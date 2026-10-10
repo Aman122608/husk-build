@@ -19,6 +19,7 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <sched.h>
 #include <stdatomic.h>
@@ -28,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -688,6 +690,189 @@ static size_t fwrite_shim(const void *ptr, size_t size, size_t nmemb, void *stre
     return fwrite(ptr, size, nmemb, map_stream(stream));
 }
 
+/* bionic's stdio globals, which Darwin does not export under these names.
+ *
+ * On Darwin `stdout` is a macro for `__stdoutp`, so dlsym(RTLD_DEFAULT,
+ * "stdout") finds nothing -- which is why libUE4.so could not relocate. The shim
+ * already had three fake FILE structs and map_stream() already turned them into
+ * the real streams; they were simply never reachable by name. bionic lays them
+ * out as __sF[0]=stdin, [1]=stdout, [2]=stderr and g_sF_storage is those three
+ * back to back, so the addresses handed out here are exactly the ones
+ * map_stream() recognises. */
+#define TL_STREAM_SLOT(n) ((void *)&g_sF_storage[(n) * 8])
+
+/* bionic's ctype table. Guest code indexes it directly -- (_ctype_ + 1)[c] --
+ * so it has to be the real 257-byte table with bionic's flag bits, not a pointer
+ * into Darwin's rune locale, whose layout and bits are both different. */
+#define TL_CTYPE_U 0x01   /* upper */
+#define TL_CTYPE_L 0x02   /* lower */
+#define TL_CTYPE_D 0x04   /* digit */
+#define TL_CTYPE_S 0x08   /* space */
+#define TL_CTYPE_P 0x10   /* punct */
+#define TL_CTYPE_C 0x20   /* control */
+#define TL_CTYPE_X 0x40   /* hex digit */
+#define TL_CTYPE_B 0x80   /* blank */
+static const char g_ctype[257] = {
+    0x00, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    0x20, 0x88, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
+    0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
+    0x10, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
+    0x44, 0x44, 0x44, 0x10, 0x10, 0x10, 0x10, 0x10,
+    0x10, 0x10, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x10, 0x10, 0x10, 0x10,
+    0x10, 0x10, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42,
+    0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+    0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+    0x02, 0x02, 0x02, 0x02, 0x10, 0x10, 0x10, 0x10,
+    0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00,
+};
+
+/* The fortified libc entry points (_FORTIFY_SOURCE). bionic ships them; Darwin
+ * has no equivalent, so every one is an unresolved import for an Android binary
+ * built with fortify on -- and libUE4.so imports a dozen. The checks that matter
+ * (a length that does not fit its buffer) abort, as bionic's do. */
+static void *__memcpy_chk_shim(void *dst, const void *src, size_t n, size_t dstlen) {
+    if (n > dstlen) abort();
+    return memcpy(dst, src, n);
+}
+static void *__memset_chk_shim(void *dst, int c, size_t n, size_t dstlen) {
+    if (n > dstlen) abort();
+    return memset(dst, c, n);
+}
+static char *__strcat_chk_shim(char *dst, const char *src, size_t dstlen) {
+    if (strlen(dst) + strlen(src) + 1 > dstlen) abort();
+    return strcat(dst, src);
+}
+static char *__strcpy_chk_shim(char *dst, const char *src, size_t dstlen) {
+    if (strlen(src) + 1 > dstlen) abort();
+    return strcpy(dst, src);
+}
+static char *__strncat_chk_shim(char *dst, const char *src, size_t n, size_t dstlen) {
+    if (strlen(dst) + strnlen(src, n) + 1 > dstlen) abort();
+    return strncat(dst, src, n);
+}
+static char *__strncpy_chk_shim(char *dst, const char *src, size_t n, size_t dstlen) {
+    if (n > dstlen) abort();
+    return strncpy(dst, src, n);
+}
+/* bionic's strchr_chk walks until it finds the character or the terminator and
+ * only faults if it runs off the end of the declared buffer first. */
+static char *__strchr_chk_shim(const char *s, int c, size_t slen) {
+    for (;; s++, slen--) {
+        if (slen == 0) abort();
+        if (*s == (char)c) return (char *)s;
+        if (*s == '\0') return NULL;
+    }
+}
+static char *__strrchr_chk_shim(const char *s, int c, size_t slen) {
+    const char *save = NULL;
+    for (;; s++, slen--) {
+        if (slen == 0) abort();
+        if (*s == (char)c) save = s;
+        if (*s == '\0') return (char *)save;
+    }
+}
+static int __vsprintf_chk_shim(char *dst, int flag, size_t dstlen, const char *fmt, va_list ap) {
+    (void)flag;
+    int n = vsnprintf(dst, dstlen, fmt, ap);
+    if (n < 0 || (size_t)n >= dstlen) abort();
+    return n;
+}
+static ssize_t __read_chk_shim(int fd, void *buf, size_t count, size_t buflen) {
+    if (count > buflen) abort();
+    return read(fd, buf, count);
+}
+static ssize_t __write_chk_shim(int fd, const void *buf, size_t count, size_t buflen) {
+    if (count > buflen) abort();
+    return write(fd, buf, count);
+}
+static ssize_t __pread_chk_shim(int fd, void *buf, size_t count, off_t off, size_t buflen) {
+    if (count > buflen) abort();
+    return pread(fd, buf, count, off);
+}
+static ssize_t __pread64_chk_shim(int fd, void *buf, size_t count, off_t off, size_t buflen) {
+    if (count > buflen) abort();
+    return pread(fd, buf, count, off);
+}
+static ssize_t __pwrite_chk_shim(int fd, const void *buf, size_t count, off_t off, size_t buflen) {
+    if (count > buflen) abort();
+    return pwrite(fd, buf, count, off);
+}
+static ssize_t __pwrite64_chk_shim(int fd, const void *buf, size_t count, off_t off, size_t buflen) {
+    if (count > buflen) abort();
+    return pwrite(fd, buf, count, off);
+}
+static void __FD_SET_chk_shim(int fd, fd_set *set, size_t setlen) {
+    if (fd < 0 || (size_t)fd >= setlen * 8) abort();
+    FD_SET(fd, set);
+}
+static int __FD_ISSET_chk_shim(int fd, const fd_set *set, size_t setlen) {
+    if (fd < 0 || (size_t)fd >= setlen * 8) abort();
+    return FD_ISSET(fd, set);
+}
+/* __open_2 is open() without the mode argument, so O_CREAT is the mistake it
+ * exists to catch. */
+static int __open_2_shim(const char *path, int flags) {
+    if (flags & O_CREAT) abort();
+    return open(path, flags);
+}
+
+/* Two more bionic-only libc entry points with no Darwin symbol of either name. */
+static int __gnu_strerror_r_shim(int err, char *buf, size_t len) {
+    if (!buf || !len) return EINVAL;
+    snprintf(buf, len, "%s", strerror(err));
+    return 0;
+}
+static int __libc_current_sigrtmin_shim(void) {
+    return 32;      /* bionic's first real-time signal; nothing here delivers one */
+}
+static int __register_atfork_shim(void (*prepare)(void), void (*parent)(void),
+                                  void (*child)(void), void *dso) {
+    (void)dso;
+    return pthread_atfork(prepare, parent, child);
+}
+
+/* OpenSL ES. libUE4.so binds slCreateEngine and six SL_IID_* interface IDs at
+ * relocation time, none of them optional, and there is no OpenSL ES on iOS to
+ * forward to -- so the library cannot load without these.
+ *
+ * The interface IDs are pointers the guest compares, so each has to be a
+ * distinct, stable address; nothing dereferences them, because nothing here
+ * hands out an engine. slCreateEngine reports the feature as unsupported rather
+ * than returning a fake object: a fake engine gets dereferenced through a vtable
+ * that does not exist, which turns "no sound" into a crash, where most engines
+ * take a failed engine creation as "run silently". */
+static const uint64_t g_sl_iids[8];
+#define TL_SL_IID(n) ((void *)&g_sl_iids[n])
+static int slCreateEngine_shim(void **engine, uint32_t nopts, const void *opts,
+                               uint32_t nif, const void *ids, const void *req) {
+    (void)nopts; (void)opts; (void)nif; (void)ids; (void)req;
+    if (engine) *engine = NULL;
+    tl_log_line("opensl: slCreateEngine -- no OpenSL ES here, so the game runs without sound");
+    return 0x0000000C;      /* SL_RESULT_FEATURE_UNSUPPORTED */
+}
+
 /* Surface and HardwareBuffer stubs */
 static void *ANativeWindow_fromSurface_shim(void *env, void *surface) { (void)env; (void)surface; return NULL; }
 static void *ASurfaceControl_create_shim(void) { return NULL; }
@@ -861,6 +1046,45 @@ static const tl_export_entry g_exports[] = {
     { "fflush",                     fflush_shim },
     { "fwrite",                     fwrite_shim },
 
+    /* bionic's stdio globals and ctype table: data the guest binds by name and
+     * Darwin has no symbol for. */
+    { "stdin",                      TL_STREAM_SLOT(0) },
+    { "stdout",                     TL_STREAM_SLOT(1) },
+    { "stderr",                     TL_STREAM_SLOT(2) },
+    { "_ctype_",                    (void *)g_ctype },
+
+    /* Fortified libc. */
+    { "__memcpy_chk",               __memcpy_chk_shim },
+    { "__memset_chk",               __memset_chk_shim },
+    { "__strcat_chk",               __strcat_chk_shim },
+    { "__strcpy_chk",               __strcpy_chk_shim },
+    { "__strncat_chk",              __strncat_chk_shim },
+    { "__strncpy_chk",              __strncpy_chk_shim },
+    { "__strchr_chk",               __strchr_chk_shim },
+    { "__strrchr_chk",              __strrchr_chk_shim },
+    { "__vsprintf_chk",             __vsprintf_chk_shim },
+    { "__read_chk",                 __read_chk_shim },
+    { "__write_chk",                __write_chk_shim },
+    { "__pread_chk",                __pread_chk_shim },
+    { "__pread64_chk",              __pread64_chk_shim },
+    { "__pwrite_chk",               __pwrite_chk_shim },
+    { "__pwrite64_chk",             __pwrite64_chk_shim },
+    { "__FD_SET_chk",               __FD_SET_chk_shim },
+    { "__FD_ISSET_chk",             __FD_ISSET_chk_shim },
+    { "__open_2",                   __open_2_shim },
+    { "__gnu_strerror_r",           __gnu_strerror_r_shim },
+    { "__libc_current_sigrtmin",    __libc_current_sigrtmin_shim },
+    { "__register_atfork",          __register_atfork_shim },
+
+    /* OpenSL ES: named, never functional. See the comment above slCreateEngine. */
+    { "slCreateEngine",             slCreateEngine_shim },
+    { "SL_IID_ENGINE",              TL_SL_IID(0) },
+    { "SL_IID_PLAY",                TL_SL_IID(1) },
+    { "SL_IID_RECORD",              TL_SL_IID(2) },
+    { "SL_IID_BUFFERQUEUE",         TL_SL_IID(3) },
+    { "SL_IID_ANDROIDSIMPLEBUFFERQUEUE", TL_SL_IID(4) },
+    { "SL_IID_VOLUME",              TL_SL_IID(5) },
+
     { "ANativeWindow_fromSurface",  ANativeWindow_fromSurface_shim },
     { "ASurfaceControl_create",     ASurfaceControl_create_shim },
     { "ASurfaceControl_createFromWindow", ASurfaceControl_createFromWindow_shim },
@@ -935,7 +1159,11 @@ bool tl_shim_supplies(const char *soname)
         || !strcmp(soname, "libm.so") || !strcmp(soname, "libdl.so")
         || !strcmp(soname, "libandroid.so") || !strcmp(soname, "libEGL.so")
         || !strcmp(soname, "libGLESv2.so") || !strcmp(soname, "libGLESv1_CM.so")
-        || !strcmp(soname, "libGLESv3.so");
+        || !strcmp(soname, "libGLESv3.so")
+        /* Named, not implemented: slCreateEngine reports the feature unsupported
+         * and the SL_IID_* handles are distinct addresses. That is enough for a
+         * library to relocate and run without sound. */
+        || !strcmp(soname, "libOpenSLES.so");
 }
 
 /* The pieces the loader wires into the ANativeActivity it passes. */

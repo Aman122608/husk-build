@@ -33,3 +33,10 @@ Husk-main.zip
 *.zip
 *.o
 
+
+# LocalSend's client certificate and key. tools/ls_send.py says this lives beside the repo
+# because it is gitignored -- it was not, and a private key nearly went to a public
+# repository. Never commit these.
+.local/
+__pycache__/
+*.pyc

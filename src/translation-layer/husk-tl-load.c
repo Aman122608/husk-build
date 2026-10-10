@@ -781,6 +781,26 @@ static void *resolve(const char *name, bool *weak)
 
 /* ------------------------------------------------------- relocation  */
 
+/* Imports this library could not bind, collected as the walk goes.
+ *
+ * The walk used to stop dead at the first symbol it could not resolve, which
+ * makes one build one guess: the log names `stdout`, you shim `stdout`, and the
+ * next build names something else that was equally invisible all along. Nothing
+ * about the decision changes -- the library is still refused -- but every
+ * missing symbol is named in the same pass, so the whole set can be fixed at
+ * once instead of one symbol per build. */
+#define TL_MAX_UNRESOLVED 96
+static char g_unresolved[TL_MAX_UNRESOLVED][96];
+static int  g_n_unresolved;
+
+static void note_unresolved(const char *name)
+{
+    if (g_n_unresolved < TL_MAX_UNRESOLVED) {
+        snprintf(g_unresolved[g_n_unresolved], sizeof(g_unresolved[0]), "%s", name);
+        g_n_unresolved++;
+    }
+}
+
 typedef struct { const uint8_t *p; const uint8_t *end; bool bad; } sleb_r;
 static int64_t rd_sleb(sleb_r *s)
 {
@@ -850,9 +870,12 @@ static bool reloc_one(uint64_t off_in_image, uint32_t type, uint32_t symidx,
             void *addr = resolve(sname, &weak);
             if (!addr) {
                 if (!weak) {
-                    tl_log_line("reloc: unresolved import %s in %s -- refusing",
-                                sname, L->name);
-                    return false;
+                    note_unresolved(sname);
+                    /* Keep walking so the report below is the whole list. The
+                     * slot is left NULL and the load is refused at the end of
+                     * apply_relocations, so nothing ever runs with it. */
+                    *(uint64_t *)place = 0;
+                    return true;
                 }
                 *(uint64_t *)place = 0;      /* a weak undefined stays NULL */
                 return true;
@@ -887,6 +910,7 @@ static bool reloc_one(uint64_t off_in_image, uint32_t type, uint32_t symidx,
 static bool apply_relocations(tl_lib *L, lex *e, const ldyn *d)
 {
     size_t done = 0;
+    g_n_unresolved = 0;
 
     /* Plain RELA. */
     if (d->rela && d->relasz) {
@@ -1020,6 +1044,16 @@ static bool apply_relocations(tl_lib *L, lex *e, const ldyn *d)
         }
     }
     tl_log_line("reloc: %s, %zu relocations applied", L->name, done);
+    if (g_n_unresolved) {
+        /* One line per symbol, so the list can be read straight off the log and
+         * answered in one change. */
+        tl_log_line("reloc: %s has %d import(s) that nothing resolves -- refusing:",
+                    L->name, g_n_unresolved);
+        for (int i = 0; i < g_n_unresolved; i++) {
+            tl_log_line("reloc:   unresolved: %s", g_unresolved[i]);
+        }
+        return false;
+    }
     return true;
 }
 
@@ -1717,6 +1751,53 @@ static void *attempt_thread(void *arg)
     return NULL;
 }
 
+/* One library's DT_NEEDED sonames, read from its bytes: a real linker's
+ * dependency list. Mirrors the program-header walk load_library does, without
+ * mapping anything or allocating. The returned names point into `file`, which
+ * the caller keeps alive for the whole run. */
+static int lib_needed(const uint8_t *file, size_t flen, const char *out[], int max)
+{
+    if (flen < sizeof(tl_ehdr)) {
+        return 0;
+    }
+    const tl_ehdr *eh = (const tl_ehdr *)file;
+    if (eh->e_phentsize < sizeof(tl_phdr) || eh->e_phnum > 64
+        || (size_t)eh->e_phoff + (size_t)eh->e_phnum * eh->e_phentsize > flen) {
+        return 0;
+    }
+    lex e;
+    memset(&e, 0, sizeof(e));
+    e.d = file; e.n = flen;
+    for (int i = 0; i < eh->e_phnum; i++) {
+        const uint8_t *ph = file + eh->e_phoff + (size_t)i * eh->e_phentsize;
+        uint32_t type = ld32(ph);
+        if (type == PT_LOAD && e.nloads < 16) {
+            e.lv[e.nloads] = ld64(ph + 16);
+            e.lo[e.nloads] = ld64(ph + 8);
+            e.lf[e.nloads] = ld64(ph + 32);
+            e.nloads++;
+        } else if (type == PT_DYNAMIC) {
+            e.dyn_vaddr = ld64(ph + 16);
+            e.dyn_filesz = ld64(ph + 32);
+        }
+    }
+    if (!e.dyn_filesz) {
+        return 0;
+    }
+    ldyn d;
+    if (!lex_dynamic(&e, &d)) {
+        return 0;
+    }
+    int n = 0;
+    for (int i = 0; i < d.nneeded && n < max; i++) {
+        const char *s = ldyn_str(&e, &d, d.needed[i]);
+        if (s && *s) {
+            out[n++] = s;
+        }
+    }
+    return n;
+}
+
 int husk_tl_attempt_start(const char *const *apks, int count, int seconds)
 {
     pthread_mutex_lock(&g_log_mutex);
@@ -1760,39 +1841,90 @@ int husk_tl_attempt_start(const char *const *apks, int count, int seconds)
     }
     tl_log_line("attempt: primary library is %s", names[primary]);
 
-    /* Load order: the primary first, then its helpers, so the primary's
-     * relocations see the helpers' exports. */
-    uint8_t *bytes = NULL; size_t blen = 0;
-    if (!extract_lib(apk_of[primary], names[primary], &bytes, &blen,
-                     err, sizeof(err))) {
+    /* Load order: the primary's own DT_NEEDED libraries first -- a real linker's
+     * order -- then the primary, then whatever else the APK ships.
+     *
+     * This is not tidiness. libUE4.so imports 55 symbols in Android's
+     * std::__ndk1 namespace, and the only thing that defines them is the APK's
+     * own libc++_shared.so: Darwin's libc++ is std::__1, so dlsym(RTLD_DEFAULT)
+     * finds none of them. Loading the primary first left that whole family
+     * unresolved, and relocation stopped at the first one it could not bind --
+     * which is why the log named `stdout` and nothing else. */
+    int order[24], nord = 0;
+    bool placed[24];
+    for (int i = 0; i < n; i++) {
+        placed[i] = false;
+    }
+    uint8_t *pbytes = NULL; size_t pblen = 0;
+    if (!extract_lib(apk_of[primary], names[primary], &pbytes, &pblen, err, sizeof(err))) {
         tl_log_line("attempt: %s", err);
         attempt_stop(0);
         return -1;
     }
-    if (!load_library(names[primary], bytes, blen)) {
-        free(bytes);
-        tl_log_line("attempt: the primary library could not be loaded");
-        attempt_stop(0);
-        return 0;
-    }
-    g_run.libs[g_run.nlibs - 1].file = bytes;
-    g_run.libs[g_run.nlibs - 1].file_len = blen;
-
-    for (int i = 0; i < n && g_run.nlibs < 8; i++) {
-        if (i == primary) {
-            continue;
-        }
-        uint8_t *b = NULL; size_t l = 0;
-        if (extract_lib(apk_of[i], names[i], &b, &l, err, sizeof(err))) {
-            if (load_library(names[i], b, l)) {
-                g_run.libs[g_run.nlibs - 1].file = b;
-                g_run.libs[g_run.nlibs - 1].file_len = l;
-            } else {
-                free(b);
-                tl_log_line("attempt: helper %s did not load (continuing)",
-                            names[i]);
+    {
+        const char *need[24];
+        int nn = lib_needed(pbytes, pblen, need, 24);
+        for (int k = 0; k < nn; k++) {
+            for (int i = 0; i < n; i++) {
+                if (!placed[i] && !strcmp(names[i], need[k])) {
+                    placed[i] = true;
+                    order[nord++] = i;
+                    tl_log_line("attempt: loading %s first: %s needs it",
+                                names[i], names[primary]);
+                }
             }
         }
+    }
+    placed[primary] = true;
+    order[nord++] = primary;
+    for (int i = 0; i < n; i++) {
+        if (!placed[i]) {
+            placed[i] = true;
+            order[nord++] = i;
+        }
+    }
+
+    /* Extract and load in that order. The primary failing is fatal; a helper
+     * failing is not, because a helper is a bonus and the primary is the point. */
+    bool primary_loaded = false;
+    for (int k = 0; k < nord; k++) {
+        int i = order[k];
+        bool is_primary = (i == primary);
+        if (g_run.nlibs >= 8) {
+            if (is_primary) {
+                tl_log_line("attempt: no room left for the primary library");
+                attempt_stop(0);
+                return 0;
+            }
+            continue;
+        }
+        uint8_t *b = pbytes; size_t l = pblen;
+        if (!is_primary) {
+            if (!extract_lib(apk_of[i], names[i], &b, &l, err, sizeof(err))) {
+                tl_log_line("attempt: helper %s could not be read (continuing)", names[i]);
+                continue;
+            }
+        }
+        if (load_library(names[i], b, l)) {
+            g_run.libs[g_run.nlibs - 1].file = b;
+            g_run.libs[g_run.nlibs - 1].file_len = l;
+            if (is_primary) {
+                primary_loaded = true;
+            }
+        } else {
+            free(b);
+            if (is_primary) {
+                tl_log_line("attempt: the primary library could not be loaded");
+                attempt_stop(0);
+                return 0;
+            }
+            tl_log_line("attempt: helper %s did not load (continuing)", names[i]);
+        }
+    }
+    if (!primary_loaded) {
+        tl_log_line("attempt: the primary library was never loaded");
+        attempt_stop(0);
+        return 0;
     }
 
     /* Run JNI_OnLoad for any loaded library that exports it. */
