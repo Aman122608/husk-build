@@ -1,0 +1,21 @@
+# This repo is built on macOS, where its shell scripts must be LF. Windows
+# checkouts default to converting to CRLF, which breaks a .sh's shebang and the
+# scripts' here-docs, so the source-of-truth line ending is pinned per type.
+* text=auto eol=lf
+*.sh   text eol=lf
+*.c    text eol=lf
+*.h    text eol=lf
+*.m    text eol=lf
+*.inc  text eol=lf
+*.S    text eol=lf
+*.swift text eol=lf
+*.yml  text eol=lf
+*.plist text eol=lf
+*.patch text eol=lf
+
+# Binaries the repo legitimately carries.
+*.png  binary
+*.jpeg binary
+*.jpg  binary
+*.xcframework/** binary
+StikJIT binary

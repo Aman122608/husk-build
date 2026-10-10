@@ -1,0 +1,53 @@
+name: check-translation-layer
+
+# The translation layer is plain C that the app target compiles; on a Mac it can be
+# compiled on its own in seconds, against the real iPhoneOS SDK, without building
+# QEMU/ANGLE/MoltenVK first. That is the fast signal that a change to
+# src/translation-layer-next compiles the way the app builds it -- use it before
+# waiting hours on build-ios.yml.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/translation-layer-next/**'
+      - 'src/translation-layer/**'
+      - '.github/workflows/check-translation-layer.yml'
+  pull_request:
+    paths:
+      - 'src/translation-layer-next/**'
+      - 'src/translation-layer/**'
+
+jobs:
+  compile:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show SDK
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Compile src/translation-layer-next for arm64-apple-ios
+        run: |
+          set -euo pipefail
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          MIN=16.0
+          # The same include dirs the app target uses; the sources define
+          # _DARWIN_C_SOURCE themselves, and no OTHER_CFLAGS are set in project.yml.
+          INC="-Isrc/translation-layer-next -Isrc/translation-layer"
+          mkdir -p /tmp/tl-obj
+          fail=0
+          for f in src/translation-layer-next/*.c; do
+            obj="/tmp/tl-obj/$(basename "${f%.c}").o"
+            if ! clang -isysroot "$SDK" \
+                   -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
+                   $INC -c "$f" -o "$obj" 2> "/tmp/tl-obj/err.txt"; then
+              echo "::error file=$f::does not compile for arm64-apple-ios"
+              sed -n '1,12p' "/tmp/tl-obj/err.txt"
+              fail=1
+            fi
+          done
+          exit $fail

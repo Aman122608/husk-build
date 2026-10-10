@@ -1,0 +1,70 @@
+name: build-ios
+
+# Husk builds with Xcode, so only a macOS runner can produce the IPA. This does
+# exactly what scripts/ci_build.sh does on a Mac. The FIRST run takes a couple of
+# hours: it fetches and cross-compiles QEMU, ANGLE and MoltenVK from source. Later
+# runs reuse the cache and only rebuild what changed.
+#
+# The IPA is signed ad hoc, with Husk's entitlements embedded, and is not tied to a
+# signing team: SideStore/AltStore re-sign at install, TrollStore keeps the
+# entitlements already in the binary. So no secrets are needed here.
+on:
+  # Manual only, or a version tag. A push must NOT kick off a ~2 hour build by
+  # itself; the fast check-translation-layer workflow covers every push instead.
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  ipa:
+    runs-on: macos-14
+    timeout-minutes: 350            # the first cold build is ~2 hours
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # package_ipa.sh stamps the commit into the bundle
+
+      - name: Free disk space
+        # The Xcode image ships ~14 GB free; QEMU + ANGLE + MoltenVK + sources need more.
+        run: |
+          sudo rm -rf /usr/local/share/dotnet /usr/share/dotnet ~/.dotnet \
+                      ~/Library/Caches/Homebrew/downloads 2>/dev/null || true
+          df -h /
+
+      - name: Toolchain
+        # ci_build.sh and the scripts it calls use these; Xcode and rustup are on the image.
+        run: |
+          brew install meson ninja pkg-config qemu xcodegen autoconf automake \
+                       libtool gettext gnu-sed coreutils
+          rustup target add aarch64-apple-ios
+          xcodebuild -version
+          qemu-img --version
+
+      - name: Cache dependencies and prior build
+        uses: actions/cache@v4
+        with:
+          path: |
+            third_party/sources
+            third_party/build
+            build/ios-arm64
+          # Keyed on the pinned upstream versions in sources.sh, so a version bump
+          # rebuilds but an app-only change reuses QEMU/ANGLE/MoltenVK.
+          key: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh', 'scripts/build_ios.sh') }}
+
+      - name: Build IPA + tipa
+        run: ./scripts/ci_build.sh build/Husk.ipa
+
+      - name: Package artifacts
+        run: |
+          ls -la build/ || true
+          test -f build/Husk.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Husk-${{ github.sha }}
+          path: |
+            build/Husk.ipa
+            build/Husk.tipa
+          if-no-files-found: error
+          retention-days: 30
