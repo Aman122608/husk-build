@@ -13,7 +13,11 @@ on:
 
 jobs:
   ipa:
-    runs-on: macos-14
+    # macos-26, not macos-14: the app project requires the Xcode 16+ project format
+    # (objectVersion 77) and the vendored StikJIT framework carries a .swiftinterface
+    # built by Apple Swift 6.4, which Xcode 16.2 (macos-14's newest) cannot read.
+    # macos-14 is also deprecated for Actions.
+    runs-on: macos-26
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
