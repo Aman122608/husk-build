@@ -1496,14 +1496,26 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
 
 /* -------------------------------------------------------- the attempt  */
 
+/*
+ * Which library is the engine.
+ *
+ * This matched any name containing "native" -- which is how libbacktrace-native.so, a crash
+ * reporter shipped alongside the game, was picked as the primary over Flutter's actual engine,
+ * and the run failed before anything of the game's ran. Engines are named first and in order;
+ * a plain JNI library called something like "libnative-lib.so" is still the last resort, which
+ * is what the old rule was reaching for.
+ */
 static int pick_primary(char names[][96], int n)
 {
-    for (int i = 0; i < n; i++) {
-        if (!strcmp(names[i], "libmain.so") || !strcmp(names[i], "libgame.so")
-            || strstr(names[i], "activity") || strstr(names[i], "native")) {
-            return i;
-        }
-    }
+    static const char *const engines[] = {
+        "libmain.so", "libgame.so", "libunity.so", "libil2cpp.so", "libflutter.so", "libapp.so",
+        "libUE4.so", "libmonobdwgc", "libgodot", "liblove", "librenpython.so", "libpython",
+        "libcocos", "libGDX", "libSDL2", "libsdl", "activity",
+        "libnative", "native-lib", "libnative-lib",          /* a plain JNI library, last */
+    };
+    for (size_t e = 0; e < sizeof(engines) / sizeof(engines[0]); e++)
+        for (int i = 0; i < n; i++)
+            if (strstr(names[i], engines[e])) return i;
     return n ? 0 : -1;
 }
 
