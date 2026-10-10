@@ -1508,9 +1508,13 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
 static int pick_primary(char names[][96], int n)
 {
     static const char *const engines[] = {
-        "libmain.so", "libgame.so", "libunity.so", "libil2cpp.so", "libflutter.so", "libapp.so",
-        "libUE4.so", "libmonobdwgc", "libgodot", "liblove", "librenpython.so", "libpython",
-        "libcocos", "libGDX", "libSDL2", "libsdl", "activity",
+        /* Game engines first. A modded game can ship both: GTA San Andreas Definitive Edition is
+         * Unreal with a Flutter mod menu beside it, and picking Flutter would run the menu. */
+        "libUE4.so", "libunity.so", "libil2cpp.so", "libgodot", "liblove", "librenpython.so",
+        "libpython", "libcocos", "libGDX", "libSDL2", "libsdl",
+        /* Then the frameworks a game may be built *in* rather than around. */
+        "libmain.so", "libgame.so", "libflutter.so", "libapp.so",
+        "activity",
         "libnative", "native-lib", "libnative-lib",          /* a plain JNI library, last */
     };
     for (size_t e = 0; e < sizeof(engines) / sizeof(engines[0]); e++)
