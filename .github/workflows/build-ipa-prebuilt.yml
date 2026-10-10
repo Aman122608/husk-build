@@ -34,8 +34,11 @@ jobs:
           sudo xcode-select -s "$BEST"
           xcodebuild -version
           export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
-          brew install xcodegen
+          # qemu-img is not optional: the app's "Stage guest image" build phase uses it
+          # to create the firmware and userdata seed images the guest boots from.
+          brew install xcodegen qemu
           rustup target add aarch64-apple-ios
+          qemu-img --version
 
       - name: Build IPA from upstream binaries
         env:

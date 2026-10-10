@@ -77,6 +77,22 @@ cat > "$XCF/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
+step "stage QEMU's pc-bios data"
+# The app's "Stage guest image" build phase reads QEMU's pc-bios directory, which
+# only exists once QEMU has been built. Take the same ROMs and the same UEFI
+# firmware the donor's QEMU uses. The firmware is 64 MiB of mostly zeros and the
+# phase bunzip2s it, so repack the .fd the donor already ships rather than
+# re-downloading QEMU's sources for one file.
+DONOR_APP="$WORK/x/Payload/Husk.app"
+BIOS="$HUSK_ROOT/third_party/build/qemu-10.0.12-utm/pc-bios"
+mkdir -p "$BIOS"
+cp "$DONOR_APP/pc-bios/"*.rom "$BIOS/" 2>/dev/null || true
+if [ -f "$DONOR_APP/edk2-aarch64-code.fd" ]; then
+    bzip2 -9 -c "$DONOR_APP/edk2-aarch64-code.fd" > "$BIOS/edk2-aarch64-code.fd.bz2"
+fi
+[ -s "$BIOS/edk2-aarch64-code.fd.bz2" ] \
+    || { echo "donor IPA has no edk2-aarch64-code.fd to stage" >&2; exit 1; }
+
 step "guest kernel + firmware"
 ./scripts/fetch_phase0_guest.sh
 
