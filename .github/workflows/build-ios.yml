@@ -21,16 +21,6 @@ on:
     tags:
       - 'v*'
 
-env:
-  # One string, so the restore key and the save key can never drift apart.
-  CACHE_KEY: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh','scripts/build_ios.sh','scripts/build_angle_ios.sh','scripts/build_moltenvk_ios.sh','scripts/build_rppairing_ios.sh') }}-${{ github.run_id }}
-  CACHE_PATHS: |
-    third_party/sources
-    third_party/build
-    third_party/gpu
-    build/ios-arm64
-    build/stamps
-
 jobs:
   ipa:
     runs-on: macos-14
@@ -57,11 +47,18 @@ jobs:
           xcodebuild -version
           qemu-img --version
 
+      # The key is written out in both steps rather than shared through env:, because
+      # the runner context is not available in a workflow-level env: block.
       - name: Restore build cache
         uses: actions/cache/restore@v4
         with:
-          path: ${{ env.CACHE_PATHS }}
-          key: ${{ env.CACHE_KEY }}
+          path: |
+            third_party/sources
+            third_party/build
+            third_party/gpu
+            build/ios-arm64
+            build/stamps
+          key: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh','scripts/build_ios.sh','scripts/build_angle_ios.sh','scripts/build_moltenvk_ios.sh','scripts/build_rppairing_ios.sh') }}-${{ github.run_id }}
           # The newest cache from any earlier run of this workflow, finished or not.
           restore-keys: |
             husk-${{ runner.os }}-
@@ -81,8 +78,13 @@ jobs:
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: ${{ env.CACHE_PATHS }}
-          key: ${{ env.CACHE_KEY }}
+          path: |
+            third_party/sources
+            third_party/build
+            third_party/gpu
+            build/ios-arm64
+            build/stamps
+          key: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh','scripts/build_ios.sh','scripts/build_angle_ios.sh','scripts/build_moltenvk_ios.sh','scripts/build_rppairing_ios.sh') }}-${{ github.run_id }}
 
       - name: Upload build logs (also on failure)
         if: always()
