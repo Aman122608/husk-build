@@ -161,11 +161,11 @@ for f in *.c; do
 done
 ```
 
-Expected: **36 of 42** pass. The six that fail want framework headers zig does not ship
-(`AudioToolbox`, `CoreGraphics`, `Security`, `resolv.h`, `mach/mach_vm.h`,
-`if_nametoindex`) in files unrelated to the Ren'Py change — they are fine in the real
-SDK, which is exactly what path B checks. Notes: zig's `-fsyntax-only` is broken (use
-`-c -o`), and `zig.exe` is a native binary, so pass `C:/...` paths, not MSYS `/c/...`.
+Expected: **37 of 42** pass. The five that fail want framework headers zig does not ship
+(`AudioToolbox`, `CoreGraphics`, `Security`, `resolv.h`, `mach/mach_vm.h`) in files unrelated
+to the Ren'Py change — they are fine in the real SDK, which is exactly what path B checks.
+Notes: zig's `-fsyntax-only` is broken (use `-c -o`), and `zig.exe` is a native binary, so pass
+`C:/...` paths, not MSYS `/c/...`.
 
 ---
 
