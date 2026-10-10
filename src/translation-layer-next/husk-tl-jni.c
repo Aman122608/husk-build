@@ -858,7 +858,10 @@ typedef struct { const char *name, *sig; void *fn; } native_method;
 static int32_t jni_RegisterNatives(void *env, jo cls, const native_method *m, int32_t n)
 {
     (void)env;
-    if (!cls || cls->kind != TL_K_CLASS) return -1;
+    if (!cls || cls->kind != TL_K_CLASS) {
+        tl_log_line("jni: RegisterNatives for a class that is not a class object (%p) -- %d method(s) lost", (void *)cls, n);
+        return -1;
+    }
     tl_jclass *c = cls->klass.jc;
     pthread_mutex_lock(&g_lock);
     for (int32_t i = 0; i < n; i++) {
@@ -870,6 +873,10 @@ static int32_t jni_RegisterNatives(void *env, jo cls, const native_method *m, in
         TRACE("jni: RegisterNatives %s.%s%s -> %p", c->name, m[i].name, m[i].sig, m[i].fn);
     }
     pthread_mutex_unlock(&g_lock);
+    /* Said out loud, once per call: whether a native was registered at all is the difference
+     * between a driver that can start a Unity game and one that sits at zero frames, and the
+     * absence of this line is what made that cost a build to work out. */
+    tl_log_line("jni: RegisterNatives %s: %d method(s), %s first", c->name, n, n > 0 ? m[0].name : "-");
     return 0;
 }
 static int32_t jni_UnregisterNatives(void *env, jo cls) { (void)env; (void)cls; return 0; }

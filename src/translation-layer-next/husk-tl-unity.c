@@ -123,6 +123,28 @@ static void *unity_main(void *arg)
         tl_log_line("unity: told the engine the volume (7 of 15) and that sound is on");
     }
 
+    /*
+     * UnityPlayer's natives are not registered by libmain -- that library registers only
+     * NativeLoader's own. They come from libunity's JNI_OnLoad, which the engine normally reaches
+     * through dlsym as it dlopens the library. If they are still missing when the frame loop is
+     * about to start, ask the engine's own libraries ourselves.
+     *
+     * Without them nativeRender resolves to nothing, the loop below never runs a frame, and the
+     * game sits at "alive: 0 frames" behind a log whose only clue is "was not registered".
+     */
+    if (!tl_jni_native("com/unity3d/player/UnityPlayer", "nativeRender", "()Z")) {
+        static const char *deps[] = { "libunity.so", "libil2cpp.so" };
+        for (size_t i = 0; i < sizeof(deps) / sizeof(deps[0]); i++) {
+            tl_lib *l = tl_ld_load(deps[i]);
+            onload_fn dep_load = l ? (onload_fn)tl_ld_sym(l, "JNI_OnLoad") : NULL;
+            if (!dep_load) { tl_log_line("unity: %s has no JNI_OnLoad to call", deps[i]); continue; }
+            int32_t dep_ver = dep_load(tl_jni_vm(), NULL);
+            tl_log_line("unity: %s JNI_OnLoad -> %#x", deps[i], dep_ver);
+        }
+        tl_log_line("unity: UnityPlayer.nativeRender %s after asking them", 
+                    tl_jni_native("com/unity3d/player/UnityPlayer", "nativeRender", "()Z") ? "resolved" : "STILL unresolved");
+    }
+
     void *render = native_of("com/unity3d/player/UnityPlayer", "nativeRender", "()Z");
     bool was_paused = false;
     while (render && !atomic_load(&U.stop)) {
