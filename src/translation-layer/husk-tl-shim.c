@@ -442,6 +442,119 @@ void *eglGetProcAddress(const char *name)
 
 unsigned eglGetError(void) { return 0x3005; }   /* EGL_NOT_INITIALIZED */
 
+/*
+ * The rest of the EGL surface libUE4 binds. iOS has no EGL at all -- these had
+ * no symbol to find, which is why they were the last thing refusing the load --
+ * and the attempt renders through the software window rather than a GL surface.
+ *
+ * So they answer as an EGL that cannot provide a display, and eglInitialize
+ * reports failure. That is the honest report here, and it is the one a guest
+ * handles: it takes its "no GPU" path. Handing back a fake display, context or
+ * surface instead would put a pointer in a guest's hands that the next EGL call
+ * dereferences, turning "no graphics" into a crash somewhere further on.
+ */
+#define EGL_FALSE 0
+#define EGL_TRUE  1
+
+void *eglGetDisplay(void *display_id)
+{
+    (void)display_id;
+    return (void *)8;       /* non-NULL: EGL_NO_DISPLAY is NULL */
+}
+int eglInitialize(void *dpy, int *major, int *minor)
+{
+    (void)dpy;
+    if (major) *major = 1;
+    if (minor) *minor = 4;
+    tl_log_line("egl: eglInitialize -- there is no EGL on iOS, so the guest gets no display");
+    return EGL_FALSE;
+}
+int eglTerminate(void *dpy) { (void)dpy; return EGL_TRUE; }
+int eglChooseConfig(void *dpy, const int *attribs, void **configs, int config_size, int *num_config)
+{
+    (void)dpy; (void)attribs; (void)configs; (void)config_size;
+    if (num_config) *num_config = 0;
+    return EGL_TRUE;
+}
+int eglGetConfigAttrib(void *dpy, void *config, int attribute, int *value)
+{
+    (void)dpy; (void)config; (void)attribute;
+    if (value) *value = 0;
+    return EGL_FALSE;
+}
+void *eglCreateContext(void *dpy, void *config, void *share, const int *attribs)
+{
+    (void)dpy; (void)config; (void)share; (void)attribs;
+    return NULL;            /* EGL_NO_CONTEXT */
+}
+int eglDestroyContext(void *dpy, void *ctx) { (void)dpy; (void)ctx; return EGL_TRUE; }
+void *eglCreateWindowSurface(void *dpy, void *config, void *win, const int *attribs)
+{
+    (void)dpy; (void)config; (void)win; (void)attribs;
+    return NULL;            /* EGL_NO_SURFACE */
+}
+void *eglCreatePbufferSurface(void *dpy, void *config, const int *attribs)
+{
+    (void)dpy; (void)config; (void)attribs;
+    return NULL;
+}
+int eglDestroySurface(void *dpy, void *surface) { (void)dpy; (void)surface; return EGL_TRUE; }
+int eglQuerySurface(void *dpy, void *surface, int attribute, int *value)
+{
+    (void)dpy; (void)surface; (void)attribute;
+    if (value) *value = 0;
+    return EGL_TRUE;
+}
+int eglSurfaceAttrib(void *dpy, void *surface, int attribute, int value)
+{
+    (void)dpy; (void)surface; (void)attribute; (void)value;
+    return EGL_TRUE;
+}
+int eglBindAPI(unsigned api) { (void)api; return EGL_TRUE; }
+void *eglGetCurrentContext(void) { return NULL; }
+int eglMakeCurrent(void *dpy, void *draw, void *read, void *ctx)
+{
+    (void)dpy; (void)draw; (void)read; (void)ctx;
+    return EGL_FALSE;
+}
+const char *eglQueryString(void *dpy, int name)
+{
+    (void)dpy; (void)name;
+    return "";              /* never NULL: a guest will strlen() it */
+}
+int eglSwapInterval(void *dpy, int interval) { (void)dpy; (void)interval; return EGL_TRUE; }
+int eglSwapBuffers(void *dpy, void *surface) { (void)dpy; (void)surface; return EGL_FALSE; }
+
+/*
+ * The ES 3.1 / 3.2 entry points. Whatever supplied this guest's ES 3.0 calls has
+ * no symbol for these, and the tell is precise: the resolved set stops exactly at
+ * the 3.1 additions (images, compute, indirect draws, vertex-attribute binding)
+ * while the 3.2 fence family resolved. With no context there is nothing to call
+ * them on, so naming them is all that is needed -- and all that is honest.
+ */
+void glBindImageTexture(unsigned unit, unsigned tex, int level, unsigned layered,
+                        int layer, unsigned access, unsigned format)
+{
+    (void)unit; (void)tex; (void)level; (void)layered; (void)layer; (void)access; (void)format;
+}
+void glBindVertexBuffer(unsigned bindingindex, unsigned buffer, long offset, int stride)
+{ (void)bindingindex; (void)buffer; (void)offset; (void)stride; }
+void glDispatchCompute(unsigned a, unsigned b, unsigned c) { (void)a; (void)b; (void)c; }
+void glDispatchComputeIndirect(long offset) { (void)offset; }
+void glDrawArraysIndirect(unsigned mode, const void *indirect) { (void)mode; (void)indirect; }
+void glDrawElementsIndirect(unsigned mode, unsigned type, const void *indirect)
+{ (void)mode; (void)type; (void)indirect; }
+void glMemoryBarrier(unsigned barriers) { (void)barriers; }
+void glVertexAttribBinding(unsigned index, unsigned bindingindex)
+{ (void)index; (void)bindingindex; }
+void glVertexAttribFormat(unsigned index, int size, unsigned type, unsigned normalized,
+                          unsigned relativeoffset)
+{ (void)index; (void)size; (void)type; (void)normalized; (void)relativeoffset; }
+void glVertexAttribIFormat(unsigned index, int size, unsigned type, unsigned relativeoffset)
+{ (void)index; (void)size; (void)type; (void)relativeoffset; }
+void glVertexBindingDivisor(unsigned bindingindex, unsigned divisor)
+{ (void)bindingindex; (void)divisor; }
+
 /* --------------------------------------------------------- activity -- */
 
 void ANativeActivity_finish(void *activity)
@@ -656,6 +769,30 @@ int pthread_mutex_trylock_shim(void *m)
 }
 int pthread_mutex_unlock_shim(void *m) { if (m) spin_unlock_40(m); return 0; }
 int pthread_mutex_destroy_shim(void *m) { if (m) memset(m, 0, 40); return 0; }
+
+/* The timed variant of the same 40-byte mutex, and it has to be built on the
+ * compare-and-swap rather than Darwin's pthread_mutex_timedlock: the object is
+ * bionic's 40 bytes and Darwin's pthread_mutex_t is larger, so handing it over
+ * would read past the guest's mutex. Try, nap, give up at the caller's deadline. */
+int pthread_mutex_timedlock_shim(void *m, const struct timespec *deadline)
+{
+    if (!m) return EINVAL;
+    for (;;) {
+        if (__sync_bool_compare_and_swap((uint8_t *)m, 0, 1)) {
+            return 0;
+        }
+        if (deadline) {
+            struct timespec now;
+            clock_gettime(CLOCK_REALTIME, &now);
+            if (now.tv_sec > deadline->tv_sec
+                || (now.tv_sec == deadline->tv_sec && now.tv_nsec >= deadline->tv_nsec)) {
+                return ETIMEDOUT;
+            }
+        }
+        struct timespec nap = { 0, 1000000 };       /* a millisecond */
+        nanosleep(&nap, NULL);
+    }
+}
 
 /* pthread_once_t is 4 bytes on bionic, 8 on Darwin (long). Same shape of
  * problem, same answer: 0 is "never run", 1 is "done", and the compare-
@@ -972,6 +1109,50 @@ static pid_t gettid_shim(void) {
     return (pid_t)tid;
 }
 
+/*
+ * bionic's *64 aliases. Darwin's off_t is already 64-bit, so these are the
+ * ordinary calls under the name the guest binds -- the bionic name is the only
+ * thing missing, not the 64-bit behaviour.
+ */
+static int64_t lseek64_shim(int fd, int64_t offset, int whence)
+{ return (int64_t)lseek(fd, (off_t)offset, whence); }
+static int64_t pread64_shim(int fd, void *buf, size_t n, int64_t offset)
+{ return (int64_t)pread(fd, buf, n, (off_t)offset); }
+static int ftruncate64_shim(int fd, int64_t length)
+{ return ftruncate(fd, (off_t)length); }
+
+/* memalign is declared on Darwin but not exported by that name. */
+static void *memalign_shim(size_t alignment, size_t size)
+{
+    void *p = NULL;
+    return posix_memalign(&p, alignment, size) == 0 ? p : NULL;
+}
+
+/* glibc has sincos; Darwin only has __sincos, so the plain names are missing. */
+static void sincos_shim(double x, double *s, double *c)
+{ if (s) *s = sin(x); if (c) *c = cos(x); }
+static void sincosf_shim(float x, float *s, float *c)
+{ if (s) *s = sinf(x); if (c) *c = cosf(x); }
+
+/*
+ * glibc-only again. Each reports "I cannot tell you" rather than a fabricated
+ * number: a zero CPU count or a zeroed sysinfo struct reads as real information
+ * to a guest that acts on it, and -1 is what these return for "unsupported".
+ */
+static int sysinfo_shim(void *info) { (void)info; return -1; }
+static int sched_getaffinity_shim(int pid, size_t len, void *mask)
+{ (void)pid; (void)len; (void)mask; return -1; }
+static int sched_setaffinity_shim(int pid, size_t len, const void *mask)
+{ (void)pid; (void)len; (void)mask; return -1; }
+static int __sched_cpucount_shim(size_t setsize, const void *set)
+{
+    /* bionic's own answer is "how many CPUs are in this set". The shim cannot
+     * see the guest's cpu_set_t, and one is the value that never claims more
+     * parallelism than exists. */
+    (void)setsize; (void)set;
+    return 1;
+}
+
 /* Two more bionic-only libc entry points with no Darwin symbol of either name. */
 static int __gnu_strerror_r_shim(int err, char *buf, size_t len) {
     if (!buf || !len) return EINVAL;
@@ -1170,9 +1351,40 @@ static const tl_export_entry g_exports[] = {
     { "AConfiguration_getLanguage", AConfiguration_getLanguage },
     { "AConfiguration_getCountry",  AConfiguration_getCountry },
 
-    /* EGL: resolver only, honest failure at call time */
+    /* EGL and GLES: named, honest failure at call time. There is no EGL on iOS
+     * and the attempt draws through the software window, so these exist so a
+     * library can relocate and report "no GPU" rather than be refused. */
     { "eglGetProcAddress",          eglGetProcAddress },
     { "eglGetError",                eglGetError },
+    { "eglGetDisplay",              eglGetDisplay },
+    { "eglInitialize",              eglInitialize },
+    { "eglTerminate",               eglTerminate },
+    { "eglChooseConfig",            eglChooseConfig },
+    { "eglGetConfigAttrib",         eglGetConfigAttrib },
+    { "eglCreateContext",           eglCreateContext },
+    { "eglDestroyContext",          eglDestroyContext },
+    { "eglCreateWindowSurface",     eglCreateWindowSurface },
+    { "eglCreatePbufferSurface",    eglCreatePbufferSurface },
+    { "eglDestroySurface",          eglDestroySurface },
+    { "eglQuerySurface",            eglQuerySurface },
+    { "eglSurfaceAttrib",           eglSurfaceAttrib },
+    { "eglBindAPI",                 eglBindAPI },
+    { "eglGetCurrentContext",       eglGetCurrentContext },
+    { "eglMakeCurrent",             eglMakeCurrent },
+    { "eglQueryString",             eglQueryString },
+    { "eglSwapInterval",            eglSwapInterval },
+    { "eglSwapBuffers",             eglSwapBuffers },
+    { "glBindImageTexture",         glBindImageTexture },
+    { "glBindVertexBuffer",         glBindVertexBuffer },
+    { "glDispatchCompute",          glDispatchCompute },
+    { "glDispatchComputeIndirect",  glDispatchComputeIndirect },
+    { "glDrawArraysIndirect",       glDrawArraysIndirect },
+    { "glDrawElementsIndirect",     glDrawElementsIndirect },
+    { "glMemoryBarrier",            glMemoryBarrier },
+    { "glVertexAttribBinding",      glVertexAttribBinding },
+    { "glVertexAttribFormat",       glVertexAttribFormat },
+    { "glVertexAttribIFormat",      glVertexAttribIFormat },
+    { "glVertexBindingDivisor",     glVertexBindingDivisor },
 
     /* JNI entry points */
     { "JNI_GetDefaultJavaVMInitArgs", JNI_GetDefaultJavaVMInitArgs },
@@ -1185,6 +1397,7 @@ static const tl_export_entry g_exports[] = {
     { "pthread_mutex_trylock",      pthread_mutex_trylock_shim },
     { "pthread_mutex_unlock",       pthread_mutex_unlock_shim },
     { "pthread_mutex_destroy",      pthread_mutex_destroy_shim },
+    { "pthread_mutex_timedlock",    pthread_mutex_timedlock_shim },
     { "pthread_once",               pthread_once_shim },
     { "sysconf",                    sysconf_shim },
     { "dlopen",                     dlopen_shim },
@@ -1239,6 +1452,16 @@ static const tl_export_entry g_exports[] = {
     { "__ctype_get_mb_cur_max",     __ctype_get_mb_cur_max_shim },
     { "__strncpy_chk2",             __strncpy_chk2_shim },
     { "gettid",                     gettid_shim },
+    { "lseek64",                    lseek64_shim },
+    { "pread64",                    pread64_shim },
+    { "ftruncate64",                ftruncate64_shim },
+    { "memalign",                   memalign_shim },
+    { "sincos",                     sincos_shim },
+    { "sincosf",                    sincosf_shim },
+    { "sysinfo",                    sysinfo_shim },
+    { "sched_getaffinity",          sched_getaffinity_shim },
+    { "sched_setaffinity",          sched_setaffinity_shim },
+    { "__sched_cpucount",           __sched_cpucount_shim },
 
     /* OpenSL ES: named, never functional. See the comment above slCreateEngine. */
     { "slCreateEngine",             slCreateEngine_shim },
