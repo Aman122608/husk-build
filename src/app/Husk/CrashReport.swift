@@ -201,6 +201,9 @@ struct CrashReportSheet: View {
                                 .frame(maxWidth: .infinity).padding(.vertical, 6)
                         }
                         .buttonStyle(.borderedProminent)
+
+                        SendLogToPCButton(file: file)
+                            .padding(.top, 4)
                     }
                     Text("The report holds the full log of that run and which device and build it was on. It is also saved as a file in Husk's folder, so it is still there later. Nothing is sent anywhere unless you share it.")
                         .font(.footnote).foregroundStyle(.secondary)

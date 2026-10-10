@@ -51,6 +51,18 @@ enum HuskLog {
             .appendingPathComponent("husk.log")
     }
 
+    // MARK: - Handing the log to a machine on the LAN
+
+    /// The address a log is sent to, and whether sending is allowed at all.
+    ///
+    /// Two settings, both empty/off until the user fills them in: nothing is ever sent to
+    /// anywhere by default, and there is no automatic send. The other end is
+    /// `husk_log_receiver.py`, which prints the address to type here.
+    enum SendKeys {
+        static let address = "husk.logsend.address"
+        static let on = "husk.logsend.on"
+    }
+
     static func recentLines(_ n: Int = 400) -> [String] {
         ringLock.lock(); defer { ringLock.unlock() }
         return Array(ring.suffix(n))

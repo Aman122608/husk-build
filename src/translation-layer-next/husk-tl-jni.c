@@ -924,21 +924,42 @@ void *tl_jni_native(const char *cls, const char *name, const char *sig)
     void *r = NULL;
     pthread_mutex_lock(&g_lock);
     for (int i = 0; i < c->nnatives; i++) if (!strcmp(c->natives[i].name, name) && (!sig || !strcmp(c->natives[i].sig, sig))) r = c->natives[i].fn;
+    if (!r && sig) {
+        /*
+         * The caller's signature disagrees with the registered one. The registration is the
+         * truth -- the engine registered it -- so take the method by name and say so. Unity does
+         * this to us: its initJni is registered with a signature the driver did not guess, and
+         * because the lookup insisted on the signature the call silently did nothing, leaving
+         * the engine's native side without the Java class it needed: NULL classes in later
+         * GetMethodID calls, then strlen(NULL) inside libunity on the main thread.
+         */
+        for (int i = 0; i < c->nnatives; i++) {
+            if (!strcmp(c->natives[i].name, name)) {
+                r = c->natives[i].fn;
+                pthread_mutex_unlock(&g_lock);
+                tl_log_line("jni: %s.%s is registered as %s, not %s -- using it", cls, name, c->natives[i].sig, sig);
+                return r;
+            }
+        }
+    }
+    if (!r) {
+        /* Name what the class does have: a failed lookup should say what was there. */
+        char have[420] = "";
+        size_t used = 0;
+        for (int i = 0; i < c->nnatives && used < sizeof(have) - 40 && i < 12; i++) {
+            int n = snprintf(have + used, sizeof(have) - used, "%s%s%s", i ? ", " : "", c->natives[i].name, c->natives[i].sig);
+            if (n > 0) used += (size_t)n;
+        }
+        pthread_mutex_unlock(&g_lock);
+        tl_log_line("jni: %s has no %s%s; it has %d native(s)%s%s", cls, name, sig ? sig : "",
+                    c->nnatives, c->nnatives ? ": " : "", c->nnatives ? have : "");
+        /* then ART's own second step: the JNI symbol name */
+        goto by_symbol;
+    }
     pthread_mutex_unlock(&g_lock);
-    if (r) return r;
+    return r;
 
-    /*
-     * Nothing registered this native, so look for the symbol the JVM itself would: an
-     * unregistered native is resolved by its JNI name, Java_<class>_<method>, and for an
-     * overloaded one Java_<class>_<method>__<argument types>. This is ART's own second step,
-     * not a shortcut.
-     *
-     * Unity needs it. Its libmain registers some of UnityPlayer's natives and not others, so
-     * before this every call the Unity driver makes on the engine -- nativeRender,
-     * nativeResume, nativeRecreateGfxState -- resolved to nothing. The driver's calls are
-     * skipped when the lookup fails, so the engine never heard them, never rendered, and the
-     * game sat at zero frames behind a log that said only "was not registered".
-     */
+by_symbol:;
     char esc[256], args[256], sym[600];
     jni_escape(cls, esc, sizeof(esc));
     jni_escape_args(sig, args, sizeof(args));
