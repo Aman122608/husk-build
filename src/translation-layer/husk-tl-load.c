@@ -789,12 +789,21 @@ static void *resolve(const char *name, bool *weak)
  * about the decision changes -- the library is still refused -- but every
  * missing symbol is named in the same pass, so the whole set can be fixed at
  * once instead of one symbol per build. */
-#define TL_MAX_UNRESOLVED 96
+#define TL_MAX_UNRESOLVED 512
 static char g_unresolved[TL_MAX_UNRESOLVED][96];
 static int  g_n_unresolved;
 
 static void note_unresolved(const char *name)
 {
+    /* Distinct names only. A single symbol can back dozens of relocation slots
+     * (one libUE4 import appeared 18 times), so a list that keeps duplicates
+     * fills its cap with one name and truncates away the rest -- which is how a
+     * 96-entry report managed to hide symbols. */
+    for (int i = 0; i < g_n_unresolved; i++) {
+        if (!strcmp(g_unresolved[i], name)) {
+            return;
+        }
+    }
     if (g_n_unresolved < TL_MAX_UNRESOLVED) {
         snprintf(g_unresolved[g_n_unresolved], sizeof(g_unresolved[0]), "%s", name);
         g_n_unresolved++;
@@ -1047,7 +1056,7 @@ static bool apply_relocations(tl_lib *L, lex *e, const ldyn *d)
     if (g_n_unresolved) {
         /* One line per symbol, so the list can be read straight off the log and
          * answered in one change. */
-        tl_log_line("reloc: %s has %d import(s) that nothing resolves -- refusing:",
+        tl_log_line("reloc: %s has %d distinct import(s) that nothing resolves -- refusing:",
                     L->name, g_n_unresolved);
         for (int i = 0; i < g_n_unresolved; i++) {
             tl_log_line("reloc:   unresolved: %s", g_unresolved[i]);

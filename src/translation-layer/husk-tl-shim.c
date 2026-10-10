@@ -458,6 +458,7 @@ void ANativeActivity_setWindowFlags(void *a, unsigned flags, unsigned mask)
 
 void ANativeActivity_showSoftInput(void *a, unsigned flags) { (void)a; (void)flags; }
 void ANativeActivity_hideSoftInput(void *a, unsigned flags) { (void)a; (void)flags; }
+void ANativeActivity_setWindowFormat(void *a, int format) { (void)a; (void)format; }
 
 /* ---------------------------------------------------------- input  -- */
 
@@ -502,6 +503,60 @@ int64_t AMotionEvent_getEventTime(const void *event)
 {
     return event ? ((const struct tl_input_event *)event)->when : 0;
 }
+int32_t AMotionEvent_getButtonState(const void *event) { (void)event; return 0; }
+int32_t AMotionEvent_getPointerId(const void *event, size_t idx)
+{
+    (void)event;                /* one finger, so the pointer id is its index */
+    return (int32_t)idx;
+}
+
+/* -------------------------------------------------------- looper  ---- */
+
+/* A looper the guest can poll. Nothing delivers through it -- the attempt pushes
+ * touch through the loader, not through the looper -- so pollAll reports a
+ * timeout, which is exactly what a real idle looper returns. */
+#define ALOOPER_POLL_TIMEOUT      (-3)
+#define AINPUT_SOURCE_TOUCHSCREEN 0x1002
+
+void *ALooper_prepare(int opts) { (void)opts; return calloc(1, 32); }
+int ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void **out_data)
+{
+    (void)timeout_ms;
+    if (out_fd) *out_fd = -1;
+    if (out_events) *out_events = 0;
+    if (out_data) *out_data = NULL;
+    return ALOOPER_POLL_TIMEOUT;
+}
+void ALooper_addFd(void *looper, int fd, int ident, int events, void *callback, void *data)
+{
+    (void)looper; (void)fd; (void)ident; (void)events; (void)callback; (void)data;
+}
+void ALooper_acquire(void *looper) { (void)looper; }
+void ALooper_release(void *looper) { (void)looper; }
+void ALooper_wake(void *looper) { (void)looper; }
+
+void AInputQueue_attachLooper(void *q, void *looper, int ident, void *callback, void *data)
+{
+    (void)q; (void)looper; (void)ident; (void)callback; (void)data;
+}
+void AInputQueue_detachLooper(void *q) { (void)q; }
+int32_t AInputQueue_getEvent(void *q, void **out_event)
+{
+    (void)q;
+    if (out_event) *out_event = NULL;
+    return -1;                  /* nothing pending, as a real empty queue reports */
+}
+
+int32_t AInputEvent_getDeviceId(const void *event) { (void)event; return 0; }
+int32_t AInputEvent_getSource(const void *event)
+{
+    return event ? AINPUT_SOURCE_TOUCHSCREEN : 0;
+}
+
+int32_t AKeyEvent_getAction(const void *event) { (void)event; return 0; }
+int32_t AKeyEvent_getFlags(const void *event) { (void)event; return 0; }
+int32_t AKeyEvent_getKeyCode(const void *event) { (void)event; return 0; }
+int32_t AKeyEvent_getMetaState(const void *event) { (void)event; return 0; }
 
 /* --------------------------------------------------------- assets  -- */
 
@@ -515,6 +570,55 @@ void AAsset_close(void *a) { (void)a; }
 int AAsset_read(void *a, void *buf, size_t n) { (void)a; (void)buf; (void)n; return 0; }
 int64_t AAsset_getLength(void *a) { (void)a; return 0; }
 const void *AAsset_getBuffer(void *a) { (void)a; return NULL; }
+void *AAssetManager_fromJava(void *env, void *mgr)
+{
+    (void)env;
+    return mgr;                 /* the handle the other AAsset stubs ignore */
+}
+/* The rest of the AAsset surface libUE4 binds. Same position as
+ * AAssetManager_open: named so the library relocates, honest that there are no
+ * assets behind it. */
+void AAssetDir_close(void *dir) { (void)dir; }
+void *AAssetManager_openDir(void *mgr, const char *dirname)
+{
+    (void)mgr;
+    tl_log_line("asset: directory %s requested -- AAsset is not wired in the attempt", dirname);
+    return NULL;
+}
+int AAsset_openFileDescriptor(void *asset, int64_t *out_start, int64_t *out_length)
+{
+    (void)asset;
+    if (out_start) *out_start = 0;
+    if (out_length) *out_length = 0;
+    return -1;
+}
+
+/* -------------------------------------------------- configuration  --- */
+
+/*
+ * A value the guest holds and passes back. Nothing reads it -- the attempt has no
+ * real configuration -- so the getters answer with the default locale.
+ *
+ * The getters write exactly TWO bytes and no terminator, which is what bionic's
+ * own implementation does (`outLanguage[0] = config->language[0]; [1] = ...`).
+ * Writing a third byte "to be safe" would be an overflow into whatever the
+ * caller put after its two-character buffer.
+ */
+void *AConfiguration_new(void) { return calloc(1, 16); }
+void AConfiguration_delete(void *config) { free(config); }
+void AConfiguration_fromAssetManager(void *out, void *mgr) { (void)out; (void)mgr; }
+void AConfiguration_getLanguage(void *config, char *out)
+{
+    (void)config;
+    if (!out) return;
+    out[0] = 'e'; out[1] = 'n';
+}
+void AConfiguration_getCountry(void *config, char *out)
+{
+    (void)config;
+    if (!out) return;
+    out[0] = 'U'; out[1] = 'S';
+}
 
 /* --------------------------------------------------------- libc  ---- */
 
@@ -838,6 +942,36 @@ static int __open_2_shim(const char *path, int flags) {
     return open(path, flags);
 }
 
+/*
+ * libc++ asks how many bytes a multibyte character can be, through a name that
+ * exists in glibc and bionic but not on Darwin. MB_CUR_MAX is the same answer
+ * the real function gives for the current locale.
+ *
+ * One symbol, and it was enough to stop the whole APK: libc++_shared.so would
+ * not relocate without it, so it never loaded, so libUE4.so's 55 std::__ndk1
+ * imports had nothing to bind to and the primary library could not be loaded
+ * either. When a single import in a helper refuses the helper, read what the
+ * *helper* is missing before reading the primary's list -- the primary's is
+ * usually the consequence.
+ */
+static size_t __ctype_get_mb_cur_max_shim(void) { return MB_CUR_MAX; }
+
+/* bionic's second fortified strncpy: as well as the destination bound, the
+ * compiler passed the source length it knows about. */
+static char *__strncpy_chk2_shim(char *dst, const char *src, size_t n, size_t dstlen, size_t srclen) {
+    if (n > dstlen) abort();
+    if (strnlen(src, srclen) >= srclen) abort();
+    return strncpy(dst, src, n);
+}
+
+/* bionic's gettid(): no Darwin symbol. The kernel thread id is what it returns,
+ * and pthread_threadid_np is how Darwin reaches it. */
+static pid_t gettid_shim(void) {
+    uint64_t tid = 0;
+    pthread_threadid_np(NULL, &tid);
+    return (pid_t)tid;
+}
+
 /* Two more bionic-only libc entry points with no Darwin symbol of either name. */
 static int __gnu_strerror_r_shim(int err, char *buf, size_t len) {
     if (!buf || !len) return EINVAL;
@@ -1001,6 +1135,24 @@ static const tl_export_entry g_exports[] = {
     { "AMotionEvent_getX",          AMotionEvent_getX },
     { "AMotionEvent_getY",          AMotionEvent_getY },
     { "AMotionEvent_getEventTime",  AMotionEvent_getEventTime },
+    { "AMotionEvent_getButtonState", AMotionEvent_getButtonState },
+    { "AMotionEvent_getPointerId",  AMotionEvent_getPointerId },
+    { "AInputQueue_attachLooper",   AInputQueue_attachLooper },
+    { "AInputQueue_detachLooper",   AInputQueue_detachLooper },
+    { "AInputQueue_getEvent",       AInputQueue_getEvent },
+    { "AInputEvent_getDeviceId",    AInputEvent_getDeviceId },
+    { "AInputEvent_getSource",      AInputEvent_getSource },
+    { "AKeyEvent_getAction",        AKeyEvent_getAction },
+    { "AKeyEvent_getFlags",         AKeyEvent_getFlags },
+    { "AKeyEvent_getKeyCode",       AKeyEvent_getKeyCode },
+    { "AKeyEvent_getMetaState",     AKeyEvent_getMetaState },
+    { "ALooper_prepare",            ALooper_prepare },
+    { "ALooper_pollAll",            ALooper_pollAll },
+    { "ALooper_addFd",              ALooper_addFd },
+    { "ALooper_acquire",            ALooper_acquire },
+    { "ALooper_release",            ALooper_release },
+    { "ALooper_wake",               ALooper_wake },
+    { "ANativeActivity_setWindowFormat", ANativeActivity_setWindowFormat },
 
     /* assets */
     { "AAssetManager_open",         AAssetManager_open },
@@ -1008,6 +1160,15 @@ static const tl_export_entry g_exports[] = {
     { "AAsset_read",                AAsset_read },
     { "AAsset_getLength",           AAsset_getLength },
     { "AAsset_getBuffer",           AAsset_getBuffer },
+    { "AAssetManager_fromJava",     AAssetManager_fromJava },
+    { "AAssetDir_close",            AAssetDir_close },
+    { "AAssetManager_openDir",      AAssetManager_openDir },
+    { "AAsset_openFileDescriptor",  AAsset_openFileDescriptor },
+    { "AConfiguration_new",         AConfiguration_new },
+    { "AConfiguration_delete",      AConfiguration_delete },
+    { "AConfiguration_fromAssetManager", AConfiguration_fromAssetManager },
+    { "AConfiguration_getLanguage", AConfiguration_getLanguage },
+    { "AConfiguration_getCountry",  AConfiguration_getCountry },
 
     /* EGL: resolver only, honest failure at call time */
     { "eglGetProcAddress",          eglGetProcAddress },
@@ -1075,6 +1236,9 @@ static const tl_export_entry g_exports[] = {
     { "__gnu_strerror_r",           __gnu_strerror_r_shim },
     { "__libc_current_sigrtmin",    __libc_current_sigrtmin_shim },
     { "__register_atfork",          __register_atfork_shim },
+    { "__ctype_get_mb_cur_max",     __ctype_get_mb_cur_max_shim },
+    { "__strncpy_chk2",             __strncpy_chk2_shim },
+    { "gettid",                     gettid_shim },
 
     /* OpenSL ES: named, never functional. See the comment above slCreateEngine. */
     { "slCreateEngine",             slCreateEngine_shim },
