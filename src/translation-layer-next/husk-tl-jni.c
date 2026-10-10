@@ -11,6 +11,7 @@
 
 #include "husk-tl-bionic.h"
 #include "husk-tl-dexindex.h"
+#include "husk-tl-ld.h"
 #include "husk-tl-va.h"
 
 /* ---------------------------------------------------------------- types */
@@ -873,6 +874,43 @@ static int32_t jni_RegisterNatives(void *env, jo cls, const native_method *m, in
 }
 static int32_t jni_UnregisterNatives(void *env, jo cls) { (void)env; (void)cls; return 0; }
 
+/* JNI name mangling: '/' becomes '_', and the characters that would be ambiguous are escaped --
+ * '_' as _1, ';' as _2, '[' as _3. */
+static void jni_escape(const char *in, char *out, size_t n)
+{
+    size_t j = 0;
+    for (const char *p = in; *p && j + 3 < n; p++) {
+        if (*p == '/') out[j++] = '_';
+        else if (*p == '_') { out[j++] = '_'; out[j++] = '1'; }
+        else if (*p == ';') { out[j++] = '_'; out[j++] = '2'; }
+        else if (*p == '[') { out[j++] = '_'; out[j++] = '3'; }
+        else out[j++] = *p;
+    }
+    out[j] = 0;
+}
+
+/* The argument types an overloaded native carries in its name: "(ILjava/lang/String;)V" gives
+ * "ILjava_lang_String_2". */
+static void jni_escape_args(const char *sig, char *out, size_t n)
+{
+    size_t j = 0;
+    if (!sig || sig[0] != '(') { out[0] = 0; return; }
+    for (const char *p = sig + 1; *p && *p != ')' && j + 3 < n; p++) {
+        if (*p == '[') { out[j++] = '_'; out[j++] = '3'; }
+        else if (*p == 'L') {
+            out[j++] = 'L';
+            for (p++; *p && *p != ';' && j + 3 < n; p++) {
+                if (*p == '/') out[j++] = '_';
+                else if (*p == '_') { out[j++] = '_'; out[j++] = '1'; }
+                else out[j++] = *p;
+            }
+            if (*p == ';') { out[j++] = '_'; out[j++] = '2'; }
+            else p--;                       /* not a well-formed descriptor: back up for the loop */
+        } else out[j++] = *p;
+    }
+    out[j] = 0;
+}
+
 void *tl_jni_native(const char *cls, const char *name, const char *sig)
 {
     tl_jclass *c = tl_jni_class(cls);
@@ -880,6 +918,30 @@ void *tl_jni_native(const char *cls, const char *name, const char *sig)
     pthread_mutex_lock(&g_lock);
     for (int i = 0; i < c->nnatives; i++) if (!strcmp(c->natives[i].name, name) && (!sig || !strcmp(c->natives[i].sig, sig))) r = c->natives[i].fn;
     pthread_mutex_unlock(&g_lock);
+    if (r) return r;
+
+    /*
+     * Nothing registered this native, so look for the symbol the JVM itself would: an
+     * unregistered native is resolved by its JNI name, Java_<class>_<method>, and for an
+     * overloaded one Java_<class>_<method>__<argument types>. This is ART's own second step,
+     * not a shortcut.
+     *
+     * Unity needs it. Its libmain registers some of UnityPlayer's natives and not others, so
+     * before this every call the Unity driver makes on the engine -- nativeRender,
+     * nativeResume, nativeRecreateGfxState -- resolved to nothing. The driver's calls are
+     * skipped when the lookup fails, so the engine never heard them, never rendered, and the
+     * game sat at zero frames behind a log that said only "was not registered".
+     */
+    char esc[256], args[256], sym[600];
+    jni_escape(cls, esc, sizeof(esc));
+    jni_escape_args(sig, args, sizeof(args));
+    snprintf(sym, sizeof(sym), "Java_%s_%s", esc, name);
+    r = tl_ld_sym(NULL, sym);
+    if (!r && args[0]) {
+        snprintf(sym, sizeof(sym), "Java_%s_%s__%s", esc, name, args);
+        r = tl_ld_sym(NULL, sym);
+    }
+    if (r) TRACE("jni: %s.%s%s resolved by its JNI symbol name", cls, name, sig ? sig : "");
     return r;
 }
 
