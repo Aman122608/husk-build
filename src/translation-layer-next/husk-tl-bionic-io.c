@@ -130,9 +130,36 @@ int tl_synth_open(const char *path)
 static char g_shared_storage[1024];
 void tl_set_shared_storage(const char *dir) { snprintf(g_shared_storage, sizeof(g_shared_storage), "%s", dir ? dir : ""); }
 
+/*
+ * The guest is Android, and Android's Python decides which platform it is on by asking
+ * platform.mac_ver() -- which reads this file when it exists. On iOS it does exist, so Ren'Py
+ * concludes it is on a Mac: it sets renpy.macintosh instead of renpy.android, never registers the
+ * scan of the APK's assets, and therefore cannot see anything that lives in the APK -- the
+ * engine's own common modules and the game's whole data tree. The game then dies with
+ * "Module _errorhandling could not be loaded", which names none of that.
+ *
+ * Android has no such file, so the guest is pointed at one that is not there: every caller gets
+ * an ordinary ENOENT, and platform.mac_ver() answers as it would on a phone. The log line is
+ * there so this is proven rather than assumed -- if nothing asks for the path, nothing prints.
+ */
+static bool tl_is_apple_version_file(const char *p)
+{
+    return !strcmp(p, "/System/Library/CoreServices/SystemVersion.plist");
+}
+
 const char *tl_path_resolve(const char *path, char *buf, size_t n)
 {
     if (!path) return path;
+    if (tl_is_apple_version_file(path)) {
+        static bool told;
+        if (!told) {
+            told = true;
+            tl_log_line("bionic: %s is an Apple path with no Android equivalent; reporting it absent",
+                        path);
+        }
+        snprintf(buf, n, "%s/.husk-no-such-file", tl_data_dir());
+        return buf;
+    }
     const char *pkg = "/data/data/";
     if (!strncmp(path, pkg, strlen(pkg))) {
         const char *rest = strchr(path + strlen(pkg), '/');
