@@ -51,3 +51,27 @@ jobs:
             fi
           done
           exit $fail
+
+      # The app target compiles BOTH translation-layer directories, and the older one is where the
+      # loader and the bionic shim live. Compiling only -next left that half unguarded: a missing
+      # <math.h> in husk-tl-shim.c kept this workflow green while build-ipa-prebuilt failed five
+      # minutes in. Check the same set the app builds.
+      - name: Compile src/translation-layer for arm64-apple-ios
+        run: |
+          set -euo pipefail
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          MIN=16.0
+          INC="-Isrc/translation-layer-next -Isrc/translation-layer"
+          mkdir -p /tmp/tl-obj-old
+          fail=0
+          for f in src/translation-layer/*.c; do
+            obj="/tmp/tl-obj-old/$(basename "${f%.c}").o"
+            if ! clang -isysroot "$SDK" \
+                   -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
+                   $INC -c "$f" -o "$obj" 2> "/tmp/tl-obj-old/err.txt"; then
+              echo "::error file=$f::does not compile for arm64-apple-ios"
+              sed -n '1,12p' "/tmp/tl-obj-old/err.txt"
+              fail=1
+            fi
+          done
+          exit $fail
