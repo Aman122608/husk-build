@@ -515,11 +515,30 @@ static void jni_ExceptionClear(void *env) { (void)env; t_pending = NULL; }
 static void jni_FatalError(void *env, const char *msg) { (void)env; tl_log_line("jni: FatalError: %s", msg); abort(); }
 static int32_t jni_PushLocalFrame(void *env, int32_t cap) { (void)env; (void)cap; return 0; }
 static jo jni_PopLocalFrame(void *env, jo r) { (void)env; return r; }
-static jo jni_NewGlobalRef(void *env, jo o) { (void)env; return tl_jni_ref(o); }
-static void jni_DeleteGlobalRef(void *env, jo o) { (void)env; tl_jni_unref(o); }
-static void jni_DeleteLocalRef(void *env, jo o) { (void)env; tl_jni_unref(o); }
+/*
+ * A pointer that is not one of ours.
+ *
+ * A jobj is always 8-byte aligned (calloc'd), so NULL or a misaligned value is not one, and
+ * dereferencing it would fault instead of telling anyone anything. That is exactly what happened
+ * when Unity handed NewGlobalRef the zero it got back from an unimplemented
+ * Class.forName(String, boolean, ClassLoader): the report said the fault was in jni_NewGlobalRef,
+ * and the cause was nowhere in it. Treat it as no object, and say so.
+ */
+static bool obj_known(jo o, const char *where)
+{
+    if (!o) return true;                       /* NULL is a legitimate answer to many calls */
+    if (((uintptr_t)o & 7) || (uintptr_t)o < 0x10000) {
+        tl_log_line("jni: %s was given %p, which is not an object -- treating it as none", where, (void *)o);
+        return false;
+    }
+    return true;
+}
+
+static jo jni_NewGlobalRef(void *env, jo o) { (void)env; return obj_known(o, "NewGlobalRef") ? tl_jni_ref(o) : NULL; }
+static void jni_DeleteGlobalRef(void *env, jo o) { (void)env; if (obj_known(o, "DeleteGlobalRef")) tl_jni_unref(o); }
+static void jni_DeleteLocalRef(void *env, jo o) { (void)env; if (obj_known(o, "DeleteLocalRef")) tl_jni_unref(o); }
 static uint8_t jni_IsSameObject(void *env, jo a, jo b) { (void)env; return a == b; }
-static jo jni_NewLocalRef(void *env, jo o) { (void)env; return tl_jni_ref(o); }
+static jo jni_NewLocalRef(void *env, jo o) { (void)env; return obj_known(o, "NewLocalRef") ? tl_jni_ref(o) : NULL; }
 static int32_t jni_EnsureLocalCapacity(void *env, int32_t n) { (void)env; (void)n; return 0; }
 static uint32_t jni_GetObjectRefType(void *env, jo o) { (void)env; (void)o; return 1; }
 static jo jni_AllocObject(void *env, jo cls) { (void)env; return (cls && cls->kind == TL_K_CLASS) ? tl_jni_new_object(cls->klass.jc) : NULL; }

@@ -882,6 +882,10 @@ static void Class_forName(tl_jcall *c)
 static const tl_jhle k_hle[] = {
     M("java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;", Class_forName),
     M("java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Object;", Class_forName),
+    /* The three-argument form, which is the one Unity asks for: (String, initialize, loader).
+     * Only the name matters here, so it lands on the same handler -- and without it Unity got a
+     * zero back and handed it straight to NewGlobalRef. */
+    M("java/lang/Class", "forName", "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;", Class_forName),
     M("java/lang/System", "load", "(Ljava/lang/String;)V", System_load),
     M("java/lang/System", "loadLibrary", "(Ljava/lang/String;)V", System_loadLibrary),
     M("com/sybogames/chili/migration/KilooPlatformAndroidBridge", "<init>", "()V", Noop),
