@@ -490,7 +490,7 @@ static void *angle_open(void)
     return g_angle;
 }
 
-/* One symbol from ANGLE, or NULL. Every gl*/egl* name goes through here. */
+/* One symbol from ANGLE, or NULL. Every gl* and egl* name goes through here. */
 static void *angle_symbol(const char *name)
 {
     void *h = angle_open();
