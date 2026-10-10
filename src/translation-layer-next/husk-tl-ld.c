@@ -1201,19 +1201,26 @@ static uint64_t image_addr(const tl_lib *L, uint64_t vaddr)
 
 /*
  * A last chance before binding a stub: the host may already have the function under the same
- * name with the same ABI. Only names checked for that are consulted. bionic's sigset_t, its
- * struct passwd and struct rlimit, and its msync flag values are NOT Darwin's; pipe2 and dup3
- * have no Darwin counterpart at all; and a guest FILE* is one of ours, not Darwin's. A blind
- * dlsym would bind something that links cleanly and then misbehaves.
+ * name with the same ABI. Only names checked for that are consulted.
+ *
+ * Deliberately NOT here, and why:
+ *   - anything taking a bionic struct (sigset_t, passwd, rlimit) or bionic flag values (msync, the
+ *     AT_* family): the numbers and layouts differ, so the call would link and then misbehave.
+ *   - execlp and friends: variadic, and the arm64 varargs convention is not the same, which is why
+ *     this shim carries tl_va_* wrappers for every variadic libc function.
+ *   - setitimer/getitimer: Darwin's suseconds_t is 32-bit where bionic's is 64, so a returned
+ *     timeval needs zero-extending, not passing through.
+ *   - killpg: signal numbers differ above the low ones (bionic SIGCHLD is 17, Darwin's is 20).
+ *   - pipe2/dup3: no Darwin counterpart at all; implemented in the io tables instead.
  */
 static void *host_fallback(const char *name)
 {
     static const char *const same_abi[] = {
-        "arc4random", "chown", "execlp", "fchdir", "fchownat", "getgroups", "getitimer", "getpgid",
+        "arc4random", "chown", "fchdir", "getgroups", "getpgid",
         "getpgrp", "getprotobyname", "getservbyname", "getservbyport", "getsid", "hstrerror",
-        "killpg", "lchown", "linkat", "mkdirat", "mkfifo", "mkstemp", "nice", "posix_fallocate",
-        "pread", "pwrite", "readlinkat", "readv", "renameat", "setgroups", "setitimer", "setpgid",
-        "setpgrp", "setsid", "symlinkat", "sync", "times", "ttyname_r", "wcstok", "writev",
+        "lchown", "mkfifo", "mkstemp", "nice", "posix_fallocate",
+        "pread", "pwrite", "readv", "setgroups", "setpgid",
+        "setpgrp", "setsid", "sync", "times", "ttyname_r", "wcstok", "writev",
     };
     for (size_t i = 0; i < sizeof(same_abi) / sizeof(same_abi[0]); i++)
         if (!strcmp(name, same_abi[i])) return dlsym(RTLD_DEFAULT, name);
