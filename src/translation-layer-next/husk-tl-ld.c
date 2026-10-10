@@ -1199,6 +1199,27 @@ static uint64_t image_addr(const tl_lib *L, uint64_t vaddr)
     return (uint64_t)(uintptr_t)(L->rx + off);
 }
 
+/*
+ * A last chance before binding a stub: the host may already have the function under the same
+ * name with the same ABI. Only names checked for that are consulted. bionic's sigset_t, its
+ * struct passwd and struct rlimit, and its msync flag values are NOT Darwin's; pipe2 and dup3
+ * have no Darwin counterpart at all; and a guest FILE* is one of ours, not Darwin's. A blind
+ * dlsym would bind something that links cleanly and then misbehaves.
+ */
+static void *host_fallback(const char *name)
+{
+    static const char *const same_abi[] = {
+        "arc4random", "chown", "execlp", "fchdir", "fchownat", "getgroups", "getitimer", "getpgid",
+        "getpgrp", "getprotobyname", "getservbyname", "getservbyport", "getsid", "hstrerror",
+        "killpg", "lchown", "linkat", "mkdirat", "mkfifo", "mkstemp", "nice", "posix_fallocate",
+        "pread", "pwrite", "readlinkat", "readv", "renameat", "setgroups", "setitimer", "setpgid",
+        "setpgrp", "setsid", "symlinkat", "sync", "times", "ttyname_r", "wcstok", "writev",
+    };
+    for (size_t i = 0; i < sizeof(same_abi) / sizeof(same_abi[0]); i++)
+        if (!strcmp(name, same_abi[i])) return dlsym(RTLD_DEFAULT, name);
+    return NULL;
+}
+
 static uint64_t bind_symbol(tl_lib *L, uint32_t symidx, bool *failed)
 {
     bool cached = L->symcache && symidx < L->ncache;
@@ -1219,14 +1240,21 @@ static uint64_t bind_symbol(tl_lib *L, uint32_t symidx, bool *failed)
         } else if ((s->st_info >> 4) == STB_WEAK_) {
             val = 0;
         } else {
-            void *stub = make_stub(name);
-            if (!stub) { *failed = true; return 0; }
-            val = (uint64_t)(uintptr_t)stub;
-            L->n_unresolved++;
-            G.unresolved++;
-            /* Every one, by name, at load time: the summary line only gave a count, and the name
-             * is what a NULL-returning stub would otherwise hide until it faulted. */
-            tl_log_line("ld: %s: unresolved import %s (bound to a logging stub)", L->name, name);
+            void *host = host_fallback(name);
+            if (host) {
+                /* Bound to the real thing, so it is not an unresolved import at all. */
+                val = (uint64_t)(uintptr_t)host;
+                tl_log_line("ld: %s: %s bound to the host's own", L->name, name);
+            } else {
+                void *stub = make_stub(name);
+                if (!stub) { *failed = true; return 0; }
+                val = (uint64_t)(uintptr_t)stub;
+                L->n_unresolved++;
+                G.unresolved++;
+                /* Every one, by name, at load time: the summary line only gave a count, and the name
+                 * is what a NULL-returning stub would otherwise hide until it faulted. */
+                tl_log_line("ld: %s: unresolved import %s (bound to a logging stub)", L->name, name);
+            }
         }
     }
     if (cached) L->symcache[symidx] = val ? val : 1;   /* 1 marks a resolved NULL */

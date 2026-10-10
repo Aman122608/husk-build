@@ -1003,6 +1003,64 @@ static int b_sigismember(const uint64_t *set, int sig)
     return (int)((*set >> (sig - 1)) & 1ull);
 }
 
+/*
+ * pipe2 and dup3 do not exist on Darwin; they are pipe/dup2 plus flags. The flags arrive in
+ * bionic's numbering, so they go through the same translation open() uses -- O_CLOEXEC is
+ * 0x80000 to the guest and 0x1000000 here, and passing the guest value straight to fcntl
+ * would set some unrelated flag.
+ */
+static int b_pipe2(int *fds, int flags)
+{
+    TL_ERRNO_BEGIN(); int r = pipe(fds); TL_ERRNO_END();
+    if (r != 0) return r;
+    int d = oflags_to_darwin(flags);
+    if (d & O_CLOEXEC) { fcntl(fds[0], F_SETFD, FD_CLOEXEC); fcntl(fds[1], F_SETFD, FD_CLOEXEC); }
+    if (d & O_NONBLOCK) {
+        fcntl(fds[0], F_SETFL, fcntl(fds[0], F_GETFL) | O_NONBLOCK);
+        fcntl(fds[1], F_SETFL, fcntl(fds[1], F_GETFL) | O_NONBLOCK);
+    }
+    return 0;
+}
+
+static int b_dup3(int oldfd, int newfd, int flags)
+{
+    if (oldfd == newfd) { tl_set_guest_errno(22); return -1; }
+    TL_ERRNO_BEGIN(); int r = dup2(oldfd, newfd); TL_ERRNO_END();
+    if (r >= 0 && (oflags_to_darwin(flags) & O_CLOEXEC)) fcntl(newfd, F_SETFD, FD_CLOEXEC);
+    return r;
+}
+
+/*
+ * sigpending and sigwait take bionic's sigset_t: one 64-bit word, where Darwin's is a
+ * 32-bit one. Nothing may pass the guest's word straight through, so the sets are
+ * translated in both directions.
+ */
+static int b_sigpending(uint64_t *set)
+{
+    if (!set) { tl_set_guest_errno(22); return -1; }
+    sigset_t d;
+    sigemptyset(&d);
+    TL_ERRNO_BEGIN(); int r = sigpending(&d); TL_ERRNO_END();
+    if (r == 0) {
+        uint64_t g = 0;
+        for (int s = 1; s < 32; s++) if (sigismember(&d, s) == 1) g |= 1ull << (s - 1);
+        *set = g;
+    }
+    return r;
+}
+
+static int b_sigwait(const uint64_t *set, int *sig)
+{
+    if (!set || !sig) { tl_set_guest_errno(22); return -1; }
+    sigset_t d;
+    sigemptyset(&d);
+    for (int s = 1; s < 32; s++) if (*set & (1ull << (s - 1))) sigaddset(&d, s);
+    int got = 0;
+    TL_ERRNO_BEGIN(); int r = sigwait(&d, &got); TL_ERRNO_END();
+    if (r == 0) *sig = got;
+    return r;
+}
+
 static int b_sigaction(int sig, const guest_sigaction *act, guest_sigaction *old)
 {
     if (sig <= 0 || sig >= 32) { tl_set_guest_errno(22); return -1; }
@@ -1282,7 +1340,7 @@ const tl_bionic_entry tl_tab_io[] = {
     TL_WRAP("open", b_open), TL_WRAP("__open_2", b___open_2), TL_WRAP("close", b_close), TL_WRAP("read", b_read),
     TL_WRAP("__read_chk", b___read_chk), TL_WRAP("write", b_write), TL_WRAP("__write_chk", b___write_chk), TL_WRAP("writev", b_writev),
     TL_WRAP("pread64", b_pread64), TL_WRAP("pwrite64", b_pwrite64), TL_WRAP("__pread64_chk", b___pread64_chk), TL_WRAP("__pwrite64_chk", b___pwrite64_chk), TL_WRAP("__pwrite_chk", b___pwrite64_chk), TL_WRAP("__pread_chk", b___pread64_chk), TL_WRAP("lseek", b_lseek), TL_WRAP("lseek64", b_lseek),
-    TL_WRAP("dup", b_dup), TL_WRAP("dup2", b_dup2), TL_WRAP("pipe", b_pipe), TL_WRAP("fsync", b_fsync), TL_WRAP("fdatasync", b_fsync),
+    TL_WRAP("dup", b_dup), TL_WRAP("dup2", b_dup2), TL_WRAP("pipe", b_pipe), TL_WRAP("pipe2", b_pipe2), TL_WRAP("dup3", b_dup3), TL_WRAP("fsync", b_fsync), TL_WRAP("fdatasync", b_fsync),
     TL_WRAP("ftruncate", b_ftruncate), TL_WRAP("truncate", b_truncate), TL_WRAP("isatty", b_isatty), TL_WRAP("flock", b_flock),
     TL_WRAP("unlink", b_unlink), TL_WRAP("rmdir", b_rmdir), TL_WRAP("mkdir", b_mkdir), TL_WRAP("access", b_access),
     TL_WRAP("chmod", b_chmod), TL_WRAP("fchmod", b_fchmod), TL_WRAP("link", b_link), TL_WRAP("symlink", b_symlink),
@@ -1301,7 +1359,7 @@ const tl_bionic_entry tl_tab_io[] = {
     TL_DIRECT(tfind), TL_DIRECT(tsearch), TL_DIRECT(tdelete), TL_DIRECT(twalk), TL_DIRECT(stpcpy),
     TL_DIRECT(ctime), TL_DIRECT(ctime_r), TL_DIRECT(asctime), TL_DIRECT(asctime_r), TL_DIRECT(timegm),
     TL_WRAP("sigaction", b_sigaction), TL_WRAP("signal", b_signal), TL_WRAP("sigemptyset", b_sigemptyset),
-    TL_WRAP("sigismember", b_sigismember),
+    TL_WRAP("sigismember", b_sigismember), TL_WRAP("sigpending", b_sigpending), TL_WRAP("sigwait", b_sigwait),
     TL_WRAP("__libc_current_sigrtmin", b_current_sigrtmin), TL_WRAP("__libc_current_sigrtmax", b_current_sigrtmax),
     TL_WRAP("sigfillset", b_sigfillset), TL_WRAP("sigaddset", b_sigaddset), TL_WRAP("sigdelset", b_sigdelset),
     TL_WRAP("sigsuspend", b_sigsuspend), TL_WRAP("sigaltstack", b_sigaltstack), TL_WRAP("raise", b_raise),

@@ -617,6 +617,9 @@ const tl_bionic_entry tl_tab_str[] = {
     TL_DIRECT(tanhf), TL_DIRECT(cosh), TL_DIRECT(coshf), TL_DIRECT(sinh), TL_DIRECT(sinhf), TL_DIRECT(asinhf), TL_DIRECT(acosh),
     TL_DIRECT(acoshf), TL_DIRECT(atanh), TL_DIRECT(atanhf), TL_DIRECT(expm1), TL_DIRECT(expm1f), TL_DIRECT(log1p), TL_DIRECT(log1pf),
     TL_DIRECT(exp2), TL_DIRECT(cbrt), TL_DIRECT(hypotf), TL_DIRECT(frexpf), TL_DIRECT(scalbnf),
+    /* erf, erfc and copysign: Python's math module binds these, and they were logging stubs.
+     * Darwin's have the same ABI, so they go straight through. */
+    TL_DIRECT(copysign), TL_DIRECT(copysignf), TL_DIRECT(erf), TL_DIRECT(erff), TL_DIRECT(erfc), TL_DIRECT(erfcf),
     TL_WRAP("__isnanf", b___isnanf), TL_WRAP("__fpclassifyd", b___fpclassifyd),
     /* locale.h */
     TL_WRAP("setlocale", b_setlocale), TL_WRAP("newlocale", b_newlocale), TL_DIRECT(freelocale), TL_DIRECT(uselocale),
@@ -668,17 +671,26 @@ static FILE *b_tmpfile(void) { TL_ERRNO_BEGIN(); FILE *f = tmpfile(); TL_ERRNO_E
 /* bionic's mbstate_t is 8 bytes, Darwin's is not; the conversion state is dropped */
 static size_t b_wcsrtombs(char *dst, const wchar_t **src, size_t len, void *ps) { (void)ps; return wcsrtombs(dst, src, len, NULL); }
 
+/* The guest's FILE* is one of ours (g_sF), not Darwin's, so Darwin's unlocked and locking
+ * stdio cannot be bound directly: it would be handed a stream that is not its own. The
+ * unlocked forms are the same call; locking is a no-op because the guest never shares a
+ * stream between its threads. */
+static void b_noop_fp(void *f) { (void)f; }
+static int b_zero_fp(void *f) { (void)f; return 0; }
+
 const tl_bionic_entry tl_tab_str2[] = {
     TL_WRAP("__strcpy_chk", b___strcpy_chk), TL_WRAP("__strcat_chk", b___strcat_chk), TL_WRAP("__strncpy_chk", b___strncpy_chk),
     TL_WRAP("__stpcpy_chk", b___stpcpy_chk), TL_WRAP("putchar", b_putchar), TL_WRAP("__strlcpy_chk", b___strlcpy_chk), TL_WRAP("__strlcat_chk", b___strlcat_chk), TL_WRAP("__strrchr_chk", b___strrchr_chk), TL_WRAP("__fgets_chk", b___fgets_chk),
     TL_WRAP("__FD_CLR_chk", b___FD_CLR_chk),
     TL_DATA("stdin", &g_stdin_var), TL_DATA("stdout", &g_stdout_var), TL_DATA("stderr", &g_stderr_var),
     TL_WRAP("perror", b_perror), TL_WRAP("rewind", b_rewind), TL_WRAP("fputwc", b_fputwc), TL_WRAP("popen", b_popen), TL_WRAP("pclose", b_pclose),
+    TL_WRAP("getc_unlocked", b_getc), TL_WRAP("fgetc_unlocked", b_getc), TL_WRAP("putc_unlocked", b_putc), TL_WRAP("fputc_unlocked", b_fputc),
+    TL_WRAP("flockfile", b_noop_fp), TL_WRAP("funlockfile", b_noop_fp), TL_WRAP("ftrylockfile", b_zero_fp),
     TL_WRAP("tmpfile", b_tmpfile), TL_WRAP("wcsrtombs", b_wcsrtombs),
     TL_DIRECT(strncat), TL_DIRECT(strptime), TL_DIRECT(ldiv), TL_DIRECT(sleep), TL_DIRECT(pause), TL_DIRECT(arc4random_buf), TL_DIRECT(nan), TL_DIRECT(nanf),
-    TL_DIRECT(ceil), TL_DIRECT(floor), TL_DIRECT(fabs), TL_DIRECT(trunc), TL_DIRECT(cbrt), TL_DIRECT(acosh), TL_DIRECT(atanh), TL_DIRECT(cosh),
+    TL_DIRECT(ceil), TL_DIRECT(floor), TL_DIRECT(fabs), TL_DIRECT(trunc),
     TL_WRAP("feholdexcept", b_fe_env), TL_WRAP("fegetenv", b_fe_env), TL_WRAP("fesetenv", b_fe_env), TL_WRAP("feupdateenv", b_fe_env), TL_WRAP("fegetround", b_fe_ok), TL_WRAP("fesetround", b_fe_ok), TL_WRAP("feclearexcept", b_fe_ok), TL_WRAP("feraiseexcept", b_fe_ok), TL_WRAP("fetestexcept", b_fe_ok),
-    TL_DIRECT(regcomp), TL_DIRECT(regexec), TL_DIRECT(regfree), TL_DIRECT(regerror), TL_DIRECT(sinh), TL_DIRECT(sinhf), TL_DIRECT(scalbnf), TL_DIRECT(mbstowcs), TL_DIRECT(wcstombs), TL_DIRECT(exp2), TL_DIRECT(expm1), TL_DIRECT(log1p), TL_DIRECT(hypotf), TL_DIRECT(ilogbf), TL_DIRECT(nextafter),
-    TL_DIRECT(nextafterf), TL_DIRECT(frexpf), TL_DIRECT(if_indextoname),
+    TL_DIRECT(regcomp), TL_DIRECT(regexec), TL_DIRECT(regfree), TL_DIRECT(regerror), TL_DIRECT(mbstowcs), TL_DIRECT(wcstombs), TL_DIRECT(ilogbf), TL_DIRECT(nextafter),
+    TL_DIRECT(nextafterf), TL_DIRECT(if_indextoname),
     TL_END
 };
