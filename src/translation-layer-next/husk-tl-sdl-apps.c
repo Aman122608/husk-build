@@ -405,6 +405,7 @@ static void rp_declare_methods(void)
     for (int a = 0; a < 2; a++)
         for (size_t i = 0; i < sizeof(m) / sizeof(m[0]); i++)
             tl_jni_reflect_method(acts[a], m[i].name, m[i].sig, m[i].is_static);
+    tl_jni_reflect_method(tl_jni_class_object(RENPY_PM), "hasSystemFeature", "(Ljava/lang/String;)Z", false);
     tl_jni_reflect_method(tl_jni_class_object("java/lang/System"), "exit", "(I)V", true);
 }
 
@@ -468,6 +469,7 @@ void tl_sdl_apps_install(const char *package)
     if (tl_dexidx_has_class(RENPY_ACTIVITY) || tl_dexidx_has_class(RENPY_ACTIVITY2)) {
         tl_jni_register_hle(k_renpy);
         rp_declare_methods();   /* the class model jnius reads has to exist before Python starts */
+        tl_jni_declare_implemented_methods();   /* and so does every other table's, not one class at a time */
         tl_renpy_prepare();     /* unpackData + the environment, before SDL_main runs start_python */
     }
 }

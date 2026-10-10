@@ -1183,6 +1183,25 @@ static const tl_jhle k_reflect[] = {
 
 void tl_jni_reflect_install(void) { tl_jni_register_hle(k_reflect); }
 
+/*
+ * jnius can only see what is in a class's model, and a method only enters that model when
+ * something looks it up -- which, for a method whose only caller is jnius, is circular. An
+ * implementation in an HLE table is therefore invisible on its own: that was
+ * "object has no attribute 'getPackageManager'", and then the same for hasSystemFeature, one
+ * class at a time as each was reached.
+ *
+ * So every implementation a registered table declares is also declared on its class here, before
+ * Python starts. Staticness is declared separately where it matters (isChromebook, System.exit);
+ * a duplicate entry is harmless, because dispatch runs whichever entry it finds first and an
+ * implementation ignores the receiver either way.
+ */
+void tl_jni_declare_implemented_methods(void)
+{
+    for (int t = 0; t < g_nhle; t++)
+        for (const tl_jhle *e = g_hle[t]; e->cls; e++)
+            if (e->name && e->sig) lookup_method(tl_jni_class(e->cls), e->name, e->sig, false);
+}
+
 void *tl_jni_vm(void) { tl_jni_init(); return &g_vm; }
 void *tl_jni_env(void) { tl_jni_init(); return &g_env; }
 
