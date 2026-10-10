@@ -83,6 +83,13 @@ step "guest kernel + firmware"
 step "on-device pairing (Rust)"
 ./scripts/build_rppairing_ios.sh
 
+step "regenerate the Xcode project"
+# package_ipa.sh generates with --quiet and ignores the exit status, so a failure
+# there surfaces only as xcodebuild's "Unable to read project". Do it here, loudly,
+# and stop on the real error instead of a symptom of it.
+( cd src/app && xcodegen --version && xcodegen generate ) \
+    || { echo "xcodegen failed; project dir is:" >&2; ls -la src/app/Husk.xcodeproj >&2 || true; exit 1; }
+
 step "app + IPA"
 mkdir -p "$(dirname "$OUT")"
 ./scripts/package_ipa.sh "$OUT"
