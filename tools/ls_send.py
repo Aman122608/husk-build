@@ -21,7 +21,13 @@ import uuid
 PORT = 53317
 ALIAS = "husk-build (windows)"
 FINGERPRINT = "huskbuild" + uuid.getnode().to_bytes(6, "big").hex()
-CERT_DIR = r"C:/Users/Aiden/AppData/Local/Temp/lscert"
+# The client certificate LocalSend demands. It used to live only in %TEMP%, which anything can clean --
+# losing it means the handshake dies with TLSV13_ALERT_CERTIFICATE_REQUIRED and no build can be sent at
+# all. It now lives beside the repo (gitignored: a private key does not belong in a public repo), with
+# the old temp location kept as a fallback.
+CERT_DIR = r"C:/Users/Aiden/Desktop/HuskApp/.local/lscert"
+if not os.path.isfile(CERT_DIR + "/cert.pem"):
+    CERT_DIR = r"C:/Users/Aiden/AppData/Local/Temp/lscert"
 
 # LocalSend's server demands a client certificate: without one the handshake ends in
 # TLSV13_ALERT_CERTIFICATE_REQUIRED before any HTTP is spoken. Any self-signed cert will do,
