@@ -314,11 +314,51 @@ void tl_renpy_prepare(void)
 static void RP_preparePython(tl_jcall *c) { (void)c; tl_renpy_prepare(); }
 static void RP_toast(tl_jcall *c) { tl_log_line("renpy: toast %s", c->args[0].l ? Str(c->args[0].l) : ""); }
 
+/*
+ * The rest of the Java surface Ren'Py wants, found by reading choose_variants() and the shutdown
+ * path out of the game's own renpy/main.pyc and renpy/bootstrap.pyc rather than by guessing:
+ *
+ *   main.py:206   package_manager = android.activity.getPackageManager()      [not in a try]
+ *   main.py:208   if package_manager.hasSystemFeature("android.hardware.type.television")
+ *   main.py:217   if PythonSDLActivity.isChromebook()
+ *   bootstrap:419 android.activity.finishAndRemoveTask()                      [not in a try]
+ *   bootstrap:423 System.exit(0)
+ *
+ * None of the fatal two is guarded, so an absent one is an AttributeError at the end of every run
+ * -- including a run that otherwise worked. There is no television and no Chromebook here, so both
+ * feature questions answer no and Ren'Py picks its ordinary phone/tablet variants.
+ */
+#define RENPY_PM "android/content/pm/PackageManager"
+
+static void RP_getPackageManager(tl_jcall *c)
+{
+    jvalue v; v.j = 0;
+    v.l = tl_jni_new_object(tl_jni_class(RENPY_PM));
+    c->ret = v;
+}
+static void RP_finishAndRemoveTask(tl_jcall *c)
+{
+    (void)c;
+    tl_log_line("renpy: the activity is finished, so the run is over");
+}
+static void RP_system_exit(tl_jcall *c)
+{
+    tl_log_line("renpy: System.exit(%d)", c->args ? c->args[0].i : 0);
+}
+
 static const tl_jhle k_renpy[] = {
     /* The method SDL_main calls, and whose absence is the reported last log line. */
     { RENPY_ACTIVITY, "preparePython", "()V", RP_preparePython },
     { RENPY_ACTIVITY, "toast", "(Ljava/lang/String;)V", RP_toast },
+    { RENPY_ACTIVITY, "getPackageManager", "()Landroid/content/pm/PackageManager;", RP_getPackageManager },
+    { RENPY_ACTIVITY, "isChromebook", "()Z", H_false },
+    { RENPY_ACTIVITY, "finishAndRemoveTask", "()V", RP_finishAndRemoveTask },
     { RENPY_ACTIVITY2, "preparePython", "()V", RP_preparePython },
+    { RENPY_ACTIVITY2, "getPackageManager", "()Landroid/content/pm/PackageManager;", RP_getPackageManager },
+    { RENPY_ACTIVITY2, "isChromebook", "()Z", H_false },
+    { RENPY_ACTIVITY2, "finishAndRemoveTask", "()V", RP_finishAndRemoveTask },
+    { RENPY_PM, "hasSystemFeature", "(Ljava/lang/String;)Z", H_false },
+    { "java/lang/System", "exit", "(I)V", RP_system_exit },
     { NULL, NULL, NULL, NULL }
 };
 
