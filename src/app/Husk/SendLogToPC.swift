@@ -1,6 +1,14 @@
 import Foundation
 import SwiftUI
 
+/// Where logs go by default: this machine, as it was when the build was made.
+///
+/// LiveContainer clears the app's data on every install, so a setting alone would have to be
+/// typed again each time. The address of the machine being built for does not change between
+/// builds, so it is compiled in as the starting value; "Change" in the UI overwrites it if the
+/// machine moves or the network hands out a different address.
+private let defaultLogAddress = "192.168.1.123:8765"
+
 /// Sends a log to an address the user names, over their own network, when they tap the button.
 ///
 /// Deliberately shaped to be privacy-respecting:
@@ -17,7 +25,7 @@ struct SendLogToPCButton: View {
 
     private var source: URL { file ?? HuskLog.logFileURL }
 
-    @AppStorage(HuskLog.SendKeys.address) private var address = ""
+    @AppStorage(HuskLog.SendKeys.address) private var address = defaultLogAddress
     @AppStorage(HuskLog.SendKeys.on) private var enabled = false
 
     @State private var draft = ""
