@@ -11,8 +11,11 @@ import SwiftUI
 ///
 /// The other end is `husk_log_receiver.py`, which prints the address to type in here.
 struct SendLogToPCButton: View {
-    /// What to send, if there is anything: the crash report file, which carries the full log.
-    let file: URL?
+    /// What to send: the crash report when the button is on that screen, and otherwise the live
+    /// log -- which is what exists when a game hangs on "Starting" instead of crashing.
+    var file: URL? = nil
+
+    private var source: URL { file ?? HuskLog.logFileURL }
 
     @AppStorage(HuskLog.SendKeys.address) private var address = ""
     @AppStorage(HuskLog.SendKeys.on) private var enabled = false
@@ -68,7 +71,7 @@ struct SendLogToPCButton: View {
                             .frame(maxWidth: .infinity).padding(.vertical, 6)
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!enabled || busy || file == nil)
+                    .disabled(!enabled || busy)
 
                     Button("Change") { draft = address; editing = true }
                         .buttonStyle(.bordered)
@@ -88,8 +91,8 @@ struct SendLogToPCButton: View {
     }
 
     private func send() {
-        guard let url = target, let file else { return }
-        guard let body = try? Data(contentsOf: file) else {
+        guard let url = target else { return }
+        guard let body = try? Data(contentsOf: source) else {
             status = "The log could not be read."; failed = true; return
         }
         var request = URLRequest(url: url)

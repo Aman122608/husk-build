@@ -699,6 +699,8 @@ struct TLCocosAttemptView: View {
             HStack {
                 Text("ATTEMPT LOG").font(.technical(10, weight: .bold)).foregroundStyle(Theme.textDim)
                 Spacer()
+                SendLogToPCButton()
+                    .fixedSize()
                 Button { UIPasteboard.general.string = model.logText } label: {
                     Label("Copy", systemImage: "doc.on.doc").font(.system(size: 11))
                 }

@@ -491,7 +491,11 @@ struct LogView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollViewReader { proxy in
+            VStack(spacing: 0) {
+                SendLogToPCButton(file: HuskLog.logFileURL)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 1) {
                         ForEach(Array(lines.enumerated()), id: \.offset) { i, line in
@@ -510,6 +514,7 @@ struct LogView: View {
                     if let last = lines.indices.last {
                         proxy.scrollTo(last, anchor: .bottom)
                     }
+                }
                 }
             }
             .navigationTitle("Logs")
