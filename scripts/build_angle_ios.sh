@@ -92,20 +92,28 @@ angle_build () {
     # backslash-escaped here.
     local ldflags=()
     if [ -n "${1:-}" ]; then
-        ldflags=("OTHER_LDFLAGS=\\$(inherited) -Wl,-alias_list,$1")
+        ldflags=("OTHER_LDFLAGS=\$(inherited) -Wl,-alias_list,$1")
     fi
 
-    # Diagnostic: ANGLE_ENABLE_SHARE_CONTEXT_LOCK is defined by ANGLE's GN build
-    # (BUILD.gn) and by nothing in WebKit's Xcode project, so this build takes the
-    # "locks disabled" branch of ResourceMap. Forcing it on is the one config where
-    # every ResourceMapParams kAdditionalFlatResourcesSize > 0 comes with
-    # kNeedsLock == true.
-    local cflags='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis'
+    # -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1: required, not optional.
+    #
+    # ANGLE's GN build defines this (BUILD.gn: angle_enable_share_context_lock);
+    # WebKit's Xcode project defines nothing of the sort, so building ANGLE the
+    # Xcode way silently takes ResourceMap.h's "locks disabled" #else branch, where
+    # kNeedsLock and kAdditionalFlatResourcesSize are constants that do not depend
+    # on IDType. That makes clang evaluate the static_assert(kNeedsLock) inside
+    # if constexpr (kAdditionalFlatResourcesSize > 0), even though the branch
+    # should be discarded -- so the build dies on an assert that a dependency-based
+    # discard is supposed to hide.
+    #
+    # Measured, not inferred: with a probe injected at the assert the compiler
+    # reported ANGLE_ENABLE_SHARE_CONTEXT_LOCK undefined, kAdditionalFlatResourcesSize
+    # == 0, kNeedsLock == false -- and instantiated the branch anyway. Defining the
+    # macro makes both values depend on IDType (BufferID: 0x6000/true, every other
+    # ID: 0/false), so the branch is correctly discarded for the lockless types and
+    # the assert holds for BufferID. Pass 1 then builds clean.
+    local cflags='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1'
     local cxxflags="$cflags"
-    if [ "${HUSK_ANGLE_FORCE_SHARE_LOCK:-0}" = "1" ]; then
-        cxxflags="$cxxflags -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1"
-        cflags="$cflags -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1"
-    fi
 
     # -Wno-thread-safety-*: ANGLE's src/common/SimpleMutex.h annotates a
     # std::mutex with acquire_capability/release_capability. clang 16+ diagnoses
