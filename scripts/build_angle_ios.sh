@@ -60,6 +60,14 @@ angle_build () {
         ldflags=("OTHER_LDFLAGS=\$(inherited) -Wl,-alias_list,$1")
     fi
 
+    # -Wno-thread-safety-*: ANGLE's src/common/SimpleMutex.h annotates a
+    # std::mutex with acquire_capability/release_capability. clang 16+ diagnoses
+    # that as -Wthread-safety-attributes, and WebKit's xcconfigs build with
+    # -Werror, so the build dies on ANGLE's own annotation macros. It is ANGLE's
+    # internal bookkeeping, not a defect in anything Husk links, so the two
+    # diagnostics are silenced rather than the source patched -- ANGLE here is a
+    # WebKit HEAD checkout, which is a moving target that a local patch would not
+    # survive.
     env -i PATH="$PATH" HOME="$HOME" xcodebuild archive \
         -archivePath "ANGLE" -scheme "ANGLE" \
         -sdk iphoneos -arch arm64 -configuration Release \
@@ -67,8 +75,8 @@ angle_build () {
         CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
         WK_AVAILABILITY_OVERLAY_FLAGS="" WK_AVAILABILITY_OVERLAY_SWIFT_FLAGS="" \
         IPHONEOS_DEPLOYMENT_TARGET="15.5" \
-        OTHER_CFLAGS='$(inherited) -Wno-unguarded-availability-new' \
-        OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-unguarded-availability-new' \
+        OTHER_CFLAGS='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis' \
+        OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis' \
         ${ldflags[@]+"${ldflags[@]}"} \
         > "$LOG" 2>&1 \
       || { echo "ANGLE build failed; last errors:" >&2
