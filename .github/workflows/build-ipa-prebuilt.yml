@@ -22,10 +22,16 @@ jobs:
 
       - name: Toolchain
         run: |
+          # The project is objectVersion 77, the Xcode 16 format, and the runner's
+          # default Xcode is 15.x, which cannot read it ("Unable to read project").
+          # Pick the newest Xcode installed instead of relying on the default.
+          BEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "selecting $BEST"
+          sudo xcode-select -s "$BEST"
+          xcodebuild -version
           export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
           brew install xcodegen
           rustup target add aarch64-apple-ios
-          xcodebuild -version
 
       - name: Build IPA from upstream binaries
         env:

@@ -40,11 +40,17 @@ jobs:
       - name: Toolchain
         # ci_build.sh and the scripts it calls use these; Xcode and rustup are on the image.
         run: |
+          # The app project is objectVersion 77, the Xcode 16 format, and the runner's
+          # default Xcode is 15.x, which cannot read it ("Unable to read project").
+          # Without this the ~2 hour build gets all the way to the app and dies there.
+          BEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "selecting $BEST"
+          sudo xcode-select -s "$BEST"
+          xcodebuild -version
           export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
           brew install meson ninja pkg-config qemu xcodegen autoconf automake \
                        libtool gettext gnu-sed coreutils
           rustup target add aarch64-apple-ios
-          xcodebuild -version
           qemu-img --version
 
       # The key is written out in both steps rather than shared through env:, because
