@@ -129,6 +129,8 @@ static const tl_jhle k_brogue[] = {
  */
 #define RENPY_ACTIVITY "org/renpy/android/PythonSDLActivity"
 #define RENPY_ACTIVITY2 "org/renpy/android/PythonActivity"
+/* SDL's own activity, which the engine reads a field from before it will start drawing. */
+#define SDL_ACTIVITY "org/libsdl/app/SDLActivity"
 
 extern const char *tl_hle_files_dir(void);
 extern const char *tl_hle_data_dir(void);
@@ -172,6 +174,15 @@ void tl_renpy_set_env(void)
     memset(&av, 0, sizeof(av));
     av.l = tl_jni_new_object(tl_jni_class(RENPY_ACTIVITY));
     tl_jni_set_static_field(RENPY_ACTIVITY, "mActivity", "L" RENPY_ACTIVITY ";", av);
+
+    /* display/core.py:1971 check_android_start refuses to let the display start unless SDL's own
+     * activity reports focus -- it logs "App not focused at interface start, shutting down early"
+     * and calls os._exit(1) otherwise, which is how the last run ended. The window is focused; it
+     * is this app's own view. */
+    jvalue focus;
+    memset(&focus, 0, sizeof(focus));
+    focus.z = true;
+    tl_jni_set_static_field(SDL_ACTIVITY, "mHasFocus", "Z", focus);
 
     tl_log_line("renpy: environment set (ANDROID_PRIVATE=%s, ANDROID_APK=%s)", priv, apk);
 }
@@ -350,6 +361,9 @@ static void RP_system_exit(tl_jcall *c)
 static void RP_getDPI(tl_jcall *c) { c->ret = vi(460); }
 static void RP_openUrl(tl_jcall *c) { tl_log_line("renpy: openUrl %s", c->args[0].l ? Str(c->args[0].l) : ""); }
 
+/* display/core.py calls hidePresplash on the class itself once the first frame is drawn. */
+static void RP_hidePresplash(tl_jcall *c) { (void)c; tl_log_line("renpy: the presplash is hidden"); }
+
 static const tl_jhle k_renpy[] = {
     /* The method SDL_main calls, and whose absence is the reported last log line. */
     { RENPY_ACTIVITY, "preparePython", "()V", RP_preparePython },
@@ -361,12 +375,18 @@ static const tl_jhle k_renpy[] = {
     { RENPY_ACTIVITY, "vibrate", "(F)V", H_void },
     { RENPY_ACTIVITY, "openUrl", "(Ljava/lang/String;)V", RP_openUrl },
     { RENPY_ACTIVITY, "setWakeLock", "(Z)V", H_void },
+    { RENPY_ACTIVITY, "hidePresplash", "()V", RP_hidePresplash },
+    { RENPY_ACTIVITY, "finishOnStop", "()V", H_void },
+    { RENPY_ACTIVITY, "armOnStop", "()V", H_void },
     { RENPY_ACTIVITY2, "preparePython", "()V", RP_preparePython },
     { RENPY_ACTIVITY2, "getPackageManager", "()Landroid/content/pm/PackageManager;", RP_getPackageManager },
     { RENPY_ACTIVITY2, "isChromebook", "()Z", H_false },
     { RENPY_ACTIVITY2, "finishAndRemoveTask", "()V", RP_finishAndRemoveTask },
     { RENPY_ACTIVITY2, "getDPI", "()I", RP_getDPI },
     { RENPY_ACTIVITY2, "openUrl", "(Ljava/lang/String;)V", RP_openUrl },
+    { RENPY_ACTIVITY2, "hidePresplash", "()V", RP_hidePresplash },
+    { RENPY_ACTIVITY2, "finishOnStop", "()V", H_void },
+    { RENPY_ACTIVITY2, "armOnStop", "()V", H_void },
     { RENPY_PM, "hasSystemFeature", "(Ljava/lang/String;)Z", H_false },
     { "java/lang/System", "exit", "(I)V", RP_system_exit },
     { NULL, NULL, NULL, NULL }
@@ -400,6 +420,9 @@ static void rp_declare_methods(void)
         { "vibrate", "(F)V", false },
         { "openUrl", "(Ljava/lang/String;)V", false },
         { "setWakeLock", "(Z)V", false },
+        { "hidePresplash", "()V", true },        /* core.py calls it on the class, once, after the first frame */
+        { "finishOnStop", "()V", false },
+        { "armOnStop", "()V", false },
     };
     jobj *acts[2] = { tl_jni_class_object(RENPY_ACTIVITY), tl_jni_class_object(RENPY_ACTIVITY2) };
     for (int a = 0; a < 2; a++)
