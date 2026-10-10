@@ -911,6 +911,278 @@ static int32_t vm_GetEnv(void *vm, void **penv, int32_t version) { (void)vm; (vo
 static const void *g_vm_fns[8] = { NULL, NULL, NULL, vm_DestroyJavaVM, vm_Attach, vm_Detach, vm_GetEnv, vm_Attach };
 static int32_t jni_GetJavaVM(void *env, void **vm) { (void)env; *vm = &g_vm; return 0; }
 
+/* ------------------------------------------------------------- reflection */
+
+/*
+ * pyjnius is how Ren'Py's Python reaches Java, and autoclass() builds a Python class by walking
+ * the Java class hierarchy: getConstructors, then per class getName/isInterface/getSuperclass/
+ * getInterfaces/getDeclaredMethods/getDeclaredFields, and per member getName/getParameterTypes/
+ * getReturnType/getModifiers/isVarArgs. Ren'Py's android/__init__.py autoclasses
+ * PythonSDLActivity as it is imported, which loader.py does before it will list the APK -- so
+ * until these answer, bootstrap dies on 'NoneType' object is not iterable, which names nothing
+ * about the cause.
+ *
+ * Nothing here invents a model. It reports the tables the rest of the shim dispatches through --
+ * the members of tl_jclass, its declared superclass, each member's own signature -- so what
+ * pyjnius sees is exactly what this layer implements. Modifier bits are java.lang.reflect.Modifier's
+ * own, and a member's type is a Class, never a string. Every array answer is a real (possibly
+ * empty) array: a zero here is what pyjnius cannot iterate.
+ */
+static jvalue rv_obj(void *p) { jvalue v; v.j = 0; v.l = p; return v; }
+static jvalue rv_int(int i) { jvalue v; v.j = 0; v.i = i; return v; }
+static jvalue rv_bool(int b) { jvalue v; v.j = 0; v.z = b != 0; return v; }
+
+/* java.lang.reflect.Modifier's bits. */
+#define MOD_PUBLIC 1
+#define MOD_STATIC 8
+
+/* The Class a type descriptor names. An array is a class too, and its name is its descriptor. */
+static jobj *desc_class(const char *d, int *used)
+{
+    static const struct { char k; const char *n; } prim[] = {
+        {'Z', "boolean"}, {'B', "byte"}, {'C', "char"}, {'S', "short"}, {'I', "int"},
+        {'J', "long"}, {'F', "float"}, {'D', "double"}, {'V', "void"},
+    };
+    if (d[0] == '[') {
+        int u = 0;
+        (void)desc_class(d + 1, &u);
+        int n = 1 + u;
+        char nm[256];
+        if ((size_t)n > sizeof(nm) - 1) n = (int)sizeof(nm) - 1;
+        memcpy(nm, d, (size_t)n);
+        nm[n] = 0;
+        *used = n;
+        return tl_jni_class_object(nm);
+    }
+    if (d[0] == 'L') {
+        const char *e = strchr(d, ';');
+        int n = e ? (int)(e - d - 1) : (int)strlen(d) - 1;
+        char nm[256];
+        if (n < 0) n = 0;
+        if ((size_t)n > sizeof(nm) - 1) n = (int)sizeof(nm) - 1;
+        memcpy(nm, d + 1, (size_t)n);
+        nm[n] = 0;
+        *used = n + 2;
+        return tl_jni_class_object(nm);
+    }
+    for (size_t i = 0; i < sizeof(prim) / sizeof(prim[0]); i++)
+        if (prim[i].k == d[0]) { *used = 1; return tl_jni_class_object(prim[i].n); }
+    *used = 1;
+    return tl_jni_class_object("java/lang/Object");
+}
+
+/* Class.getName() is dotted: "org.renpy.android.PythonSDLActivity". */
+static void dotted_name(const char *in, char *out, size_t n)
+{
+    size_t j = 0;
+    for (size_t i = 0; in[i] && j + 1 < n; i++) out[j++] = in[i] == '/' ? '.' : in[i];
+    out[j] = 0;
+}
+
+static tl_jclass *call_class(tl_jcall *c) { return (c->self && c->self->kind == TL_K_CLASS) ? c->self->klass.jc : NULL; }
+static tl_jmeth *call_method(tl_jcall *c) { return (c->self && c->self->native) ? (tl_jmeth *)c->self->native : NULL; }
+static tl_jfield *call_field(tl_jcall *c) { return (c->self && c->self->native) ? (tl_jfield *)c->self->native : NULL; }
+
+/* ------------------------------------------------------------ java.lang.Class */
+
+static void R_Class_getName(tl_jcall *c)
+{
+    tl_jclass *k = call_class(c);
+    char nm[256] = "?";
+    if (k) dotted_name(k->name, nm, sizeof(nm));
+    c->ret = rv_obj(tl_jni_new_string(nm));
+}
+
+static void R_Class_getSuperclass(tl_jcall *c)
+{
+    tl_jclass *k = call_class(c);
+    c->ret = rv_obj((k && k->super) ? k->super->mirror : NULL);
+}
+
+static void R_Class_no_classes(tl_jcall *c)
+{
+    c->ret = rv_obj(tl_jni_new_obj_array(tl_jni_class("java/lang/Class"), 0));
+}
+
+static void R_Class_isInterface(tl_jcall *c) { (void)c; c->ret = rv_bool(0); }
+static void R_Class_isArray(tl_jcall *c) { tl_jclass *k = call_class(c); c->ret = rv_bool(k && k->name[0] == '['); }
+
+static void R_Class_isPrimitive(tl_jcall *c)
+{
+    tl_jclass *k = call_class(c);
+    c->ret = rv_bool(k && k->name[0] != '[' && !strchr(k->name, '/'));
+}
+
+static void R_Class_getComponentType(tl_jcall *c)
+{
+    tl_jclass *k = call_class(c);
+    if (!k || k->name[0] != '[') { c->ret = rv_obj(NULL); return; }
+    int u = 0;
+    c->ret = rv_obj(desc_class(k->name + 1, &u));
+}
+
+static void R_Class_getModifiers(tl_jcall *c) { (void)c; c->ret = rv_int(MOD_PUBLIC); }
+
+/* The members of a class, as the arrays Java returns. want: 0 constructors, 1 methods, 2 fields. */
+static void R_Class_members(tl_jcall *c, const char *elem, int want)
+{
+    tl_jclass *k = call_class(c);
+    if (!k) { c->ret = rv_obj(tl_jni_new_obj_array(tl_jni_class(elem), 0)); return; }
+    if (want == 2) {
+        jobj *a = tl_jni_new_obj_array(tl_jni_class(elem), (uint32_t)k->nfields);
+        uint32_t n = 0;
+        for (int i = 0; i < k->nfields; i++)
+            if (k->fields[i]) a->oarr.v[n++] = tl_jni_ref(reflected(elem, k->fields[i]));
+        a->oarr.len = n;
+        c->ret = rv_obj(a);
+        return;
+    }
+    /* Java keeps constructors out of getMethods, and <clinit> out of everything. getDeclared*
+     * answers with this class's own members, which is what pyjnius walks the hierarchy for. */
+    jobj *a = tl_jni_new_obj_array(tl_jni_class(elem), (uint32_t)k->nmeths);
+    uint32_t n = 0;
+    for (int i = 0; i < k->nmeths; i++) {
+        tl_jmeth *m = k->meths[i];
+        if (!m || !m->name) continue;
+        bool ctor = !strcmp(m->name, "<init>");
+        if (want == 0 ? !ctor : ctor) continue;
+        if (m->name[0] == '<') continue;
+        a->oarr.v[n++] = tl_jni_ref(reflected(elem, m));
+    }
+    a->oarr.len = n;
+    c->ret = rv_obj(a);
+}
+
+static void R_Class_getConstructors(tl_jcall *c) { R_Class_members(c, "java/lang/reflect/Constructor", 0); }
+static void R_Class_getDeclaredConstructors(tl_jcall *c) { R_Class_members(c, "java/lang/reflect/Constructor", 0); }
+static void R_Class_getMethods(tl_jcall *c) { R_Class_members(c, "java/lang/reflect/Method", 1); }
+static void R_Class_getDeclaredMethods(tl_jcall *c) { R_Class_members(c, "java/lang/reflect/Method", 1); }
+static void R_Class_getFields(tl_jcall *c) { R_Class_members(c, "java/lang/reflect/Field", 2); }
+static void R_Class_getDeclaredFields(tl_jcall *c) { R_Class_members(c, "java/lang/reflect/Field", 2); }
+
+/* ------------------------------- java.lang.reflect.Method / Constructor / Field */
+
+static void R_Member_getName(tl_jcall *c)
+{
+    tl_jmeth *m = call_method(c);
+    if (m && m->name) {
+        if (strcmp(m->name, "<init>")) { c->ret = rv_obj(tl_jni_new_string(m->name)); return; }
+        /* Constructor.getName() is the class name, not "<init>". */
+        char nm[256] = "?";
+        if (m->cls) dotted_name(m->cls->name, nm, sizeof(nm));
+        c->ret = rv_obj(tl_jni_new_string(nm));
+        return;
+    }
+    tl_jfield *f = call_field(c);
+    c->ret = rv_obj(tl_jni_new_string(f && f->name ? f->name : ""));
+}
+
+/* A parameter list as Classes, or the return type. Both come from the member's own signature. */
+static void R_Member_types(tl_jcall *c, bool want_return)
+{
+    tl_jmeth *m = call_method(c);
+    if (!m || !m->sig) { c->ret = rv_obj(NULL); return; }
+    if (want_return) {
+        const char *r = strchr(m->sig, ')');
+        int u = 0;
+        c->ret = rv_obj(desc_class(r ? r + 1 : m->sig, &u));
+        return;
+    }
+    const char *p = strchr(m->sig, '(');
+    const char *q = p ? p + 1 : m->sig;
+    int n = 0;
+    for (const char *s = q; *s && *s != ')'; ) { int u = 0; desc_class(s, &u); s += u ? u : 1; n++; }
+    jobj *a = tl_jni_new_obj_array(tl_jni_class("java/lang/Class"), (uint32_t)n);
+    int i = 0;
+    for (const char *s = q; *s && *s != ')' && i < n; ) { int u = 0; a->oarr.v[i++] = tl_jni_ref(desc_class(s, &u)); s += u ? u : 1; }
+    a->oarr.len = (uint32_t)i;
+    c->ret = rv_obj(a);
+}
+
+static void R_Member_getParameterTypes(tl_jcall *c) { R_Member_types(c, false); }
+static void R_Member_getReturnType(tl_jcall *c) { R_Member_types(c, true); }
+
+static void R_Member_getModifiers(tl_jcall *c)
+{
+    tl_jmeth *m = call_method(c);
+    if (m) { c->ret = rv_int(MOD_PUBLIC | (m->is_static ? MOD_STATIC : 0)); return; }
+    tl_jfield *f = call_field(c);
+    c->ret = rv_int(MOD_PUBLIC | (f && f->is_static ? MOD_STATIC : 0));
+}
+
+static void R_Member_isVarArgs(tl_jcall *c) { (void)c; c->ret = rv_bool(0); }
+
+static void R_Field_getType(tl_jcall *c)
+{
+    tl_jfield *f = call_field(c);
+    if (!f || !f->sig) { c->ret = rv_obj(NULL); return; }
+    int u = 0;
+    c->ret = rv_obj(desc_class(f->sig, &u));
+}
+
+/* --------------------------------------------------------- java.lang.reflect.Modifier */
+
+static void R_Mod_is(tl_jcall *c, int bit) { c->ret = rv_bool(c->args && (c->args[0].i & bit)); }
+static void R_Mod_isPublic(tl_jcall *c) { R_Mod_is(c, 1); }
+static void R_Mod_isPrivate(tl_jcall *c) { R_Mod_is(c, 2); }
+static void R_Mod_isProtected(tl_jcall *c) { R_Mod_is(c, 4); }
+static void R_Mod_isStatic(tl_jcall *c) { R_Mod_is(c, 8); }
+static void R_Mod_isFinal(tl_jcall *c) { R_Mod_is(c, 16); }
+static void R_Mod_isSynchronized(tl_jcall *c) { R_Mod_is(c, 32); }
+static void R_Mod_isVolatile(tl_jcall *c) { R_Mod_is(c, 64); }
+static void R_Mod_isTransient(tl_jcall *c) { R_Mod_is(c, 128); }
+static void R_Mod_isNative(tl_jcall *c) { R_Mod_is(c, 256); }
+static void R_Mod_isInterface(tl_jcall *c) { R_Mod_is(c, 512); }
+static void R_Mod_isAbstract(tl_jcall *c) { R_Mod_is(c, 1024); }
+static void R_Mod_isStrict(tl_jcall *c) { R_Mod_is(c, 2048); }
+
+#define RM(c, n, s, f) { c, n, s, f }
+static const tl_jhle k_reflect[] = {
+    RM("java/lang/Class", "getName", "()Ljava/lang/String;", R_Class_getName),
+    RM("java/lang/Class", "isInterface", "()Z", R_Class_isInterface),
+    RM("java/lang/Class", "isArray", "()Z", R_Class_isArray),
+    RM("java/lang/Class", "isPrimitive", "()Z", R_Class_isPrimitive),
+    RM("java/lang/Class", "getModifiers", "()I", R_Class_getModifiers),
+    RM("java/lang/Class", "getSuperclass", "()Ljava/lang/Class;", R_Class_getSuperclass),
+    RM("java/lang/Class", "getInterfaces", "()[Ljava/lang/Class;", R_Class_no_classes),
+    RM("java/lang/Class", "getClasses", "()[Ljava/lang/Class;", R_Class_no_classes),
+    RM("java/lang/Class", "getDeclaredClasses", "()[Ljava/lang/Class;", R_Class_no_classes),
+    RM("java/lang/Class", "getComponentType", "()Ljava/lang/Class;", R_Class_getComponentType),
+    RM("java/lang/Class", "getConstructors", "()[Ljava/lang/reflect/Constructor;", R_Class_getConstructors),
+    RM("java/lang/Class", "getDeclaredConstructors", "()[Ljava/lang/reflect/Constructor;", R_Class_getDeclaredConstructors),
+    RM("java/lang/Class", "getMethods", "()[Ljava/lang/reflect/Method;", R_Class_getMethods),
+    RM("java/lang/Class", "getDeclaredMethods", "()[Ljava/lang/reflect/Method;", R_Class_getDeclaredMethods),
+    RM("java/lang/Class", "getFields", "()[Ljava/lang/reflect/Field;", R_Class_getFields),
+    RM("java/lang/Class", "getDeclaredFields", "()[Ljava/lang/reflect/Field;", R_Class_getDeclaredFields),
+    RM("java/lang/reflect/Method", "getName", "()Ljava/lang/String;", R_Member_getName),
+    RM("java/lang/reflect/Method", "getParameterTypes", "()[Ljava/lang/Class;", R_Member_getParameterTypes),
+    RM("java/lang/reflect/Method", "getReturnType", "()Ljava/lang/Class;", R_Member_getReturnType),
+    RM("java/lang/reflect/Method", "getModifiers", "()I", R_Member_getModifiers),
+    RM("java/lang/reflect/Method", "isVarArgs", "()Z", R_Member_isVarArgs),
+    RM("java/lang/reflect/Constructor", "getName", "()Ljava/lang/String;", R_Member_getName),
+    RM("java/lang/reflect/Constructor", "getParameterTypes", "()[Ljava/lang/Class;", R_Member_getParameterTypes),
+    RM("java/lang/reflect/Constructor", "getModifiers", "()I", R_Member_getModifiers),
+    RM("java/lang/reflect/Constructor", "isVarArgs", "()Z", R_Member_isVarArgs),
+    RM("java/lang/reflect/Field", "getName", "()Ljava/lang/String;", R_Member_getName),
+    RM("java/lang/reflect/Field", "getType", "()Ljava/lang/Class;", R_Field_getType),
+    RM("java/lang/reflect/Field", "getModifiers", "()I", R_Member_getModifiers),
+    RM("java/lang/reflect/Modifier", "isPublic", "(I)Z", R_Mod_isPublic),
+    RM("java/lang/reflect/Modifier", "isPrivate", "(I)Z", R_Mod_isPrivate),
+    RM("java/lang/reflect/Modifier", "isProtected", "(I)Z", R_Mod_isProtected),
+    RM("java/lang/reflect/Modifier", "isStatic", "(I)Z", R_Mod_isStatic),
+    RM("java/lang/reflect/Modifier", "isFinal", "(I)Z", R_Mod_isFinal),
+    RM("java/lang/reflect/Modifier", "isSynchronized", "(I)Z", R_Mod_isSynchronized),
+    RM("java/lang/reflect/Modifier", "isVolatile", "(I)Z", R_Mod_isVolatile),
+    RM("java/lang/reflect/Modifier", "isTransient", "(I)Z", R_Mod_isTransient),
+    RM("java/lang/reflect/Modifier", "isNative", "(I)Z", R_Mod_isNative),
+    RM("java/lang/reflect/Modifier", "isInterface", "(I)Z", R_Mod_isInterface),
+    RM("java/lang/reflect/Modifier", "isAbstract", "(I)Z", R_Mod_isAbstract),
+    RM("java/lang/reflect/Modifier", "isStrict", "(I)Z", R_Mod_isStrict),
+    { NULL, NULL, NULL, NULL },
+};
+
+void tl_jni_reflect_install(void) { tl_jni_register_hle(k_reflect); }
+
 void *tl_jni_vm(void) { tl_jni_init(); return &g_vm; }
 void *tl_jni_env(void) { tl_jni_init(); return &g_env; }
 
@@ -962,4 +1234,5 @@ void tl_jni_init(void)
 {
     pthread_once(&g_init_once, build_tables);
     g_env_fns[228] = (const void *)jni_ExceptionCheck;
+    tl_jni_reflect_install();
 }

@@ -164,6 +164,15 @@ void tl_renpy_set_env(void)
     rp_setenv("PYTHONPATH", path);
     rp_setenv("PYTHONOPTIMIZE", "2");
     rp_setenv("RENPY_RENDERER", "gl");
+
+    /* android/__init__.py autoclasses PythonSDLActivity and reads its mActivity field in the same
+     * breath, so the field has to be here before the first Python import rather than when some
+     * later call wants it. The value is this layer's stand-in for the real Activity. */
+    jvalue av;
+    memset(&av, 0, sizeof(av));
+    av.l = tl_jni_new_object(tl_jni_class(RENPY_ACTIVITY));
+    tl_jni_set_static_field(RENPY_ACTIVITY, "mActivity", "L" RENPY_ACTIVITY ";", av);
+
     tl_log_line("renpy: environment set (ANDROID_PRIVATE=%s, ANDROID_APK=%s)", priv, apk);
 }
 
