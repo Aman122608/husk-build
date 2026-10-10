@@ -345,6 +345,10 @@ static void RP_system_exit(tl_jcall *c)
 {
     tl_log_line("renpy: System.exit(%d)", c->args ? c->args[0].i : 0);
 }
+/* The only thing Ren'Py does with this is size the screen's diagonal, so the density bucket a 3x
+ * screen reports is what matters, not a measurement. */
+static void RP_getDPI(tl_jcall *c) { c->ret = vi(460); }
+static void RP_openUrl(tl_jcall *c) { tl_log_line("renpy: openUrl %s", c->args[0].l ? Str(c->args[0].l) : ""); }
 
 static const tl_jhle k_renpy[] = {
     /* The method SDL_main calls, and whose absence is the reported last log line. */
@@ -353,14 +357,56 @@ static const tl_jhle k_renpy[] = {
     { RENPY_ACTIVITY, "getPackageManager", "()Landroid/content/pm/PackageManager;", RP_getPackageManager },
     { RENPY_ACTIVITY, "isChromebook", "()Z", H_false },
     { RENPY_ACTIVITY, "finishAndRemoveTask", "()V", RP_finishAndRemoveTask },
+    { RENPY_ACTIVITY, "getDPI", "()I", RP_getDPI },
+    { RENPY_ACTIVITY, "vibrate", "(F)V", H_void },
+    { RENPY_ACTIVITY, "openUrl", "(Ljava/lang/String;)V", RP_openUrl },
+    { RENPY_ACTIVITY, "setWakeLock", "(Z)V", H_void },
     { RENPY_ACTIVITY2, "preparePython", "()V", RP_preparePython },
     { RENPY_ACTIVITY2, "getPackageManager", "()Landroid/content/pm/PackageManager;", RP_getPackageManager },
     { RENPY_ACTIVITY2, "isChromebook", "()Z", H_false },
     { RENPY_ACTIVITY2, "finishAndRemoveTask", "()V", RP_finishAndRemoveTask },
+    { RENPY_ACTIVITY2, "getDPI", "()I", RP_getDPI },
+    { RENPY_ACTIVITY2, "openUrl", "(Ljava/lang/String;)V", RP_openUrl },
     { RENPY_PM, "hasSystemFeature", "(Ljava/lang/String;)Z", H_false },
     { "java/lang/System", "exit", "(I)V", RP_system_exit },
     { NULL, NULL, NULL, NULL }
 };
+
+/*
+ * Having an implementation in k_renpy is not the same as the method existing.
+ *
+ * pyjnius builds its Python class out of getDeclaredMethods(), which reports this layer's class
+ * model, and a method only enters that model when something looks it up -- which, for everything
+ * Ren'Py reaches through jnius, nothing had done. A registered implementation was therefore
+ * invisible: 'org.renpy.android.PythonSDLActivity' object has no attribute 'getPackageManager' at
+ * main.py:206, and the same for finishAndRemoveTask at bootstrap.py:419 on the way out of a run
+ * that had already ended. The mActivity field never had this problem because it is created when
+ * declared, not when looked up.
+ *
+ * So the methods Ren'Py's android/__init__.py uses are declared here, before Python starts, with
+ * the staticness each is really called with (isChromebook and System.exit are static; the rest are
+ * called on activity). Signatures are this layer's to choose: pyjnius derives the call from the
+ * declared parameter types, so declaration and implementation have to agree, not match Android's.
+ */
+static void rp_declare_methods(void)
+{
+    static const struct { const char *name, *sig; bool is_static; } m[] = {
+        { "preparePython", "()V", false },
+        { "toast", "(Ljava/lang/String;)V", false },
+        { "getPackageManager", "()Landroid/content/pm/PackageManager;", false },
+        { "isChromebook", "()Z", true },
+        { "finishAndRemoveTask", "()V", false },
+        { "getDPI", "()I", false },
+        { "vibrate", "(F)V", false },
+        { "openUrl", "(Ljava/lang/String;)V", false },
+        { "setWakeLock", "(Z)V", false },
+    };
+    jobj *acts[2] = { tl_jni_class_object(RENPY_ACTIVITY), tl_jni_class_object(RENPY_ACTIVITY2) };
+    for (int a = 0; a < 2; a++)
+        for (size_t i = 0; i < sizeof(m) / sizeof(m[0]); i++)
+            tl_jni_reflect_method(acts[a], m[i].name, m[i].sig, m[i].is_static);
+    tl_jni_reflect_method(tl_jni_class_object("java/lang/System"), "exit", "(I)V", true);
+}
 
 /* ------------------------------------------------------------- Pekka Kana 2 */
 
@@ -421,6 +467,7 @@ void tl_sdl_apps_install(const char *package)
     if (!strcmp(package, "org.pgnapps.pk2")) tl_jni_register_hle(k_pk2);
     if (tl_dexidx_has_class(RENPY_ACTIVITY) || tl_dexidx_has_class(RENPY_ACTIVITY2)) {
         tl_jni_register_hle(k_renpy);
+        rp_declare_methods();   /* the class model jnius reads has to exist before Python starts */
         tl_renpy_prepare();     /* unpackData + the environment, before SDL_main runs start_python */
     }
 }
