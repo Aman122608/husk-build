@@ -80,7 +80,7 @@ angle_build () {
         ${ldflags[@]+"${ldflags[@]}"} \
         > "$LOG" 2>&1 \
       || { echo "ANGLE build failed; last errors:" >&2
-           grep -a "error:\|^ld: " "$LOG" | head -10 >&2; exit 1; }
+           grep -a "error:\|^ld: " "$LOG" | head -40 >&2; exit 1; }
 }
 
 # Two passes, because of a name mismatch.

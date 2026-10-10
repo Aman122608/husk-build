@@ -69,6 +69,12 @@ jobs:
       - name: Build IPA + tipa
         run: bash ./scripts/ci_build.sh build/Husk.ipa
 
+      - name: WebKit revision used
+        # ANGLE comes from an unpinned WebKit HEAD checkout, so a failure is only
+        # reproducible if the revision is recorded.
+        if: always()
+        run: git -C third_party/gpu/webkit rev-parse HEAD 2>/dev/null || echo "(no webkit checkout)"
+
       - name: Save build cache (also on failure)
         # if: always() is the whole point: a failed run still hands the next one the
         # stages it did finish. Stamps make a partial tree safe to reuse.
