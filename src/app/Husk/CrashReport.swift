@@ -98,7 +98,11 @@ final class CrashReport: ObservableObject {
         let lines = ((try? String(contentsOf: Self.previousLogURL, encoding: .utf8)) ?? "")
             .split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
         var cause = Cause.unknown
-        if let fatal = lines.last(where: { $0.contains("*** FATAL SIGNAL") }),
+        // Two handlers can report a fatal signal: the native one, which writes
+        // "=== FATAL signal N ..." into the game's own log, and the Swift one, which
+        // writes "*** FATAL SIGNAL N" into husk.log. Matching only one of them made a
+        // real crash read as "Husk closed while the game was running".
+        if let fatal = lines.last(where: { $0.contains("*** FATAL SIGNAL") || $0.contains("=== FATAL signal") }),
            let n = fatal.split(separator: " ").compactMap({ Int($0) }).first {
             cause = .signal(n)
         } else if lines.contains(where: { $0.contains("the game could not be started") || $0.contains("native: launch refused") }) {
@@ -148,7 +152,12 @@ final class CrashReport: ObservableObject {
         text += "\n---- native output of that run ----\n"
         text += (try? String(contentsOf: HuskLog.previousNativeLogURL, encoding: .utf8)) ?? "(none)\n"
         let safe = r.game.replacingOccurrences(of: "/", with: "-")
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Husk crash report - \(safe).txt")
+        // Written into Documents, not tmp. The sheet is otherwise the only way to this
+        // report, and it is gone the moment it is dismissed or Husk is relaunched --
+        // leaving the logs themselves but nothing that ties them to what happened.
+        // Documents is exposed to the Files app (UIFileSharingEnabled), so the report
+        // survives and can be retrieved and sent later.
+        let url = Self.docs.appendingPathComponent("crash report - \(safe).txt")
         do { try text.write(to: url, atomically: true, encoding: .utf8) } catch { return nil }
         return url
     }
@@ -193,7 +202,7 @@ struct CrashReportSheet: View {
                         }
                         .buttonStyle(.borderedProminent)
                     }
-                    Text("The report holds the full log of that run and which device and build it was on. Nothing is sent anywhere unless you share it.")
+                    Text("The report holds the full log of that run and which device and build it was on. It is also saved as a file in Husk's folder, so it is still there later. Nothing is sent anywhere unless you share it.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 .padding(20)
