@@ -2,8 +2,13 @@ name: build-ios
 
 # Husk builds with Xcode, so only a macOS runner can produce the IPA. This does
 # exactly what scripts/ci_build.sh does on a Mac. The FIRST run takes a couple of
-# hours: it fetches and cross-compiles QEMU, ANGLE and MoltenVK from source. Later
-# runs reuse the cache and only rebuild what changed.
+# hours: it fetches and cross-compiles QEMU, ANGLE and MoltenVK from source.
+#
+# Retries resume. build_ios.sh marks each finished stage with a stamp under
+# build/stamps, and skips a stage whose stamp exists -- so the cache has to carry
+# build/stamps back as well as the built tree. The cache is SAVED EVEN WHEN THE JOB
+# FAILS (if: always()), with a per-run key and a shared restore prefix, so each
+# attempt keeps whatever the last one finished instead of starting from zero.
 #
 # The IPA is signed ad hoc, with Husk's entitlements embedded, and is not tied to a
 # signing team: SideStore/AltStore re-sign at install, TrollStore keeps the
@@ -15,6 +20,16 @@ on:
   push:
     tags:
       - 'v*'
+
+env:
+  # One string, so the restore key and the save key can never drift apart.
+  CACHE_KEY: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh','scripts/build_ios.sh','scripts/build_angle_ios.sh','scripts/build_moltenvk_ios.sh','scripts/build_rppairing_ios.sh') }}-${{ github.run_id }}
+  CACHE_PATHS: |
+    third_party/sources
+    third_party/build
+    third_party/gpu
+    build/ios-arm64
+    build/stamps
 
 jobs:
   ipa:
@@ -35,25 +50,42 @@ jobs:
       - name: Toolchain
         # ci_build.sh and the scripts it calls use these; Xcode and rustup are on the image.
         run: |
+          export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
           brew install meson ninja pkg-config qemu xcodegen autoconf automake \
                        libtool gettext gnu-sed coreutils
           rustup target add aarch64-apple-ios
           xcodebuild -version
           qemu-img --version
 
-      - name: Cache dependencies and prior build
-        uses: actions/cache@v4
+      - name: Restore build cache
+        uses: actions/cache/restore@v4
         with:
-          path: |
-            third_party/sources
-            third_party/build
-            build/ios-arm64
-          # Keyed on the pinned upstream versions in sources.sh, so a version bump
-          # rebuilds but an app-only change reuses QEMU/ANGLE/MoltenVK.
-          key: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh', 'scripts/build_ios.sh') }}
+          path: ${{ env.CACHE_PATHS }}
+          key: ${{ env.CACHE_KEY }}
+          # The newest cache from any earlier run of this workflow, finished or not.
+          restore-keys: |
+            husk-${{ runner.os }}-
 
       - name: Build IPA + tipa
         run: bash ./scripts/ci_build.sh build/Husk.ipa
+
+      - name: Save build cache (also on failure)
+        # if: always() is the whole point: a failed run still hands the next one the
+        # stages it did finish. Stamps make a partial tree safe to reuse.
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CACHE_PATHS }}
+          key: ${{ env.CACHE_KEY }}
+
+      - name: Upload build logs (also on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: build/logs/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Package artifacts
         run: |
