@@ -3,11 +3,14 @@
 """
 Serve a folder to Husk's Downloads tab over the local network.
 
-    python3 tools/serve-folder.py <folder> [port]
+    python3 tools/serve-folder.py <folder> [port] [bind-address]
 
 Husk is given the address this prints. GET / is the manifest, a JSON list of every file under the folder with its size;
 GET /f/<path> is one file, with Range requests honoured so an interrupted download resumes where it stopped. Husk puts the
 files in its Shared Storage folder at the same paths, so serve the folder whose contents belong at the top of /sdcard.
+
+The address this serves on is the address it prints, by default: see serve_address() for why that matters on a
+machine with more than one interface. Pass a bind address to override it.
 """
 import json
 import os
@@ -19,6 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.realpath(sys.argv[1] if len(sys.argv) > 1 else ".")
 PORT = int(sys.argv[2]) if len(sys.argv) > 2 else 8642
+BIND = sys.argv[3] if len(sys.argv) > 3 else ""
 
 
 def manifest():
@@ -176,6 +180,21 @@ def lan_address():
         s.close()
 
 
+def serve_address():
+    """The address to serve on -- the one this script prints, on purpose.
+
+    Binding 0.0.0.0 answers on every interface, which on a machine with more than
+    one (Ethernet plus Wi-Fi, a docked laptop, a VPN adapter) also exposes it on
+    the slow one. A client that happens to find that address gets the slow link,
+    and Husk's sweep takes the first address that answers, so which one it finds
+    is a coin flip: on one machine a 1 Gbps Ethernet and a 58 Mbps Wi-Fi sat on
+    the same subnet and measured 17 MB/s against 2.8 MB/s for the same file.
+    Serving only on the advertised address is what stops the two disagreeing.
+    Pass a bind address on the command line to override it.
+    """
+    return BIND or lan_address()
+
+
 if __name__ == "__main__":
     m = manifest()
     total = sum(f["size"] for f in m["files"])
@@ -191,7 +210,7 @@ if __name__ == "__main__":
         beacon.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         while True:
             try:
-                host = lan_address()
+                host = serve_address()
                 msg = json.dumps({"husk": "serve-folder", "v": 1, "name": os.path.basename(ROOT),
                                   "host": host, "port": int(PORT), "files": len(manifest()["files"]),
                                   "url": "http://%s:%d/" % (host, int(PORT))}).encode()
@@ -206,10 +225,23 @@ if __name__ == "__main__":
 
     import threading
     threading.Thread(target=announce_forever, daemon=True).start()
-    print("In Husk, Downloads > Add, enter:  http://%s:%d/" % (lan_address(), PORT))
+    host = serve_address()
+    print("In Husk, Downloads > Add, enter:  http://%s:%d/" % (host, PORT))
     class Server(ThreadingHTTPServer):
         daemon_threads = True
         def server_bind(self):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 8 << 20)
             super().server_bind()
-    Server(("0.0.0.0", PORT), Handler).serve_forever()
+    try:
+        server = Server((host, PORT), Handler)
+    except OSError as exc:
+        # The address can move between the check above and the bind (a DHCP
+        # re-lease, a Wi-Fi drop). 0.0.0.0 keeps the folder reachable, at the
+        # cost of answering on interfaces we did not advertise -- say so rather
+        # than failing, because a server nobody can reach is worse.
+        if BIND:
+            raise
+        print("Could not bind %s: %s" % (host, exc))
+        print("Serving on 0.0.0.0 instead: every interface, including any slow one.")
+        server = Server(("0.0.0.0", PORT), Handler)
+    server.serve_forever()
