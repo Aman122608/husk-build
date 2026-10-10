@@ -92,7 +92,19 @@ step "regenerate the Xcode project"
 
 step "app + IPA"
 mkdir -p "$(dirname "$OUT")"
-./scripts/package_ipa.sh "$OUT"
+# Keep DerivedData (and therefore build.log) inside the workspace: package_ipa.sh
+# defaults to /tmp/husk_ipa, where a failure's log cannot be uploaded or read.
+export DD="$HUSK_ROOT/build/DerivedData"
+if ! ./scripts/package_ipa.sh "$OUT"; then
+    # package_ipa.sh pipes xcodebuild through `grep -E "error:|BUILD ..."`, so a
+    # failure can surface as a bare "BUILD FAILED" with none of the reasons. Show
+    # them here instead of leaving a run that says nothing.
+    echo "===== xcodebuild diagnostics ($DD/build.log) =====" >&2
+    grep -nE "error:|BUILD FAILED|The following build commands failed|fatal error|❌" "$DD/build.log" 2>/dev/null | head -40 >&2
+    echo "===== last 60 lines =====" >&2
+    tail -60 "$DD/build.log" 2>/dev/null >&2
+    exit 1
+fi
 ./scripts/package_ipa.sh --trollstore "${OUT%.ipa}.tipa"
 
 step "manifest: which binaries are whose"
