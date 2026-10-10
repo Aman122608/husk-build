@@ -53,6 +53,62 @@ class Handler(BaseHTTPRequestHandler):
             if not head:
                 self.wfile.write(body)
             return
+        # Short, meaningful links. The slug comes from the file name, so /g/gta.apk is guessable, the
+        # map is whatever is in the folder right now (nothing is hardcoded), and a slug never shifts
+        # when files are added or removed the way a number does. Numbers still work for quick typing,
+        # and /list prints the whole map as plain text -- open it in a browser, never in Husk (a JSON
+        # listing there would be taken as a folder).
+        if path.startswith("/g/") or path == "/list":
+            names = sorted(f["path"] for f in manifest()["files"])
+
+            def slug_of(name):
+                base = os.path.basename(name).rsplit(".", 1)[0].lower()
+                parts = [p for p in "".join(c if c.isalnum() else "-" for c in base).split("-") if p]
+                if parts and parts[-1] in ("com", "net", "org", "apk"):
+                    parts = parts[:-1]
+                keep = []
+                for p in parts:                       # drop the version tail: 1.87.0-an1.com, .97.11, -0-2-42
+                    if p.isdigit():
+                        break
+                    keep.append(p)
+                return "-".join(keep[:6]) or "-".join(parts[:6])
+
+            host = lan_address()
+            if path == "/list":
+                lines = ["%d. %s" % (i, n) for i, n in enumerate(names, 1)]
+                lines += ["", "short links (type any of these into Husk's Downloads):", ""]
+                lines += ["  http://%s:%d/g/%s.apk" % (host, self.server.server_address[1], slug_of(n)) for n in names]
+                body = ("\n".join(lines) + "\n").encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                if not head:
+                    self.wfile.write(body)
+                return
+
+            tag = path[3:]
+            hit = None
+            want = tag[:-4] if tag.endswith(".apk") else tag
+            if want.isdigit():
+                n = int(want)
+                if 1 <= n <= len(names):
+                    hit = names[n - 1]
+            elif want:
+                for cand in names:                       # exact slug, else the first that contains it
+                    if want == slug_of(cand):
+                        hit = cand
+                        break
+                if hit is None:
+                    for cand in names:
+                        if want in slug_of(cand):
+                            hit = cand
+                            break
+            if hit:
+                path = "/f/" + hit
+            else:
+                self.send_error(404)
+                return
         if not path.startswith("/f/"):
             self.send_error(404)
             return
@@ -90,13 +146,15 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.flush()
         t0, sent = time.time(), 0
         with open(full, "rb") as f:
-            # sendfile: the kernel copies from the file to the socket, without the data passing through Python.
+            # socket.sendfile() copies from the file to the socket, using the kernel's sendfile where
+            # the platform has one. os.sendfile() is Unix-only: on Windows it raises AttributeError and
+            # every download died here, which the client reports as "network connection lost".
             sock = self.connection
             offset, left = start, end - start + 1
             try:
                 while left > 0:
-                    n = os.sendfile(sock.fileno(), f.fileno(), offset, min(left, 64 << 20))
-                    if n == 0:
+                    n = sock.sendfile(f, offset, min(left, 64 << 20))
+                    if not n:
                         break
                     offset += n
                     left -= n
@@ -122,6 +180,32 @@ if __name__ == "__main__":
     m = manifest()
     total = sum(f["size"] for f in m["files"])
     print("Serving %s: %d files, %.1f GB" % (ROOT, len(m["files"]), total / 1e9))
+
+    # Announce ourselves on the LAN so the app can fill the address in instead of the user typing it.
+    # A plain UDP broadcast on a fixed port (8766), not mDNS: nothing for the phone to resolve and no
+    # Bonjour service to register. The app listens on 8766, and the address the PC is *actually* using
+    # travels in the packet -- which is what makes a DHCP re-lease a non-event.
+    def announce_forever():
+        import threading as _t   # noqa: F401  (kept local so the module needs nothing new at import time)
+        beacon = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        beacon.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        while True:
+            try:
+                host = lan_address()
+                msg = json.dumps({"husk": "serve-folder", "v": 1, "name": os.path.basename(ROOT),
+                                  "host": host, "port": int(PORT), "files": len(manifest()["files"]),
+                                  "url": "http://%s:%d/" % (host, int(PORT))}).encode()
+                for dest in ("255.255.255.255", "224.0.0.167"):
+                    try:
+                        beacon.sendto(msg, (dest, 8766))
+                    except OSError:
+                        pass
+            except Exception:
+                pass
+            time.sleep(2)
+
+    import threading
+    threading.Thread(target=announce_forever, daemon=True).start()
     print("In Husk, Downloads > Add, enter:  http://%s:%d/" % (lan_address(), PORT))
     class Server(ThreadingHTTPServer):
         daemon_threads = True

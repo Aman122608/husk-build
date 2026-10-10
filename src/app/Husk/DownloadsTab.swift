@@ -12,6 +12,7 @@ struct DownloadsTab: View {
         NavigationStack {
             List {
                 updatesSection
+                LocalGamesSection()
                 Section {
                     if downloads.jobs.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {

@@ -136,6 +136,16 @@ final class Downloads: ObservableObject {
         start(Job(title: name, source: url.absoluteString, kind: kind, files: [File(path: name, url: url.absoluteString, size: size)]))
     }
 
+    /// Start one file by its own URL, without asking the server what it is.
+    ///
+    /// Used by LAN discovery, where the folder's listing already gave the exact path and size. The listing
+    /// itself is never handed to `add(link:)`: a manifest of files makes a `.folder` job, whose files land in
+    /// Shared Storage and never appear in the library. One file, one URL, and an APK becomes a real app.
+    func addFile(name: String, url: String, size: Int64) {
+        let kind: Job.Kind = name.lowercased().hasSuffix(".apk") ? .apk : .file
+        start(Job(title: name, source: url, kind: kind, files: [File(path: name, url: url, size: size)]))
+    }
+
     private func start(_ new: Job) {
         // The same link again: carry on with the one already there, rather than fetch anything twice.
         if let existing = jobs.first(where: { $0.source == new.source }) {
