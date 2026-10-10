@@ -433,9 +433,133 @@ void ANativeWindow_setFrameRate(void *window, float fps, int mode)
     (void)window; (void)fps; (void)mode;
 }
 
-/* EGL: named, not implemented. eglGetProcAddress answers from this table
- * so a guest that resolves every call through it (the common pattern)
- * gets pointers; the EGL calls themselves fail cleanly. */
+/* ------------------------------------------------------------------- GL --
+ *
+ * The guest's GLES and EGL come from the ANGLE the app already embeds
+ * (Frameworks/libANGLE-shared.dylib) and that QEMU already dlopens for its own GL.
+ *
+ * The app links neither OpenGLES nor ANGLE, so dlsym(RTLD_DEFAULT) finds almost no gl*
+ * or egl* symbol. What it did find was iOS's own OpenGL ES, which stops at ES 3.0: the
+ * tell in the log was precise -- the 3.2 fence family resolved while every 3.1 addition
+ * (images, compute, indirect draws, vertex-attribute binding) did not. A guest with half
+ * its GL from one implementation and half from another is not a guest with GL at all, so
+ * the whole surface is answered from ANGLE, and the stubs below only cover the case where
+ * ANGLE cannot be loaded at all.
+ *
+ * Two calls this layer owns outright, because ANGLE cannot do them here:
+ *
+ *   eglCreateWindowSurface -- the guest's native window is this layer's own tl_window
+ *     struct, not an iOS drawable. Handing that pointer to ANGLE's Metal backend means it
+ *     messages a pointer that is not an object. A pbuffer of the same size is a surface
+ *     ANGLE can genuinely render into.
+ *   eglSwapBuffers -- reads the finished frame back into that window and posts it, which
+ *     is how the rest of this layer (and Husk's display) sees anything at all.
+ */
+#define EGL_FALSE 0
+#define EGL_TRUE  1
+#define EGL_NONE  0x3038
+#define EGL_WIDTH 0x3057
+#define EGL_HEIGHT 0x3056
+#define GL_RGBA          0x1908
+#define GL_UNSIGNED_BYTE 0x1401
+
+/* The window this run draws into; set by tl_shim_bind_run. */
+static tl_window *g_run_window;
+
+static void *g_angle;
+static bool  g_angle_tried;
+static bool  g_angle_frame_logged;
+
+static void *angle_open(void)
+{
+    if (!g_angle_tried) {
+        g_angle_tried = true;
+        g_angle = dlopen("@rpath/libANGLE-shared.dylib", RTLD_NOW | RTLD_LOCAL);
+        if (!g_angle) {
+            g_angle = dlopen("libANGLE-shared.dylib", RTLD_NOW | RTLD_LOCAL);
+        }
+        if (g_angle) {
+            tl_log_line("gl: ANGLE loaded -- the guest's whole GLES/EGL surface comes from it");
+        } else {
+            /* One dlerror() call: it clears the error, so asking twice returns NULL. */
+            const char *why = dlerror();
+            tl_log_line("gl: ANGLE could not be loaded (%s); GLES/EGL stay stubbed and the "
+                        "guest gets no graphics", why ? why : "unknown");
+        }
+    }
+    return g_angle;
+}
+
+/* One symbol from ANGLE, or NULL. Every gl*/egl* name goes through here. */
+static void *angle_symbol(const char *name)
+{
+    void *h = angle_open();
+    return h ? dlsym(h, name) : NULL;
+}
+
+static bool is_gl_or_egl(const char *name)
+{
+    /* glXxx: gl + a capital. eglXxx. Nothing else in libc looks like that. The length
+     * check is not decoration: a two-character name would otherwise read past its own
+     * terminator. */
+    if (!name || strlen(name) < 3) {
+        return false;
+    }
+    if (name[0] == 'g' && name[1] == 'l' && name[2] >= 'A' && name[2] <= 'Z') {
+        return true;
+    }
+    return name[0] == 'e' && name[1] == 'g' && name[2] == 'l';
+}
+
+/* Read the finished frame out of ANGLE's draw buffer and into the window the rest of
+ * this layer presents from, then post it. GL's origin is bottom-left and the window's is
+ * top-left, so the rows come back inverted; the window is RGBA_8888 and glReadPixels with
+ * GL_RGBA/GL_UNSIGNED_BYTE produces exactly those bytes, so only the row order changes. */
+static void angle_present_frame(void)
+{
+    tl_window *w = g_run_window;
+    if (!w || !w->bits || w->width <= 0 || w->height <= 0) {
+        return;
+    }
+    static uint8_t *scratch;
+    static size_t scratch_cap;
+    const size_t row = (size_t)w->width * 4;
+    const size_t need = row * (size_t)w->height;
+    if (scratch_cap < need) {
+        uint8_t *grown = realloc(scratch, need);
+        if (!grown) {
+            return;
+        }
+        scratch = grown;
+        scratch_cap = need;
+    }
+
+    static void (*read_pixels)(int, int, int, int, unsigned, unsigned, void *);
+    if (!read_pixels) {
+        read_pixels = (void (*)(int, int, int, int, unsigned, unsigned, void *))
+                      angle_symbol("glReadPixels");
+    }
+    if (!read_pixels) {
+        return;
+    }
+    read_pixels(0, 0, w->width, w->height, GL_RGBA, GL_UNSIGNED_BYTE, scratch);
+
+    const size_t stride = (size_t)(w->stridePixels > 0 ? w->stridePixels : w->width) * 4;
+    pthread_mutex_lock(&w->lock);
+    for (int y = 0; y < w->height; y++) {
+        memcpy(w->bits + (size_t)y * stride,
+               scratch + (size_t)(w->height - 1 - y) * row, row);
+    }
+    pthread_mutex_unlock(&w->lock);
+
+    if (!g_angle_frame_logged) {
+        g_angle_frame_logged = true;
+        tl_log_line("gl: first frame read back from ANGLE into the window (%dx%d)",
+                    w->width, w->height);
+    }
+    tl_loader_frame_posted();
+}
+
 void *eglGetProcAddress(const char *name)
 {
     return tl_shim_find(name);
@@ -444,19 +568,11 @@ void *eglGetProcAddress(const char *name)
 unsigned eglGetError(void) { return 0x3005; }   /* EGL_NOT_INITIALIZED */
 
 /*
- * The rest of the EGL surface libUE4 binds. iOS has no EGL at all -- these had
- * no symbol to find, which is why they were the last thing refusing the load --
- * and the attempt renders through the software window rather than a GL surface.
- *
- * So they answer as an EGL that cannot provide a display, and eglInitialize
- * reports failure. That is the honest report here, and it is the one a guest
- * handles: it takes its "no GPU" path. Handing back a fake display, context or
- * surface instead would put a pointer in a guest's hands that the next EGL call
- * dereferences, turning "no graphics" into a crash somewhere further on.
+ * The rest of the EGL surface. With ANGLE loaded, none of these is reached -- the lookup
+ * prefers ANGLE's own, and it has a real display, configs, contexts and surfaces. They are
+ * what answers when it is not, and they report an EGL that cannot provide a display rather
+ * than handing back a fake one a guest would dereference on its next call.
  */
-#define EGL_FALSE 0
-#define EGL_TRUE  1
-
 void *eglGetDisplay(void *display_id)
 {
     (void)display_id;
@@ -467,7 +583,7 @@ int eglInitialize(void *dpy, int *major, int *minor)
     (void)dpy;
     if (major) *major = 1;
     if (minor) *minor = 4;
-    tl_log_line("egl: eglInitialize -- there is no EGL on iOS, so the guest gets no display");
+    tl_log_line("egl: eglInitialize -- no ANGLE and no EGL on iOS, so the guest gets no display");
     return EGL_FALSE;
 }
 int eglTerminate(void *dpy) { (void)dpy; return EGL_TRUE; }
@@ -489,15 +605,30 @@ void *eglCreateContext(void *dpy, void *config, void *share, const int *attribs)
     return NULL;            /* EGL_NO_CONTEXT */
 }
 int eglDestroyContext(void *dpy, void *ctx) { (void)dpy; (void)ctx; return EGL_TRUE; }
+
+/* Ours, not ANGLE's: see the block comment. */
 void *eglCreateWindowSurface(void *dpy, void *config, void *win, const int *attribs)
 {
-    (void)dpy; (void)config; (void)win; (void)attribs;
-    return NULL;            /* EGL_NO_SURFACE */
+    (void)win; (void)attribs;
+    void *(*make_pbuffer)(void *, void *, const int *) =
+        (void *(*)(void *, void *, const int *))angle_symbol("eglCreatePbufferSurface");
+    if (!make_pbuffer) {
+        return NULL;        /* EGL_NO_SURFACE */
+    }
+    tl_window *w = g_run_window;
+    const int width  = (w && w->width  > 0) ? w->width  : 540;
+    const int height = (w && w->height > 0) ? w->height : 960;
+    const int pbuffer[] = { EGL_WIDTH, width, EGL_HEIGHT, height, EGL_NONE };
+    void *surface = make_pbuffer(dpy, config, pbuffer);
+    tl_log_line("egl: window surface -> a %dx%d ANGLE pbuffer (%p)", width, height, surface);
+    return surface;
 }
+
 void *eglCreatePbufferSurface(void *dpy, void *config, const int *attribs)
 {
-    (void)dpy; (void)config; (void)attribs;
-    return NULL;
+    void *(*make_pbuffer)(void *, void *, const int *) =
+        (void *(*)(void *, void *, const int *))angle_symbol("eglCreatePbufferSurface");
+    return make_pbuffer ? make_pbuffer(dpy, config, attribs) : NULL;
 }
 int eglDestroySurface(void *dpy, void *surface) { (void)dpy; (void)surface; return EGL_TRUE; }
 int eglQuerySurface(void *dpy, void *surface, int attribute, int *value)
@@ -524,7 +655,16 @@ const char *eglQueryString(void *dpy, int name)
     return "";              /* never NULL: a guest will strlen() it */
 }
 int eglSwapInterval(void *dpy, int interval) { (void)dpy; (void)interval; return EGL_TRUE; }
-int eglSwapBuffers(void *dpy, void *surface) { (void)dpy; (void)surface; return EGL_FALSE; }
+
+/* Ours, not ANGLE's: ANGLE presents into a pbuffer nobody can see, so the frame has to
+ * be brought back into the window on every swap. */
+int eglSwapBuffers(void *dpy, void *surface)
+{
+    int (*swap)(void *, void *) = (int (*)(void *, void *))angle_symbol("eglSwapBuffers");
+    int ok = swap ? swap(dpy, surface) : EGL_TRUE;
+    angle_present_frame();
+    return ok;
+}
 
 /*
  * The ES 3.1 / 3.2 entry points. Whatever supplied this guest's ES 3.0 calls has
@@ -1276,7 +1416,11 @@ void __android_log_assert(const char *cond, const char *tag, const char *fmt, ..
 void tl_shim_bind_run(void *activity, void *window)
 {
     (void)activity;
-    (void)window;
+    /* The GL swap reads the finished frame back into this, so it has to be the window the
+     * run is actually presenting from -- and it has to be cleared before that window is
+     * freed, or the next swap writes into freed memory. The loader calls this with NULLs
+     * when it tears a run down. */
+    g_run_window = (tl_window *)window;
 }
 
 /* One line each. Order does not matter; the linear scan is honest and
@@ -1522,6 +1666,29 @@ void *tl_shim_find(const char *name)
 {
     if (!name) {
         return NULL;
+    }
+    /* GLES and EGL first, and from one place. A guest whose ES 3.0 calls came from iOS's
+     * OpenGL ES and whose 3.1 calls came from nowhere is not a guest with GL; ANGLE is the
+     * only implementation here that covers the whole surface. The two calls this layer owns
+     * are named before the lookup so ANGLE cannot shadow them. */
+    if (is_gl_or_egl(name)) {
+        if (!strcmp(name, "eglCreateWindowSurface")) {
+            return (void *)eglCreateWindowSurface;
+        }
+        if (!strcmp(name, "eglSwapBuffers")) {
+            return (void *)eglSwapBuffers;
+        }
+        /* eglGetProcAddress is how most guests fetch their entry points, so it has to be
+         * ours: ANGLE's would hand back ANGLE's own eglCreateWindowSurface and the pbuffer
+         * substitution above would never happen. Ours routes through this same lookup, so
+         * the two calls stay ours whichever way the guest asks for them. */
+        if (!strcmp(name, "eglGetProcAddress")) {
+            return (void *)eglGetProcAddress;
+        }
+        void *from_angle = angle_symbol(name);
+        if (from_angle) {
+            return from_angle;
+        }
     }
     for (size_t i = 0; i < sizeof(g_exports) / sizeof(g_exports[0]); i++) {
         if (!strcmp(g_exports[i].name, name) && g_exports[i].addr) {

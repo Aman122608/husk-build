@@ -2148,6 +2148,9 @@ void husk_tl_attempt_reset(void)
         free(g_run.libs[i].file);
     }
     g_prewarmed_used = 0;
+    /* Before the window goes: the shim's GL swap writes frames into it, and a swap after
+     * this point would write into freed memory. */
+    tl_shim_bind_run(NULL, NULL);
     tl_window_release(g_run.window);
     tl_shim_free(g_run.queue);
     tl_shim_free(g_run.assets);
