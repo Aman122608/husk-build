@@ -53,7 +53,7 @@ jobs:
           key: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh', 'scripts/build_ios.sh') }}
 
       - name: Build IPA + tipa
-        run: ./scripts/ci_build.sh build/Husk.ipa
+        run: bash ./scripts/ci_build.sh build/Husk.ipa
 
       - name: Package artifacts
         run: |
