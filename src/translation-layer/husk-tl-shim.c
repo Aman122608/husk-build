@@ -911,6 +911,64 @@ int pthread_mutex_trylock_shim(void *m)
 int pthread_mutex_unlock_shim(void *m) { if (m) spin_unlock_40(m); return 0; }
 int pthread_mutex_destroy_shim(void *m) { if (m) memset(m, 0, 40); return 0; }
 
+/*
+ * pthread_mutexattr_t is the other half of that mismatch, and leaving it to Darwin is
+ * worse than leaving the mutex there: the attr is usually a LOCAL, so the overflow lands
+ * on the guest's own stack frame.
+ *
+ * bionic's pthread_mutexattr_t is one int (4 bytes). Darwin's is 64. So the ordinary
+ *
+ *     pthread_mutexattr_t attr;            // 4 bytes of stack
+ *     pthread_mutexattr_init(&attr);       // Darwin writes 64
+ *     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+ *     pthread_mutex_init(&m, &attr);
+ *     pthread_mutexattr_destroy(&attr);
+ *
+ * overwrote 60 bytes of saved registers, frame pointer and stack canary. libUE4.so's
+ * 18th constructor does exactly this -- it is the run that ends inside it with no fault
+ * line, because the corrupted return faults where the JIT guard owns the signal (SIGBUS
+ * is deliberately left to it) and nothing gets logged.
+ *
+ * The type is kept in the single int bionic keeps it in. The mutex above is a plain
+ * spinlock, so a recursive or error-checking request is reported rather than silently
+ * mis-served.
+ */
+#define TL_MUTEX_DEFAULT     0
+#define TL_MUTEX_RECURSIVE   1
+#define TL_MUTEX_ERRORCHECK  2
+
+int pthread_mutexattr_init_shim(void *a)
+{
+    if (!a) return EINVAL;
+    *(int *)a = TL_MUTEX_DEFAULT;
+    return 0;
+}
+int pthread_mutexattr_destroy_shim(void *a)
+{
+    if (!a) return EINVAL;
+    *(int *)a = TL_MUTEX_DEFAULT;
+    return 0;
+}
+int pthread_mutexattr_settype_shim(void *a, int type)
+{
+    if (!a) return EINVAL;
+    if (type != TL_MUTEX_DEFAULT && type != TL_MUTEX_RECURSIVE && type != TL_MUTEX_ERRORCHECK) {
+        return EINVAL;
+    }
+    if (type != TL_MUTEX_DEFAULT) {
+        tl_log_line("pthread: mutex type %d (recursive/error-check) is not implemented -- "
+                    "the mutex behaves as a plain one", type);
+    }
+    *(int *)a = type;
+    return 0;
+}
+int pthread_mutexattr_gettype_shim(const void *a, int *type)
+{
+    if (!a || !type) return EINVAL;
+    *type = *(const int *)a;
+    return 0;
+}
+
 /* The timed variant of the same 40-byte mutex, and it has to be built on the
  * compare-and-swap rather than Darwin's pthread_mutex_timedlock: the object is
  * bionic's 40 bytes and Darwin's pthread_mutex_t is larger, so handing it over
@@ -1543,6 +1601,12 @@ static const tl_export_entry g_exports[] = {
     { "pthread_mutex_unlock",       pthread_mutex_unlock_shim },
     { "pthread_mutex_destroy",      pthread_mutex_destroy_shim },
     { "pthread_mutex_timedlock",    pthread_mutex_timedlock_shim },
+    /* The attr type is bionic's 4 bytes, not Darwin's 64 -- see the comment above the
+     * implementations. Leaving these to Darwin overflows a guest's stack frame. */
+    { "pthread_mutexattr_init",     pthread_mutexattr_init_shim },
+    { "pthread_mutexattr_destroy",  pthread_mutexattr_destroy_shim },
+    { "pthread_mutexattr_settype",  pthread_mutexattr_settype_shim },
+    { "pthread_mutexattr_gettype",  pthread_mutexattr_gettype_shim },
     { "pthread_once",               pthread_once_shim },
     { "sysconf",                    sysconf_shim },
     { "dlopen",                     dlopen_shim },
