@@ -987,6 +987,22 @@ static void host_signal_entry(int dsig, siginfo_t *info, void *uctx)
 
 static int is_fault_signal(int g) { return g == 4 || g == 5 || g == 6 || g == 7 || g == 8 || g == 11; }
 
+/*
+ * bionic's realtime-signal bounds. Android's are 32 and 63 (asm-generic: __SIGRTMIN is 32,
+ * _NSIG is 64); Darwin has no realtime signals at all, but the numbers are still asked for.
+ * Python's signal module wants them while it imports, and an unresolved import returning a
+ * zero there is a value, not a NULL, so this is a plain answer rather than an abort.
+ */
+static int b_current_sigrtmin(void) { return 32; }
+static int b_current_sigrtmax(void) { return 63; }
+
+/* bionic's sigset_t, as the mask the guest passes to sigaddset/sigismember: a 64-bit word. */
+static int b_sigismember(const uint64_t *set, int sig)
+{
+    if (!set || sig < 1 || sig > 64) { tl_set_guest_errno(22); return -1; }
+    return (int)((*set >> (sig - 1)) & 1ull);
+}
+
 static int b_sigaction(int sig, const guest_sigaction *act, guest_sigaction *old)
 {
     if (sig <= 0 || sig >= 32) { tl_set_guest_errno(22); return -1; }
@@ -1285,6 +1301,8 @@ const tl_bionic_entry tl_tab_io[] = {
     TL_DIRECT(tfind), TL_DIRECT(tsearch), TL_DIRECT(tdelete), TL_DIRECT(twalk), TL_DIRECT(stpcpy),
     TL_DIRECT(ctime), TL_DIRECT(ctime_r), TL_DIRECT(asctime), TL_DIRECT(asctime_r), TL_DIRECT(timegm),
     TL_WRAP("sigaction", b_sigaction), TL_WRAP("signal", b_signal), TL_WRAP("sigemptyset", b_sigemptyset),
+    TL_WRAP("sigismember", b_sigismember),
+    TL_WRAP("__libc_current_sigrtmin", b_current_sigrtmin), TL_WRAP("__libc_current_sigrtmax", b_current_sigrtmax),
     TL_WRAP("sigfillset", b_sigfillset), TL_WRAP("sigaddset", b_sigaddset), TL_WRAP("sigdelset", b_sigdelset),
     TL_WRAP("sigsuspend", b_sigsuspend), TL_WRAP("sigaltstack", b_sigaltstack), TL_WRAP("raise", b_raise),
     TL_WRAP("poll", b_poll), TL_WRAP("select", b_select), TL_WRAP("__FD_SET_chk", b___FD_SET_chk),

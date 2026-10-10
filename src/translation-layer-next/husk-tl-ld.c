@@ -512,19 +512,35 @@ static void tl_unresolved_called(const char *name, void *lr)
 
     /*
      * An unresolved import is a libc or framework function bionic has and this shim does not:
-     * it stands in as a stub that returns zero. For a call that returns a pointer, that zero is
-     * a NULL passed on to whoever asked, and the fault surfaces somewhere else entirely -- the
-     * signature of the Ren'Py crash, where a stubbed import returned NULL into a libc string
-     * routine. So the first call is fatal by default, which names the culprit at its call site
-     * instead of losing it. TL_UNRESOLVED_TOLERANT=1 restores the old "return zero and carry on"
-     * for a game that calls one harmlessly.
+     * it stands in as a stub that returns zero. What that zero MEANS depends on what the
+     * function returns. For a pointer it is a NULL handed back to the caller, and the fault
+     * surfaces somewhere else entirely -- the shape of the Ren'Py crash that started all this,
+     * where a stubbed import returned NULL into a libc string routine. Those stay fatal at the
+     * first call, which names the culprit at its call site.
+     *
+     * For a function returning a number or nothing, zero is a wrong answer rather than a
+     * landmine. Aborting on one stops a game that would otherwise have run, which is what
+     * happened to Ren'Py's signal module asking for __libc_current_sigrtmin. Those log and
+     * return zero. TL_UNRESOLVED_TOLERANT=1 makes even the pointer cases return zero.
      */
-    if (getenv("TL_UNRESOLVED_TOLERANT")) {
-        tl_log_line("ld:   %s is not provided here; returning zero (TL_UNRESOLVED_TOLERANT is set)", name);
+    static const char *const pointers[] = {
+        "__sched_cpualloc", "asctime", "ctime", "dlerror", "getenv", "getgrnam", "gethostbyaddr",
+        "gethostbyname", "getlogin", "getprotobyname", "getprotobynumber", "getpwnam", "getservbyname",
+        "getservbyport", "hstrerror", "iconv_open", "inet_ntoa", "localeconv", "gmtime", "localtime",
+        "mkdtemp", "nl_langinfo", "realpath", "setlocale", "strerror", "strerror_r", "strtok",
+        "tmpfile", "tmpnam", "ttyname", "ttyname_r", "wcstok",
+    };
+    bool returns_pointer = false;
+    for (size_t i = 0; i < sizeof(pointers) / sizeof(pointers[0]); i++)
+        if (!strcmp(name, pointers[i])) returns_pointer = true;
+
+    if (getenv("TL_UNRESOLVED_TOLERANT") || !returns_pointer) {
+        tl_log_line("ld:   %s is not provided here; returning zero%s", name,
+                    returns_pointer ? " (TL_UNRESOLVED_TOLERANT is set)" : "");
         return;
     }
-    tl_log_line("ld:   %s is not provided here and its return would be zero; aborting at the call "
-                "(set TL_UNRESOLVED_TOLERANT=1 to return zero instead)", name);
+    tl_log_line("ld:   %s is not provided here and it returns a pointer, so zero would be a NULL "
+                "handed to its caller; aborting at the call (set TL_UNRESOLVED_TOLERANT=1 to return zero)", name);
     abort();
 }
 
