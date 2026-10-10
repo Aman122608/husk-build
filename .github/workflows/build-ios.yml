@@ -53,7 +53,11 @@ jobs:
           xcodebuild -version
           export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
           brew install meson ninja pkg-config qemu xcodegen autoconf automake \
-                       libtool gettext gnu-sed coreutils
+                       libtool gettext gnu-sed coreutils pyyaml
+          # virglrenderer's gallium build imports yaml from meson, and meson here runs
+          # under Homebrew's python3. Without it: "ERROR: /opt/homebrew/bin/python3 is
+          # missing modules: yaml" and the whole stage dies.
+          python3 -c "import yaml" || python3 -m pip install --break-system-packages pyyaml
           rustup target add aarch64-apple-ios
           qemu-img --version
 
