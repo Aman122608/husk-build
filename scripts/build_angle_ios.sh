@@ -33,6 +33,41 @@ fi
 
 cd "$WK/Source/ThirdParty/ANGLE"
 
+if [ "${HUSK_ANGLE_PROBE:-0}" = "1" ]; then
+    # Diagnostic. Instantiating an undefined template with a value makes clang name
+    # that value in the diagnostic, which is the only way to read a constexpr
+    # without running the build under a debugger.
+    echo "==> probing ResourceMap.h"
+    python3 - <<'PY'
+p = "src/libANGLE/ResourceMap.h"
+s = open(p).read()
+
+macro_probe = (
+    '#if defined(ANGLE_ENABLE_SHARE_CONTEXT_LOCK)\n'
+    '#pragma message("PROBE: ANGLE_ENABLE_SHARE_CONTEXT_LOCK is DEFINED")\n'
+    '#else\n'
+    '#pragma message("PROBE: ANGLE_ENABLE_SHARE_CONTEXT_LOCK is NOT defined")\n'
+    '#endif\n\n'
+)
+ns = ("namespace angle_probe {\n"
+      "template <bool B> struct Bool;\n"
+      "template <unsigned long long N> struct Size;\n"
+      "}  // namespace angle_probe\n\n")
+
+assert "\nnamespace gl" in s, "no namespace gl"
+s = s.replace("\nnamespace gl", "\n" + macro_probe + ns + "namespace gl", 1)
+
+old = "        static_assert(kNeedsLock);"
+assert old in s, "assert site not found"
+s = s.replace(old,
+    "        angle_probe::Bool<kNeedsLock> angle_probe_fn_needs_lock;\n"
+    "        angle_probe::Size<kAdditionalFlatResourcesSize> angle_probe_fn_additional;\n" + old, 1)
+
+open(p, "w").write(s)
+print("  injected probes")
+PY
+fi
+
 # Two overrides worth explaining.
 #
 # WK_AVAILABILITY_OVERLAY_FLAGS points at a clang VFS overlay that WebKit
@@ -57,7 +92,19 @@ angle_build () {
     # backslash-escaped here.
     local ldflags=()
     if [ -n "${1:-}" ]; then
-        ldflags=("OTHER_LDFLAGS=\$(inherited) -Wl,-alias_list,$1")
+        ldflags=("OTHER_LDFLAGS=\\$(inherited) -Wl,-alias_list,$1")
+    fi
+
+    # Diagnostic: ANGLE_ENABLE_SHARE_CONTEXT_LOCK is defined by ANGLE's GN build
+    # (BUILD.gn) and by nothing in WebKit's Xcode project, so this build takes the
+    # "locks disabled" branch of ResourceMap. Forcing it on is the one config where
+    # every ResourceMapParams kAdditionalFlatResourcesSize > 0 comes with
+    # kNeedsLock == true.
+    local cflags='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis'
+    local cxxflags="$cflags"
+    if [ "${HUSK_ANGLE_FORCE_SHARE_LOCK:-0}" = "1" ]; then
+        cxxflags="$cxxflags -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1"
+        cflags="$cflags -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1"
     fi
 
     # -Wno-thread-safety-*: ANGLE's src/common/SimpleMutex.h annotates a
@@ -75,8 +122,8 @@ angle_build () {
         CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
         WK_AVAILABILITY_OVERLAY_FLAGS="" WK_AVAILABILITY_OVERLAY_SWIFT_FLAGS="" \
         IPHONEOS_DEPLOYMENT_TARGET="15.5" \
-        OTHER_CFLAGS='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis' \
-        OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis' \
+        OTHER_CFLAGS="$cflags" \
+        OTHER_CPLUSPLUSFLAGS="$cxxflags" \
         ${ldflags[@]+"${ldflags[@]}"} \
         > "$LOG" 2>&1 \
       || { echo "ANGLE build failed; last errors:" >&2

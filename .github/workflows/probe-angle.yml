@@ -1,0 +1,49 @@
+name: probe-angle
+
+# Temporary diagnostic + fix-candidate test for the ANGLE ResourceMap static_assert.
+# workflow_dispatch only; delete once the ANGLE build is decided.
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: macos-14
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/share/dotnet /usr/share/dotnet ~/.dotnet 2>/dev/null || true
+          df -h /
+
+      - name: Probe ResourceMap constexpr values (expect failure)
+        # Instantiating an undefined template with a value makes clang name the value.
+        # #pragma message reports whether the controlling macro is defined at all.
+        run: |
+          set +e
+          HUSK_ANGLE_PROBE=1 bash scripts/build_angle_ios.sh 2>&1 | tail -40
+          echo "probe run exit: ${PIPESTATUS[0]}"
+          echo "===== PROBE MESSAGES (macro state) ====="
+          grep -a "PROBE:" build/logs/angle-build.log | sort -u | head
+          echo "===== PROBE VALUES (clang naming instantiations) ====="
+          grep -a -o "angle_probe::[A-Za-z]*<[^>]*>" build/logs/angle-build.log | sort -u | head
+          echo "===== error lines ====="
+          grep -a -o "error: .*" build/logs/angle-build.log | sort -u | head
+
+      - name: Restore unprobed header
+        run: git -C third_party/gpu/webkit checkout -- Source/ThirdParty/ANGLE/src/libANGLE/ResourceMap.h
+
+      - name: Test fix candidate (share-context lock forced on)
+        run: |
+          set +e
+          HUSK_ANGLE_FORCE_SHARE_LOCK=1 bash scripts/build_angle_ios.sh 2>&1 | tail -25
+          echo "force-lock run exit: ${PIPESTATUS[0]}"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-logs-${{ github.run_id }}
+          path: build/logs/
+          if-no-files-found: ignore
