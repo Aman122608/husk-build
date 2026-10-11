@@ -778,6 +778,12 @@ int32_t AMotionEvent_getPointerId(const void *event, size_t idx)
  * Without this, a command written and never read looks identical to a command never
  * written at all, which is the same invisible-failure trap as the constructor loop.
  * Only len == 1 is logged, so the rest of the guest's I/O passes through untouched.
+ *
+ * Longer writes to stdout/stderr are ALSO logged, capped hard, because that is where an
+ * engine's early output goes and it was invisible here: the engine's main thread started,
+ * said nothing for 25 seconds and never armed a frame callback, and there was no way to
+ * tell whether it was silent or merely unheard. (No recursion risk: the shim's own
+ * tl_log_line calls Darwin's write directly, so it never re-enters this function.)
  */
 ssize_t write_shim(int fd, const void *buf, size_t len)
 {
@@ -789,6 +795,19 @@ ssize_t write_shim(int fd, const void *buf, size_t len)
                     fd, (unsigned)*(const unsigned char *)buf, r,
                     r < 0 ? " (failed)" : "");
         if (r < 0) tl_log_line("pipe cmd: write errno %d", err);
+    } else if ((fd == 1 || fd == 2) && len >= 2) {
+        static int shown;
+        if (shown < 250) {
+            shown++;
+            char t[200];
+            size_t n = len < sizeof(t) - 1 ? len : sizeof(t) - 1;
+            memcpy(t, buf, n);
+            t[n] = 0;
+            for (size_t i = 0; i < n; i++) {
+                if (t[i] == '\n' || t[i] == '\r') t[i] = ' ';
+            }
+            tl_log_line("guest fd%d: %s", fd, t);
+        }
     }
     errno = err;
     return r;
@@ -1594,11 +1613,17 @@ int pthread_cond_wait_shim(void *cond, void *mutex)
 {
     tl_cond *c = cond_of(cond);
     if (!c || !mutex) return EINVAL;
+    /* Logged, because a thread parked in a condition wait is invisible otherwise -- and
+     * "the engine started and said nothing for 25 seconds" is exactly what a lost
+     * rendezvous looks like. Entry and exit both, so a wait that never returns is
+     * distinguishable from one that returned and was re-entered. */
+    tl_log_line("cond: wait enter cond=%p (thread %p)", cond, (void *)pthread_self());
     pthread_mutex_lock(&c->m);
     pthread_mutex_unlock_shim(mutex);          /* the guest's mutex, which is ours */
     pthread_cond_wait(&c->c, &c->m);
     pthread_mutex_unlock(&c->m);
     pthread_mutex_lock_shim(mutex);
+    tl_log_line("cond: wait leave cond=%p (thread %p)", cond, (void *)pthread_self());
     return 0;
 }
 int pthread_cond_timedwait_shim(void *cond, void *mutex, const struct timespec *abstime)
