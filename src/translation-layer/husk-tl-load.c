@@ -1868,12 +1868,24 @@ static void *attempt_thread(void *arg)
      * void ANativeActivity_onCreate(ANativeActivity*, void* savedState,
      *                               size_t savedStateSize). */
     if (g_run.on_create) {
+        tl_log_line("lifecycle: calling ANativeActivity_onCreate");
         g_run.on_create(&g_run.activity, NULL, 0);
+        tl_log_line("lifecycle: ANativeActivity_onCreate returned -- "
+                    "onStart=%p onResume=%p window=%p focus=%p input=%p surface=%p",
+                    (void *)g_run.activity.callbacks->onStart,
+                    (void *)g_run.activity.callbacks->onResume,
+                    (void *)g_run.activity.callbacks->onNativeWindowCreated,
+                    (void *)g_run.activity.callbacks->onWindowFocusChanged,
+                    (void *)g_run.activity.callbacks->onInputQueueCreated,
+                    (void *)g_run.activity.callbacks->onSurfaceChanged);
         if (!g_run.activity.callbacks->onNativeWindowCreated
             && !g_run.activity.callbacks->onSurfaceChanged) {
             tl_log_line("attempt: onCreate ran but registered no window "
                         "callbacks -- nothing will draw through them");
         }
+    } else {
+        tl_log_line("lifecycle: the guest exports no ANativeActivity_onCreate -- "
+                    "there is no entry point to call");
     }
 
     struct timespec start;
@@ -1973,28 +1985,37 @@ static void *attempt_thread(void *arg)
         return NULL;
     }
 
-    /* Lifecycle, as the NDK's native_app_glue would drive it: */
+    /* Lifecycle, as the NDK's native_app_glue would drive it. Each step names itself
+     * before it runs: the sequence is otherwise silent, so a guest that blocks inside
+     * one of these callbacks looks exactly like a guest that never got here at all. */
     if (g_run.activity.callbacks->onStart) {
+        tl_log_line("lifecycle: onStart");
         g_run.activity.callbacks->onStart(&g_run.activity);
     }
     if (g_run.activity.callbacks->onResume) {
+        tl_log_line("lifecycle: onResume");
         g_run.activity.callbacks->onResume(&g_run.activity);
     }
     if (g_run.activity.callbacks->onNativeWindowCreated) {
+        tl_log_line("lifecycle: onNativeWindowCreated (window=%p)", g_run.window);
         g_run.activity.callbacks->onNativeWindowCreated(&g_run.activity, g_run.window);
     }
     if (g_run.activity.callbacks->onWindowFocusChanged) {
+        tl_log_line("lifecycle: onWindowFocusChanged(1)");
         g_run.activity.callbacks->onWindowFocusChanged(&g_run.activity, 1);
     }
     if (g_run.activity.callbacks->onInputQueueCreated) {
+        tl_log_line("lifecycle: onInputQueueCreated (queue=%p)", g_run.queue);
         g_run.activity.callbacks->onInputQueueCreated(&g_run.activity, g_run.queue);
     }
     if (g_run.activity.callbacks->onSurfaceChanged) {
+        tl_log_line("lifecycle: onSurfaceChanged");
         g_run.activity.callbacks->onSurfaceChanged(&g_run.activity, g_run.window, 1);
     }
 
     /* The run loop. It watches the budget and the stop flag; a guest that
      * renders does so from its own threads, into the window. */
+    int spins = 0;
     while (!g_run.stop_requested) {
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
@@ -2005,6 +2026,14 @@ static void *attempt_thread(void *arg)
                         seconds, (unsigned long long)g_run.frames);
             break;
         }
+        /* A heartbeat. Without it this loop is the last silent thing in the run, and a
+         * guest spinning here is indistinguishable from one that blocked in a lifecycle
+         * callback above. Every five seconds is enough to see it is alive. */
+        if (spins == 0 || spins % 50 == 0) {
+            tl_log_line("lifecycle: run loop alive (%.0fs in, %llu frame(s) drawn)",
+                        (double)elapsed / 1000.0, (unsigned long long)g_run.frames);
+        }
+        spins++;
         struct timespec tick = { 0, 100 * 1000000 };
         nanosleep(&tick, NULL);
     }
