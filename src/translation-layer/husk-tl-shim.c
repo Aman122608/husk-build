@@ -1050,20 +1050,42 @@ int pthread_once_shim(void *once, void (*fn)(void))
     return 0;
 }
 
-/* sysconf: guests ask for page size and the like. The truthful answer on
- * this host is 16 KiB, and that is what Android 15+ code now expects. */
+/*
+ * sysconf: the guest asks with BIONIC's numbers, not Darwin's.
+ *
+ * bionic's _SC_PAGESIZE is 0x27 (39) and _SC_PAGE_SIZE is 0x28 (40); Darwin's are
+ * 29 and 30. Answering only Darwin's meant a guest asking for the page size fell
+ * through to sysconf(39) on Darwin -- an undefined name, which returns -1.
+ *
+ * That -1 is not harmless. FAndroidPlatformMemory::GetConstants() calls
+ * sysconf(0x27) and stores the result in its page-size field, which UE4 then uses
+ * as an ALIGNMENT: Align(0x200000, 0xFFFFFFFF) is 0 in 32-bit arithmetic. So the
+ * engine's pool allocations came out as zero-size requests, and BinnedAllocFromOS
+ * serves a zero-size request from its (still empty) arena without ever calling
+ * mmap -- handing back the arena's cursor, which is zero. Hence a null pool base
+ * with no mmap at all, which is what the crash showed.
+ *
+ * 16 KiB, not 4096: this host really has 16 KiB pages, and the arena unmaps in
+ * page-size multiples, so a smaller answer would misalign Darwin's munmap.
+ */
 long sysconf_shim(int name)
 {
     switch (name) {
-    case 29:  /* _SC_PAGESIZE */
-    case 30:  /* _SC_PAGE_SIZE */
+    case 39:  /* _SC_PAGESIZE  (bionic: 0x27) */
+    case 40:  /* _SC_PAGE_SIZE (bionic: 0x28) */
+    case 29:  /* the same two names as Darwin numbers them, for a guest that uses those */
+    case 30:
         return 16384;
-    case 84:  /* _SC_NPROCESSORS_ONLN */
+    case 84:  /* _SC_NPROCESSORS_ONLN -- the same value in bionic and Darwin */
         return (long)sysconf(_SC_NPROCESSORS_ONLN);
     default:
         return sysconf(name);
     }
 }
+
+/* Darwin's is already 16 KiB on this host, but say so rather than depend on it: a
+ * guest that read 4096 here would misalign every munmap the arena makes. */
+long getpagesize_shim(void) { return 16384; }
 
 void *dlopen_shim(const char *path, int mode)
 {
@@ -1956,6 +1978,7 @@ static const tl_export_entry g_exports[] = {
     { "pthread_mutexattr_gettype",  pthread_mutexattr_gettype_shim },
     { "pthread_once",               pthread_once_shim },
     { "sysconf",                    sysconf_shim },
+    { "getpagesize",                getpagesize_shim },
     { "sysinfo",                    sysinfo_shim },
     /* /proc has no iOS equivalent, and the files below are read by name rather than
      * discovered, so the only way to answer them is at fopen. */
