@@ -1444,22 +1444,48 @@ static const char *mmap_caller(void *addr)
     return buf;
 }
 
+/*
+ * mmap's FLAGS are numbered differently, and here the difference is fatal rather than
+ * cosmetic. bionic puts MAP_ANONYMOUS at 0x20; Darwin puts MAP_ANON at 0x1000 and calls
+ * 0x20 MAP_RENAME, which it no longer supports. So forwarding a guest's
+ * MAP_PRIVATE|MAP_ANONYMOUS (0x22) verbatim makes Darwin fail the call with EINVAL, and
+ * the guest builds an allocator arena on a -1 pointer.
+ *
+ * Translate rather than pass through, and build the result from scratch: Android-only
+ * bits collide with unrelated Darwin ones (bionic's MAP_EXECUTABLE is 0x1000, which is
+ * Darwin's MAP_ANON), so an unrecognised bit has to be dropped, never forwarded.
+ * bionic's MAP_32BIT (0x40) is meaningless on iOS and is dropped too.
+ */
+static int mmap_flags_to_darwin(int bionic)
+{
+    int d = 0;
+    if (bionic & 0x0001) d |= 0x0001;   /* MAP_SHARED  -- same */
+    if (bionic & 0x0002) d |= 0x0002;   /* MAP_PRIVATE -- same */
+    if (bionic & 0x0010) d |= 0x0010;   /* MAP_FIXED   -- same */
+    if (bionic & 0x0020) d |= 0x1000;   /* MAP_ANONYMOUS -> Darwin's MAP_ANON */
+    if (bionic & 0x4000) d |= 0x0040;   /* MAP_NORESERVE */
+    return d;
+}
+
 void *mmap_shim(void *addr, size_t len, int prot, int flags, int fd, long off)
 {
     errno = 0;
-    void *p = mmap(addr, len, prot, flags, fd, (off_t)off);
+    int dflags = mmap_flags_to_darwin(flags);
+    void *p = mmap(addr, len, prot, dflags, fd, (off_t)off);
     int err = errno;
     const char *from = mmap_caller(__builtin_return_address(0));
 
     char pr[4];
     mmap_prot_str(prot, pr, sizeof(pr));
 
-    if (p) {
-        tl_log_line("mmap: len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld -> %p  from %s",
-                    len, len / 1024, pr, (unsigned)flags, fd, off, p, from);
+    /* MAP_FAILED is (void *)-1, so a truthiness test reports a failure as a success
+     * and prints a -1 pointer as if it were an address. */
+    if (p != MAP_FAILED) {
+        tl_log_line("mmap: len=%zu (%zu KiB) prot=%s flags=%#x (darwin %#x) fd=%d off=%ld -> %p  from %s",
+                    len, len / 1024, pr, (unsigned)flags, (unsigned)dflags, fd, off, p, from);
     } else {
-        tl_log_line("mmap: len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld -> NULL, "
-                    "errno %d  from %s", len, len / 1024, pr, (unsigned)flags, fd, off,
+        tl_log_line("mmap: len=%zu (%zu KiB) prot=%s flags=%#x (darwin %#x) fd=%d off=%ld -> FAILED, "
+                    "errno %d  from %s", len, len / 1024, pr, (unsigned)flags, (unsigned)dflags, fd, off,
                     err, from);
     }
 
