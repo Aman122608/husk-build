@@ -2186,3 +2186,64 @@ void husk_tl_send_touch(int action, float x, float y)
         tl_dex_send_touch(g_run.dex_ctx, action, x, y);
     }
 }
+
+/*
+ * Name an address the guest is running at: "libUE4.so+0x61df71c".
+ *
+ * A crash report's guest frames came out as "??? 0x000000011c57771c 0x0 + 4770461468",
+ * which is a number rather than a location -- and the loader is the only thing that knows
+ * where each guest library was mapped, so it is the only thing that can say which one a
+ * frame belongs to. An offset into libUE4.so is something you can disassemble; a raw
+ * address on its own is not.
+ *
+ * Called from a signal handler, so: no allocation, no locks, formatting by hand. Reading
+ * g_run.libs while another thread loads a library can see a torn entry, which for a
+ * diagnostic is a wrong name at worst -- never a fault.
+ *
+ * Returns 1 and NUL-terminates `out` when the address is inside a guest library, and 0
+ * when it is not (a host frame, which the app names for itself through dladdr).
+ */
+int husk_tl_describe_address(uintptr_t addr, char *out, size_t outlen)
+{
+    static const char hex[] = "0123456789abcdef";
+    if (!out || outlen < 4) {
+        return 0;
+    }
+    for (int i = 0; i < g_run.nlibs; i++) {
+        const tl_lib *L = &g_run.libs[i];
+        if (!L->base || L->npages == 0) {
+            continue;
+        }
+        uintptr_t lo = (uintptr_t)L->base;
+        uintptr_t hi = lo + (uintptr_t)L->npages * (uintptr_t)TL_PAGE;
+        if (addr < lo || addr >= hi) {
+            continue;
+        }
+
+        size_t n = 0;
+        /* Leave room for "+0x" (3) and at least one digit and the terminator. */
+        while (n + 6 < outlen && L->name[n] != '\0') {
+            out[n] = L->name[n];
+            n++;
+        }
+        out[n++] = '+';
+        out[n++] = '0';
+        out[n++] = 'x';
+
+        /* The image offset, not the mapping offset: that is what the section and symbol
+         * tables are indexed by, so that is the number worth printing. */
+        uint64_t off = (uint64_t)(addr - lo) + (uint64_t)L->base_vaddr;
+        char digits[17];
+        int k = 0;
+        do {
+            digits[k++] = hex[off & 0xf];
+            off >>= 4;
+        } while (off != 0 && k < (int)sizeof(digits));
+        while (k > 0 && n + 1 < outlen) {
+            out[n++] = digits[--k];
+        }
+        out[n] = '\0';
+        return 1;
+    }
+    return 0;
+}
