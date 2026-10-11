@@ -1166,6 +1166,22 @@ int pthread_attr_getstack_shim(const void *guest, void **addr, size_t *size)
     return pthread_attr_getstack(p, addr, size);
 }
 
+/*
+ * pthread_create has to be ours the moment the attr is ours.
+ *
+ * The guest's pthread_attr_t now holds a POINTER to the Darwin attr rather than the attr
+ * itself, so handing those 52 bytes to Darwin's pthread_create would have it interpret a
+ * heap address as an attr structure -- a good way to get a nonsense stack size and a
+ * thread that never starts. NULL still means "default attributes", which is the common
+ * case and must keep working.
+ */
+int pthread_create_shim(void *thread, const void *guest_attr,
+                        void *(*fn)(void *), void *arg)
+{
+    pthread_attr_t *a = guest_attr ? *(pthread_attr_t **)(void *)guest_attr : NULL;
+    return pthread_create((pthread_t *)thread, a, fn, arg);
+}
+
 /* ---- pthread_rwlock_t: 56 on bionic, 200 on Darwin --------------------- */
 
 static void rwlock_init0(void *p) { pthread_rwlock_init((pthread_rwlock_t *)p, NULL); }
@@ -2321,6 +2337,7 @@ static const tl_export_entry g_exports[] = {
     { "pthread_attr_setstacksize",  pthread_attr_setstacksize_shim },
     { "pthread_attr_setschedpolicy", pthread_attr_setschedpolicy_shim },
     { "pthread_attr_getstack",      pthread_attr_getstack_shim },
+    { "pthread_create",             pthread_create_shim },
     { "pthread_rwlock_init",        pthread_rwlock_init_shim },
     { "pthread_rwlock_destroy",     pthread_rwlock_destroy_shim },
     { "pthread_rwlock_rdlock",      pthread_rwlock_rdlock_shim },
