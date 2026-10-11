@@ -1217,6 +1217,34 @@ int pthread_mutexattr_gettype_shim(const void *a, int *type)
 }
 
 /*
+ * Install a FRESH side object for a guest object, discarding whatever its bytes held,
+ * and return it.
+ *
+ * This is what an *_init function must do, and the distinction from tl_side_create is the
+ * whole bug: tl_side_create assumes a non-NULL value in the guest's bytes means "already
+ * created", which is true for a GLOBAL (zeroed in BSS) and false for a STACK LOCAL, which
+ * holds whatever the last user of that slot left there.
+ *
+ * libUE4's thread entry is where that bit. It reuses one stack slot: first for the two
+ * bytes AConfiguration_getLanguage writes ("en"), then for a pthread_attr_t. The attr init
+ * saw 0x6e65 in those bytes, called it an existing attr, and passed it to Darwin's
+ * pthread_attr_setdetachstate -- which dereferenced "en\0". That is the game thread dying
+ * on startup, and therefore the black screen: a thread that dies before its loop never
+ * polls its looper, never reads a lifecycle command, and never acknowledges one.
+ *
+ * pthread_attr_init is defined to make an attribute usable whatever the bytes were, so it
+ * must install unconditionally.
+ */
+static void *tl_side_install(void *guest, size_t bytes, void (*init)(void *))
+{
+    void *n = calloc(1, bytes);
+    if (!n) return NULL;
+    if (init) init(n);
+    *(void **)guest = n;
+    return n;
+}
+
+/*
  * The rest of the pthread types are the same trap, and there are five of them.
  *
  * bionic and Darwin disagree on the SIZE of most pthread objects, and a guest embeds
@@ -1279,7 +1307,7 @@ static void attr_init0(void *p) { pthread_attr_init((pthread_attr_t *)p); }
 int pthread_attr_init_shim(void *guest)
 {
     if (!guest) return EINVAL;
-    return tl_side_create(guest, sizeof(pthread_attr_t), attr_init0) ? 0 : ENOMEM;
+    return tl_side_install(guest, sizeof(pthread_attr_t), attr_init0) ? 0 : ENOMEM;
 }
 int pthread_attr_destroy_shim(void *guest)
 {
@@ -1352,7 +1380,8 @@ static pthread_rwlock_t *rwlock_of(void *guest)
 int pthread_rwlock_init_shim(void *guest, const void *attr)
 {
     (void)attr;                    /* bionic's rwlockattr is not used by these guests */
-    return rwlock_of(guest) ? 0 : ENOMEM;
+    if (!guest) return EINVAL;
+    return tl_side_install(guest, sizeof(pthread_rwlock_t), rwlock_init0) ? 0 : ENOMEM;
 }
 int pthread_rwlock_destroy_shim(void *guest)
 {
@@ -1384,7 +1413,7 @@ static void condattr_init0(void *p) { pthread_condattr_init((pthread_condattr_t 
 int pthread_condattr_init_shim(void *guest)
 {
     if (!guest) return EINVAL;
-    return tl_side_create(guest, sizeof(pthread_condattr_t), condattr_init0) ? 0 : ENOMEM;
+    return tl_side_install(guest, sizeof(pthread_condattr_t), condattr_init0) ? 0 : ENOMEM;
 }
 int pthread_condattr_destroy_shim(void *guest)
 {
@@ -1442,7 +1471,8 @@ static tl_cond *cond_of(void *g)
 int pthread_cond_init_shim(void *cond, const void *attr)
 {
     (void)attr;                    /* the guest's condattr is 8 bytes; Darwin reads 16 */
-    return cond_of(cond) ? 0 : ENOMEM;
+    if (!cond) return EINVAL;
+    return tl_side_install(cond, sizeof(tl_cond), cond_init0) ? 0 : ENOMEM;
 }
 int pthread_cond_destroy_shim(void *cond)
 {
