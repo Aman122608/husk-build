@@ -1346,12 +1346,24 @@ static void sincosf_shim(float x, float *s, float *c)
  * Android accepts flag bits Darwin does not, and a size computed from a rodata
  * table can come out absurd, so both are worth a line each.
  *
- * Not every call is logged -- a guest mmaps constantly and a log nobody can read
- * is worse than none. Failures always; successes only when large enough to be a
- * real arena rather than a stray page.
+ * Every call is logged, with the caller's address. The first version filtered on
+ * size, which was wrong twice over: it hid any small mapping, and when no line
+ * appeared at all it could not tell "never called" from "called below the
+ * threshold" -- which is exactly the ambiguity it produced. A guest's mmap count
+ * is in the dozens, so the whole set stays readable.
+ *
+ * __builtin_return_address(0) is the guest's return address, not the shim's: the
+ * PLT stub branches to us instead of calling, so x30 still holds the site that
+ * made the call. That names the guest function that asked, which is the one thing
+ * the previous build could not say.
  */
 
 #include <sys/mman.h>
+
+/* Names a guest address as "<library>+<offset>"; see the crash handler's use of
+ * the same function. Declared here for the same reason tl_log_line is: this file
+ * does not include the translation layer's public header. */
+int husk_tl_describe_address(uintptr_t addr, char *out, size_t outlen);
 
 static void mmap_prot_str(int prot, char *out, size_t len)
 {
@@ -1361,22 +1373,39 @@ static void mmap_prot_str(int prot, char *out, size_t len)
              (prot & PROT_EXEC)  ? "x" : "-");
 }
 
+/* The call site, as "libUE4.so+0x6257e9c", so the log says which guest function
+ * asked without a second pass over the ELF tables.
+ *
+ * The address is passed in rather than read with __builtin_return_address(1): at
+ * -O2 the level-1 walk needs frame pointers that may not be there, whereas the
+ * value read inside mmap_shim itself is the guest's own return address, because
+ * the PLT stub branches here instead of calling. */
+static const char *mmap_caller(void *addr)
+{
+    static _Thread_local char buf[128];
+    if (!husk_tl_describe_address((uintptr_t)addr, buf, sizeof(buf))) {
+        snprintf(buf, sizeof(buf), "%p", addr);
+    }
+    return buf;
+}
+
 void *mmap_shim(void *addr, size_t len, int prot, int flags, int fd, long off)
 {
     errno = 0;
     void *p = mmap(addr, len, prot, flags, fd, (off_t)off);
     int err = errno;
+    const char *from = mmap_caller(__builtin_return_address(0));
 
     char pr[4];
     mmap_prot_str(prot, pr, sizeof(pr));
 
-    if (!p) {
-        tl_log_line("mmap: addr=%p len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld "
-                    "-> NULL, errno %d", addr, len, len / 1024, pr,
-                    (unsigned)flags, fd, off, err);
-    } else if (len >= (256u * 1024u)) {
-        tl_log_line("mmap: addr=%p len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld -> %p",
-                    addr, len, len / 1024, pr, (unsigned)flags, fd, off, p);
+    if (p) {
+        tl_log_line("mmap: len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld -> %p  from %s",
+                    len, len / 1024, pr, (unsigned)flags, fd, off, p, from);
+    } else {
+        tl_log_line("mmap: len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld -> NULL, "
+                    "errno %d  from %s", len, len / 1024, pr, (unsigned)flags, fd, off,
+                    err, from);
     }
 
     errno = err;
@@ -1388,9 +1417,9 @@ int munmap_shim(void *addr, size_t len)
     errno = 0;
     int rc = munmap(addr, len);
     int err = errno;
-    if (rc != 0) {
-        tl_log_line("munmap: addr=%p len=%zu -> %d (errno %d)", addr, len, rc, err);
-    }
+    const char *from = mmap_caller(__builtin_return_address(0));
+    tl_log_line("munmap: addr=%p len=%zu -> %d%s  from %s", addr, len, rc,
+                rc ? " (FAILED)" : "", from);
     errno = err;
     return rc;
 }
