@@ -1319,15 +1319,33 @@ int pthread_cond_timedwait_shim(void *cond, void *mutex, const struct timespec *
     pthread_mutex_lock_shim(mutex);
     return r;
 }
+/*
+ * Signal and broadcast take the condition's own mutex, and that is not decoration.
+ *
+ * There is a window between the waiter releasing the guest's mutex and blocking on the
+ * Darwin condition. Hold the condition's internal mutex across both sides and the
+ * hand-off is ordered: the signal either lands while the waiter still holds it (so the
+ * waiter is about to block with the signal already banked) or while it is genuinely
+ * waiting. Without it a signal arriving inside that window is delivered to nobody and
+ * the waiter blocks forever -- the same failure this whole change exists to fix.
+ */
 int pthread_cond_signal_shim(void *cond)
 {
     tl_cond *c = cond_of(cond);
-    return c ? pthread_cond_signal(&c->c) : EINVAL;
+    if (!c) return EINVAL;
+    pthread_mutex_lock(&c->m);
+    int r = pthread_cond_signal(&c->c);
+    pthread_mutex_unlock(&c->m);
+    return r;
 }
 int pthread_cond_broadcast_shim(void *cond)
 {
     tl_cond *c = cond_of(cond);
-    return c ? pthread_cond_broadcast(&c->c) : EINVAL;
+    if (!c) return EINVAL;
+    pthread_mutex_lock(&c->m);
+    int r = pthread_cond_broadcast(&c->c);
+    pthread_mutex_unlock(&c->m);
+    return r;
 }
 
 /* The timed variant of the same 40-byte mutex, and it has to be built on the
