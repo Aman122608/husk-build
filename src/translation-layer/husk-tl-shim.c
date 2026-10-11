@@ -1333,12 +1333,235 @@ static void sincos_shim(double x, double *s, double *c)
 static void sincosf_shim(float x, float *s, float *c)
 { if (s) *s = sinf(x); if (c) *c = cosf(x); }
 
+/* ------------------------------------------------------------------ /proc --- */
+
 /*
- * glibc-only again. Each reports "I cannot tell you" rather than a fabricated
- * number: a zero CPU count or a zeroed sysinfo struct reads as real information
- * to a guest that acts on it, and -1 is what these return for "unsupported".
+ * The /proc files a game actually reads.
+ *
+ * FAndroidPlatformMemory::GetStats() opens /proc/meminfo and parses it with fgets
+ * and atol. iOS has no /proc, so fopen returns NULL, the parse yields nothing, and
+ * the engine concludes it has no memory at all -- which sizes UE4's crash-allocator
+ * pools to zero and leaves a null base for the first store to land on. Half the
+ * Android ecosystem reads the same file for the same reason, so it is worth
+ * answering properly rather than stubbing.
+ *
+ * The content is written once to a real file in the process's own temporary
+ * directory and a genuine FILE* is handed back: fgets, fseek and fclose all have to
+ * keep working on it, and there is no portable way to fabricate a FILE*.
+ *
+ * A whitelist, not a general interception. fopen is on the hot path of every guest,
+ * and an unlisted path falls through to Darwin's fopen and behaves exactly as it
+ * did before this existed -- which is what makes the change safe to make at all.
  */
-static int sysinfo_shim(void *info) { (void)info; return -1; }
+
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <sys/sysctl.h>
+#endif
+
+static uint64_t proc_physical_memory(void)
+{
+#if defined(__APPLE__)
+    uint64_t bytes = 0;
+    size_t len = sizeof(bytes);
+    if (sysctlbyname("hw.memsize", &bytes, &len, NULL, 0) == 0 && bytes) {
+        return bytes;
+    }
+#endif
+    return 0;
+}
+
+static uint64_t proc_free_memory(void)
+{
+#if defined(__APPLE__)
+    vm_size_t page = 0;
+    vm_statistics64_data_t vmstat;
+    mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+    if (host_page_size(mach_host_self(), &page) == KERN_SUCCESS
+        && host_statistics64(mach_host_self(), HOST_VM_INFO64,
+                             (host_info64_t)&vmstat, &count) == KERN_SUCCESS) {
+        return (uint64_t)(vmstat.free_count + vmstat.purgeable_count) * (uint64_t)page;
+    }
+#endif
+    return 0;
+}
+
+/* Never report zero: a guest that divides by it, or sizes a pool from it, is
+ * worse off than one given a conservative guess. */
+static void proc_memory_totals(uint64_t *total, uint64_t *freeb)
+{
+    uint64_t t = proc_physical_memory();
+    uint64_t f = proc_free_memory();
+    if (!t) t = 1024ull * 1024 * 1024;
+    if (!f) f = t / 4;
+    *total = t;
+    *freeb = f;
+}
+
+static int proc_write_file(const char *path, const char *key)
+{
+    FILE *f = fopen(path, "w");
+    if (!f) {
+        return 0;
+    }
+
+    if (!strcmp(key, "meminfo")) {
+        uint64_t total, freeb;
+        proc_memory_totals(&total, &freeb);
+        fprintf(f,
+                "MemTotal:       %llu kB\n"
+                "MemFree:        %llu kB\n"
+                "MemAvailable:   %llu kB\n"
+                "Buffers:               0 kB\n"
+                "Cached:                0 kB\n"
+                "SwapCached:            0 kB\n"
+                "Active:                0 kB\n"
+                "Inactive:              0 kB\n"
+                "SwapTotal:             0 kB\n"
+                "SwapFree:              0 kB\n",
+                (unsigned long long)(total / 1024),
+                (unsigned long long)(freeb / 1024),
+                (unsigned long long)(freeb / 1024));
+    } else if (!strcmp(key, "cpuinfo")) {
+        long n = sysconf(_SC_NPROCESSORS_ONLN);
+        if (n < 1) n = 1;
+        if (n > 64) n = 64;
+        for (long i = 0; i < n; i++) {
+            fprintf(f,
+                    "processor\t: %ld\n"
+                    "BogoMIPS\t: 38.40\n"
+                    "Features\t: fp asimd evtstrm aes pmull sha1 sha2 crc32\n"
+                    "CPU implementer\t: 0x41\n"
+                    "CPU architecture: 8\n"
+                    "CPU variant\t: 0x0\n"
+                    "CPU part\t: 0xd0b\n"
+                    "CPU revision\t: 0\n\n", i);
+        }
+    } else if (!strcmp(key, "self-status")) {
+        uint64_t rss = 0;
+#if defined(__APPLE__)
+        mach_task_basic_info_data_t info;
+        mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+        if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                      (task_info_t)&info, &count) == KERN_SUCCESS) {
+            rss = (uint64_t)info.resident_size;
+        }
+#endif
+        fprintf(f,
+                "Name:\tHusk\n"
+                "State:\tR (running)\n"
+                "Tgid:\t%ld\n"
+                "Pid:\t%ld\n"
+                "PPid:\t%ld\n"
+                "Threads:\t1\n"
+                "VmSize:\t%llu kB\n"
+                "VmRSS:\t%llu kB\n",
+                (long)getpid(), (long)getpid(), (long)getppid(),
+                (unsigned long long)(rss / 1024),
+                (unsigned long long)(rss / 1024));
+    } else {
+        fclose(f);
+        return 0;
+    }
+
+    fclose(f);
+    return 1;
+}
+
+FILE *fopen_shim(const char *path, const char *mode)
+{
+    /* Only a plain read of an absolute path is ours to answer. "r+"/"w"/"a" and
+     * relative paths go straight to Darwin, so nothing that writes is affected. */
+    bool plain_read = mode
+        && mode[0] == 'r'
+        && (mode[1] == '\0' || (mode[1] == 'b' && mode[2] == '\0'));
+    if (!path || !plain_read || path[0] != '/') {
+        return fopen(path, mode);
+    }
+
+    const char *key = NULL;
+    if (!strcmp(path, "/proc/meminfo"))           key = "meminfo";
+    else if (!strcmp(path, "/proc/cpuinfo"))      key = "cpuinfo";
+    else if (!strcmp(path, "/proc/self/status"))  key = "self-status";
+
+    if (!key) {
+        return fopen(path, mode);
+    }
+
+    const char *tmpdir = getenv("TMPDIR");
+    if (!tmpdir || !tmpdir[0]) {
+        tmpdir = "/tmp";
+    }
+
+    char file[512];
+    snprintf(file, sizeof(file), "%s/husk-proc-%s", tmpdir, key);
+
+    if (access(file, R_OK) != 0) {
+        if (!proc_write_file(file, key)) {
+            /* Could not synthesise one. Let the guest see the real failure rather
+             * than a half-written file that parses to nonsense. */
+            return fopen(path, mode);
+        }
+        tl_log_line("proc: %s has no iOS equivalent; serving a synthesised %s", path, file);
+    }
+    return fopen(file, mode);
+}
+
+/*
+ * bionic's struct sysinfo, filled with the host's real numbers.
+ *
+ * This used to return -1, on the reasoning that a zeroed struct reads as real
+ * information to a guest that acts on it. True -- but a failure reads as real
+ * information too, and worse: FAndroidPlatformMemory asks this for total RAM, gets
+ * nothing, and reports zero, which is one of the two ways the engine's crash
+ * allocator ended up sizing its pools to zero. The fields below are the ones a
+ * guest acts on.
+ *
+ * The layout is bionic's, 104 bytes on LP64: uptime, three loads, six ram fields,
+ * procs/pad, two "high" fields, mem_unit, then glibc's _f padding which is empty
+ * when long is 8 bytes.
+ */
+struct husk_sysinfo {
+    long          uptime;
+    unsigned long loads[3];
+    unsigned long totalram;
+    unsigned long freeram;
+    unsigned long sharedram;
+    unsigned long bufferram;
+    unsigned long totalswap;
+    unsigned long freeswap;
+    unsigned short procs;
+    unsigned short pad;
+    unsigned long totalhigh;
+    unsigned long freehigh;
+    unsigned int  mem_unit;
+    char          _f[20 - 2 * sizeof(long) - sizeof(int)];
+};
+
+static int sysinfo_shim(void *info)
+{
+    if (!info) {
+        return -1;
+    }
+    struct husk_sysinfo *si = (struct husk_sysinfo *)info;
+    memset(si, 0, sizeof(*si));
+
+    uint64_t total, freeb;
+    proc_memory_totals(&total, &freeb);
+
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+        si->uptime = (long)ts.tv_sec;
+    }
+    si->totalram  = (unsigned long)total;
+    si->freeram   = (unsigned long)freeb;
+    si->totalswap = 0;          /* iOS has no swap to report */
+    si->freeswap  = 0;
+    si->procs     = 1;
+    si->mem_unit  = 1;          /* the values above are already in bytes */
+    return 0;
+}
+
 static int sched_getaffinity_shim(int pid, size_t len, void *mask)
 { (void)pid; (void)len; (void)mask; return -1; }
 static int sched_setaffinity_shim(int pid, size_t len, const void *mask)
@@ -1609,6 +1832,11 @@ static const tl_export_entry g_exports[] = {
     { "pthread_mutexattr_gettype",  pthread_mutexattr_gettype_shim },
     { "pthread_once",               pthread_once_shim },
     { "sysconf",                    sysconf_shim },
+    { "sysinfo",                    sysinfo_shim },
+    /* /proc has no iOS equivalent, and the files below are read by name rather than
+     * discovered, so the only way to answer them is at fopen. */
+    { "fopen",                      fopen_shim },
+    { "fopen64",                    fopen_shim },
     { "dlopen",                     dlopen_shim },
     { "dlsym",                      dlsym_shim },
 
@@ -1667,7 +1895,6 @@ static const tl_export_entry g_exports[] = {
     { "memalign",                   memalign_shim },
     { "sincos",                     sincos_shim },
     { "sincosf",                    sincosf_shim },
-    { "sysinfo",                    sysinfo_shim },
     { "sched_getaffinity",          sched_getaffinity_shim },
     { "sched_setaffinity",          sched_setaffinity_shim },
     { "__sched_cpucount",           __sched_cpucount_shim },
