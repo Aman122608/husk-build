@@ -1991,26 +1991,32 @@ static void *attempt_thread(void *arg)
     if (g_run.activity.callbacks->onStart) {
         tl_log_line("lifecycle: onStart");
         g_run.activity.callbacks->onStart(&g_run.activity);
+        tl_log_line("lifecycle: onStart returned");
     }
     if (g_run.activity.callbacks->onResume) {
         tl_log_line("lifecycle: onResume");
         g_run.activity.callbacks->onResume(&g_run.activity);
+        tl_log_line("lifecycle: onResume returned");
     }
     if (g_run.activity.callbacks->onNativeWindowCreated) {
         tl_log_line("lifecycle: onNativeWindowCreated (window=%p)", g_run.window);
         g_run.activity.callbacks->onNativeWindowCreated(&g_run.activity, g_run.window);
+        tl_log_line("lifecycle: onNativeWindowCreated returned");
     }
     if (g_run.activity.callbacks->onWindowFocusChanged) {
         tl_log_line("lifecycle: onWindowFocusChanged(1)");
         g_run.activity.callbacks->onWindowFocusChanged(&g_run.activity, 1);
+        tl_log_line("lifecycle: onWindowFocusChanged returned");
     }
     if (g_run.activity.callbacks->onInputQueueCreated) {
         tl_log_line("lifecycle: onInputQueueCreated (queue=%p)", g_run.queue);
         g_run.activity.callbacks->onInputQueueCreated(&g_run.activity, g_run.queue);
+        tl_log_line("lifecycle: onInputQueueCreated returned");
     }
     if (g_run.activity.callbacks->onSurfaceChanged) {
         tl_log_line("lifecycle: onSurfaceChanged");
         g_run.activity.callbacks->onSurfaceChanged(&g_run.activity, g_run.window, 1);
+        tl_log_line("lifecycle: onSurfaceChanged returned");
     }
 
     /* The run loop. It watches the budget and the stop flag; a guest that

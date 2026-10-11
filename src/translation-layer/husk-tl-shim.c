@@ -770,6 +770,51 @@ int32_t AMotionEvent_getPointerId(const void *event, size_t idx)
     return (int32_t)idx;
 }
 
+/*
+ * The glue's whole lifecycle is single bytes down the message pipe, and nothing else in
+ * this run writes one byte. So instrument exactly that: whether the command byte was
+ * written, to which fd, and what came back -- and whether the game thread ever read it.
+ *
+ * Without this, a command written and never read looks identical to a command never
+ * written at all, which is the same invisible-failure trap as the constructor loop.
+ * Only len == 1 is logged, so the rest of the guest's I/O passes through untouched.
+ */
+ssize_t write_shim(int fd, const void *buf, size_t len)
+{
+    errno = 0;
+    ssize_t r = write(fd, buf, len);
+    int err = errno;
+    if (len == 1 && fd >= 0) {
+        tl_log_line("pipe cmd: write fd=%d byte=%#x -> %zd%s",
+                    fd, (unsigned)*(const unsigned char *)buf, r,
+                    r < 0 ? " (failed)" : "");
+        if (r < 0) tl_log_line("pipe cmd: write errno %d", err);
+    }
+    errno = err;
+    return r;
+}
+
+ssize_t read_shim(int fd, void *buf, size_t len)
+{
+    errno = 0;
+    ssize_t r = read(fd, buf, len);
+    int err = errno;
+    if (len == 1 && r == 1) {
+        tl_log_line("pipe cmd: read  fd=%d byte=%#x", fd,
+                    (unsigned)*(const unsigned char *)buf);
+    }
+    errno = err;
+    return r;
+}
+
+int pipe_shim(int fds[2])
+{
+    int r = pipe(fds);
+    if (r == 0) tl_log_line("pipe cmd: created read=%d write=%d", fds[0], fds[1]);
+    else        tl_log_line("pipe cmd: pipe failed, errno %d", errno);
+    return r;
+}
+
 /* -------------------------------------------------------- looper  ---- */
 
 /*
@@ -2448,6 +2493,11 @@ static const tl_export_entry g_exports[] = {
     { "pthread_cond_broadcast",     pthread_cond_broadcast_shim },
     { "sysconf",                    sysconf_shim },
     { "getpagesize",                getpagesize_shim },
+    /* The glue's command channel is one-byte writes to the message pipe; see the block
+     * above. These log only len == 1 and forward everything else untouched. */
+    { "write",                      write_shim },
+    { "read",                       read_shim },
+    { "pipe",                       pipe_shim },
     { "sysinfo",                    sysinfo_shim },
     /* /proc has no iOS equivalent, and the files below are read by name rather than
      * discovered, so the only way to answer them is at fopen. */
