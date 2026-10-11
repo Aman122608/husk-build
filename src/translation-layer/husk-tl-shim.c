@@ -1321,12 +1321,24 @@ int pthread_attr_getstack_shim(const void *guest, void **addr, size_t *size)
  * heap address as an attr structure -- a good way to get a nonsense stack size and a
  * thread that never starts. NULL still means "default attributes", which is the common
  * case and must keep working.
+ *
+ * Logged, because "the game thread never ran" and "the game thread ran and died" are
+ * indistinguishable from outside, and the difference matters: the first is a create
+ * failure, the second is a fault inside the entry.
  */
 int pthread_create_shim(void *thread, const void *guest_attr,
                         void *(*fn)(void *), void *arg)
 {
     pthread_attr_t *a = guest_attr ? *(pthread_attr_t **)(void *)guest_attr : NULL;
-    return pthread_create((pthread_t *)thread, a, fn, arg);
+    errno = 0;
+    int r = pthread_create((pthread_t *)thread, a, fn, arg);
+    int err = errno;
+    tl_log_line("thread: create entry=%p arg=%p attr=%p (guest %p) -> %d%s",
+                (void *)fn, arg, (void *)a, guest_attr, r,
+                r != 0 ? " (failed)" : "");
+    if (r != 0) tl_log_line("thread: create errno %d", err);
+    errno = err;
+    return r;
 }
 
 /* ---- pthread_rwlock_t: 56 on bionic, 200 on Darwin --------------------- */
