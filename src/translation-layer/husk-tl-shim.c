@@ -815,6 +815,97 @@ int pipe_shim(int fds[2])
     return r;
 }
 
+/* ---------------------------------------------------- choreographer  ---- */
+
+/*
+ * AChoreographer is Android's vsync API, and it is how an Android build drives its render
+ * loop: the engine registers a callback that renders one frame and re-arms itself, so the
+ * loop runs at the display's refresh rate. With dlsym returning NULL for it there is no
+ * frame loop at all -- which is exactly what the run showed: every lifecycle command
+ * delivered and read, all six callbacks returned, no crash, and zero frames for 42 seconds.
+ *
+ * The callback must run on the thread that posted it, not on a timer thread of our own.
+ * A GL context is thread-affine, so rendering a frame from a different thread than the one
+ * that made the context current would produce no output at all -- and would look like a
+ * renderer bug rather than a threading one.
+ *
+ * That thread is already inside ALooper_pollAll (that is the glue's loop), so the frame
+ * callback is delivered from pollAll: it clamps its timeout to the frame deadline, and when
+ * the deadline arrives it runs the callback and returns ALOOPER_POLL_CALLBACK, which the
+ * glue treats as "a callback ran, keep polling". This mirrors what the NDK's choreographer
+ * does with the calling thread's looper.
+ */
+#define ALOOPER_POLL_CALLBACK     (-2)
+#define TL_FRAME_NS               16666667L      /* 60 Hz */
+
+static __thread void (*tl_frame_cb)(long, void *);
+static __thread void  *tl_frame_data;
+static __thread int    tl_frame_armed;           /* a frame is pending on this thread */
+static __thread long   tl_frame_due_ns;
+
+static long tl_now_ns(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (long)((long long)t.tv_sec * 1000000000LL + t.tv_nsec);
+}
+
+/* Run a due frame callback on this thread. Returns true if one ran. */
+static int tl_frame_service(void)
+{
+    if (!tl_frame_armed || !tl_frame_cb) return 0;
+    long now = tl_now_ns();
+    if (now < tl_frame_due_ns) return 0;
+    void (*cb)(long, void *) = tl_frame_cb;
+    void *data = tl_frame_data;
+    tl_frame_armed = 0;                          /* the callback's own re-arm schedules the next */
+    tl_frame_due_ns = now + TL_FRAME_NS;
+    cb(now, data);
+    return 1;
+}
+
+void *AChoreographer_getInstance(void)
+{
+    static char token;                           /* a stable, non-NULL instance */
+    return &token;
+}
+
+void AChoreographer_postFrameCallback(void *ch, void (*cb)(long, void *), void *data)
+{
+    (void)ch;
+    if (!cb) return;
+    if (!tl_frame_armed) tl_frame_due_ns = tl_now_ns() + TL_FRAME_NS;
+    tl_frame_cb = cb;
+    tl_frame_data = data;
+    tl_frame_armed = 1;
+    if (!tl_frame_cb) return;
+    static int said;
+    if (!said) {
+        said = 1;
+        tl_log_line("frame: AChoreographer armed on thread %p -- driving a 60 Hz render loop",
+                    (void *)pthread_self());
+    }
+}
+
+void AChoreographer_postFrameCallbackDelayed(void *ch, void (*cb)(long, void *),
+                                             void *data, long delay_ms)
+{
+    (void)delay_ms;      /* the callback re-arms every frame; this only shifts the first one */
+    if (!tl_frame_armed) tl_frame_due_ns = tl_now_ns() + (delay_ms > 0 ? delay_ms * 1000000L : 0);
+    tl_frame_cb = cb;
+    tl_frame_data = data;
+    tl_frame_armed = cb ? 1 : 0;
+}
+
+/* Input axes are read for stick deflection and touch pressure. Zero is the neutral value
+ * and nothing about the lifecycle or rendering depends on it, so it is answered as neutral
+ * rather than left as a NULL that becomes a crash at the call site. */
+float AMotionEvent_getAxisValue(void *event, int axis, size_t pointer_index)
+{
+    (void)event; (void)axis; (void)pointer_index;
+    return 0.0f;
+}
+
 /* -------------------------------------------------------- looper  ---- */
 
 /*
@@ -893,16 +984,26 @@ int ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void **out_dat
     int trace = (seen < 6);
     if (trace) seen++;
 
+    /* A pending frame callback must wake this poll, or the render loop would only advance
+     * when something else happened to arrive. Clamp the wait to the frame deadline. */
+    int wait = timeout_ms;
+    if (tl_frame_armed && tl_frame_cb) {
+        long until_ms = (tl_frame_due_ns - tl_now_ns()) / 1000000L;
+        if (until_ms < 0) until_ms = 0;
+        if (wait < 0 || until_ms < wait) wait = (int)until_ms;
+    }
+
     if (!l || l->n == 0) {
         if (trace) tl_log_line("looper: pollAll timeout_ms=%d on EMPTY looper %p (thread %p)",
                                timeout_ms, (void *)l, (void *)pthread_self());
-        if (timeout_ms > 0) {
+        if (wait < 0) wait = 100;            /* a bare looper with no deadline: do not spin */
+        if (wait > 0) {
             struct timespec t;
-            t.tv_sec = timeout_ms / 1000;
-            t.tv_nsec = (long)(timeout_ms % 1000) * 1000000L;
+            t.tv_sec = wait / 1000;
+            t.tv_nsec = (long)(wait % 1000) * 1000000L;
             nanosleep(&t, NULL);
         }
-        return ALOOPER_POLL_TIMEOUT;
+        return tl_frame_service() ? ALOOPER_POLL_CALLBACK : ALOOPER_POLL_TIMEOUT;
     }
 
     struct pollfd p[TL_LOOPER_MAX];
@@ -915,14 +1016,17 @@ int ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void **out_dat
     }
 
     /* timeout_ms = -1 blocks, which is exactly what the glue asks for. */
-    int r = poll(p, (nfds_t)l->n, timeout_ms);
+    int r = poll(p, (nfds_t)l->n, wait);
     if (r < 0) {
         tl_log_line("looper: pollAll poll() failed errno=%d (thread %p)", errno, (void *)pthread_self());
         return ALOOPER_POLL_ERROR;
     }
     if (r == 0) {
+        /* Nothing on an fd -- but a frame may be due, which is the whole point of the
+         * clamped timeout above. */
+        if (tl_frame_service()) return ALOOPER_POLL_CALLBACK;
         if (trace) tl_log_line("looper: pollAll timeout after %d ms on %d fd(s) (thread %p)",
-                               timeout_ms, l->n, (void *)pthread_self());
+                               wait, l->n, (void *)pthread_self());
         return ALOOPER_POLL_TIMEOUT;
     }
 
@@ -2484,6 +2588,12 @@ static const tl_export_entry g_exports[] = {
     { "ALooper_acquire",            ALooper_acquire },
     { "ALooper_release",            ALooper_release },
     { "ALooper_wake",               ALooper_wake },
+    /* AChoreographer: the frame loop. See the block above for why it must run the callback
+     * on the posting thread rather than on a timer thread of our own. */
+    { "AChoreographer_getInstance",   AChoreographer_getInstance },
+    { "AChoreographer_postFrameCallback", AChoreographer_postFrameCallback },
+    { "AChoreographer_postFrameCallbackDelayed", AChoreographer_postFrameCallbackDelayed },
+    { "AMotionEvent_getAxisValue",    AMotionEvent_getAxisValue },
     { "ANativeActivity_setWindowFormat", ANativeActivity_setWindowFormat },
 
     /* assets */
