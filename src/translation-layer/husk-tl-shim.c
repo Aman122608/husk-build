@@ -1617,17 +1617,40 @@ long sysconf_shim(int name)
  * guest that read 4096 here would misalign every munmap the arena makes. */
 long getpagesize_shim(void) { return 16384; }
 
+/*
+ * dlopen has to succeed, because that is how an Android engine reaches the NDK.
+ *
+ * libUE4.so's threads open "libandroid.so" at startup and then dlsym the platform entry
+ * points (ANativeWindow_*, ALooper_*, the EGL family) out of it. Refusing the open means
+ * the engine's platform layer never initialises -- it receives INIT_WINDOW and
+ * GAINED_FOCUS, and then sits at zero frames indefinitely. That is exactly what the run
+ * showed: every lifecycle command delivered and read, ANGLE loaded, and not one frame.
+ *
+ * The handle does not have to mean anything, because dlsym_shim ignores it and resolves
+ * the name against the shim table. It only has to be non-NULL: the guest checks the
+ * result, and NULL is the one answer that stops it dead. A stable sentinel is returned
+ * for every name, and each request is logged so the next run shows what the engine looks
+ * for -- an engine that gets a handle for a library that is not really there will fail
+ * later and less legibly, so the log is what makes that visible.
+ */
 void *dlopen_shim(const char *path, int mode)
 {
     (void)mode;
-    tl_log_line("shim: guest asked to dlopen %s -- not provided", path ? path : "(self)");
-    return NULL;
+    static char tl_dl_handle;      /* a stable, non-NULL token */
+    tl_log_line("shim: dlopen(%s) -> the shim table", path ? path : "(self)");
+    return &tl_dl_handle;
 }
 
 void *dlsym_shim(void *handle, const char *name)
 {
     (void)handle;
-    return tl_shim_find(name);
+    void *p = tl_shim_find(name);
+    /* Then the host, for anything the shim does not implement itself: a guest asking
+     * for a system symbol it expects to exist is better served by the real one than by
+     * a NULL that turns into a crash at the call site. */
+    if (!p) p = dlsym(RTLD_DEFAULT, name);
+    if (!p) tl_log_line("shim: dlsym(%s) -> not found", name ? name : "(null)");
+    return p;
 }
 
 extern int *__error(void);
