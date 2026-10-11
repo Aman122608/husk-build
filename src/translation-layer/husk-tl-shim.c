@@ -2628,8 +2628,89 @@ static int proc_write_file(const char *path, const char *key)
     return 1;
 }
 
+/*
+ * The guest's file I/O, made visible and made correct.
+ *
+ * Two separate problems in one place. First: bionic's O_* values are not Darwin's, and the
+ * mismatch is silent -- open(path, O_CREAT) sets a bit Darwin does not treat as O_CREAT, so
+ * the open fails with ENOENT and the guest sees a missing file rather than a wrong flag.
+ * Second: none of open/openat/access/opendir was shimmed, so every path the engine asked for
+ * went unrecorded, and an engine that cannot find its data is indistinguishable from one that
+ * never looked.
+ */
+static int open_flags_to_darwin(int f)
+{
+    int d = f & 3;                              /* O_RDONLY/O_WRONLY/O_RDWR are the same */
+    if (f & 0x40)                             d |= 0x200;      /* O_CREAT     0x40 -> 0x200 */
+    if (f & 0x80)                             d |= 0x800;      /* O_EXCL      0x80 -> 0x800 */
+    if (f & 0x100)                            d |= 0x20000;    /* O_NOCTTY   0x100 -> 0x20000 */
+    if (f & 0x200)                            d |= 0x400;      /* O_TRUNC    0x200 -> 0x400 */
+    if (f & 0x400)                            d |= 0x8;        /* O_APPEND   0x400 -> 0x8 */
+    if (f & 0x800)                            d |= 0x4;        /* O_NONBLOCK 0x800 -> 0x4 */
+    if (f & 0x10000)                          d |= 0x100000;   /* O_DIRECTORY 0x10000 -> 0x100000 */
+    if (f & 0x20000)                          d |= 0x100;      /* O_NOFOLLOW 0x20000 -> 0x100 */
+    if (f & 0x80000)                          d |= 0x1000000;  /* O_CLOEXEC  0x80000 -> 0x1000000 */
+    return d;
+}
+
+static void note_file(const char *what, const char *path, int r)
+{
+    static int shown;
+    if (shown >= 500) return;
+    shown++;
+    tl_log_line("file: %s(\"%s\") -> %d", what, path ? path : "(null)", r);
+}
+
+int open_shim(const char *path, int flags, int mode)
+{
+    int dflags = open_flags_to_darwin(flags);
+    /* mode is only meaningful with O_CREAT, and the caller only passes it then, so reading
+     * it unconditionally is safe even though the guest's prototype is variadic. */
+    errno = 0;
+    int fd = (dflags & 0x200) ? open(path, dflags, (mode_t)mode) : open(path, dflags);
+    static int shown;
+    if (shown < 500) {
+        shown++;
+        tl_log_line("file: open(\"%s\", %#x -> %#x) -> %d%s",
+                    path ? path : "(null)", flags, dflags, fd,
+                    fd < 0 ? " (failed)" : "");
+    }
+    return fd;
+}
+
+int openat_shim(int dirfd, const char *path, int flags, int mode)
+{
+    int dflags = open_flags_to_darwin(flags);
+    errno = 0;
+    int fd = (dflags & 0x200) ? openat(dirfd, path, dflags, (mode_t)mode)
+                              : openat(dirfd, path, dflags);
+    note_file("openat", path, fd);
+    return fd;
+}
+
+int access_shim(const char *path, int mode)
+{
+    int r = access(path, mode);
+    note_file("access", path, r);
+    return r;
+}
+
+void *opendir_shim(const char *path)
+{
+    void *d = opendir(path);
+    note_file("opendir", path, d ? 0 : -1);
+    return d;
+}
+
 FILE *fopen_shim(const char *path, const char *mode)
 {
+    /* Every open, not just /proc: the engine's log file and its data files both arrive here,
+     * and the paths are the only view we have into a build whose logging is compiled out. */
+    static int shown;
+    if (path && shown < 500) {
+        shown++;
+        tl_log_line("file: fopen(\"%s\", \"%s\")", path, mode ? mode : "?");
+    }
     /* Only a plain read of an absolute path is ours to answer. "r+"/"w"/"a" and
      * relative paths go straight to Darwin, so nothing that writes is affected. */
     bool plain_read = mode
@@ -3039,6 +3120,10 @@ static const tl_export_entry g_exports[] = {
     /* /proc has no iOS equivalent, and the files below are read by name rather than
      * discovered, so the only way to answer them is at fopen. */
     { "fopen",                      fopen_shim },
+    { "open",                       open_shim },
+    { "openat",                     openat_shim },
+    { "access",                     access_shim },
+    { "opendir",                    opendir_shim },
     { "fopen64",                    fopen_shim },
     /* Logging passthroughs, not adapters: the guest's arena allocator is the
      * current suspect and its mmap is how the failure becomes visible. */
