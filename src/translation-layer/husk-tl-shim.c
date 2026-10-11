@@ -1333,6 +1333,68 @@ static void sincos_shim(double x, double *s, double *c)
 static void sincosf_shim(float x, float *s, float *c)
 { if (s) *s = sinf(x); if (c) *c = cosf(x); }
 
+/* ------------------------------------------------------ mmap, with notes --- */
+
+/*
+ * mmap and munmap as logging passthroughs.
+ *
+ * FAndroidPlatformMemory::BinnedAllocFromOS keeps one large mapped region and
+ * carves slices out of it. When UE4's crash allocator asked it for its pool the
+ * answer was NULL; the constructor noticed, logged an error, and then called
+ * InitializeSmallPools() on the null anyway. So the allocation is the bug and
+ * this is how to see it: the size, the flags, and the errno when it fails.
+ * Android accepts flag bits Darwin does not, and a size computed from a rodata
+ * table can come out absurd, so both are worth a line each.
+ *
+ * Not every call is logged -- a guest mmaps constantly and a log nobody can read
+ * is worse than none. Failures always; successes only when large enough to be a
+ * real arena rather than a stray page.
+ */
+
+#include <sys/mman.h>
+
+static void mmap_prot_str(int prot, char *out, size_t len)
+{
+    snprintf(out, len, "%s%s%s",
+             (prot & PROT_READ)  ? "r" : "-",
+             (prot & PROT_WRITE) ? "w" : "-",
+             (prot & PROT_EXEC)  ? "x" : "-");
+}
+
+void *mmap_shim(void *addr, size_t len, int prot, int flags, int fd, long off)
+{
+    errno = 0;
+    void *p = mmap(addr, len, prot, flags, fd, (off_t)off);
+    int err = errno;
+
+    char pr[4];
+    mmap_prot_str(prot, pr, sizeof(pr));
+
+    if (!p) {
+        tl_log_line("mmap: addr=%p len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld "
+                    "-> NULL, errno %d", addr, len, len / 1024, pr,
+                    (unsigned)flags, fd, off, err);
+    } else if (len >= (256u * 1024u)) {
+        tl_log_line("mmap: addr=%p len=%zu (%zu KiB) prot=%s flags=%#x fd=%d off=%ld -> %p",
+                    addr, len, len / 1024, pr, (unsigned)flags, fd, off, p);
+    }
+
+    errno = err;
+    return p;
+}
+
+int munmap_shim(void *addr, size_t len)
+{
+    errno = 0;
+    int rc = munmap(addr, len);
+    int err = errno;
+    if (rc != 0) {
+        tl_log_line("munmap: addr=%p len=%zu -> %d (errno %d)", addr, len, rc, err);
+    }
+    errno = err;
+    return rc;
+}
+
 /* ------------------------------------------------------------------ /proc --- */
 
 /*
@@ -1837,6 +1899,11 @@ static const tl_export_entry g_exports[] = {
      * discovered, so the only way to answer them is at fopen. */
     { "fopen",                      fopen_shim },
     { "fopen64",                    fopen_shim },
+    /* Logging passthroughs, not adapters: the guest's arena allocator is the
+     * current suspect and its mmap is how the failure becomes visible. */
+    { "mmap",                       mmap_shim },
+    { "mmap64",                     mmap_shim },
+    { "munmap",                     munmap_shim },
     { "dlopen",                     dlopen_shim },
     { "dlsym",                      dlsym_shim },
 
