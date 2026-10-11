@@ -232,6 +232,114 @@ static int64_t jni_GetDirectBufferCapacity_impl(void *env, void *buf)
     return b ? b->cap : 0;
 }
 
+/*
+ * A minimal Java surface: enough for the strings UE4 fetches over JNI.
+ *
+ * On Android a UE4 build asks Java for its command line, then reads the characters back:
+ * FindClass, GetMethodID, CallObjectMethod, GetStringUTFChars. Every one of those returned
+ * NULL here, so the engine received an EMPTY command line -- no project, no mount point.
+ * That is why it never opened a single asset: AAssetManager_open has not appeared in any log
+ * because nothing ever asked, and the game's 819 MB of data in assets/main.obb.png was never
+ * looked for.
+ *
+ * So hand back real, non-NULL objects, and make the one thing the engine actually reads --
+ * the characters of a string -- return a real C string. The command line comes from
+ * assets/UE4CommandLine.txt, which the APK ships for exactly this purpose.
+ */
+typedef struct { char *utf; int kind; } tl_jobj;
+
+static tl_jobj g_jclass  = { NULL, 1 };     /* FindClass result */
+static tl_jobj g_jmethod = { NULL, 2 };     /* GetMethodID result */
+
+static char g_cmdline[1024];
+static int  g_cmdline_loaded;
+
+/* assets/UE4CommandLine.txt, or empty if the APK has none. */
+static const char *jni_command_line(void)
+{
+    if (!g_cmdline_loaded) {
+        g_cmdline_loaded = 1;
+        void  *bytes = NULL;
+        size_t len = 0;
+        if (tl_apk_read_asset("UE4CommandLine.txt", &bytes, &len) && bytes) {
+            size_t n = len < sizeof(g_cmdline) - 1 ? len : sizeof(g_cmdline) - 1;
+            memcpy(g_cmdline, bytes, n);
+            g_cmdline[n] = 0;
+            /* Strip the trailing newline: the guest passes this straight to its parser. */
+            while (n && (g_cmdline[n - 1] == '\n' || g_cmdline[n - 1] == '\r')) {
+                g_cmdline[--n] = 0;
+            }
+            free(bytes);
+        } else {
+            g_cmdline[0] = 0;
+        }
+        tl_log_line("jni: command line = \"%s\"", g_cmdline);
+    }
+    return g_cmdline;
+}
+
+static void *jni_obj_new(const char *utf, int kind)
+{
+    tl_jobj *o = (tl_jobj *)calloc(1, sizeof *o);
+    if (!o) return NULL;
+    o->kind = kind;
+    o->utf = utf ? strdup(utf) : NULL;
+    return o;
+}
+
+/* FindClass / GetObjectClass / GetMethodID / GetStaticMethodID: non-NULL tokens. Nothing
+ * dereferences them -- they are only ever handed back to us. */
+static void *jni_FindClass_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)b; (void)c; (void)d; (void)e; (void)f;
+    return &g_jclass;
+}
+static void *jni_GetMethodID_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)b; (void)c; (void)d; (void)e; (void)f;
+    return &g_jmethod;
+}
+/* Object-returning calls: the only object the engine reads back is a string, and the only
+ * string whose value matters is the command line. */
+static void *jni_CallObjectMethod_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
+    return jni_obj_new(jni_command_line(), 3);
+}
+static void *jni_NewStringUTF_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)a; (void)c; (void)d; (void)e; (void)f;
+    return jni_obj_new((const char *)b, 3);
+}
+static void *jni_GetStringUTFChars_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)a; (void)d; (void)e; (void)f;
+    if (c) *(unsigned char *)c = 0;             /* not a copy: ours lives with the object */
+    tl_jobj *o = (tl_jobj *)b;
+    return (void *)((o && o->utf) ? o->utf : "");
+}
+static void *jni_GetStringUTFLength_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)a; (void)c; (void)d; (void)e; (void)f;
+    tl_jobj *o = (tl_jobj *)b;
+    return (void *)(intptr_t)((o && o->utf) ? (int)strlen(o->utf) : 0);
+}
+static void *jni_identity_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)a; (void)c; (void)d; (void)e; (void)f;
+    return b;                                   /* NewGlobalRef / NewLocalRef */
+}
+static void *jni_ret_true_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
+    return (void *)1;                           /* IsInstanceOf */
+}
+static void *jni_noop_impl(void *a, void *b, void *c, void *d, void *e, void *f)
+{
+    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
+    return NULL;                                /* ReleaseStringUTFChars / DeleteLocalRef */
+}
+
 /* Generic stub: log the entry's name and return a failure the caller can
  * see (0/false/NULL are all "no" in JNI's conventions). */
 static int jni_stub_log(const char *name)
@@ -275,6 +383,28 @@ static void jni_env_table_fill(void)
     t[229] = (void *)jni_NewDirectByteBuffer_impl;
     t[230] = (void *)jni_GetDirectBufferAddress_impl;
     t[231] = (void *)jni_GetDirectBufferCapacity_impl;
+
+    /* The Java surface UE4 actually reads: objects non-NULL, and the characters of a
+     * string a real C string. See jni_command_line. */
+    t[6]   = (void *)jni_FindClass_impl;
+    t[21]  = (void *)jni_identity_impl;          /* NewGlobalRef */
+    t[23]  = (void *)jni_noop_impl;              /* DeleteLocalRef */
+    t[25]  = (void *)jni_identity_impl;          /* NewLocalRef */
+    t[31]  = (void *)jni_FindClass_impl;         /* GetObjectClass */
+    t[32]  = (void *)jni_ret_true_impl;          /* IsInstanceOf */
+    t[33]  = (void *)jni_GetMethodID_impl;
+    t[34]  = (void *)jni_CallObjectMethod_impl;
+    t[35]  = (void *)jni_CallObjectMethod_impl;  /* CallObjectMethodV */
+    t[36]  = (void *)jni_CallObjectMethod_impl;  /* CallObjectMethodA */
+    t[113] = (void *)jni_GetMethodID_impl;       /* GetStaticMethodID */
+    t[114] = (void *)jni_CallObjectMethod_impl;  /* CallStaticObjectMethod */
+    t[115] = (void *)jni_CallObjectMethod_impl;
+    t[116] = (void *)jni_CallObjectMethod_impl;
+    t[167] = (void *)jni_NewStringUTF_impl;
+    t[168] = (void *)jni_GetStringUTFLength_impl;
+    t[169] = (void *)jni_GetStringUTFChars_impl;
+    t[170] = (void *)jni_noop_impl;              /* ReleaseStringUTFChars */
+    t[17]  = (void *)jni_noop_impl;              /* ExceptionClear */
 }
 
 _Static_assert(sizeof(g_env_table) / sizeof(g_env_table[0]) == 233,
