@@ -1621,6 +1621,53 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
         unmap_lib(&(tl_lib){ .base = base, .npages = npages, .page_flags = flags, .is_stikdebug = is_stikdebug });
         return false;
     }
+
+    /*
+     * Verify the zero-fill actually landed.
+     *
+     * The tail of a segment past its file size is zeroed above, and the guest
+     * reads it as .bss. A page that keeps a non-zero value there is a page the
+     * guest reads as garbage, and it is completely silent -- the engine simply
+     * behaves as though a global had been set, which is indistinguishable from
+     * the global having been set.
+     *
+     * Checked rather than assumed. The arithmetic said the memset covered the
+     * arena allocator's state, and yet by elimination that state is non-zero
+     * before anything could have written it: the mmap entry point is reached by
+     * straight-line code from a branch that only a zero can take, and the call
+     * never arrives. So measure it.
+     */
+    for (int i = 0; i < nloads; i++) {
+        const uint8_t *ph = (const uint8_t *)loads[i];
+        uint64_t v = ld64(ph + 16), fo = ld64(ph + 8);
+        uint64_t fs = ld64(ph + 32), ms = ld64(ph + 40);
+        if (fo > flen || fs > flen - fo || ms <= fs) {
+            continue;
+        }
+        uint64_t seg_off = v - base_vaddr;
+        size_t sp = (size_t)(seg_off / TL_PAGE);
+        uint8_t *dst = (sp < npages && (flags[sp] & TL_PAGE_CARVED))
+                     ? (base + seg_off)
+                     : (base_rw ? base_rw + seg_off : base + seg_off);
+        uint64_t nz = 0, first = 0;
+        for (uint64_t k = fs; k < ms; k++) {
+            if (dst[k]) {
+                if (!nz) first = k;
+                nz++;
+            }
+        }
+        if (nz) {
+            tl_log_line("bss: %s segment %d: %llu non-zero byte(s) in its zero-filled tail, "
+                        "first at vaddr 0x%llx -- the zero-fill did not reach it",
+                        name, i, (unsigned long long)nz,
+                        (unsigned long long)(v + first));
+        } else if (ms > fs) {
+            tl_log_line("bss: %s segment %d: zero-filled tail verified (%llu bytes at 0x%llx)",
+                        name, i, (unsigned long long)(ms - fs),
+                        (unsigned long long)(v + fs));
+        }
+    }
+
     patch_guest_code(base_rw, base, npages * TL_PAGE, flags, npages,
                      is_stikdebug, (ptrdiff_t)(base_rw - base));
     jit_icache(base, npages * TL_PAGE);
