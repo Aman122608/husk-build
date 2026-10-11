@@ -820,17 +820,72 @@ static void *lib_lookup(const tl_lib *L, const char *name)
  * its own dependencies), then the shim. */
 void *tl_shim_find(const char *name);
 
+/*
+ * A short watchlist of names worth a line at resolution time.
+ *
+ * Set when an import is present in the library, resolves to something, and the
+ * guest still behaves as though it had not -- the point being to see which of the
+ * three places it came from: an earlier library, the shim, or Darwin. mmap and
+ * fopen are on it because fopen demonstrably reaches the shim and mmap, in the
+ * same table, demonstrably does not; the guard primitives because the function
+ * that fails branches on a guard byte before it ever reaches its mmap.
+ */
+static bool watch_import(const char *name)
+{
+    static const char *const watched[] = {
+        "mmap", "munmap", "fopen", "fopen64", "open",
+        "__cxa_guard_acquire", "__cxa_guard_release", "__cxa_atexit",
+        "pthread_mutex_lock", "sysconf", "sbrk", "mprotect",
+    };
+    for (size_t i = 0; i < sizeof(watched) / sizeof(watched[0]); i++) {
+        if (!strcmp(name, watched[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* One line per watched name, not per relocation: a single import can back dozens
+ * of slots and the repetition would bury the answer. */
+static bool watch_seen(const char *name)
+{
+    static char seen[24][64];
+    static size_t n;
+    for (size_t i = 0; i < n; i++) {
+        if (!strcmp(seen[i], name)) {
+            return true;
+        }
+    }
+    if (n < sizeof(seen) / sizeof(seen[0])) {
+        snprintf(seen[n], sizeof(seen[0]), "%s", name);
+        n++;
+    }
+    return false;
+}
+
 static void *resolve(const char *name, bool *weak)
 {
+    bool watch = watch_import(name) && !watch_seen(name);
+
     for (int i = 0; i < g_run.nlibs; i++) {
         void *a = lib_lookup(&g_run.libs[i], name);
         if (a) {
+            if (watch) {
+                tl_log_line("resolve: %s -> %s (a guest library, which takes priority)",
+                            name, g_run.libs[i].name);
+            }
             return a;
         }
     }
     void *shim = tl_shim_find(name);
     if (shim) {
+        if (watch) {
+            tl_log_line("resolve: %s -> the shim at %p", name, shim);
+        }
         return shim;
+    }
+    if (watch) {
+        tl_log_line("resolve: %s -> NOTHING (the guest will call a null pointer)", name);
     }
     (void)weak;
     return NULL;
