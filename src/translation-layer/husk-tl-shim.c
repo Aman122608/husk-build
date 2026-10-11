@@ -1069,6 +1069,177 @@ int pthread_mutexattr_gettype_shim(const void *a, int *type)
     return 0;
 }
 
+/*
+ * The rest of the pthread types are the same trap, and there are five of them.
+ *
+ * bionic and Darwin disagree on the SIZE of most pthread objects, and a guest embeds
+ * bionic's in its own structs and stack frames. Handing that memory to Darwin lets it
+ * write past the end, and the overflow lands on whatever the guest put next -- which is
+ * how an 8-byte pthread_key_t store into a 4-byte slot at sp+4 destroyed the stack
+ * canary at sp+8 in libUE4.so's constructor 247, and the process died in
+ * __stack_chk_fail through a signal the JIT guard owns, logging nothing.
+ *
+ *   type                 bionic  Darwin
+ *   pthread_key_t             4       8     <- the value fits; widen and truncate
+ *   pthread_attr_t           52      64
+ *   pthread_rwlock_t         56     200
+ *   pthread_condattr_t        8      16
+ *   pthread_rwlockattr_t      8      24
+ *   pthread_cond_t           48      48     <- equal, so conds pass straight through
+ *
+ * For the objects, the guest's own bytes are never handed to Darwin. They hold a
+ * POINTER to a heap-allocated Darwin object instead, which has a pleasant property: a
+ * statically initialised object (PTHREAD_RWLOCK_INITIALIZER) is all zeros, i.e. a NULL
+ * pointer, which reads as "not created yet", so lazy creation on first use falls out
+ * for free. Creation is done with a compare-and-swap on the slot, because two threads
+ * racing to create it would otherwise end up locking two different rwlocks and the
+ * mutual exclusion would silently not exist.
+ */
+static void *tl_side_create(void *guest, size_t bytes, void (*init)(void *))
+{
+    void *p = *(void **)guest;
+    if (p) return p;
+    void *n = calloc(1, bytes);
+    if (!n) return NULL;
+    if (init) init(n);
+    /* Losing the race means another thread installed its own object first; ours is
+     * unused and must be discarded, or the two would never see each other. */
+    if (!__sync_bool_compare_and_swap((void **)guest, NULL, n)) {
+        free(n);
+        return *(void **)guest;
+    }
+    return n;
+}
+
+/* ---- pthread_key_t: 4 bytes on bionic, 8 on Darwin ---------------------- */
+
+int pthread_key_create_shim(int *key, void (*destructor)(void *))
+{
+    pthread_key_t real = 0;
+    int r = pthread_key_create(&real, destructor);
+    if (r == 0 && key) *key = (int)real;      /* four bytes, never eight */
+    return r;
+}
+int pthread_key_delete_shim(int key)      { return pthread_key_delete((pthread_key_t)key); }
+int pthread_setspecific_shim(int key, const void *value)
+{ return pthread_setspecific((pthread_key_t)key, value); }
+void *pthread_getspecific_shim(int key)   { return pthread_getspecific((pthread_key_t)key); }
+
+/* ---- pthread_attr_t: 52 on bionic, 64 on Darwin ------------------------ */
+
+static void attr_init0(void *p) { pthread_attr_init((pthread_attr_t *)p); }
+
+int pthread_attr_init_shim(void *guest)
+{
+    if (!guest) return EINVAL;
+    return tl_side_create(guest, sizeof(pthread_attr_t), attr_init0) ? 0 : ENOMEM;
+}
+int pthread_attr_destroy_shim(void *guest)
+{
+    if (!guest) return EINVAL;
+    pthread_attr_t *p = *(pthread_attr_t **)guest;
+    if (p) { pthread_attr_destroy(p); free(p); *(void **)guest = NULL; }
+    return 0;
+}
+int pthread_attr_setdetachstate_shim(void *guest, int v)
+{
+    pthread_attr_t *p = guest ? tl_side_create(guest, sizeof(pthread_attr_t), attr_init0) : NULL;
+    return p ? pthread_attr_setdetachstate(p, v) : EINVAL;
+}
+int pthread_attr_setstacksize_shim(void *guest, size_t v)
+{
+    pthread_attr_t *p = guest ? tl_side_create(guest, sizeof(pthread_attr_t), attr_init0) : NULL;
+    return p ? pthread_attr_setstacksize(p, v) : EINVAL;
+}
+/* bionic has no scheduling policy on the attr that iOS acts on; accepting it keeps the
+ * guest's sequence intact instead of failing a call it does not check. */
+int pthread_attr_setschedpolicy_shim(void *guest, int v)
+{
+    (void)guest; (void)v;
+    return 0;
+}
+int pthread_attr_getstack_shim(const void *guest, void **addr, size_t *size)
+{
+    if (!guest) return EINVAL;
+    pthread_attr_t *p = *(pthread_attr_t **)(void *)guest;
+    if (!p) return EINVAL;
+    return pthread_attr_getstack(p, addr, size);
+}
+
+/* ---- pthread_rwlock_t: 56 on bionic, 200 on Darwin --------------------- */
+
+static void rwlock_init0(void *p) { pthread_rwlock_init((pthread_rwlock_t *)p, NULL); }
+
+static pthread_rwlock_t *rwlock_of(void *guest)
+{
+    return guest ? tl_side_create(guest, sizeof(pthread_rwlock_t), rwlock_init0) : NULL;
+}
+int pthread_rwlock_init_shim(void *guest, const void *attr)
+{
+    (void)attr;                    /* bionic's rwlockattr is not used by these guests */
+    return rwlock_of(guest) ? 0 : ENOMEM;
+}
+int pthread_rwlock_destroy_shim(void *guest)
+{
+    if (!guest) return EINVAL;
+    pthread_rwlock_t *p = *(pthread_rwlock_t **)guest;
+    if (p) { pthread_rwlock_destroy(p); free(p); *(void **)guest = NULL; }
+    return 0;
+}
+int pthread_rwlock_rdlock_shim(void *guest)
+{
+    pthread_rwlock_t *p = rwlock_of(guest);
+    return p ? pthread_rwlock_rdlock(p) : EINVAL;
+}
+int pthread_rwlock_wrlock_shim(void *guest)
+{
+    pthread_rwlock_t *p = rwlock_of(guest);
+    return p ? pthread_rwlock_wrlock(p) : EINVAL;
+}
+int pthread_rwlock_unlock_shim(void *guest)
+{
+    pthread_rwlock_t *p = rwlock_of(guest);
+    return p ? pthread_rwlock_unlock(p) : EINVAL;
+}
+
+/* ---- pthread_condattr_t: 8 on bionic, 16 on Darwin -------------------- */
+
+static void condattr_init0(void *p) { pthread_condattr_init((pthread_condattr_t *)p); }
+
+int pthread_condattr_init_shim(void *guest)
+{
+    if (!guest) return EINVAL;
+    return tl_side_create(guest, sizeof(pthread_condattr_t), condattr_init0) ? 0 : ENOMEM;
+}
+int pthread_condattr_destroy_shim(void *guest)
+{
+    if (!guest) return EINVAL;
+    pthread_condattr_t *p = *(pthread_condattr_t **)guest;
+    if (p) { pthread_condattr_destroy(p); free(p); *(void **)guest = NULL; }
+    return 0;
+}
+int pthread_condattr_setclock_shim(void *guest, int clock_id)
+{
+    pthread_condattr_t *p = guest ? tl_side_create(guest, sizeof(pthread_condattr_t), condattr_init0) : NULL;
+    if (!p) return EINVAL;
+    /* CLOCK_MONOTONIC is 1 on bionic and 6 on Darwin, so translating the number would
+     * be guesswork; iOS condition variables are monotonic already, which is what the
+     * guest is asking for, so the request is already satisfied. */
+    (void)clock_id;
+    return 0;
+}
+
+/*
+ * pthread_cond_t itself is 48 bytes on both, so the object passes through -- but the
+ * ATTRIBUTE does not, and pthread_cond_init would read 16 bytes from the guest's 8.
+ * The guest's attribute is not consulted, which costs it nothing on this platform.
+ */
+int pthread_cond_init_shim(void *cond, const void *attr)
+{
+    (void)attr;
+    return pthread_cond_init((pthread_cond_t *)cond, NULL);
+}
+
 /* The timed variant of the same 40-byte mutex, and it has to be built on the
  * compare-and-swap rather than Darwin's pthread_mutex_timedlock: the object is
  * bionic's 40 bytes and Darwin's pthread_mutex_t is larger, so handing it over
@@ -2065,6 +2236,26 @@ static const tl_export_entry g_exports[] = {
     { "pthread_mutexattr_settype",  pthread_mutexattr_settype_shim },
     { "pthread_mutexattr_gettype",  pthread_mutexattr_gettype_shim },
     { "pthread_once",               pthread_once_shim },
+    /* The types Darwin defines larger than bionic: see the block above for the sizes. */
+    { "pthread_key_create",         pthread_key_create_shim },
+    { "pthread_key_delete",         pthread_key_delete_shim },
+    { "pthread_getspecific",        pthread_getspecific_shim },
+    { "pthread_setspecific",        pthread_setspecific_shim },
+    { "pthread_attr_init",          pthread_attr_init_shim },
+    { "pthread_attr_destroy",       pthread_attr_destroy_shim },
+    { "pthread_attr_setdetachstate", pthread_attr_setdetachstate_shim },
+    { "pthread_attr_setstacksize",  pthread_attr_setstacksize_shim },
+    { "pthread_attr_setschedpolicy", pthread_attr_setschedpolicy_shim },
+    { "pthread_attr_getstack",      pthread_attr_getstack_shim },
+    { "pthread_rwlock_init",        pthread_rwlock_init_shim },
+    { "pthread_rwlock_destroy",     pthread_rwlock_destroy_shim },
+    { "pthread_rwlock_rdlock",      pthread_rwlock_rdlock_shim },
+    { "pthread_rwlock_wrlock",      pthread_rwlock_wrlock_shim },
+    { "pthread_rwlock_unlock",      pthread_rwlock_unlock_shim },
+    { "pthread_condattr_init",      pthread_condattr_init_shim },
+    { "pthread_condattr_destroy",   pthread_condattr_destroy_shim },
+    { "pthread_condattr_setclock",  pthread_condattr_setclock_shim },
+    { "pthread_cond_init",          pthread_cond_init_shim },
     { "sysconf",                    sysconf_shim },
     { "getpagesize",                getpagesize_shim },
     { "sysinfo",                    sysinfo_shim },
