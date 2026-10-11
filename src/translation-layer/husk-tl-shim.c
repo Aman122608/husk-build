@@ -921,16 +921,22 @@ static void spin_unlock_40(uint8_t *b) { *b = 0; }
  */
 static void note_arena_lock(void *m)
 {
-    static int logged;
-    if (logged || !m) {
+    static int n;
+    if (!m) {
         return;
     }
     char where[128];
-    if (husk_tl_describe_address((uintptr_t)m, where, sizeof(where))
-        && !strcmp(where, "libUE4.so+0xaea6798")) {
-        tl_log_line("arena: BinnedAllocFromOS took its static mutex at %s -- it was entered, "
-                    "so any missing mmap after this means the request size was zero", where);
-        logged = 1;
+    if (!husk_tl_describe_address((uintptr_t)m, where, sizeof(where))) {
+        snprintf(where, sizeof(where), "%p", m);
+    }
+    /* Log the ones that matter always, and a bounded sample of the rest: a filter
+     * that matches nothing produces the same empty log as a call that never
+     * happened, and telling those apart is the entire point. */
+    bool arena = !strcmp(where, "libUE4.so+0xaea6798");
+    if (arena || n < 40) {
+        tl_log_line("mutex: lock %s%s", where,
+                    arena ? "   <<< the arena allocator's static mutex" : "");
+        n++;
     }
 }
 

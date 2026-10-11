@@ -2439,10 +2439,23 @@ int husk_tl_describe_address(uintptr_t addr, char *out, size_t outlen)
         if (!L->base || L->npages == 0) {
             continue;
         }
+        /* Both aliases name the same image at different addresses, and a data address
+         * reached through a remapped adrp lands in the writable one -- which is where
+         * the arena allocator's static mutex lives. Checking only the executable alias
+         * made every such address unrecognisable, which is how a logging instrument
+         * silently reported nothing instead of reporting the answer. */
         uintptr_t lo = (uintptr_t)L->base;
         uintptr_t hi = lo + (uintptr_t)L->npages * (uintptr_t)TL_PAGE;
         if (addr < lo || addr >= hi) {
-            continue;
+            if (!L->base_rw || L->base_rw == L->base) {
+                continue;
+            }
+            uintptr_t rlo = (uintptr_t)L->base_rw;
+            uintptr_t rhi = rlo + (uintptr_t)L->npages * (uintptr_t)TL_PAGE;
+            if (addr < rlo || addr >= rhi) {
+                continue;
+            }
+            lo = rlo;
         }
 
         size_t n = 0;
