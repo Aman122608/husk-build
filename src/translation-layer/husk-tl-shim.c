@@ -852,20 +852,31 @@ static __thread tl_looper *tl_looper_cur;
 void *ALooper_prepare(int opts)
 {
     (void)opts;
-    if (!tl_looper_cur) tl_looper_cur = calloc(1, sizeof(tl_looper));
+    if (!tl_looper_cur) {
+        tl_looper_cur = calloc(1, sizeof(tl_looper));
+        tl_log_line("looper: prepare on thread %p -> %p", (void *)pthread_self(), (void *)tl_looper_cur);
+    }
     return tl_looper_cur;
 }
 
 int ALooper_addFd(void *looper, int fd, int ident, int events, void *callback, void *data)
 {
     tl_looper *l = looper ? (tl_looper *)looper : tl_looper_cur;
-    if (!l || l->n >= TL_LOOPER_MAX) return 0;
+    if (!l || l->n >= TL_LOOPER_MAX) {
+        tl_log_line("looper: addFd REFUSED looper=%p fd=%d ident=%d (n=%d)",
+                    looper, fd, ident, l ? l->n : -1);
+        return 0;
+    }
     l->fd[l->n]       = fd;
     l->ident[l->n]    = ident;
     l->events[l->n]   = events;
     l->callback[l->n] = callback;
     l->data[l->n]     = data;
     l->n++;
+    /* Which looper the pipe lands on is the whole question: it is registered on the game
+     * thread's looper, so the game thread must be the one polling it. */
+    tl_log_line("looper: addFd looper=%p (thread %p) fd=%d ident=%d events=%#x n=%d",
+                (void *)l, (void *)pthread_self(), fd, ident, (unsigned)events, l->n);
     return 1;
 }
 
@@ -876,9 +887,15 @@ int ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void **out_dat
     if (out_data) *out_data = NULL;
 
     tl_looper *l = tl_looper_cur;
+    /* First few calls per looper, plus every call that returns a source: a hot polling
+     * loop that never sees its fd is exactly the shape being chased. */
+    static int seen;
+    int trace = (seen < 6);
+    if (trace) seen++;
+
     if (!l || l->n == 0) {
-        /* Nothing registered. Honour the timeout rather than spinning, so a guest polling
-         * a bare looper blocks the way a real one would instead of burning a core. */
+        if (trace) tl_log_line("looper: pollAll timeout_ms=%d on EMPTY looper %p (thread %p)",
+                               timeout_ms, (void *)l, (void *)pthread_self());
         if (timeout_ms > 0) {
             struct timespec t;
             t.tv_sec = timeout_ms / 1000;
@@ -899,11 +916,20 @@ int ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void **out_dat
 
     /* timeout_ms = -1 blocks, which is exactly what the glue asks for. */
     int r = poll(p, (nfds_t)l->n, timeout_ms);
-    if (r < 0) return ALOOPER_POLL_ERROR;
-    if (r == 0) return ALOOPER_POLL_TIMEOUT;
+    if (r < 0) {
+        tl_log_line("looper: pollAll poll() failed errno=%d (thread %p)", errno, (void *)pthread_self());
+        return ALOOPER_POLL_ERROR;
+    }
+    if (r == 0) {
+        if (trace) tl_log_line("looper: pollAll timeout after %d ms on %d fd(s) (thread %p)",
+                               timeout_ms, l->n, (void *)pthread_self());
+        return ALOOPER_POLL_TIMEOUT;
+    }
 
     for (int i = 0; i < l->n; i++) {
         if (!p[i].revents) continue;
+        tl_log_line("looper: pollAll READY fd=%d ident=%d revents=%#x (thread %p)",
+                    l->fd[i], l->ident[i], (unsigned)p[i].revents, (void *)pthread_self());
         if (out_fd)     *out_fd = l->fd[i];
         if (out_events) *out_events = l->events[i];
         if (out_data)   *out_data = l->data[i];
