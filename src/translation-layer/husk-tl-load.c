@@ -1359,11 +1359,22 @@ static void check_dual_map(const tl_lib *L)
 static void jni_install_env(tl_lib *L, const char *name)
 {
     /* The mangled name, because it is a C++ member and that is what the symbol
-     * table holds. AndroidJavaEnv::InitializeJavaEnv(JavaVM*, int, jobject). */
+     * table holds. AndroidJavaEnv::InitializeJavaEnv(JavaVM*, int, jobject) --
+     * and note the underscore in P7_JavaVM: Android's typedef is
+     * `typedef struct _JavaVM JavaVM;`, so the parameter mangles as _JavaVM.
+     * Spelling it JavaVM gives a name that is not in the table, the lookup
+     * returns null, and the handover silently does nothing. */
     void (*init_env)(void *, int32_t, void *) =
         (void (*)(void *, int32_t, void *))lib_lookup(
-            L, "_ZN14AndroidJavaEnv17InitializeJavaEnvEP7JavaVMiP8_jobject");
+            L, "_ZN14AndroidJavaEnv17InitializeJavaEnvEP7_JavaVMiP8_jobject");
     if (!init_env) {
+        /* Say so. A silent return here is indistinguishable from "the handover
+         * worked", which cost a build cycle: the crash came back byte-identical
+         * with no new log line and no way to tell a failed lookup from a
+         * library that simply has no such symbol. */
+        tl_log_line("jni: %s has no AndroidJavaEnv::InitializeJavaEnv "
+                    "(looked for _ZN14AndroidJavaEnv17InitializeJavaEnvEP7_JavaVMiP8_jobject)",
+                    name);
         return;
     }
 
