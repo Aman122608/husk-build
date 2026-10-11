@@ -42,6 +42,12 @@
 void tl_log_line(const char *fmt, ...);          /* husk-tl-load.c */
 void *tl_shim_find(const char *name);            /* this file, further down */
 
+/* The loaded APKs, so the asset surface can answer out of them. See tl_apk_read_asset. */
+int         tl_apk_count(void);
+const char *tl_apk_path(int i);
+int         tl_apk_read_asset(const char *name, void **out, size_t *outlen);
+int         tl_apk_list_assets(const char *prefix, char *out, int max, int namesz);
+
 /* Names a guest address as "<library>+<offset>"; husk-tl-load.c owns it. Declared
  * here because the shim uses it to say which guest code called something, which is
  * the difference between "the call never arrived" and "the call arrived and failed". */
@@ -1116,37 +1122,154 @@ int32_t AKeyEvent_getMetaState(const void *event) { (void)event; return 0; }
 
 /* --------------------------------------------------------- assets  -- */
 
+/*
+ * The guest's AssetManager, answered from the APK.
+ *
+ * A UE4 Android build asks Java for its AssetManager, receives an opaque jobject, and
+ * hands that straight back to AAssetManager_fromJava. Every later open is
+ * AAssetManager_open(manager, path, mode). Both ends of that pointer are ours -- fromJava
+ * is an NDK function in libandroid.so, which this layer provides -- so fromJava can ignore
+ * the jobject entirely and hand back a token of our choosing.
+ *
+ * That makes the entire asset path work with no ART and no activity: the manager is only a
+ * handle the guest passes back to us, and an open is "read assets/<path> out of the loaded
+ * APK", which the loader already knows how to do.
+ *
+ * This is why the game's data was unreachable. The manager came back NULL, so the engine's
+ * Android file layer could never mount the APK, and AAssetManager_open was never called at
+ * all -- the log was silent because nothing ever asked, not because nothing was missing.
+ */
+typedef struct {
+    uint8_t *data;      /* owned */
+    size_t   len;
+    size_t   pos;
+} tl_asset;
+
+static char g_asset_token;      /* the manager; only its address is meaningful */
+
+void *AAssetManager_fromJava(void *env, void *mgr)
+{
+    (void)env; (void)mgr;
+    /* Deliberately not the jobject: it is NULL here, and nothing downstream dereferences
+     * the manager -- the guest only ever passes it back to us. */
+    return &g_asset_token;
+}
+
 void *AAssetManager_open(void *mgr, const char *name, int mode)
 {
     (void)mgr; (void)mode;
-    tl_log_line("asset: %s requested -- AAsset is not wired in the attempt", name);
-    return NULL;
+    if (!name) return NULL;
+
+    void  *bytes = NULL;
+    size_t len = 0;
+    if (!tl_apk_read_asset(name, &bytes, &len)) {
+        /* A miss is worth seeing: the guest asked for something that is not in the APK,
+         * which is a different problem from the asset system being unwired. */
+        tl_log_line("asset: MISS %s", name);
+        return NULL;
+    }
+    tl_asset *a = (tl_asset *)malloc(sizeof *a);
+    if (!a) { free(bytes); return NULL; }
+    a->data = (uint8_t *)bytes;
+    a->len  = len;
+    a->pos  = 0;
+    tl_log_line("asset: %s -> %zu bytes", name, len);
+    return a;
 }
-void AAsset_close(void *a) { (void)a; }
-int AAsset_read(void *a, void *buf, size_t n) { (void)a; (void)buf; (void)n; return 0; }
-int64_t AAsset_getLength(void *a) { (void)a; return 0; }
-const void *AAsset_getBuffer(void *a) { (void)a; return NULL; }
-void *AAssetManager_fromJava(void *env, void *mgr)
+
+int64_t AAsset_getLength(void *asset)
 {
-    (void)env;
-    return mgr;                 /* the handle the other AAsset stubs ignore */
+    return asset ? (int64_t)((tl_asset *)asset)->len : 0;
 }
-/* The rest of the AAsset surface libUE4 binds. Same position as
- * AAssetManager_open: named so the library relocates, honest that there are no
- * assets behind it. */
-void AAssetDir_close(void *dir) { (void)dir; }
+
+int64_t AAsset_getRemainingLength(void *asset)
+{
+    tl_asset *a = (tl_asset *)asset;
+    return a ? (int64_t)(a->len - a->pos) : 0;
+}
+
+const void *AAsset_getBuffer(void *asset)
+{
+    return asset ? ((tl_asset *)asset)->data : NULL;
+}
+
+int AAsset_read(void *asset, void *buf, size_t n)
+{
+    tl_asset *a = (tl_asset *)asset;
+    if (!a || !buf) return -1;
+    size_t left = a->len - a->pos;
+    if (n > left) n = left;
+    if (n) memcpy(buf, a->data + a->pos, n);
+    a->pos += n;
+    return (int)n;
+}
+
+off_t AAsset_seek(void *asset, off_t off, int whence)
+{
+    tl_asset *a = (tl_asset *)asset;
+    if (!a) return -1;
+    off_t base = (whence == SEEK_CUR) ? (off_t)a->pos
+               : (whence == SEEK_END) ? (off_t)a->len : 0;
+    off_t p = base + off;
+    if (p < 0) p = 0;
+    if (p > (off_t)a->len) p = (off_t)a->len;
+    a->pos = (size_t)p;
+    return p;
+}
+
+void AAsset_close(void *asset)
+{
+    tl_asset *a = (tl_asset *)asset;
+    if (!a) return;
+    free(a->data);
+    free(a);
+}
+
+int AAsset_openFileDescriptor(void *asset, int64_t *out_start, int64_t *out_length)
+{
+    /* An entry inside a zip has no descriptor to hand out, and a bogus one is worse than a
+     * refusal: the guest would read the wrong bytes, or read past the end. */
+    (void)asset;
+    if (out_start)  *out_start = 0;
+    if (out_length) *out_length = 0;
+    return -1;
+}
+
+/* Directory enumeration inside the APK: a walk over the loader's zip index. */
+typedef struct {
+    char  names[1024][160];
+    int   count;
+    int   pos;
+} tl_asset_dir;
+
 void *AAssetManager_openDir(void *mgr, const char *dirname)
 {
     (void)mgr;
-    tl_log_line("asset: directory %s requested -- AAsset is not wired in the attempt", dirname);
-    return NULL;
+    if (!dirname) return NULL;
+    tl_asset_dir *d = (tl_asset_dir *)calloc(1, sizeof *d);
+    if (!d) return NULL;
+    d->count = tl_apk_list_assets(dirname, &d->names[0][0], 1024, 160);
+    d->pos = 0;
+    tl_log_line("asset: openDir %s -> %d name(s)", dirname, d->count);
+    return d;
 }
-int AAsset_openFileDescriptor(void *asset, int64_t *out_start, int64_t *out_length)
+
+const char *AAssetDir_getNextFileName(void *dir)
 {
-    (void)asset;
-    if (out_start) *out_start = 0;
-    if (out_length) *out_length = 0;
-    return -1;
+    tl_asset_dir *d = (tl_asset_dir *)dir;
+    if (!d || d->pos >= d->count) return NULL;
+    return d->names[d->pos++];
+}
+
+void AAssetDir_rewind(void *dir)
+{
+    tl_asset_dir *d = (tl_asset_dir *)dir;
+    if (d) d->pos = 0;
+}
+
+void AAssetDir_close(void *dir)
+{
+    free(dir);
 }
 
 /* -------------------------------------------------- configuration  --- */
@@ -2678,10 +2801,14 @@ static const tl_export_entry g_exports[] = {
     { "AAssetManager_open",         AAssetManager_open },
     { "AAsset_close",               AAsset_close },
     { "AAsset_read",                AAsset_read },
+    { "AAsset_seek",                AAsset_seek },
     { "AAsset_getLength",           AAsset_getLength },
+    { "AAsset_getRemainingLength",  AAsset_getRemainingLength },
     { "AAsset_getBuffer",           AAsset_getBuffer },
     { "AAssetManager_fromJava",     AAssetManager_fromJava },
     { "AAssetDir_close",            AAssetDir_close },
+    { "AAssetDir_getNextFileName",  AAssetDir_getNextFileName },
+    { "AAssetDir_rewind",           AAssetDir_rewind },
     { "AAssetManager_openDir",      AAssetManager_openDir },
     { "AAsset_openFileDescriptor",  AAsset_openFileDescriptor },
     { "AConfiguration_new",         AConfiguration_new },

@@ -312,6 +312,109 @@ typedef struct {
 
 static tl_run g_run;
 
+/*
+ * The APKs of the current attempt, so the shim can serve assets out of them.
+ *
+ * The engine asks Java for its AssetManager and then hands that opaque pointer back to
+ * the NDK's AAssetManager_open. Both ends of it are ours, so the shim can define what the
+ * pointer means and answer every open straight out of the APK -- which is the whole of what
+ * the asset path needs, without ART and without an activity.
+ */
+static char g_apk_paths[8][512];
+static int  g_n_apk_paths;
+
+int tl_apk_count(void) { return g_n_apk_paths; }
+
+const char *tl_apk_path(int i)
+{
+    return (i >= 0 && i < g_n_apk_paths) ? g_apk_paths[i] : NULL;
+}
+
+/*
+ * assets/<name> out of any loaded APK, inflated if it is stored deflated.
+ * On success *out is a malloc'd buffer the caller frees, and *outlen its length.
+ * Returns 0 if no loaded APK has it -- which is a real answer, not an error, because a
+ * guest that probes for an optional file expects silence.
+ */
+int tl_apk_read_asset(const char *name, void **out, size_t *outlen)
+{
+    if (!name || !out || !outlen) return 0;
+
+    char entry[640];
+    if (!strncmp(name, "assets/", 7)) snprintf(entry, sizeof entry, "%s", name);
+    else                              snprintf(entry, sizeof entry, "assets/%s", name);
+
+    for (int a = 0; a < g_n_apk_paths; a++) {
+        tl_zip z;
+        char err[128];
+        if (!tl_zip_open(&z, g_apk_paths[a], err, sizeof err)) {
+            continue;
+        }
+        const tl_zip_entry *e = tl_zip_find(&z, entry);
+        if (e) {
+            /* A stored entry points into the mapping and must be copied out before the
+             * mapping goes away; an inflated one is already the caller's to free. */
+            const uint8_t *bytes = NULL;
+            size_t len = 0;
+            bool owned = false;
+            bool ok = tl_zip_data(&z, e, 1u << 30, &bytes, &len, &owned, err, sizeof err);
+            tl_zip_close(&z);
+            if (!ok) {
+                return 0;
+            }
+            if (!owned) {
+                uint8_t *copy = (uint8_t *)malloc(len ? len : 1);
+                if (!copy) {
+                    return 0;
+                }
+                if (len) memcpy(copy, bytes, len);
+                *out = copy;
+            } else {
+                *out = (void *)bytes;
+            }
+            *outlen = len;
+            return 1;
+        }
+        tl_zip_close(&z);
+    }
+    return 0;
+}
+
+/*
+ * Asset names under `prefix` (a path in the APK without the leading "assets/"), each
+ * copied into out + i*namesz. Returns how many were written. The zip index already holds
+ * every name, so a directory listing is a walk over it rather than any real directory.
+ */
+int tl_apk_list_assets(const char *prefix, char *out, int max, int namesz)
+{
+    int n = 0;
+    char pfx[192];
+    snprintf(pfx, sizeof pfx, "assets/%s", prefix ? prefix : "");
+    size_t plen = strlen(pfx);
+    while (plen && pfx[plen - 1] == '/') pfx[--plen] = 0;
+
+    for (int a = 0; a < g_n_apk_paths && n < max; a++) {
+        tl_zip z;
+        char err[128];
+        if (!tl_zip_open(&z, g_apk_paths[a], err, sizeof err)) {
+            continue;
+        }
+        for (size_t i = 0; i < z.count && n < max; i++) {
+            const char *nm = z.entries[i].name;
+            if (!nm || strncmp(nm, pfx, plen)) {
+                continue;
+            }
+            const char *rest = nm + plen;
+            if (*rest == '/') rest++;
+            if (!*rest) continue;
+            snprintf(out + (size_t)n * namesz, (size_t)namesz, "%s", rest);
+            n++;
+        }
+        tl_zip_close(&z);
+    }
+    return n;
+}
+
 int tl_log_sink_fd = -1;
 
 void tl_log_line(const char *fmt, ...)
@@ -2133,6 +2236,16 @@ int husk_tl_attempt_start(const char *const *apks, int count, int seconds)
     /* Everything below runs on this thread: loading is synchronous, the
      * lifecycle gets its own thread so the runner returns to Swift. */
     tl_log_line("=== attempt begins: %d APK(s) ===", count);
+
+    /* Record them for the asset surface: AAssetManager_open reads assets/<path> out of
+     * these, which is how the engine's file layer gets at the game's data. */
+    g_n_apk_paths = 0;
+    for (int a = 0; a < count && a < (int)(sizeof(g_apk_paths) / sizeof(g_apk_paths[0])); a++) {
+        if (!apks[a]) continue;
+        snprintf(g_apk_paths[g_n_apk_paths], sizeof(g_apk_paths[0]), "%s", apks[a]);
+        g_n_apk_paths++;
+    }
+    tl_log_line("asset: %d APK(s) available for AAssetManager_open", g_n_apk_paths);
 
     char names[24][96], apk_of[24][512];
     char err[192] = {0};
