@@ -885,16 +885,37 @@ void AConfiguration_getCountry(void *config, char *out)
  * pthread_mutex_t on bionic arm64 is 40 bytes; Darwin's is far larger.
  * Guests embed the type in their own structs, so the shim must fit IN 40
  * bytes, not hand out the host's. The attempt builds a spinlock inside
- * it: byte 0 is a lock byte, bytes 4..7 a recursion-free owner marker.
- * It cannot implement recursive or error-check mutexes; those guests
- * fail visibly rather than corrupt quietly.
+ * it: byte 0 is the lock byte, then the owner and a recursion count.
+ *
+ * Recursion has to be real, not reported. libUE4.so's crash-malloc
+ * constructor asks for PTHREAD_MUTEX_RECURSIVE and its arena allocator
+ * then locks that mutex re-entrantly -- which is the whole point of the
+ * type. Serving that request with a plain spinlock wedges the main thread
+ * on the second lock: no crash, no signal, just a black screen at 0 fps.
  */
+/* The type lives in the single int bionic keeps it in, and now survives into the mutex. */
+#define TL_MUTEX_DEFAULT     0
+#define TL_MUTEX_RECURSIVE   1
+#define TL_MUTEX_ERRORCHECK  2
+
+typedef struct {
+    uint8_t  lock;        /* 0 free, 1 held -- the spinlock byte */
+    uint8_t  pad0[3];
+    uint32_t owner;       /* the holding thread, 0 when free */
+    uint32_t count;       /* recursion depth */
+    uint32_t type;        /* TL_MUTEX_DEFAULT / _RECURSIVE / _ERRORCHECK */
+    uint8_t  pad1[24];    /* the rest of bionic's 40 bytes */
+} tl_mutex40;
+
+static uint32_t tl_thread_id(void) { return (uint32_t)(uintptr_t)pthread_self(); }
+
 int pthread_mutex_init_shim(void *m, const void *attr)
 {
-    (void)attr;
     if (!m) return EINVAL;
     memset(m, 0, 40);
-    ((uint8_t *)m)[0] = 0;       /* unlocked */
+    /* The attr is the single int the shim's own attr calls write, so the type
+     * requested at init time is what the mutex ends up honouring. */
+    ((tl_mutex40 *)m)->type = attr ? (uint32_t)*(const int *)attr : TL_MUTEX_DEFAULT;
     return 0;
 }
 
@@ -940,13 +961,56 @@ static void note_arena_lock(void *m)
     }
 }
 
-int pthread_mutex_lock_shim(void *m)   { note_arena_lock(m); if (m) spin_lock_40(m); return 0; }
+/*
+ * Locking honours the type. A recursive mutex re-locked by the thread that already
+ * holds it just deepens the count -- which is the behaviour the engine is relying on
+ * and the reason the type was requested. A default mutex spins on the second lock
+ * from the same thread, which is what a default mutex is supposed to do.
+ */
+int pthread_mutex_lock_shim(void *m)
+{
+    note_arena_lock(m);
+    if (!m) return EINVAL;
+    tl_mutex40 *mx = (tl_mutex40 *)m;
+    uint32_t me = tl_thread_id();
+    /* Only the owner can have written `owner`, so reading it without the lock is safe
+     * and saves taking the lock just to discover we already hold it. */
+    if (mx->type == TL_MUTEX_RECURSIVE && mx->count && mx->owner == me) {
+        mx->count++;
+        return 0;
+    }
+    spin_lock_40(&mx->lock);
+    mx->owner = me;
+    mx->count = 1;
+    return 0;
+}
 int pthread_mutex_trylock_shim(void *m)
 {
     if (!m) return EINVAL;
-    return __sync_bool_compare_and_swap((uint8_t *)m, 0, 1) ? 0 : EBUSY;
+    tl_mutex40 *mx = (tl_mutex40 *)m;
+    uint32_t me = tl_thread_id();
+    if (mx->type == TL_MUTEX_RECURSIVE && mx->count && mx->owner == me) {
+        mx->count++;
+        return 0;
+    }
+    if (!__sync_bool_compare_and_swap(&mx->lock, 0, 1)) return EBUSY;
+    mx->owner = me;
+    mx->count = 1;
+    return 0;
 }
-int pthread_mutex_unlock_shim(void *m) { if (m) spin_unlock_40(m); return 0; }
+int pthread_mutex_unlock_shim(void *m)
+{
+    if (!m) return EINVAL;
+    tl_mutex40 *mx = (tl_mutex40 *)m;
+    if (mx->count > 1) {           /* still held recursively: one level down */
+        mx->count--;
+        return 0;
+    }
+    mx->count = 0;
+    mx->owner = 0;
+    spin_unlock_40(&mx->lock);     /* release last, once the fields are settled */
+    return 0;
+}
 int pthread_mutex_destroy_shim(void *m) { if (m) memset(m, 0, 40); return 0; }
 
 /*
@@ -967,14 +1031,9 @@ int pthread_mutex_destroy_shim(void *m) { if (m) memset(m, 0, 40); return 0; }
  * line, because the corrupted return faults where the JIT guard owns the signal (SIGBUS
  * is deliberately left to it) and nothing gets logged.
  *
- * The type is kept in the single int bionic keeps it in. The mutex above is a plain
- * spinlock, so a recursive or error-checking request is reported rather than silently
- * mis-served.
+ * The type is kept in the single int bionic keeps it in, and pthread_mutex_init now
+ * carries it into the mutex, so a recursive request is honoured rather than reported.
  */
-#define TL_MUTEX_DEFAULT     0
-#define TL_MUTEX_RECURSIVE   1
-#define TL_MUTEX_ERRORCHECK  2
-
 int pthread_mutexattr_init_shim(void *a)
 {
     if (!a) return EINVAL;
@@ -994,8 +1053,11 @@ int pthread_mutexattr_settype_shim(void *a, int type)
         return EINVAL;
     }
     if (type != TL_MUTEX_DEFAULT) {
-        tl_log_line("pthread: mutex type %d (recursive/error-check) is not implemented -- "
-                    "the mutex behaves as a plain one", type);
+        static int said;
+        if (!said) {          /* informative, not per-instance -- it fires for every mutex */
+            said = 1;
+            tl_log_line("pthread: mutex type %d requested -- the mutex honours it", type);
+        }
     }
     *(int *)a = type;
     return 0;
