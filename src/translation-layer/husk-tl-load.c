@@ -1326,6 +1326,54 @@ static void check_dual_map(const tl_lib *L)
     }
 }
 
+/*
+ * Install the JavaVM before the library's constructors run.
+ *
+ * A UE4 engine reaches the JVM through AndroidJavaEnv. Its only writer in
+ * libUE4 is the exported
+ *
+ *     AndroidJavaEnv::InitializeJavaEnv(JavaVM *, jint version, jobject activity)
+ *
+ * which stores the VM and the version and then attaches the calling thread.
+ * Until it has run the pointer is null, and the first constructor that wants a
+ * JNIEnv -- `vm->GetEnv(&env, version)`, vtable slot 0x30 -- dereferences null
+ * and dies. That is exactly the crash: fault address 0, inside init_array[17].
+ *
+ * Android delivers the VM through JNI_OnLoad, which ART calls after dlopen, so
+ * on a device the constructors run first. This loader did the same, and its
+ * JNI_OnLoad pass sits after the constructor loop -- so a library needing the
+ * environment during static initialisation never gets it. Offer it here, before
+ * the initialisers, to whichever library exports the symbol.
+ *
+ * Only the initialiser is called, not JNI_OnLoad: it is the narrow operation
+ * (store the VM, attach this thread) rather than everything a JNI_OnLoad chooses
+ * to do, and the engine guards a second call -- its own
+ * "if (g_vm) { g_activity = activity; return; }" makes the later pass harmless.
+ *
+ * The version is JNI_VERSION_1_6, what a JNI_OnLoad would pass and what our fake
+ * VM answers GetEnv for. The activity is null: a real one belongs to ART, which
+ * is milestone 2, and the engine only stores it on the second call.
+ */
+#define HUSK_JNI_VERSION_1_6 0x00010006
+
+static void jni_install_env(tl_lib *L, const char *name)
+{
+    /* The mangled name, because it is a C++ member and that is what the symbol
+     * table holds. AndroidJavaEnv::InitializeJavaEnv(JavaVM*, int, jobject). */
+    void (*init_env)(void *, int32_t, void *) =
+        (void (*)(void *, int32_t, void *))lib_lookup(
+            L, "_ZN14AndroidJavaEnv17InitializeJavaEnvEP7JavaVMiP8_jobject");
+    if (!init_env) {
+        return;
+    }
+
+    tl_log_line("jni: %s exports AndroidJavaEnv::InitializeJavaEnv at %p -- installing the "
+                "JavaVM before its constructors", name, init_env);
+    init_env(tl_shim_vm(), HUSK_JNI_VERSION_1_6, NULL);
+    tl_log_line("jni: %s environment installed (version 0x%x, no activity -- ART is milestone 2)",
+                name, HUSK_JNI_VERSION_1_6);
+}
+
 static bool load_library(const char *name, const uint8_t *file, size_t flen)
 {
     if (g_run.nlibs >= (int)(sizeof(g_run.libs) / sizeof(g_run.libs[0]))) {
@@ -1609,6 +1657,9 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
      * write data -- and sometimes code, for layout transitions -- which
      * is why the executable window is per-thread and temporary. */
     jit_writable(false);
+    /* Before anything of the library's own runs: see jni_install_env. A library
+     * that makes a JNI call from a constructor needs the VM to exist by now. */
+    jni_install_env(L, name);
     if (L->init) {
         void (*fn)(void) = (void (*)(void))(base + (L->init - base_vaddr));
         tl_log_line("init: %s calling DT_INIT %p", name, (void *)fn);
