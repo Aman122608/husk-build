@@ -124,6 +124,24 @@ void husk_tl_send_touch(int action, float x, float y);
 
 void husk_tl_free(void *p);
 
+/* --- What the crash handler needs to say where it died ----------------------
+ *
+ * A guest backtrace has to be walked, symbolised and mapped back to a library,
+ * and on this stack it often comes back full of <host> frames with the one that
+ * matters missing. Neither of these depends on any of that.
+ */
+
+/* The last initialiser the loader entered, as "<lib> init_array[N] <addr>", or
+ * "" before any has run. Called from a signal handler: returns a pointer to a
+ * static buffer, allocates nothing. */
+const char *husk_tl_last_init(void);
+
+/* Every general-purpose register, then fp, lr, sp and pc, to fd with write(2)
+ * only -- no stdio, no locks, no allocation, so it is safe where the rest of the
+ * logging is not. A null dereference shows up here as the register holding it. */
+void husk_tl_dump_fault(int fd, uintptr_t pc, uintptr_t lr, uintptr_t sp, uintptr_t fp,
+                        const uintptr_t *regs, size_t nregs);
+
 #ifdef __cplusplus
 }
 #endif

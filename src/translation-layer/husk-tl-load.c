@@ -340,6 +340,63 @@ void tl_log_line(const char *fmt, ...)
     pthread_mutex_unlock(&g_log_mutex);
 }
 
+/* -------------------------------------------- what the crash handler says */
+
+static char g_last_init[160];
+
+const char *husk_tl_last_init(void)
+{
+    return g_last_init;
+}
+
+/*
+ * Written with write(2) only.
+ *
+ * The rest of the logging goes through vsnprintf and a mutex, which is right on
+ * a running process and useless in the one place this matters: a thread already
+ * holding the log mutex, or a fault inside malloc, would deadlock instead of
+ * reporting anything. A hang and a crash look identical from outside, so the
+ * crash path gets its own writer that takes no lock and allocates nothing.
+ */
+static void fault_put_named(int fd, const char *name, uintptr_t value)
+{
+    static const char digits[] = "0123456789abcdef";
+    char line[64];
+    char *p = line;
+
+    *p++ = ' ';
+    *p++ = ' ';
+    for (const char *c = name; *c; c++) *p++ = *c;
+    while ((size_t)(p - line) < 8) *p++ = ' ';
+    *p++ = '0';
+    *p++ = 'x';
+    for (int shift = 60; shift >= 0; shift -= 4) *p++ = digits[(value >> shift) & 0xF];
+    *p++ = '\n';
+
+    ssize_t ignored = write(fd, line, (size_t)(p - line));
+    (void)ignored;
+}
+
+void husk_tl_dump_fault(int fd, uintptr_t pc, uintptr_t lr, uintptr_t sp, uintptr_t fp,
+                        const uintptr_t *regs, size_t nregs)
+{
+    if (fd < 0) return;
+
+    char name[6];
+    for (size_t i = 0; i < nregs && i < 31; i++) {
+        size_t k = 0;
+        name[k++] = 'x';
+        if (i >= 10) name[k++] = (char)('0' + (i / 10) % 10);
+        name[k++] = (char)('0' + (i % 10));
+        name[k] = '\0';
+        fault_put_named(fd, name, regs[i]);
+    }
+    fault_put_named(fd, "fp", fp);
+    fault_put_named(fd, "lr", lr);
+    fault_put_named(fd, "sp", sp);
+    fault_put_named(fd, "pc", pc);
+}
+
 /*
  * Finished frames, handed to the UI without a copy.
  *
@@ -1225,6 +1282,50 @@ static void patch_guest_code(uint8_t *code_rw, const uint8_t *code_rx, size_t le
 
 /* ---------------------------------------------------------- loading  */
 
+/*
+ * Do the two aliases of a dual mapping actually share their memory?
+ *
+ * StikDebug gives a library two mappings of the same image: one executable, one
+ * writable. The loader relocates and patches through the writable one and the
+ * guest reads the results through the executable one, so every one of those
+ * patches depends on both naming the same physical pages. If they do not -- a
+ * MAP_PRIVATE on each side, say -- then a global a constructor writes is still
+ * the file's zero when the guest reads it back through the other alias, and the
+ * symptom is a null pointer dereference inside code that is correct. That
+ * failure is completely silent and reads as a guest bug, so it is worth one
+ * comparison at load time to rule in or out.
+ */
+static void check_dual_map(const tl_lib *L)
+{
+    if (!L->base_rw || L->base_rw == L->base) {
+        return;
+    }
+
+    size_t pages = 0, bytes = 0, first_diff = 0;
+    for (size_t p = 0; p < L->npages; p++) {
+        if (!(L->page_flags[p] & TL_PAGE_W)) continue;
+        size_t off = p * TL_PAGE;
+        size_t span = TL_PAGE;
+        if (off + span > L->npages * TL_PAGE) span = L->npages * TL_PAGE - off;
+        if (span == 0) break;
+        if (!first_diff && memcmp(L->base + off, L->base_rw + off, span) != 0) {
+            first_diff = off + 1;   /* +1: the offset of a real difference is never 0 here */
+        }
+        bytes += span;
+        pages++;
+    }
+
+    if (first_diff) {
+        tl_log_line("dualmap: the RX and RW views of %s DIFFER from +0x%zx -- a write through "
+                    "one alias is not visible through the other, so anything written at load "
+                    "time or by a constructor reads back as the file's contents",
+                    L->name, first_diff - 1);
+    } else {
+        tl_log_line("dualmap: RX and RW views agree over %zu byte(s) in %zu writable page(s)",
+                    bytes, pages);
+    }
+}
+
 static bool load_library(const char *name, const uint8_t *file, size_t flen)
 {
     if (g_run.nlibs >= (int)(sizeof(g_run.libs) / sizeof(g_run.libs[0]))) {
@@ -1483,6 +1584,7 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
         memset(L, 0, sizeof(*L));
         return false;
     }
+    check_dual_map(L);
 
     /* Dependencies: log the gaps. The attempt's helper set is the APK's
      * own libraries; anything else is a named gap in the report. */
@@ -1510,6 +1612,7 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
     if (L->init) {
         void (*fn)(void) = (void (*)(void))(base + (L->init - base_vaddr));
         tl_log_line("init: %s calling DT_INIT %p", name, (void *)fn);
+        snprintf(g_last_init, sizeof(g_last_init), "%s DT_INIT %p", name, (void *)fn);
         fn();
     }
     if (L->init_array && L->init_arraysz) {
@@ -1526,6 +1629,11 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
                 if (fn_addr) {
                     void (*fn)(void) = (void (*)(void))fn_addr;
                     tl_log_line("init: %s calling init_array[%zu] %p", name, i, (void *)fn);
+                    /* The breadcrumb the crash handler reads. Set immediately
+                     * before the call, so a crash inside a constructor names it
+                     * without needing a walked, symbolised guest backtrace. */
+                    snprintf(g_last_init, sizeof(g_last_init), "%s init_array[%zu] %p",
+                             name, i, (void *)fn);
                     fn();
                 }
             }

@@ -245,11 +245,14 @@ enum HuskLog {
     fileprivate static func describeFault(_ info: UnsafeMutablePointer<siginfo_t>?,
                                           _ context: UnsafeMutableRawPointer?) {
         if let info {
-            if let fault = info.pointee.si_addr {
-                rawWrite("  fault address: \(UInt(bitPattern: UnsafeRawPointer(fault)))\n")
-            } else {
-                rawWrite("  fault address: not reported\n")
-            }
+            // si_addr is the address the faulting instruction touched. For a
+            // SIGSEGV a null here is not "the kernel did not say" -- it IS the
+            // answer: the fault was a dereference of address 0. Testing it with
+            // `if let` reported the most informative case as the absent one.
+            let fault = info.pointee.si_addr
+            let value = fault == nil ? 0 : UInt(bitPattern: UnsafeRawPointer(fault!))
+            rawWrite("  fault address: \(value)"
+                     + (value == 0 ? "   (address 0 -- a null dereference)" : "") + "\n")
         }
         if let context {
             let uc = context.assumingMemoryBound(to: ucontext_t.self).pointee
@@ -258,6 +261,26 @@ enum HuskLog {
                 describeGuest("pc:", UInt(ss.__pc))
                 describeGuest("lr:", UInt(ss.__lr))
             }
+        }
+    }
+
+    /// Every register, straight to the raw descriptor.
+    ///
+    /// The faulting instruction names one register as the culprit -- a null
+    /// dereference is a register holding zero -- and the ones around it say what
+    /// the code was doing with it. The formatting lives in C
+    /// (husk_tl_dump_fault) because this runs in a signal handler, where stdio,
+    /// allocation and locks are all off limits.
+    fileprivate static func dumpRegisters(_ context: UnsafeMutableRawPointer?) {
+        guard let context else { return }
+        let uc = context.assumingMemoryBound(to: ucontext_t.self).pointee
+        guard let mc = uc.uc_mcontext else { return }
+        let ss = mc.pointee.__ss
+        withUnsafeBytes(of: ss.__x) { raw in
+            let words = raw.bindMemory(to: UInt.self)
+            husk_tl_dump_fault(rawLogFD,
+                               UInt(ss.__pc), UInt(ss.__lr), UInt(ss.__sp), UInt(ss.__fp),
+                               words.baseAddress, words.count)
         }
     }
 
@@ -281,6 +304,15 @@ enum HuskLog {
                 // allocation, no locks, no Swift runtime.
                 HuskLog.rawWrite("\n*** FATAL SIGNAL \(received) ***\n")
                 HuskLog.describeFault(info, context)
+                // Which initialiser was running, from the loader's own note.
+                // A backtrace has to be walked and symbolised to say this; a
+                // note written just before the call does not.
+                if let last = husk_tl_last_init(), last.pointee != 0 {
+                    HuskLog.rawWrite("  last loader step: ")
+                    HuskLog.rawWrite(String(cString: last))
+                    HuskLog.rawWrite("\n")
+                }
+                HuskLog.dumpRegisters(context)
                 // Drain whatever C wrote but the reader thread never got to.
                 //
                 // QEMU's own abort messages -- assertion text, error_report --
