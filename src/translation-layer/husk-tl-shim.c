@@ -17,6 +17,7 @@
  * entry points live in husk-tl-load.c.
  */
 #define _GNU_SOURCE
+#include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
