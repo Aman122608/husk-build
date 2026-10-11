@@ -902,7 +902,34 @@ static void spin_lock_40(uint8_t *b)
 
 static void spin_unlock_40(uint8_t *b) { *b = 0; }
 
-int pthread_mutex_lock_shim(void *m)   { if (m) spin_lock_40(m); return 0; }
+/*
+ * Log the one lock that proves which path the arena allocator took.
+ *
+ * BinnedAllocFromOS takes a single static mutex at libUE4+0xaea6798 before it
+ * decides anything. Seeing that lock proves the function was entered; seeing it
+ * and no mmap afterwards proves the arena branch was taken with a zero-sized
+ * request, which is the only way it can return null without ever mapping. That
+ * distinction is otherwise invisible: the binding is provably right, the shim
+ * provably works for other libc names, and the call simply never arrives.
+ *
+ * Logged once. The first entry is what matters and the function runs twice.
+ */
+static void note_arena_lock(void *m)
+{
+    static int logged;
+    if (logged || !m) {
+        return;
+    }
+    char where[128];
+    if (husk_tl_describe_address((uintptr_t)m, where, sizeof(where))
+        && !strcmp(where, "libUE4.so+0xaea6798")) {
+        tl_log_line("arena: BinnedAllocFromOS took its static mutex at %s -- it was entered, "
+                    "so any missing mmap after this means the request size was zero", where);
+        logged = 1;
+    }
+}
+
+int pthread_mutex_lock_shim(void *m)   { note_arena_lock(m); if (m) spin_lock_40(m); return 0; }
 int pthread_mutex_trylock_shim(void *m)
 {
     if (!m) return EINVAL;
