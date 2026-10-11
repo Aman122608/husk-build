@@ -40,6 +40,11 @@
 
 void tl_log_line(const char *fmt, ...);          /* husk-tl-load.c */
 void *tl_shim_find(const char *name);            /* this file, further down */
+
+/* Names a guest address as "<library>+<offset>"; husk-tl-load.c owns it. Declared
+ * here because the shim uses it to say which guest code called something, which is
+ * the difference between "the call never arrived" and "the call arrived and failed". */
+int husk_tl_describe_address(uintptr_t addr, char *out, size_t outlen);
 void tl_loader_frame_posted(void);               /* husk-tl-load.c */
 void tl_loader_request_stop(void);               /* husk-tl-load.c */
 
@@ -1386,11 +1391,6 @@ static void sincosf_shim(float x, float *s, float *c)
  */
 
 #include <sys/mman.h>
-
-/* Names a guest address as "<library>+<offset>"; see the crash handler's use of
- * the same function. Declared here for the same reason tl_log_line is: this file
- * does not include the translation layer's public header. */
-int husk_tl_describe_address(uintptr_t addr, char *out, size_t outlen);
 
 static void mmap_prot_str(int prot, char *out, size_t len)
 {
