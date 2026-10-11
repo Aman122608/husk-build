@@ -791,6 +791,7 @@ int32_t AMotionEvent_getPointerId(const void *event, size_t idx)
 #define ALOOPER_EVENT_INPUT       1
 #define ALOOPER_EVENT_OUTPUT      2
 #define TL_LOOPER_MAX             8
+#define AINPUT_SOURCE_TOUCHSCREEN 0x1002
 
 typedef struct {
     int   fd[TL_LOOPER_MAX];
