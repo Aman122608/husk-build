@@ -1230,14 +1230,88 @@ int pthread_condattr_setclock_shim(void *guest, int clock_id)
 }
 
 /*
- * pthread_cond_t itself is 48 bytes on both, so the object passes through -- but the
- * ATTRIBUTE does not, and pthread_cond_init would read 16 bytes from the guest's 8.
- * The guest's attribute is not consulted, which costs it nothing on this platform.
+ * pthread_cond_t is 48 bytes on BOTH platforms -- but passing it through is still wrong,
+ * because Darwin's pthread_cond_wait also manipulates the MUTEX it is handed: it reads
+ * and writes Darwin's own mutex layout, owner field and all. The guest's mutex is
+ * bionic's 40 bytes holding this shim's spinlock, so handing that pair to Darwin either
+ * corrupts the mutex or blocks forever.
+ *
+ * That is the shape of the current wall. ANativeActivity_onCreate is the NDK's
+ * native_app_glue: it creates the message pipe, spawns the game thread with
+ * pthread_create, and then waits on a condition variable until that thread reports
+ * itself running -- pthread_cond_wait(&app->cond, &app->mutex), on a guest mutex.
+ *
+ * So each condition gets its own Darwin condition AND a Darwin mutex of its own. The
+ * wait releases the guest's mutex, blocks on the Darwin one, and re-acquires -- the
+ * standard way to build a condition over a mutex you do not own. Holding the condition's
+ * internal mutex across the release-and-wait is what closes the race where a signal
+ * arriving in between would be lost.
+ *
+ * The timeout passes through unchanged: bionic and Darwin both interpret the absolute
+ * time in pthread_cond_timedwait against the realtime clock, which is the default for
+ * both. (A guest that asked for CLOCK_MONOTONIC through the attr would need it
+ * converted, but that request comes only from Flutter-built APKs, not from this one.)
  */
+typedef struct { pthread_cond_t c; pthread_mutex_t m; } tl_cond;
+
+static void cond_init0(void *p)
+{
+    pthread_cond_init(&((tl_cond *)p)->c, NULL);
+    pthread_mutex_init(&((tl_cond *)p)->m, NULL);
+}
+static tl_cond *cond_of(void *g)
+{
+    return g ? tl_side_create(g, sizeof(tl_cond), cond_init0) : NULL;
+}
+
 int pthread_cond_init_shim(void *cond, const void *attr)
 {
-    (void)attr;
-    return pthread_cond_init((pthread_cond_t *)cond, NULL);
+    (void)attr;                    /* the guest's condattr is 8 bytes; Darwin reads 16 */
+    return cond_of(cond) ? 0 : ENOMEM;
+}
+int pthread_cond_destroy_shim(void *cond)
+{
+    if (!cond) return EINVAL;
+    tl_cond *c = *(tl_cond **)cond;
+    if (c) {
+        pthread_cond_destroy(&c->c);
+        pthread_mutex_destroy(&c->m);
+        free(c);
+        *(void **)cond = NULL;
+    }
+    return 0;
+}
+int pthread_cond_wait_shim(void *cond, void *mutex)
+{
+    tl_cond *c = cond_of(cond);
+    if (!c || !mutex) return EINVAL;
+    pthread_mutex_lock(&c->m);
+    pthread_mutex_unlock_shim(mutex);          /* the guest's mutex, which is ours */
+    pthread_cond_wait(&c->c, &c->m);
+    pthread_mutex_unlock(&c->m);
+    pthread_mutex_lock_shim(mutex);
+    return 0;
+}
+int pthread_cond_timedwait_shim(void *cond, void *mutex, const struct timespec *abstime)
+{
+    tl_cond *c = cond_of(cond);
+    if (!c || !mutex) return EINVAL;
+    pthread_mutex_lock(&c->m);
+    pthread_mutex_unlock_shim(mutex);
+    int r = pthread_cond_timedwait(&c->c, &c->m, abstime);
+    pthread_mutex_unlock(&c->m);
+    pthread_mutex_lock_shim(mutex);
+    return r;
+}
+int pthread_cond_signal_shim(void *cond)
+{
+    tl_cond *c = cond_of(cond);
+    return c ? pthread_cond_signal(&c->c) : EINVAL;
+}
+int pthread_cond_broadcast_shim(void *cond)
+{
+    tl_cond *c = cond_of(cond);
+    return c ? pthread_cond_broadcast(&c->c) : EINVAL;
 }
 
 /* The timed variant of the same 40-byte mutex, and it has to be built on the
@@ -2256,6 +2330,11 @@ static const tl_export_entry g_exports[] = {
     { "pthread_condattr_destroy",   pthread_condattr_destroy_shim },
     { "pthread_condattr_setclock",  pthread_condattr_setclock_shim },
     { "pthread_cond_init",          pthread_cond_init_shim },
+    { "pthread_cond_destroy",       pthread_cond_destroy_shim },
+    { "pthread_cond_wait",          pthread_cond_wait_shim },
+    { "pthread_cond_timedwait",     pthread_cond_timedwait_shim },
+    { "pthread_cond_signal",        pthread_cond_signal_shim },
+    { "pthread_cond_broadcast",     pthread_cond_broadcast_shim },
     { "sysconf",                    sysconf_shim },
     { "getpagesize",                getpagesize_shim },
     { "sysinfo",                    sysinfo_shim },
