@@ -834,6 +834,33 @@ int pipe_shim(int fds[2])
     return r;
 }
 
+/*
+ * A guest thread waiting in a raw poll() is invisible -- and for an engine whose threads
+ * have gone quiet, "blocked in poll" and "exited" look the same from outside. Logged at a
+ * cap, because a polling loop would otherwise flood it.
+ */
+int poll_shim(struct pollfd *fds, unsigned long nfds, int timeout)
+{
+    static int shown;
+    int trace = (shown < 40);
+    if (trace) shown++;
+    if (trace) {
+        char which[96];
+        size_t o = 0;
+        which[0] = 0;
+        for (unsigned long i = 0; i < nfds && i < 4; i++) {
+            o += (size_t)snprintf(which + o, sizeof(which) - o, "%s%d",
+                                  i ? "," : "", fds[i].fd);
+            if (o >= sizeof(which)) break;
+        }
+        tl_log_line("poll: guest poll(fd=[%s] n=%lu timeout=%d) (thread %p)",
+                    which, nfds, timeout, (void *)pthread_self());
+    }
+    int r = poll(fds, (nfds_t)nfds, timeout);
+    if (trace) tl_log_line("poll: -> %d (thread %p)", r, (void *)pthread_self());
+    return r;
+}
+
 /* ---------------------------------------------------- choreographer  ---- */
 
 /*
@@ -1477,13 +1504,39 @@ int pthread_attr_getstack_shim(const void *guest, void **addr, size_t *size)
  * indistinguishable from outside, and the difference matters: the first is a create
  * failure, the second is a fault inside the entry.
  */
+/*
+ * Wrap every guest thread entry so it announces itself.
+ *
+ * "The thread started" and "the thread started and is still running" and "the thread
+ * started and exited" are three different situations, and from outside they look
+ * identical: the engine's threads are created, both open libandroid.so, and then the run
+ * has no further sign of them -- no output, no assets, no mutexes beyond the C++ runtime's,
+ * no condition waits, no frames. The trampoline turns that into a fact: START tells us the
+ * entry was reached, RETURNED tells us it came back.
+ */
+typedef struct { void *(*fn)(void *); void *arg; } tl_thread_start;
+
+static void *tl_thread_tramp(void *p)
+{
+    tl_thread_start s = *(tl_thread_start *)p;
+    free(p);
+    tl_log_line("thread: entry %p START (thread %p)", (void *)s.fn, (void *)pthread_self());
+    void *r = s.fn(s.arg);
+    tl_log_line("thread: entry %p RETURNED %p (thread %p)", (void *)s.fn, r, (void *)pthread_self());
+    return r;
+}
+
 int pthread_create_shim(void *thread, const void *guest_attr,
                         void *(*fn)(void *), void *arg)
 {
     pthread_attr_t *a = guest_attr ? *(pthread_attr_t **)(void *)guest_attr : NULL;
+    tl_thread_start *s = malloc(sizeof *s);
+    if (s) { s->fn = fn; s->arg = arg; }
     errno = 0;
-    int r = pthread_create((pthread_t *)thread, a, fn, arg);
+    int r = pthread_create((pthread_t *)thread, a,
+                           s ? tl_thread_tramp : fn, s ? (void *)s : arg);
     int err = errno;
+    if (r != 0 && s) free(s);
     tl_log_line("thread: create entry=%p arg=%p attr=%p (guest %p) -> %d%s",
                 (void *)fn, arg, (void *)a, guest_attr, r,
                 r != 0 ? " (failed)" : "");
@@ -2724,6 +2777,7 @@ static const tl_export_entry g_exports[] = {
     { "write",                      write_shim },
     { "read",                       read_shim },
     { "pipe",                       pipe_shim },
+    { "poll",                       poll_shim },
     { "sysinfo",                    sysinfo_shim },
     /* /proc has no iOS equivalent, and the files below are read by name rather than
      * discovered, so the only way to answer them is at fopen. */
