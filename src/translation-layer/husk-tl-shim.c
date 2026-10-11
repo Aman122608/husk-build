@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
+#include <poll.h>
 #include <pthread.h>
 #include <sched.h>
 #include <stdatomic.h>
@@ -771,28 +772,102 @@ int32_t AMotionEvent_getPointerId(const void *event, size_t idx)
 
 /* -------------------------------------------------------- looper  ---- */
 
-/* A looper the guest can poll. Nothing delivers through it -- the attempt pushes
- * touch through the loader, not through the looper -- so pollAll reports a
- * timeout, which is exactly what a real idle looper returns. */
+/*
+ * A looper that actually polls.
+ *
+ * The NDK's native_app_glue registers the message pipe here --
+ * ALooper_addFd(looper, app->msgpipe[0], LOOPER_ID_MAIN, ALOOPER_EVENT_INPUT, NULL,
+ * &app->looperSource) -- and reads a lifecycle command only when ALooper_pollAll returns
+ * that ident. The previous stub returned ALOOPER_POLL_TIMEOUT immediately and ignored the
+ * timeout outright, and addFd did nothing at all. So the pipe was registered into a
+ * looper that forgot it, the game thread spun hot on a -1 timeout that never blocked, and
+ * not one command was ever delivered. The engine sat waiting for APP_CMD_START.
+ *
+ * pollAll takes no looper argument, so the looper has to be found per thread -- which is
+ * also what the NDK means by it: one looper per thread, created by ALooper_prepare.
+ */
 #define ALOOPER_POLL_TIMEOUT      (-3)
-#define AINPUT_SOURCE_TOUCHSCREEN 0x1002
+#define ALOOPER_POLL_ERROR        (-4)
+#define ALOOPER_EVENT_INPUT       1
+#define ALOOPER_EVENT_OUTPUT      2
+#define TL_LOOPER_MAX             8
 
-void *ALooper_prepare(int opts) { (void)opts; return calloc(1, 32); }
+typedef struct {
+    int   fd[TL_LOOPER_MAX];
+    int   ident[TL_LOOPER_MAX];
+    int   events[TL_LOOPER_MAX];
+    void *callback[TL_LOOPER_MAX];
+    void *data[TL_LOOPER_MAX];
+    int   n;
+} tl_looper;
+
+static __thread tl_looper *tl_looper_cur;
+
+void *ALooper_prepare(int opts)
+{
+    (void)opts;
+    if (!tl_looper_cur) tl_looper_cur = calloc(1, sizeof(tl_looper));
+    return tl_looper_cur;
+}
+
+int ALooper_addFd(void *looper, int fd, int ident, int events, void *callback, void *data)
+{
+    tl_looper *l = looper ? (tl_looper *)looper : tl_looper_cur;
+    if (!l || l->n >= TL_LOOPER_MAX) return 0;
+    l->fd[l->n]       = fd;
+    l->ident[l->n]    = ident;
+    l->events[l->n]   = events;
+    l->callback[l->n] = callback;
+    l->data[l->n]     = data;
+    l->n++;
+    return 1;
+}
+
 int ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void **out_data)
 {
-    (void)timeout_ms;
     if (out_fd) *out_fd = -1;
     if (out_events) *out_events = 0;
     if (out_data) *out_data = NULL;
+
+    tl_looper *l = tl_looper_cur;
+    if (!l || l->n == 0) {
+        /* Nothing registered. Honour the timeout rather than spinning, so a guest polling
+         * a bare looper blocks the way a real one would instead of burning a core. */
+        if (timeout_ms > 0) {
+            struct timespec t;
+            t.tv_sec = timeout_ms / 1000;
+            t.tv_nsec = (long)(timeout_ms % 1000) * 1000000L;
+            nanosleep(&t, NULL);
+        }
+        return ALOOPER_POLL_TIMEOUT;
+    }
+
+    struct pollfd p[TL_LOOPER_MAX];
+    for (int i = 0; i < l->n; i++) {
+        p[i].fd = l->fd[i];
+        p[i].events = 0;
+        p[i].revents = 0;
+        if (l->events[i] & ALOOPER_EVENT_INPUT)  p[i].events |= POLLIN;
+        if (l->events[i] & ALOOPER_EVENT_OUTPUT) p[i].events |= POLLOUT;
+    }
+
+    /* timeout_ms = -1 blocks, which is exactly what the glue asks for. */
+    int r = poll(p, (nfds_t)l->n, timeout_ms);
+    if (r < 0) return ALOOPER_POLL_ERROR;
+    if (r == 0) return ALOOPER_POLL_TIMEOUT;
+
+    for (int i = 0; i < l->n; i++) {
+        if (!p[i].revents) continue;
+        if (out_fd)     *out_fd = l->fd[i];
+        if (out_events) *out_events = l->events[i];
+        if (out_data)   *out_data = l->data[i];
+        return l->ident[i];
+    }
     return ALOOPER_POLL_TIMEOUT;
-}
-void ALooper_addFd(void *looper, int fd, int ident, int events, void *callback, void *data)
-{
-    (void)looper; (void)fd; (void)ident; (void)events; (void)callback; (void)data;
 }
 void ALooper_acquire(void *looper) { (void)looper; }
 void ALooper_release(void *looper) { (void)looper; }
-void ALooper_wake(void *looper) { (void)looper; }
+void ALooper_wake(void *looper)    { (void)looper; }
 
 void AInputQueue_attachLooper(void *q, void *looper, int ident, void *callback, void *data)
 {
