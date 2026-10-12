@@ -27,6 +27,9 @@ struct SendLogToPCButton: View {
 
     @AppStorage(HuskLog.SendKeys.address) private var address = defaultLogAddress
     @AppStorage(HuskLog.SendKeys.on) private var enabled = false
+    /// The message that goes with the log. Persisted, because the moment worth describing is
+    /// usually while the game is still on screen, and killing it to reach this screen loses it.
+    @AppStorage(HuskLog.SendKeys.note) private var note = ""
 
     @State private var draft = ""
     @State private var editing = false
@@ -86,6 +89,14 @@ struct SendLogToPCButton: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Message with this log (optional)").font(.caption).foregroundStyle(.secondary)
+                TextField("What you saw, or what to look at", text: $note, axis: .vertical)
+                    .lineLimit(2...5)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.callout)
+            }
+
             if let status {
                 Text(status)
                     .font(.footnote)
@@ -108,6 +119,14 @@ struct SendLogToPCButton: View {
         request.timeoutInterval = 30
         request.setValue(buildStamp, forHTTPHeaderField: "X-Husk-Build")
         request.setValue("text/plain; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        // The message rides in a header as base64 of its UTF-8: HTTP headers carry no charset of
+        // their own, and a message the user typed can contain any character they can type. The
+        // receiver puts it at the top of the saved log, so it is read with the log rather than
+        // existing as a second file nobody knows to open.
+        let message = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !message.isEmpty {
+            request.setValue(Data(message.utf8).base64EncodedString(), forHTTPHeaderField: "X-Husk-Note")
+        }
         busy = true; status = nil; failed = false
         Task {
             do {
@@ -116,7 +135,10 @@ struct SendLogToPCButton: View {
                 await MainActor.run {
                     busy = false
                     failed = code != 200
-                    status = failed ? "The receiver answered \(code)." : "Sent \(body.count) bytes to \(displayHost)."
+                    status = failed ? "The receiver answered \(code)."
+                                    : "Sent \(body.count) bytes to \(displayHost)"
+                                      + (message.isEmpty ? "." : " with your message.")
+                    if !failed { note = "" }     // a message is consumed by the send that carried it
                 }
             } catch {
                 await MainActor.run {

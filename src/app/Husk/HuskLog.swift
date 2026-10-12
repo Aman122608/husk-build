@@ -61,6 +61,9 @@ enum HuskLog {
     enum SendKeys {
         static let address = "husk.logsend.address"
         static let on = "husk.logsend.on"
+        /// The message that rides along with the next log. Persisted, so a note can be written
+        /// while the game is still running and sent with the log once it has been killed.
+        static let note = "husk.logsend.note"
     }
 
     static func recentLines(_ n: Int = 400) -> [String] {

@@ -16,6 +16,7 @@ configured with, which is this machine. Content is the log file Husk already wri
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as _dt
 import os
 import socket
@@ -24,6 +25,22 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 TOKEN = os.environ.get("HUSK_LOG_TOKEN", "").strip()
+
+
+def note_from(headers) -> str:
+    """The message the user typed beside the log, if there is one.
+
+    Carried as base64 of its UTF-8 in ``X-Husk-Note``: HTTP headers have no charset of their own,
+    and a note can be any character the user can type. A header that is not valid base64 is taken
+    as already-plain rather than dropped, so a mismatched sender still gets its message across.
+    """
+    raw = headers.get("X-Husk-Note", "").strip()
+    if not raw:
+        return ""
+    try:
+        return base64.b64decode(raw, validate=True).decode("utf-8", "replace").strip()
+    except Exception:
+        return raw
 
 
 def lan_address() -> str:
@@ -77,9 +94,21 @@ class Handler(BaseHTTPRequestHandler):
         stamp = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
         name = self.headers.get("X-Husk-Build", "").strip().replace("/", "-")[:40]
         out = self.out_dir / f"husk-{stamp}{'-' + name if name else ''}.log"
-        out.write_bytes(data)
+
+        # The message goes INTO the log rather than beside it: whoever reads the log reads one
+        # file, and the user's own words are the first thing in it instead of something a reader
+        # has to know to look for.
+        note = note_from(self.headers)
+        if note:
+            banner = ("=== MESSAGE FROM THE USER ===\n" + note + "\n=== END MESSAGE ===\n\n").encode()
+            out.write_bytes(banner + data)
+        else:
+            out.write_bytes(data)
+
         lines = data.count(b"\n") + 1
         print(f"[{stamp}] received {n} bytes ({lines} lines) -> {out}", flush=True)
+        if note:
+            print("    message: " + note.replace("\n", "\n             "), flush=True)
         self._plain(200, f"saved {out.name}\n")
 
 
