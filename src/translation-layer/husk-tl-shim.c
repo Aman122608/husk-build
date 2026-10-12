@@ -922,11 +922,145 @@ int32_t AMotionEvent_getPointerId(const void *event, size_t idx)
  * tell whether it was silent or merely unheard. (No recursion risk: the shim's own
  * tl_log_line calls Darwin's write directly, so it never re-enters this function.)
  */
+/* ------------------------------------------------------- the guest's log --- */
+
+/*
+ * The tee: mirror the guest's own log file into this one.
+ *
+ * A UE4 shipping build has its console logging compiled out (LowLevelOutputDebugString is
+ * #if UE_BUILD_DEBUG, and FOutputDevice only reaches __android_log_print once the Android
+ * output device registers during FEngineLoop::Init), so the engine says nothing for its whole
+ * boot and "the log stops here" means only that it has nothing to say yet. But the engine also
+ * keeps a log FILE -- Saved/Logs/<Project>.log -- written through ordinary file I/O, and that
+ * file is written whatever the build config. It is the one place the engine explains itself.
+ *
+ * So: when the guest opens a path ending in ".log" for writing, remember the handle, and every
+ * byte the guest then writes through it is echoed into this log as a "guestlog|" line. Both I/O
+ * styles are covered because a UE4 Android build uses both: the FOutputDeviceFile path goes
+ * through fopen/fwrite/fputs/fprintf, and the platform file layer (AndroidFile.cpp) goes through
+ * open()/write() on a raw descriptor. A tee on only one of them can be silently empty, which is
+ * exactly the failure this instrument exists to prevent.
+ *
+ * Registration is logged loudly and uncapped ("tee: mirroring guest writes to <path>"), so a run
+ * where it never appears is a measurement -- the engine never opened a .log for writing -- and
+ * not an absence of data. That is the negative asserted out loud.
+ */
+
+#define TL_TEE_MAX 8
+#define TL_TEE_CAP_BYTES (256u * 1024u)
+
+typedef struct {
+    FILE         *f;                /* a FILE* target, or NULL */
+    int           fd;               /* an fd target, or -1 */
+    char          carry[512];
+    size_t        carry_n;
+    unsigned long bytes;
+    unsigned long lines;
+} tl_tee_t;
+
+static tl_tee_t g_tee[TL_TEE_MAX];
+
+static int tl_path_is_log(const char *path)
+{
+    if (!path) return 0;
+    size_t n = strlen(path);
+    if (n < 4) return 0;
+    const char *e = path + n - 4;
+    return e[0] == '.' && (e[1] == 'l' || e[1] == 'L')
+        && (e[2] == 'o' || e[2] == 'O') && (e[3] == 'g' || e[3] == 'G');
+}
+
+static tl_tee_t *tl_tee_slot(void)
+{
+    for (int i = 0; i < TL_TEE_MAX; i++) {
+        if (!g_tee[i].f && g_tee[i].fd < 0) return &g_tee[i];
+    }
+    return &g_tee[0];               /* recycle rather than refuse */
+}
+
+static void tl_tee_add_file(FILE *f, const char *path)
+{
+    tl_tee_t *t = tl_tee_slot();
+    t->f = f;
+    t->fd = -1;
+    t->carry_n = 0;
+    t->bytes = 0;
+    t->lines = 0;
+    tl_log_line("tee: mirroring guest writes to %s", path);
+}
+
+static void tl_tee_add_fd(int fd, const char *path)
+{
+    tl_tee_t *t = tl_tee_slot();
+    t->f = NULL;
+    t->fd = fd;
+    t->carry_n = 0;
+    t->bytes = 0;
+    t->lines = 0;
+    tl_log_line("tee: mirroring guest writes to %s", path);
+}
+
+static tl_tee_t *tl_tee_find_file(FILE *f)
+{
+    if (!f) return NULL;
+    for (int i = 0; i < TL_TEE_MAX; i++) {
+        if (g_tee[i].f == f) return &g_tee[i];
+    }
+    return NULL;
+}
+
+static tl_tee_t *tl_tee_find_fd(int fd)
+{
+    if (fd < 0) return NULL;
+    for (int i = 0; i < TL_TEE_MAX; i++) {
+        if (!g_tee[i].f && g_tee[i].fd == fd) return &g_tee[i];
+    }
+    return NULL;
+}
+
+/* Line-oriented so the echoed text reads as the engine's log, not as a byte dump. A partial
+ * line is held in the target's carry buffer until its newline arrives. */
+static void tl_tee_emit(tl_tee_t *t, const void *p, size_t n)
+{
+    const unsigned char *b = p;
+    for (size_t i = 0; i < n; i++) {
+        if (t->bytes >= TL_TEE_CAP_BYTES) {
+            if (t->bytes == TL_TEE_CAP_BYTES) {
+                t->bytes++;
+                tl_log_line("tee: stopped echoing after %u KiB (guest log is longer)",
+                            TL_TEE_CAP_BYTES / 1024);
+            }
+            return;
+        }
+        unsigned char c = b[i];
+        t->bytes++;
+        if (c == '\n') {
+            t->carry[t->carry_n] = '\0';
+            tl_log_line("guestlog| %s", t->carry);
+            t->carry_n = 0;
+            t->lines++;
+            continue;
+        }
+        if (c == '\r') continue;
+        if (t->carry_n >= sizeof(t->carry) - 1) {
+            t->carry[t->carry_n] = '\0';
+            tl_log_line("guestlog| %s", t->carry);
+            t->carry_n = 0;
+        }
+        t->carry[t->carry_n++] = (char)c;
+    }
+}
+
 ssize_t write_shim(int fd, const void *buf, size_t len)
 {
     errno = 0;
     ssize_t r = write(fd, buf, len);
     int err = errno;
+    /* The platform file layer writes its log with write() on a raw descriptor. */
+    if (r > 0) {
+        tl_tee_t *t = tl_tee_find_fd(fd);
+        if (t) tl_tee_emit(t, buf, (size_t)r);
+    }
     if (len == 1 && fd >= 0) {
         tl_log_line("pipe cmd: write fd=%d byte=%#x -> %zd%s",
                     fd, (unsigned)*(const unsigned char *)buf, r,
@@ -2155,20 +2289,43 @@ static FILE *map_stream(void *s) {
     return (FILE *)s;
 }
 
+static int vfprintf_shim(void *stream, const char *fmt, va_list ap) {
+    FILE *f = map_stream(stream);
+    tl_tee_t *t = tl_tee_find_file((FILE *)stream);
+    if (t) {
+        char buf[1024];
+        va_list ap2;
+        va_copy(ap2, ap);
+        int n = vsnprintf(buf, sizeof(buf), fmt, ap2);
+        va_end(ap2);
+        if (n > 0) {
+            tl_tee_emit(t, buf, (size_t)n < sizeof(buf) ? (size_t)n : sizeof(buf) - 1);
+        }
+    }
+    return vfprintf(f, fmt, ap);
+}
+
 static int fprintf_shim(void *stream, const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    int r = vfprintf(map_stream(stream), fmt, ap);
+    int r = vfprintf_shim(stream, fmt, ap);
     va_end(ap);
     return r;
 }
 
-static int vfprintf_shim(void *stream, const char *fmt, va_list ap) {
-    return vfprintf(map_stream(stream), fmt, ap);
+static int fputc_shim(int c, void *stream) {
+    tl_tee_t *t = tl_tee_find_file((FILE *)stream);
+    if (t) {
+        unsigned char b = (unsigned char)c;
+        tl_tee_emit(t, &b, 1);
+    }
+    return fputc(c, map_stream(stream));
 }
 
-static int fputc_shim(int c, void *stream) {
-    return fputc(c, map_stream(stream));
+static int fputs_shim(const char *s, void *stream) {
+    tl_tee_t *t = tl_tee_find_file((FILE *)stream);
+    if (t && s) tl_tee_emit(t, s, strlen(s));
+    return fputs(s, map_stream(stream));
 }
 
 static int fflush_shim(void *stream) {
@@ -2176,7 +2333,10 @@ static int fflush_shim(void *stream) {
 }
 
 static size_t fwrite_shim(const void *ptr, size_t size, size_t nmemb, void *stream) {
-    return fwrite(ptr, size, nmemb, map_stream(stream));
+    size_t r = fwrite(ptr, size, nmemb, map_stream(stream));
+    tl_tee_t *t = tl_tee_find_file((FILE *)stream);
+    if (t && r) tl_tee_emit(t, ptr, size * r);
+    return r;
 }
 
 /* bionic's stdio globals, which Darwin does not export under these names.
@@ -2676,6 +2836,10 @@ int open_shim(const char *path, int flags, int mode)
                     path ? path : "(null)", flags, dflags, fd,
                     fd < 0 ? " (failed)" : "");
     }
+    /* Write intent, in bionic's numbering: O_WRONLY 0x1, O_RDWR 0x2, O_CREAT 0x40. */
+    if (fd >= 0 && path && (flags & (0x1 | 0x2 | 0x40)) && tl_path_is_log(path)) {
+        tl_tee_add_fd(fd, path);
+    }
     return fd;
 }
 
@@ -2686,6 +2850,9 @@ int openat_shim(int dirfd, const char *path, int flags, int mode)
     int fd = (dflags & 0x200) ? openat(dirfd, path, dflags, (mode_t)mode)
                               : openat(dirfd, path, dflags);
     note_file("openat", path, fd);
+    if (fd >= 0 && path && (flags & (0x1 | 0x2 | 0x40)) && tl_path_is_log(path)) {
+        tl_tee_add_fd(fd, path);
+    }
     return fd;
 }
 
@@ -2718,7 +2885,14 @@ FILE *fopen_shim(const char *path, const char *mode)
         && mode[0] == 'r'
         && (mode[1] == '\0' || (mode[1] == 'b' && mode[2] == '\0'));
     if (!path || !plain_read || path[0] != '/') {
-        return fopen(path, mode);
+        FILE *f = fopen(path, mode);
+        /* The guest's own log file. Registered here, not in the /proc branch below, because a
+         * UE4 build's log path is relative (".../Saved/Logs/<Project>.log") and is never a plain
+         * read of an absolute path -- the shape the branch below requires. */
+        if (f && path && mode && (mode[0] == 'w' || mode[0] == 'a') && tl_path_is_log(path)) {
+            tl_tee_add_file(f, path);
+        }
+        return f;
     }
 
     const char *key = NULL;
@@ -3150,6 +3324,8 @@ static const tl_export_entry g_exports[] = {
     { "fputc",                      fputc_shim },
     { "fflush",                     fflush_shim },
     { "fwrite",                     fwrite_shim },
+    /* Imported by libUE4.so and previously resolved straight to Darwin's, bypassing the tee. */
+    { "fputs",                      fputs_shim },
 
     /* bionic's stdio globals and ctype table: data the guest binds by name and
      * Darwin has no symbol for. */
