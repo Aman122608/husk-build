@@ -312,109 +312,6 @@ typedef struct {
 
 static tl_run g_run;
 
-/*
- * The APKs of the current attempt, so the shim can serve assets out of them.
- *
- * The engine asks Java for its AssetManager and then hands that opaque pointer back to
- * the NDK's AAssetManager_open. Both ends of it are ours, so the shim can define what the
- * pointer means and answer every open straight out of the APK -- which is the whole of what
- * the asset path needs, without ART and without an activity.
- */
-static char g_apk_paths[8][512];
-static int  g_n_apk_paths;
-
-int tl_apk_count(void) { return g_n_apk_paths; }
-
-const char *tl_apk_path(int i)
-{
-    return (i >= 0 && i < g_n_apk_paths) ? g_apk_paths[i] : NULL;
-}
-
-/*
- * assets/<name> out of any loaded APK, inflated if it is stored deflated.
- * On success *out is a malloc'd buffer the caller frees, and *outlen its length.
- * Returns 0 if no loaded APK has it -- which is a real answer, not an error, because a
- * guest that probes for an optional file expects silence.
- */
-int tl_apk_read_asset(const char *name, void **out, size_t *outlen)
-{
-    if (!name || !out || !outlen) return 0;
-
-    char entry[640];
-    if (!strncmp(name, "assets/", 7)) snprintf(entry, sizeof entry, "%s", name);
-    else                              snprintf(entry, sizeof entry, "assets/%s", name);
-
-    for (int a = 0; a < g_n_apk_paths; a++) {
-        tl_zip z;
-        char err[128];
-        if (!tl_zip_open(&z, g_apk_paths[a], err, sizeof err)) {
-            continue;
-        }
-        const tl_zip_entry *e = tl_zip_find(&z, entry);
-        if (e) {
-            /* A stored entry points into the mapping and must be copied out before the
-             * mapping goes away; an inflated one is already the caller's to free. */
-            const uint8_t *bytes = NULL;
-            size_t len = 0;
-            bool owned = false;
-            bool ok = tl_zip_data(&z, e, 1u << 30, &bytes, &len, &owned, err, sizeof err);
-            tl_zip_close(&z);
-            if (!ok) {
-                return 0;
-            }
-            if (!owned) {
-                uint8_t *copy = (uint8_t *)malloc(len ? len : 1);
-                if (!copy) {
-                    return 0;
-                }
-                if (len) memcpy(copy, bytes, len);
-                *out = copy;
-            } else {
-                *out = (void *)bytes;
-            }
-            *outlen = len;
-            return 1;
-        }
-        tl_zip_close(&z);
-    }
-    return 0;
-}
-
-/*
- * Asset names under `prefix` (a path in the APK without the leading "assets/"), each
- * copied into out + i*namesz. Returns how many were written. The zip index already holds
- * every name, so a directory listing is a walk over it rather than any real directory.
- */
-int tl_apk_list_assets(const char *prefix, char *out, int max, int namesz)
-{
-    int n = 0;
-    char pfx[192];
-    snprintf(pfx, sizeof pfx, "assets/%s", prefix ? prefix : "");
-    size_t plen = strlen(pfx);
-    while (plen && pfx[plen - 1] == '/') pfx[--plen] = 0;
-
-    for (int a = 0; a < g_n_apk_paths && n < max; a++) {
-        tl_zip z;
-        char err[128];
-        if (!tl_zip_open(&z, g_apk_paths[a], err, sizeof err)) {
-            continue;
-        }
-        for (size_t i = 0; i < z.count && n < max; i++) {
-            const char *nm = z.entries[i].name;
-            if (!nm || strncmp(nm, pfx, plen)) {
-                continue;
-            }
-            const char *rest = nm + plen;
-            if (*rest == '/') rest++;
-            if (!*rest) continue;
-            snprintf(out + (size_t)n * namesz, (size_t)namesz, "%s", rest);
-            n++;
-        }
-        tl_zip_close(&z);
-    }
-    return n;
-}
-
 int tl_log_sink_fd = -1;
 
 void tl_log_line(const char *fmt, ...)
@@ -441,63 +338,6 @@ void tl_log_line(const char *fmt, ...)
     pthread_mutex_lock(&g_log_mutex);
     tl_log_put(&g_run.log, line, (size_t)w + 1);
     pthread_mutex_unlock(&g_log_mutex);
-}
-
-/* -------------------------------------------- what the crash handler says */
-
-static char g_last_init[160];
-
-const char *husk_tl_last_init(void)
-{
-    return g_last_init;
-}
-
-/*
- * Written with write(2) only.
- *
- * The rest of the logging goes through vsnprintf and a mutex, which is right on
- * a running process and useless in the one place this matters: a thread already
- * holding the log mutex, or a fault inside malloc, would deadlock instead of
- * reporting anything. A hang and a crash look identical from outside, so the
- * crash path gets its own writer that takes no lock and allocates nothing.
- */
-static void fault_put_named(int fd, const char *name, uintptr_t value)
-{
-    static const char digits[] = "0123456789abcdef";
-    char line[64];
-    char *p = line;
-
-    *p++ = ' ';
-    *p++ = ' ';
-    for (const char *c = name; *c; c++) *p++ = *c;
-    while ((size_t)(p - line) < 8) *p++ = ' ';
-    *p++ = '0';
-    *p++ = 'x';
-    for (int shift = 60; shift >= 0; shift -= 4) *p++ = digits[(value >> shift) & 0xF];
-    *p++ = '\n';
-
-    ssize_t ignored = write(fd, line, (size_t)(p - line));
-    (void)ignored;
-}
-
-void husk_tl_dump_fault(int fd, uintptr_t pc, uintptr_t lr, uintptr_t sp, uintptr_t fp,
-                        const uintptr_t *regs, size_t nregs)
-{
-    if (fd < 0) return;
-
-    char name[6];
-    for (size_t i = 0; i < nregs && i < 31; i++) {
-        size_t k = 0;
-        name[k++] = 'x';
-        if (i >= 10) name[k++] = (char)('0' + (i / 10) % 10);
-        name[k++] = (char)('0' + (i % 10));
-        name[k] = '\0';
-        fault_put_named(fd, name, regs[i]);
-    }
-    fault_put_named(fd, "fp", fp);
-    fault_put_named(fd, "lr", lr);
-    fault_put_named(fd, "sp", sp);
-    fault_put_named(fd, "pc", pc);
 }
 
 /*
@@ -923,107 +763,23 @@ static void *lib_lookup(const tl_lib *L, const char *name)
  * its own dependencies), then the shim. */
 void *tl_shim_find(const char *name);
 
-/*
- * A short watchlist of names worth a line at resolution time.
- *
- * Set when an import is present in the library, resolves to something, and the
- * guest still behaves as though it had not -- the point being to see which of the
- * three places it came from: an earlier library, the shim, or Darwin. mmap and
- * fopen are on it because fopen demonstrably reaches the shim and mmap, in the
- * same table, demonstrably does not; the guard primitives because the function
- * that fails branches on a guard byte before it ever reaches its mmap.
- */
-static bool watch_import(const char *name)
-{
-    static const char *const watched[] = {
-        "mmap", "munmap", "fopen", "fopen64", "open",
-        "__cxa_guard_acquire", "__cxa_guard_release", "__cxa_atexit",
-        "pthread_mutex_lock", "sysconf", "sbrk", "mprotect",
-    };
-    for (size_t i = 0; i < sizeof(watched) / sizeof(watched[0]); i++) {
-        if (!strcmp(name, watched[i])) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/* One line per watched name, not per relocation: a single import can back dozens
- * of slots and the repetition would bury the answer. */
-static bool watch_seen(const char *name)
-{
-    static char seen[24][64];
-    static size_t n;
-    for (size_t i = 0; i < n; i++) {
-        if (!strcmp(seen[i], name)) {
-            return true;
-        }
-    }
-    if (n < sizeof(seen) / sizeof(seen[0])) {
-        snprintf(seen[n], sizeof(seen[0]), "%s", name);
-        n++;
-    }
-    return false;
-}
-
 static void *resolve(const char *name, bool *weak)
 {
-    bool watch = watch_import(name) && !watch_seen(name);
-
     for (int i = 0; i < g_run.nlibs; i++) {
         void *a = lib_lookup(&g_run.libs[i], name);
         if (a) {
-            if (watch) {
-                tl_log_line("resolve: %s -> %s (a guest library, which takes priority)",
-                            name, g_run.libs[i].name);
-            }
             return a;
         }
     }
     void *shim = tl_shim_find(name);
     if (shim) {
-        if (watch) {
-            tl_log_line("resolve: %s -> the shim at %p", name, shim);
-        }
         return shim;
-    }
-    if (watch) {
-        tl_log_line("resolve: %s -> NOTHING (the guest will call a null pointer)", name);
     }
     (void)weak;
     return NULL;
 }
 
 /* ------------------------------------------------------- relocation  */
-
-/* Imports this library could not bind, collected as the walk goes.
- *
- * The walk used to stop dead at the first symbol it could not resolve, which
- * makes one build one guess: the log names `stdout`, you shim `stdout`, and the
- * next build names something else that was equally invisible all along. Nothing
- * about the decision changes -- the library is still refused -- but every
- * missing symbol is named in the same pass, so the whole set can be fixed at
- * once instead of one symbol per build. */
-#define TL_MAX_UNRESOLVED 512
-static char g_unresolved[TL_MAX_UNRESOLVED][96];
-static int  g_n_unresolved;
-
-static void note_unresolved(const char *name)
-{
-    /* Distinct names only. A single symbol can back dozens of relocation slots
-     * (one libUE4 import appeared 18 times), so a list that keeps duplicates
-     * fills its cap with one name and truncates away the rest -- which is how a
-     * 96-entry report managed to hide symbols. */
-    for (int i = 0; i < g_n_unresolved; i++) {
-        if (!strcmp(g_unresolved[i], name)) {
-            return;
-        }
-    }
-    if (g_n_unresolved < TL_MAX_UNRESOLVED) {
-        snprintf(g_unresolved[g_n_unresolved], sizeof(g_unresolved[0]), "%s", name);
-        g_n_unresolved++;
-    }
-}
 
 typedef struct { const uint8_t *p; const uint8_t *end; bool bad; } sleb_r;
 static int64_t rd_sleb(sleb_r *s)
@@ -1094,12 +850,9 @@ static bool reloc_one(uint64_t off_in_image, uint32_t type, uint32_t symidx,
             void *addr = resolve(sname, &weak);
             if (!addr) {
                 if (!weak) {
-                    note_unresolved(sname);
-                    /* Keep walking so the report below is the whole list. The
-                     * slot is left NULL and the load is refused at the end of
-                     * apply_relocations, so nothing ever runs with it. */
-                    *(uint64_t *)place = 0;
-                    return true;
+                    tl_log_line("reloc: unresolved import %s in %s -- refusing",
+                                sname, L->name);
+                    return false;
                 }
                 *(uint64_t *)place = 0;      /* a weak undefined stays NULL */
                 return true;
@@ -1134,7 +887,6 @@ static bool reloc_one(uint64_t off_in_image, uint32_t type, uint32_t symidx,
 static bool apply_relocations(tl_lib *L, lex *e, const ldyn *d)
 {
     size_t done = 0;
-    g_n_unresolved = 0;
 
     /* Plain RELA. */
     if (d->rela && d->relasz) {
@@ -1268,16 +1020,6 @@ static bool apply_relocations(tl_lib *L, lex *e, const ldyn *d)
         }
     }
     tl_log_line("reloc: %s, %zu relocations applied", L->name, done);
-    if (g_n_unresolved) {
-        /* One line per symbol, so the list can be read straight off the log and
-         * answered in one change. */
-        tl_log_line("reloc: %s has %d distinct import(s) that nothing resolves -- refusing:",
-                    L->name, g_n_unresolved);
-        for (int i = 0; i < g_n_unresolved; i++) {
-            tl_log_line("reloc:   unresolved: %s", g_unresolved[i]);
-        }
-        return false;
-    }
     return true;
 }
 
@@ -1439,109 +1181,6 @@ static void patch_guest_code(uint8_t *code_rw, const uint8_t *code_rx, size_t le
 #endif
 
 /* ---------------------------------------------------------- loading  */
-
-/*
- * Do the two aliases of a dual mapping actually share their memory?
- *
- * StikDebug gives a library two mappings of the same image: one executable, one
- * writable. The loader relocates and patches through the writable one and the
- * guest reads the results through the executable one, so every one of those
- * patches depends on both naming the same physical pages. If they do not -- a
- * MAP_PRIVATE on each side, say -- then a global a constructor writes is still
- * the file's zero when the guest reads it back through the other alias, and the
- * symptom is a null pointer dereference inside code that is correct. That
- * failure is completely silent and reads as a guest bug, so it is worth one
- * comparison at load time to rule in or out.
- */
-static void check_dual_map(const tl_lib *L)
-{
-    if (!L->base_rw || L->base_rw == L->base) {
-        return;
-    }
-
-    size_t pages = 0, bytes = 0, first_diff = 0;
-    for (size_t p = 0; p < L->npages; p++) {
-        if (!(L->page_flags[p] & TL_PAGE_W)) continue;
-        size_t off = p * TL_PAGE;
-        size_t span = TL_PAGE;
-        if (off + span > L->npages * TL_PAGE) span = L->npages * TL_PAGE - off;
-        if (span == 0) break;
-        if (!first_diff && memcmp(L->base + off, L->base_rw + off, span) != 0) {
-            first_diff = off + 1;   /* +1: the offset of a real difference is never 0 here */
-        }
-        bytes += span;
-        pages++;
-    }
-
-    if (first_diff) {
-        tl_log_line("dualmap: the RX and RW views of %s DIFFER from +0x%zx -- a write through "
-                    "one alias is not visible through the other, so anything written at load "
-                    "time or by a constructor reads back as the file's contents",
-                    L->name, first_diff - 1);
-    } else {
-        tl_log_line("dualmap: RX and RW views agree over %zu byte(s) in %zu writable page(s)",
-                    bytes, pages);
-    }
-}
-
-/*
- * Install the JavaVM before the library's constructors run.
- *
- * A UE4 engine reaches the JVM through AndroidJavaEnv. Its only writer in
- * libUE4 is the exported
- *
- *     AndroidJavaEnv::InitializeJavaEnv(JavaVM *, jint version, jobject activity)
- *
- * which stores the VM and the version and then attaches the calling thread.
- * Until it has run the pointer is null, and the first constructor that wants a
- * JNIEnv -- `vm->GetEnv(&env, version)`, vtable slot 0x30 -- dereferences null
- * and dies. That is exactly the crash: fault address 0, inside init_array[17].
- *
- * Android delivers the VM through JNI_OnLoad, which ART calls after dlopen, so
- * on a device the constructors run first. This loader did the same, and its
- * JNI_OnLoad pass sits after the constructor loop -- so a library needing the
- * environment during static initialisation never gets it. Offer it here, before
- * the initialisers, to whichever library exports the symbol.
- *
- * Only the initialiser is called, not JNI_OnLoad: it is the narrow operation
- * (store the VM, attach this thread) rather than everything a JNI_OnLoad chooses
- * to do, and the engine guards a second call -- its own
- * "if (g_vm) { g_activity = activity; return; }" makes the later pass harmless.
- *
- * The version is JNI_VERSION_1_6, what a JNI_OnLoad would pass and what our fake
- * VM answers GetEnv for. The activity is null: a real one belongs to ART, which
- * is milestone 2, and the engine only stores it on the second call.
- */
-#define HUSK_JNI_VERSION_1_6 0x00010006
-
-static void jni_install_env(tl_lib *L, const char *name)
-{
-    /* The mangled name, because it is a C++ member and that is what the symbol
-     * table holds. AndroidJavaEnv::InitializeJavaEnv(JavaVM*, int, jobject) --
-     * and note the underscore in P7_JavaVM: Android's typedef is
-     * `typedef struct _JavaVM JavaVM;`, so the parameter mangles as _JavaVM.
-     * Spelling it JavaVM gives a name that is not in the table, the lookup
-     * returns null, and the handover silently does nothing. */
-    void (*init_env)(void *, int32_t, void *) =
-        (void (*)(void *, int32_t, void *))lib_lookup(
-            L, "_ZN14AndroidJavaEnv17InitializeJavaEnvEP7_JavaVMiP8_jobject");
-    if (!init_env) {
-        /* Say so. A silent return here is indistinguishable from "the handover
-         * worked", which cost a build cycle: the crash came back byte-identical
-         * with no new log line and no way to tell a failed lookup from a
-         * library that simply has no such symbol. */
-        tl_log_line("jni: %s has no AndroidJavaEnv::InitializeJavaEnv "
-                    "(looked for _ZN14AndroidJavaEnv17InitializeJavaEnvEP7_JavaVMiP8_jobject)",
-                    name);
-        return;
-    }
-
-    tl_log_line("jni: %s exports AndroidJavaEnv::InitializeJavaEnv at %p -- installing the "
-                "JavaVM before its constructors", name, init_env);
-    init_env(tl_shim_vm(), HUSK_JNI_VERSION_1_6, NULL);
-    tl_log_line("jni: %s environment installed (version 0x%x, no activity -- ART is milestone 2)",
-                name, HUSK_JNI_VERSION_1_6);
-}
 
 static bool load_library(const char *name, const uint8_t *file, size_t flen)
 {
@@ -1724,53 +1363,6 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
         unmap_lib(&(tl_lib){ .base = base, .npages = npages, .page_flags = flags, .is_stikdebug = is_stikdebug });
         return false;
     }
-
-    /*
-     * Verify the zero-fill actually landed.
-     *
-     * The tail of a segment past its file size is zeroed above, and the guest
-     * reads it as .bss. A page that keeps a non-zero value there is a page the
-     * guest reads as garbage, and it is completely silent -- the engine simply
-     * behaves as though a global had been set, which is indistinguishable from
-     * the global having been set.
-     *
-     * Checked rather than assumed. The arithmetic said the memset covered the
-     * arena allocator's state, and yet by elimination that state is non-zero
-     * before anything could have written it: the mmap entry point is reached by
-     * straight-line code from a branch that only a zero can take, and the call
-     * never arrives. So measure it.
-     */
-    for (int i = 0; i < nloads; i++) {
-        const uint8_t *ph = (const uint8_t *)loads[i];
-        uint64_t v = ld64(ph + 16), fo = ld64(ph + 8);
-        uint64_t fs = ld64(ph + 32), ms = ld64(ph + 40);
-        if (fo > flen || fs > flen - fo || ms <= fs) {
-            continue;
-        }
-        uint64_t seg_off = v - base_vaddr;
-        size_t sp = (size_t)(seg_off / TL_PAGE);
-        uint8_t *dst = (sp < npages && (flags[sp] & TL_PAGE_CARVED))
-                     ? (base + seg_off)
-                     : (base_rw ? base_rw + seg_off : base + seg_off);
-        uint64_t nz = 0, first = 0;
-        for (uint64_t k = fs; k < ms; k++) {
-            if (dst[k]) {
-                if (!nz) first = k;
-                nz++;
-            }
-        }
-        if (nz) {
-            tl_log_line("bss: %s segment %d: %llu non-zero byte(s) in its zero-filled tail, "
-                        "first at vaddr 0x%llx -- the zero-fill did not reach it",
-                        name, i, (unsigned long long)nz,
-                        (unsigned long long)(v + first));
-        } else if (ms > fs) {
-            tl_log_line("bss: %s segment %d: zero-filled tail verified (%llu bytes at 0x%llx)",
-                        name, i, (unsigned long long)(ms - fs),
-                        (unsigned long long)(v + fs));
-        }
-    }
-
     patch_guest_code(base_rw, base, npages * TL_PAGE, flags, npages,
                      is_stikdebug, (ptrdiff_t)(base_rw - base));
     jit_icache(base, npages * TL_PAGE);
@@ -1848,7 +1440,6 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
         memset(L, 0, sizeof(*L));
         return false;
     }
-    check_dual_map(L);
 
     /* Dependencies: log the gaps. The attempt's helper set is the APK's
      * own libraries; anything else is a named gap in the report. */
@@ -1873,13 +1464,9 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
      * write data -- and sometimes code, for layout transitions -- which
      * is why the executable window is per-thread and temporary. */
     jit_writable(false);
-    /* Before anything of the library's own runs: see jni_install_env. A library
-     * that makes a JNI call from a constructor needs the VM to exist by now. */
-    jni_install_env(L, name);
     if (L->init) {
         void (*fn)(void) = (void (*)(void))(base + (L->init - base_vaddr));
         tl_log_line("init: %s calling DT_INIT %p", name, (void *)fn);
-        snprintf(g_last_init, sizeof(g_last_init), "%s DT_INIT %p", name, (void *)fn);
         fn();
     }
     if (L->init_array && L->init_arraysz) {
@@ -1896,11 +1483,6 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
                 if (fn_addr) {
                     void (*fn)(void) = (void (*)(void))fn_addr;
                     tl_log_line("init: %s calling init_array[%zu] %p", name, i, (void *)fn);
-                    /* The breadcrumb the crash handler reads. Set immediately
-                     * before the call, so a crash inside a constructor names it
-                     * without needing a walked, symbolised guest backtrace. */
-                    snprintf(g_last_init, sizeof(g_last_init), "%s init_array[%zu] %p",
-                             name, i, (void *)fn);
                     fn();
                 }
             }
@@ -1914,30 +1496,14 @@ static bool load_library(const char *name, const uint8_t *file, size_t flen)
 
 /* -------------------------------------------------------- the attempt  */
 
-/*
- * Which library is the engine.
- *
- * This matched any name containing "native" -- which is how libbacktrace-native.so, a crash
- * reporter shipped alongside the game, was picked as the primary over Flutter's actual engine,
- * and the run failed before anything of the game's ran. Engines are named first and in order;
- * a plain JNI library called something like "libnative-lib.so" is still the last resort, which
- * is what the old rule was reaching for.
- */
 static int pick_primary(char names[][96], int n)
 {
-    static const char *const engines[] = {
-        /* Game engines first. A modded game can ship both: GTA San Andreas Definitive Edition is
-         * Unreal with a Flutter mod menu beside it, and picking Flutter would run the menu. */
-        "libUE4.so", "libunity.so", "libil2cpp.so", "libgodot", "liblove", "librenpython.so",
-        "libpython", "libcocos", "libGDX", "libSDL2", "libsdl",
-        /* Then the frameworks a game may be built *in* rather than around. */
-        "libmain.so", "libgame.so", "libflutter.so", "libapp.so",
-        "activity",
-        "libnative", "native-lib", "libnative-lib",          /* a plain JNI library, last */
-    };
-    for (size_t e = 0; e < sizeof(engines) / sizeof(engines[0]); e++)
-        for (int i = 0; i < n; i++)
-            if (strstr(names[i], engines[e])) return i;
+    for (int i = 0; i < n; i++) {
+        if (!strcmp(names[i], "libmain.so") || !strcmp(names[i], "libgame.so")
+            || strstr(names[i], "activity") || strstr(names[i], "native")) {
+            return i;
+        }
+    }
     return n ? 0 : -1;
 }
 
@@ -1971,24 +1537,12 @@ static void *attempt_thread(void *arg)
      * void ANativeActivity_onCreate(ANativeActivity*, void* savedState,
      *                               size_t savedStateSize). */
     if (g_run.on_create) {
-        tl_log_line("lifecycle: calling ANativeActivity_onCreate");
         g_run.on_create(&g_run.activity, NULL, 0);
-        tl_log_line("lifecycle: ANativeActivity_onCreate returned -- "
-                    "onStart=%p onResume=%p window=%p focus=%p input=%p surface=%p",
-                    (void *)g_run.activity.callbacks->onStart,
-                    (void *)g_run.activity.callbacks->onResume,
-                    (void *)g_run.activity.callbacks->onNativeWindowCreated,
-                    (void *)g_run.activity.callbacks->onWindowFocusChanged,
-                    (void *)g_run.activity.callbacks->onInputQueueCreated,
-                    (void *)g_run.activity.callbacks->onSurfaceChanged);
         if (!g_run.activity.callbacks->onNativeWindowCreated
             && !g_run.activity.callbacks->onSurfaceChanged) {
             tl_log_line("attempt: onCreate ran but registered no window "
                         "callbacks -- nothing will draw through them");
         }
-    } else {
-        tl_log_line("lifecycle: the guest exports no ANativeActivity_onCreate -- "
-                    "there is no entry point to call");
     }
 
     struct timespec start;
@@ -2088,43 +1642,28 @@ static void *attempt_thread(void *arg)
         return NULL;
     }
 
-    /* Lifecycle, as the NDK's native_app_glue would drive it. Each step names itself
-     * before it runs: the sequence is otherwise silent, so a guest that blocks inside
-     * one of these callbacks looks exactly like a guest that never got here at all. */
+    /* Lifecycle, as the NDK's native_app_glue would drive it: */
     if (g_run.activity.callbacks->onStart) {
-        tl_log_line("lifecycle: onStart");
         g_run.activity.callbacks->onStart(&g_run.activity);
-        tl_log_line("lifecycle: onStart returned");
     }
     if (g_run.activity.callbacks->onResume) {
-        tl_log_line("lifecycle: onResume");
         g_run.activity.callbacks->onResume(&g_run.activity);
-        tl_log_line("lifecycle: onResume returned");
     }
     if (g_run.activity.callbacks->onNativeWindowCreated) {
-        tl_log_line("lifecycle: onNativeWindowCreated (window=%p)", g_run.window);
         g_run.activity.callbacks->onNativeWindowCreated(&g_run.activity, g_run.window);
-        tl_log_line("lifecycle: onNativeWindowCreated returned");
     }
     if (g_run.activity.callbacks->onWindowFocusChanged) {
-        tl_log_line("lifecycle: onWindowFocusChanged(1)");
         g_run.activity.callbacks->onWindowFocusChanged(&g_run.activity, 1);
-        tl_log_line("lifecycle: onWindowFocusChanged returned");
     }
     if (g_run.activity.callbacks->onInputQueueCreated) {
-        tl_log_line("lifecycle: onInputQueueCreated (queue=%p)", g_run.queue);
         g_run.activity.callbacks->onInputQueueCreated(&g_run.activity, g_run.queue);
-        tl_log_line("lifecycle: onInputQueueCreated returned");
     }
     if (g_run.activity.callbacks->onSurfaceChanged) {
-        tl_log_line("lifecycle: onSurfaceChanged");
         g_run.activity.callbacks->onSurfaceChanged(&g_run.activity, g_run.window, 1);
-        tl_log_line("lifecycle: onSurfaceChanged returned");
     }
 
     /* The run loop. It watches the budget and the stop flag; a guest that
      * renders does so from its own threads, into the window. */
-    int spins = 0;
     while (!g_run.stop_requested) {
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
@@ -2135,14 +1674,6 @@ static void *attempt_thread(void *arg)
                         seconds, (unsigned long long)g_run.frames);
             break;
         }
-        /* A heartbeat. Without it this loop is the last silent thing in the run, and a
-         * guest spinning here is indistinguishable from one that blocked in a lifecycle
-         * callback above. Every five seconds is enough to see it is alive. */
-        if (spins == 0 || spins % 50 == 0) {
-            tl_log_line("lifecycle: run loop alive (%.0fs in, %llu frame(s) drawn)",
-                        (double)elapsed / 1000.0, (unsigned long long)g_run.frames);
-        }
-        spins++;
         struct timespec tick = { 0, 100 * 1000000 };
         nanosleep(&tick, NULL);
     }
@@ -2170,53 +1701,6 @@ static void *attempt_thread(void *arg)
     return NULL;
 }
 
-/* One library's DT_NEEDED sonames, read from its bytes: a real linker's
- * dependency list. Mirrors the program-header walk load_library does, without
- * mapping anything or allocating. The returned names point into `file`, which
- * the caller keeps alive for the whole run. */
-static int lib_needed(const uint8_t *file, size_t flen, const char *out[], int max)
-{
-    if (flen < sizeof(tl_ehdr)) {
-        return 0;
-    }
-    const tl_ehdr *eh = (const tl_ehdr *)file;
-    if (eh->e_phentsize < sizeof(tl_phdr) || eh->e_phnum > 64
-        || (size_t)eh->e_phoff + (size_t)eh->e_phnum * eh->e_phentsize > flen) {
-        return 0;
-    }
-    lex e;
-    memset(&e, 0, sizeof(e));
-    e.d = file; e.n = flen;
-    for (int i = 0; i < eh->e_phnum; i++) {
-        const uint8_t *ph = file + eh->e_phoff + (size_t)i * eh->e_phentsize;
-        uint32_t type = ld32(ph);
-        if (type == PT_LOAD && e.nloads < 16) {
-            e.lv[e.nloads] = ld64(ph + 16);
-            e.lo[e.nloads] = ld64(ph + 8);
-            e.lf[e.nloads] = ld64(ph + 32);
-            e.nloads++;
-        } else if (type == PT_DYNAMIC) {
-            e.dyn_vaddr = ld64(ph + 16);
-            e.dyn_filesz = ld64(ph + 32);
-        }
-    }
-    if (!e.dyn_filesz) {
-        return 0;
-    }
-    ldyn d;
-    if (!lex_dynamic(&e, &d)) {
-        return 0;
-    }
-    int n = 0;
-    for (int i = 0; i < d.nneeded && n < max; i++) {
-        const char *s = ldyn_str(&e, &d, d.needed[i]);
-        if (s && *s) {
-            out[n++] = s;
-        }
-    }
-    return n;
-}
-
 int husk_tl_attempt_start(const char *const *apks, int count, int seconds)
 {
     pthread_mutex_lock(&g_log_mutex);
@@ -2236,16 +1720,6 @@ int husk_tl_attempt_start(const char *const *apks, int count, int seconds)
     /* Everything below runs on this thread: loading is synchronous, the
      * lifecycle gets its own thread so the runner returns to Swift. */
     tl_log_line("=== attempt begins: %d APK(s) ===", count);
-
-    /* Record them for the asset surface: AAssetManager_open reads assets/<path> out of
-     * these, which is how the engine's file layer gets at the game's data. */
-    g_n_apk_paths = 0;
-    for (int a = 0; a < count && a < (int)(sizeof(g_apk_paths) / sizeof(g_apk_paths[0])); a++) {
-        if (!apks[a]) continue;
-        snprintf(g_apk_paths[g_n_apk_paths], sizeof(g_apk_paths[0]), "%s", apks[a]);
-        g_n_apk_paths++;
-    }
-    tl_log_line("asset: %d APK(s) available for AAssetManager_open", g_n_apk_paths);
 
     char names[24][96], apk_of[24][512];
     char err[192] = {0};
@@ -2270,90 +1744,39 @@ int husk_tl_attempt_start(const char *const *apks, int count, int seconds)
     }
     tl_log_line("attempt: primary library is %s", names[primary]);
 
-    /* Load order: the primary's own DT_NEEDED libraries first -- a real linker's
-     * order -- then the primary, then whatever else the APK ships.
-     *
-     * This is not tidiness. libUE4.so imports 55 symbols in Android's
-     * std::__ndk1 namespace, and the only thing that defines them is the APK's
-     * own libc++_shared.so: Darwin's libc++ is std::__1, so dlsym(RTLD_DEFAULT)
-     * finds none of them. Loading the primary first left that whole family
-     * unresolved, and relocation stopped at the first one it could not bind --
-     * which is why the log named `stdout` and nothing else. */
-    int order[24], nord = 0;
-    bool placed[24];
-    for (int i = 0; i < n; i++) {
-        placed[i] = false;
-    }
-    uint8_t *pbytes = NULL; size_t pblen = 0;
-    if (!extract_lib(apk_of[primary], names[primary], &pbytes, &pblen, err, sizeof(err))) {
+    /* Load order: the primary first, then its helpers, so the primary's
+     * relocations see the helpers' exports. */
+    uint8_t *bytes = NULL; size_t blen = 0;
+    if (!extract_lib(apk_of[primary], names[primary], &bytes, &blen,
+                     err, sizeof(err))) {
         tl_log_line("attempt: %s", err);
         attempt_stop(0);
         return -1;
     }
-    {
-        const char *need[24];
-        int nn = lib_needed(pbytes, pblen, need, 24);
-        for (int k = 0; k < nn; k++) {
-            for (int i = 0; i < n; i++) {
-                if (!placed[i] && !strcmp(names[i], need[k])) {
-                    placed[i] = true;
-                    order[nord++] = i;
-                    tl_log_line("attempt: loading %s first: %s needs it",
-                                names[i], names[primary]);
-                }
-            }
-        }
-    }
-    placed[primary] = true;
-    order[nord++] = primary;
-    for (int i = 0; i < n; i++) {
-        if (!placed[i]) {
-            placed[i] = true;
-            order[nord++] = i;
-        }
-    }
-
-    /* Extract and load in that order. The primary failing is fatal; a helper
-     * failing is not, because a helper is a bonus and the primary is the point. */
-    bool primary_loaded = false;
-    for (int k = 0; k < nord; k++) {
-        int i = order[k];
-        bool is_primary = (i == primary);
-        if (g_run.nlibs >= 8) {
-            if (is_primary) {
-                tl_log_line("attempt: no room left for the primary library");
-                attempt_stop(0);
-                return 0;
-            }
-            continue;
-        }
-        uint8_t *b = pbytes; size_t l = pblen;
-        if (!is_primary) {
-            if (!extract_lib(apk_of[i], names[i], &b, &l, err, sizeof(err))) {
-                tl_log_line("attempt: helper %s could not be read (continuing)", names[i]);
-                continue;
-            }
-        }
-        if (load_library(names[i], b, l)) {
-            g_run.libs[g_run.nlibs - 1].file = b;
-            g_run.libs[g_run.nlibs - 1].file_len = l;
-            if (is_primary) {
-                primary_loaded = true;
-            }
-        } else {
-            free(b);
-            if (is_primary) {
-                tl_log_line("attempt: the primary library could not be loaded");
-                attempt_stop(0);
-                return 0;
-            }
-            tl_log_line("attempt: helper %s did not load (continuing)", names[i]);
-        }
-    }
-    if (!primary_loaded) {
-        tl_log_line("attempt: the primary library was never loaded");
+    if (!load_library(names[primary], bytes, blen)) {
+        free(bytes);
+        tl_log_line("attempt: the primary library could not be loaded");
         attempt_stop(0);
         return 0;
+    }
+    g_run.libs[g_run.nlibs - 1].file = bytes;
+    g_run.libs[g_run.nlibs - 1].file_len = blen;
+
+    for (int i = 0; i < n && g_run.nlibs < 8; i++) {
+        if (i == primary) {
+            continue;
+        }
+        uint8_t *b = NULL; size_t l = 0;
+        if (extract_lib(apk_of[i], names[i], &b, &l, err, sizeof(err))) {
+            if (load_library(names[i], b, l)) {
+                g_run.libs[g_run.nlibs - 1].file = b;
+                g_run.libs[g_run.nlibs - 1].file_len = l;
+            } else {
+                free(b);
+                tl_log_line("attempt: helper %s did not load (continuing)",
+                            names[i]);
+            }
+        }
     }
 
     /* Run JNI_OnLoad for any loaded library that exports it. */
@@ -2568,9 +1991,6 @@ void husk_tl_attempt_reset(void)
         free(g_run.libs[i].file);
     }
     g_prewarmed_used = 0;
-    /* Before the window goes: the shim's GL swap writes frames into it, and a swap after
-     * this point would write into freed memory. */
-    tl_shim_bind_run(NULL, NULL);
     tl_window_release(g_run.window);
     tl_shim_free(g_run.queue);
     tl_shim_free(g_run.assets);
@@ -2605,78 +2025,4 @@ void husk_tl_send_touch(int action, float x, float y)
     if (g_run.dex_ctx) {
         tl_dex_send_touch(g_run.dex_ctx, action, x, y);
     }
-}
-
-/*
- * Name an address the guest is running at: "libUE4.so+0x61df71c".
- *
- * A crash report's guest frames came out as "??? 0x000000011c57771c 0x0 + 4770461468",
- * which is a number rather than a location -- and the loader is the only thing that knows
- * where each guest library was mapped, so it is the only thing that can say which one a
- * frame belongs to. An offset into libUE4.so is something you can disassemble; a raw
- * address on its own is not.
- *
- * Called from a signal handler, so: no allocation, no locks, formatting by hand. Reading
- * g_run.libs while another thread loads a library can see a torn entry, which for a
- * diagnostic is a wrong name at worst -- never a fault.
- *
- * Returns 1 and NUL-terminates `out` when the address is inside a guest library, and 0
- * when it is not (a host frame, which the app names for itself through dladdr).
- */
-int husk_tl_describe_address(uintptr_t addr, char *out, size_t outlen)
-{
-    static const char hex[] = "0123456789abcdef";
-    if (!out || outlen < 4) {
-        return 0;
-    }
-    for (int i = 0; i < g_run.nlibs; i++) {
-        const tl_lib *L = &g_run.libs[i];
-        if (!L->base || L->npages == 0) {
-            continue;
-        }
-        /* Both aliases name the same image at different addresses, and a data address
-         * reached through a remapped adrp lands in the writable one -- which is where
-         * the arena allocator's static mutex lives. Checking only the executable alias
-         * made every such address unrecognisable, which is how a logging instrument
-         * silently reported nothing instead of reporting the answer. */
-        uintptr_t lo = (uintptr_t)L->base;
-        uintptr_t hi = lo + (uintptr_t)L->npages * (uintptr_t)TL_PAGE;
-        if (addr < lo || addr >= hi) {
-            if (!L->base_rw || L->base_rw == L->base) {
-                continue;
-            }
-            uintptr_t rlo = (uintptr_t)L->base_rw;
-            uintptr_t rhi = rlo + (uintptr_t)L->npages * (uintptr_t)TL_PAGE;
-            if (addr < rlo || addr >= rhi) {
-                continue;
-            }
-            lo = rlo;
-        }
-
-        size_t n = 0;
-        /* Leave room for "+0x" (3) and at least one digit and the terminator. */
-        while (n + 6 < outlen && L->name[n] != '\0') {
-            out[n] = L->name[n];
-            n++;
-        }
-        out[n++] = '+';
-        out[n++] = '0';
-        out[n++] = 'x';
-
-        /* The image offset, not the mapping offset: that is what the section and symbol
-         * tables are indexed by, so that is the number worth printing. */
-        uint64_t off = (uint64_t)(addr - lo) + (uint64_t)L->base_vaddr;
-        char digits[17];
-        int k = 0;
-        do {
-            digits[k++] = hex[off & 0xf];
-            off >>= 4;
-        } while (off != 0 && k < (int)sizeof(digits));
-        while (k > 0 && n + 1 < outlen) {
-            out[n++] = digits[--k];
-        }
-        out[n] = '\0';
-        return 1;
-    }
-    return 0;
 }

@@ -32,8 +32,10 @@ struct ContentView: View {
     @ObservedObject private var showcase = ShowcaseStore.shared
     @ObservedObject private var tlStore = TranslationLayerStore.shared
     @ObservedObject private var crash = CrashReport.shared
+    @ObservedObject private var massTest = MassTest.shared
     @ObservedObject private var updates = AppUpdates.shared
     @State private var showWhatsNew = false
+    @AppStorage(Holiday.key) private var holiday = true
 
     var body: some View {
         ZStack {
@@ -59,15 +61,24 @@ struct ContentView: View {
                     .tabItem { Label("Store", systemImage: "cart.fill") }
                     .tag(HuskTab.store)
 
-                DownloadsTab()
-                    .tabItem { Label("Downloads", systemImage: "arrow.down.circle.fill") }
-                    .tag(HuskTab.downloads)
+                FAQTab()
+                    .tabItem { Label("FAQ", systemImage: "questionmark.circle.fill") }
+                    .tag(HuskTab.help)
 
                 SettingsTab()
                     .tabItem { Label("Settings", systemImage: "gearshape.fill") }
                     .tag(HuskTab.settings)
             }
             .opacity(showGuestScreen && started && runner.isRunning ? 0 : 1)
+
+            // Christmas: snow over the tabs (never over Android or an app's window, which come after it)
+            if holiday && !(showGuestScreen && started && runner.isRunning) {
+                Snowfall().ignoresSafeArea()
+            }
+
+            // Multitasking: an app in a window over everything else in Husk (AppWindows.swift).
+            AppWindowLayer()
+                .ignoresSafeArea(.keyboard)
 
             // Outcomes, over whichever tab is showing. Above the tab bar rather
             // than over it: a message that covers the way out of the screen it
@@ -147,7 +158,9 @@ struct ContentView: View {
             Text("You have \(AppUpdates.current). The new version's IPA is on its release page.")
         }
         .task { await updates.check() }
+        .task { await CompatibilityStore.shared.refresh() }
         .sheet(isPresented: $router.showFiles) { FilesTab() }
+        .sheet(isPresented: $router.showDownloads) { DownloadsTab() }
         // Pictures for the apps here: read the index on launch and whenever the set of apps changes.
         .task(id: showcasePackages) { showcase.refresh(for: showcasePackages) }
         .alert("Metadata Updated", isPresented: Binding(get: { showcase.shouldAsk && !showOnboarding },
@@ -189,9 +202,12 @@ struct ContentView: View {
         } message: {
             Text(guest.update.detail)
         }
+        .sheet(isPresented: $massTest.shareResults) { ShareSheet(items: [MassTest.resultsURL]) }
         .onAppear {
             crash.checkPreviousRun()
-            if crash.pending == nil { router.resumeSwitch() }
+            // the developer mass test: the last app's fate, then the next app (it clears a crash report it has written down)
+            massTest.resume(crash: crash)
+            if crash.pending == nil, !massTest.active { router.resumeSwitch() }
             if crash.pending == nil, WhatsNew.due { showWhatsNew = true }
             router.openGuest = { showGuestScreen = true }
             router.startAndroid = { startFromLibrary() }
@@ -491,11 +507,7 @@ struct LogView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                SendLogToPCButton(file: HuskLog.logFileURL)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                ScrollViewReader { proxy in
+            ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 1) {
                         ForEach(Array(lines.enumerated()), id: \.offset) { i, line in
@@ -514,7 +526,6 @@ struct LogView: View {
                     if let last = lines.indices.last {
                         proxy.scrollTo(last, anchor: .bottom)
                     }
-                }
                 }
             }
             .navigationTitle("Logs")

@@ -12,13 +12,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <unistd.h>
-#include <zlib.h>
 
 #include "husk-tl-bionic.h"
 #include "husk-tl-dexindex.h"
-#include "husk-tl-internal.h"
 #include "husk-tl-ld.h"
 
 jobj *tl_assetstream_list(const char *path);
@@ -94,344 +91,6 @@ static const tl_jhle k_brogue[] = {
     { NULL, NULL, NULL, NULL }
 };
 
-/* ------------------------------------------------------------------ Ren'Py */
-
-/*
- * Ren'Py on Android is SDL2 plus embedded CPython, behind org.renpy.android.PythonSDLActivity.
- *
- * SDL_main is (renpy-build/runtime/librenpython3_android.c):
- *
- *     int SDL_main(...) { init_environ(); setenv_workaround("RENPY_PLATFORM", ...);
- *                         call_prepare_python();  return start_python(); }
- *     int start_python(void) {
- *         char *private = getenv("ANDROID_PRIVATE");     // NULL if preparePython did nothing
- *         chdir(private);
- *         snprintf(python, 2048, "%s/python", private);
- *         snprintf(main_py, 2048, "%s/main.py", private);
- *         ...
- *         config.home = Py_DecodeLocale(private, NULL);  // strlen(NULL) -> SIGSEGV
- *     }
- *
- * call_prepare_python() reaches the Java method through JNI (GetObjectClass, GetMethodID,
- * CallVoidMethod). No Java runs here, so it returned zero and did nothing -- and then start_python
- * read a variable that was never set. The two things the Java does, both of which the engine needs
- * before start_python, are done here:
- *
- *   1. unpackData("private", getFilesDir()). The APK carries the engine and its Python in
- *      assets/private.mp3 -- a gzip'd tar whose .mp3 name stops aapt compressing it. It holds
- *      lib/ (the CPython standard library), renpy/ and main.py, and is unpacked into the app's
- *      files directory. Without it there is no interpreter to run even once the crash is gone.
- *   2. nativeSetEnv("ANDROID_PRIVATE", getFilesDir()) and ANDROID_PUBLIC / ANDROID_OLD_PUBLIC /
- *      ANDROID_APK -- the environment Ren'Py's own C reads.
- *
- * Both are done, and the environment is set eagerly when the Ren'Py activity is first seen, so the
- * result does not depend on call_prepare_python() reaching the method.
- */
-#define RENPY_ACTIVITY "org/renpy/android/PythonSDLActivity"
-#define RENPY_ACTIVITY2 "org/renpy/android/PythonActivity"
-/* SDL's own activity, which the engine reads a field from before it will start drawing. */
-#define SDL_ACTIVITY "org/libsdl/app/SDLActivity"
-
-extern const char *tl_hle_files_dir(void);
-extern const char *tl_hle_data_dir(void);
-extern const char *tl_hle_apk_path(void);
-extern const char *tl_hle_public_dir(void);
-
-static void rp_mkdirs(const char *path)
-{
-    char tmp[1300]; snprintf(tmp, sizeof(tmp), "%s", path);
-    for (char *p = tmp + 1; *p; p++) if (*p == '/') { *p = 0; mkdir(tmp, 0755); *p = '/'; }
-    mkdir(tmp, 0755);
-}
-static void rp_setenv(const char *name, const char *value)
-{
-    if (name && *name && value && *value) setenv(name, value, 1);
-}
-
-void tl_renpy_set_env(void)
-{
-    const char *priv = tl_hle_files_dir();
-    const char *pub = tl_hle_public_dir();
-    const char *apk = tl_hle_apk_path();
-    char path[1400];
-    rp_setenv("ANDROID_PRIVATE", priv);
-    rp_setenv("ANDROID_PUBLIC", pub);
-    rp_setenv("ANDROID_OLD_PUBLIC", pub);
-    rp_setenv("ANDROID_APK", apk);
-    rp_setenv("ANDROID_ARGUMENT", priv);
-    rp_setenv("ANDROID_UNPACK", priv);
-    rp_setenv("ANDROID_APP_PATH", priv);
-    rp_setenv("PYTHONHOME", priv);
-    snprintf(path, sizeof(path), "%s:%s/lib", priv, priv);
-    rp_setenv("PYTHONPATH", path);
-    rp_setenv("PYTHONOPTIMIZE", "2");
-    rp_setenv("RENPY_RENDERER", "gl");
-
-    /* android/__init__.py autoclasses PythonSDLActivity and reads its mActivity field in the same
-     * breath, so the field has to be here before the first Python import rather than when some
-     * later call wants it. The value is this layer's stand-in for the real Activity. */
-    jvalue av;
-    memset(&av, 0, sizeof(av));
-    av.l = tl_jni_new_object(tl_jni_class(RENPY_ACTIVITY));
-    tl_jni_set_static_field(RENPY_ACTIVITY, "mActivity", "L" RENPY_ACTIVITY ";", av);
-
-    /* display/core.py:1971 check_android_start refuses to let the display start unless SDL's own
-     * activity reports focus -- it logs "App not focused at interface start, shutting down early"
-     * and calls os._exit(1) otherwise, which is how the last run ended. The window is focused; it
-     * is this app's own view. */
-    jvalue focus;
-    memset(&focus, 0, sizeof(focus));
-    focus.z = true;
-    tl_jni_set_static_field(SDL_ACTIVITY, "mHasFocus", "Z", focus);
-
-    tl_log_line("renpy: environment set (ANDROID_PRIVATE=%s, ANDROID_APK=%s)", priv, apk);
-}
-
-/* ------------------------------------------------- unpackData("private", ...) */
-
-/* gunzip into one buffer. inflateInit2 with 16 in the window bits takes a gzip (or zlib) stream. */
-static uint8_t *rp_gunzip(const uint8_t *in, size_t n, size_t *outn)
-{
-    z_stream zs; memset(&zs, 0, sizeof(zs));
-    if (inflateInit2(&zs, 15 + 32) != Z_OK) return NULL;
-    size_t cap = n * 6 + (1u << 16), len = 0;
-    uint8_t *out = malloc(cap);
-    if (!out) { inflateEnd(&zs); return NULL; }
-    zs.next_in = (Bytef *)in; zs.avail_in = (uInt)n;
-    for (;;) {
-        if (len == cap) { cap *= 2; uint8_t *t = realloc(out, cap); if (!t) { free(out); inflateEnd(&zs); return NULL; } out = t; }
-        zs.next_out = out + len; zs.avail_out = (uInt)(cap - len);
-        int rc = inflate(&zs, Z_NO_FLUSH);
-        len = cap - zs.avail_out;
-        if (rc == Z_STREAM_END) break;
-        if (rc != Z_OK && rc != Z_BUF_ERROR) { free(out); inflateEnd(&zs); return NULL; }
-        if (zs.avail_in == 0 && zs.avail_out != 0) { free(out); inflateEnd(&zs); return NULL; }   /* truncated */
-    }
-    inflateEnd(&zs);
-    *outn = len;
-    return out;
-}
-
-static long rp_octal(const char *p, size_t n)
-{
-    long v = 0;
-    for (size_t i = 0; i < n; i++) { char c = p[i]; if (c < '0' || c > '7') break; v = v * 8 + (c - '0'); }
-    return v;
-}
-
-/* An entry name is written under `dest`; one that could escape it (absolute, or with "..") is
- * refused. The archive is APK content, which is untrusted input. */
-static bool rp_tar_name_ok(const char *name)
-{
-    if (!name[0] || name[0] == '/') return false;
-    for (const char *p = name; *p; ) {
-        const char *seg = p;
-        while (*p && *p != '/') p++;
-        size_t n = (size_t)(p - seg);
-        if (n == 2 && seg[0] == '.' && seg[1] == '.') return false;
-        if (*p == '/') p++;
-    }
-    return true;
-}
-
-static int rp_extract_tar(const uint8_t *tar, size_t len, const char *dest)
-{
-    size_t off = 0;
-    int files = 0;
-    char longname[1024] = "";
-    while (off + 512 <= len) {
-        const uint8_t *h = tar + off;
-        if (h[0] == 0) break;                                   /* the two zero blocks at the end */
-        char name[256];
-        size_t nl = 0; while (nl < 100 && h[nl]) nl++;
-        snprintf(name, sizeof(name), "%.*s", (int)nl, (const char *)h);
-        long sz = rp_octal((const char *)h + 124, 12);
-        char type = (char)h[156];
-        size_t data_at = off + 512;
-        size_t next = data_at + (((size_t)(sz > 0 ? sz : 0) + 511) / 512) * 512;
-        if (next > len || next < off) break;
-        const char *use = longname[0] ? longname : name;
-        longname[0] = 0;
-        if (type == 'L') {                                      /* GNU long name record */
-            size_t k = (size_t)sz < sizeof(longname) - 1 ? (size_t)sz : sizeof(longname) - 1;
-            memcpy(longname, tar + data_at, k); longname[k] = 0;
-            off = next; continue;
-        }
-        if (rp_tar_name_ok(use)) {
-            char path[1300];
-            snprintf(path, sizeof(path), "%s/%s", dest, use);
-            if (type == '5') {
-                rp_mkdirs(path);
-            } else if (type == '0' || type == 0 || type == '7') {
-                char *slash = strrchr(path, '/');
-                if (slash) { *slash = 0; rp_mkdirs(path); *slash = '/'; }
-                FILE *f = fopen(path, "wb");
-                if (f) { if (sz > 0) fwrite(tar + data_at, 1, (size_t)sz, f); fclose(f); files++; }
-            }
-        }
-        off = next;
-    }
-    return files;
-}
-
-/* The whole of unpackData("private", getFilesDir()): find assets/private.mp3 in the APK(s), inflate
- * it, and extract it into the app's files directory. Ren'Py writes a version marker and skips the
- * work when it matches; the marker here is the asset's own size, so an updated APK re-extracts. */
-static void rp_unpack_private(void)
-{
-    const char *dest = tl_hle_files_dir();
-    char vpath[1300]; snprintf(vpath, sizeof(vpath), "%s/private.version", dest);
-    for (int i = 0;; i++) {
-        const tl_zip *z = tl_ld_apk_at(i);
-        if (!z) break;
-        const tl_zip_entry *e = tl_zip_find(z, "assets/private.mp3");
-        if (!e) continue;
-        char want[80];
-        snprintf(want, sizeof(want), "%llu-%llu", (unsigned long long)e->usize, (unsigned long long)e->csize);
-        char have[80] = "";
-        FILE *f = fopen(vpath, "r");
-        if (f) { if (!fgets(have, sizeof(have), f)) have[0] = 0; fclose(f); }
-        size_t n = strlen(have);
-        while (n && (have[n - 1] == '\n' || have[n - 1] == '\r')) have[--n] = 0;
-        if (!strcmp(have, want)) { tl_log_line("renpy: private data already unpacked (%s)", want); break; }
-
-        const uint8_t *data; size_t dlen; bool owned; char err[160];
-        if (!tl_zip_data(z, e, (size_t)1 << 30, &data, &dlen, &owned, err, sizeof(err))) {
-            tl_log_line("renpy: cannot read assets/private.mp3: %s", err);
-            break;
-        }
-        size_t tlen = 0;
-        uint8_t *tar = rp_gunzip(data, dlen, &tlen);
-        if (owned) free((void *)data);
-        if (!tar) { tl_log_line("renpy: assets/private.mp3 did not gunzip"); break; }
-        rp_mkdirs(dest);
-        int files = rp_extract_tar(tar, tlen, dest);
-        tl_log_line("renpy: unpacked private data: %d files into %s", files, dest);
-        free(tar);
-        f = fopen(vpath, "w");  if (f) { fputs(want, f); fclose(f); }
-        { char nm[1300]; snprintf(nm, sizeof(nm), "%s/.nomedia", dest); f = fopen(nm, "w"); if (f) fclose(f); }
-        break;
-    }
-}
-
-/* preparePython(): unpackData, then the environment. Called from call_prepare_python() in SDL_main,
- * and once eagerly. */
-void tl_renpy_prepare(void)
-{
-    rp_unpack_private();
-    tl_renpy_set_env();
-}
-
-static void RP_preparePython(tl_jcall *c) { (void)c; tl_renpy_prepare(); }
-static void RP_toast(tl_jcall *c) { tl_log_line("renpy: toast %s", c->args[0].l ? Str(c->args[0].l) : ""); }
-
-/*
- * The rest of the Java surface Ren'Py wants, found by reading choose_variants() and the shutdown
- * path out of the game's own renpy/main.pyc and renpy/bootstrap.pyc rather than by guessing:
- *
- *   main.py:206   package_manager = android.activity.getPackageManager()      [not in a try]
- *   main.py:208   if package_manager.hasSystemFeature("android.hardware.type.television")
- *   main.py:217   if PythonSDLActivity.isChromebook()
- *   bootstrap:419 android.activity.finishAndRemoveTask()                      [not in a try]
- *   bootstrap:423 System.exit(0)
- *
- * None of the fatal two is guarded, so an absent one is an AttributeError at the end of every run
- * -- including a run that otherwise worked. There is no television and no Chromebook here, so both
- * feature questions answer no and Ren'Py picks its ordinary phone/tablet variants.
- */
-#define RENPY_PM "android/content/pm/PackageManager"
-
-static void RP_getPackageManager(tl_jcall *c)
-{
-    jvalue v; v.j = 0;
-    v.l = tl_jni_new_object(tl_jni_class(RENPY_PM));
-    c->ret = v;
-}
-static void RP_finishAndRemoveTask(tl_jcall *c)
-{
-    (void)c;
-    tl_log_line("renpy: the activity is finished, so the run is over");
-}
-static void RP_system_exit(tl_jcall *c)
-{
-    tl_log_line("renpy: System.exit(%d)", c->args ? c->args[0].i : 0);
-}
-/* The only thing Ren'Py does with this is size the screen's diagonal, so the density bucket a 3x
- * screen reports is what matters, not a measurement. */
-static void RP_getDPI(tl_jcall *c) { c->ret = vi(460); }
-static void RP_openUrl(tl_jcall *c) { tl_log_line("renpy: openUrl %s", c->args[0].l ? Str(c->args[0].l) : ""); }
-
-/* display/core.py calls hidePresplash on the class itself once the first frame is drawn. */
-static void RP_hidePresplash(tl_jcall *c) { (void)c; tl_log_line("renpy: the presplash is hidden"); }
-
-static const tl_jhle k_renpy[] = {
-    /* The method SDL_main calls, and whose absence is the reported last log line. */
-    { RENPY_ACTIVITY, "preparePython", "()V", RP_preparePython },
-    { RENPY_ACTIVITY, "toast", "(Ljava/lang/String;)V", RP_toast },
-    { RENPY_ACTIVITY, "getPackageManager", "()Landroid/content/pm/PackageManager;", RP_getPackageManager },
-    { RENPY_ACTIVITY, "isChromebook", "()Z", H_false },
-    { RENPY_ACTIVITY, "finishAndRemoveTask", "()V", RP_finishAndRemoveTask },
-    { RENPY_ACTIVITY, "getDPI", "()I", RP_getDPI },
-    { RENPY_ACTIVITY, "vibrate", "(F)V", H_void },
-    { RENPY_ACTIVITY, "openUrl", "(Ljava/lang/String;)V", RP_openUrl },
-    { RENPY_ACTIVITY, "setWakeLock", "(Z)V", H_void },
-    { RENPY_ACTIVITY, "hidePresplash", "()V", RP_hidePresplash },
-    { RENPY_ACTIVITY, "finishOnStop", "()V", H_void },
-    { RENPY_ACTIVITY, "armOnStop", "()V", H_void },
-    { RENPY_ACTIVITY2, "preparePython", "()V", RP_preparePython },
-    { RENPY_ACTIVITY2, "getPackageManager", "()Landroid/content/pm/PackageManager;", RP_getPackageManager },
-    { RENPY_ACTIVITY2, "isChromebook", "()Z", H_false },
-    { RENPY_ACTIVITY2, "finishAndRemoveTask", "()V", RP_finishAndRemoveTask },
-    { RENPY_ACTIVITY2, "getDPI", "()I", RP_getDPI },
-    { RENPY_ACTIVITY2, "openUrl", "(Ljava/lang/String;)V", RP_openUrl },
-    { RENPY_ACTIVITY2, "hidePresplash", "()V", RP_hidePresplash },
-    { RENPY_ACTIVITY2, "finishOnStop", "()V", H_void },
-    { RENPY_ACTIVITY2, "armOnStop", "()V", H_void },
-    { RENPY_PM, "hasSystemFeature", "(Ljava/lang/String;)Z", H_false },
-    { "java/lang/System", "exit", "(I)V", RP_system_exit },
-    { NULL, NULL, NULL, NULL }
-};
-
-/*
- * Having an implementation in k_renpy is not the same as the method existing.
- *
- * pyjnius builds its Python class out of getDeclaredMethods(), which reports this layer's class
- * model, and a method only enters that model when something looks it up -- which, for everything
- * Ren'Py reaches through jnius, nothing had done. A registered implementation was therefore
- * invisible: 'org.renpy.android.PythonSDLActivity' object has no attribute 'getPackageManager' at
- * main.py:206, and the same for finishAndRemoveTask at bootstrap.py:419 on the way out of a run
- * that had already ended. The mActivity field never had this problem because it is created when
- * declared, not when looked up.
- *
- * So the methods Ren'Py's android/__init__.py uses are declared here, before Python starts, with
- * the staticness each is really called with (isChromebook and System.exit are static; the rest are
- * called on activity). Signatures are this layer's to choose: pyjnius derives the call from the
- * declared parameter types, so declaration and implementation have to agree, not match Android's.
- */
-static void rp_declare_methods(void)
-{
-    static const struct { const char *name, *sig; bool is_static; } m[] = {
-        { "preparePython", "()V", false },
-        { "toast", "(Ljava/lang/String;)V", false },
-        { "getPackageManager", "()Landroid/content/pm/PackageManager;", false },
-        { "isChromebook", "()Z", true },
-        { "finishAndRemoveTask", "()V", false },
-        { "getDPI", "()I", false },
-        { "vibrate", "(F)V", false },
-        { "openUrl", "(Ljava/lang/String;)V", false },
-        { "setWakeLock", "(Z)V", false },
-        { "hidePresplash", "()V", true },        /* core.py calls it on the class, once, after the first frame */
-        { "finishOnStop", "()V", false },
-        { "armOnStop", "()V", false },
-    };
-    jobj *acts[2] = { tl_jni_class_object(RENPY_ACTIVITY), tl_jni_class_object(RENPY_ACTIVITY2) };
-    for (int a = 0; a < 2; a++)
-        for (size_t i = 0; i < sizeof(m) / sizeof(m[0]); i++)
-            tl_jni_reflect_method(acts[a], m[i].name, m[i].sig, m[i].is_static);
-    tl_jni_reflect_method(tl_jni_class_object(RENPY_PM), "hasSystemFeature", "(Ljava/lang/String;)Z", false);
-    tl_jni_reflect_method(tl_jni_class_object("java/lang/System"), "exit", "(I)V", true);
-}
-
 /* ------------------------------------------------------------- Pekka Kana 2 */
 
 #define PK2 "org/pgnapps/pk2/PK2Activity"
@@ -484,15 +143,22 @@ static void luajit_openlibs(void *L)
 
 /* ------------------------------------------------------------------ install */
 
+/* python-for-android (Kivy): the statics PythonActivity.onCreate and Hardware's initialiser fill, which Python reads through pyjnius
+ * (PythonActivity.mActivity, Hardware.metrics). */
+jobj *tl_hle_activity(void);
+static void kivy_statics(void)
+{
+    jvalue act; act.j = 0; act.l = tl_hle_activity();
+    tl_jni_set_static("org/kivy/android/PythonActivity", "mActivity", "Lorg/kivy/android/PythonActivity;", act);
+    jvalue res = tl_jni_call(act.l, "getResources", "()Landroid/content/res/Resources;", NULL);
+    jvalue metrics = res.l ? tl_jni_call(res.l, "getDisplayMetrics", "()Landroid/util/DisplayMetrics;", NULL) : (jvalue){ .j = 0 };
+    if (metrics.l) tl_jni_set_static("org/renpy/android/Hardware", "metrics", "Landroid/util/DisplayMetrics;", metrics);
+}
+
 void tl_sdl_apps_install(const char *package)
 {
+    if (tl_dexidx_has_class("org/kivy/android/PythonActivity")) kivy_statics();
     if (!strcmp(package, "org.broguece.game")) tl_jni_register_hle(k_brogue);
     if (tl_dexidx_has_class(LOVE)) { tl_jni_register_hle(k_love); tl_ld_interpose("luaL_openlibs", (void *)luajit_openlibs); }
     if (!strcmp(package, "org.pgnapps.pk2")) tl_jni_register_hle(k_pk2);
-    if (tl_dexidx_has_class(RENPY_ACTIVITY) || tl_dexidx_has_class(RENPY_ACTIVITY2)) {
-        tl_jni_register_hle(k_renpy);
-        rp_declare_methods();   /* the class model jnius reads has to exist before Python starts */
-        tl_jni_declare_implemented_methods();   /* and so does every other table's, not one class at a time */
-        tl_renpy_prepare();     /* unpackData + the environment, before SDL_main runs start_python */
-    }
 }

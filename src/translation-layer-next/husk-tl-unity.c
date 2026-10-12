@@ -40,51 +40,17 @@ static struct {
 
 typedef int32_t (*onload_fn)(void *vm, void *reserved);
 
-/*
- * UnityPlayer's natives are not on UnityPlayer. Unity registers them against whichever
- * activity-facing subclass the game was built with -- this game uses
- * UnityPlayerForActivityOrService, which took 20 methods while UnityPlayer took 12 -- so a
- * lookup that names only UnityPlayer finds nothing and the driver sits at zero frames.
- * Ask the class the caller named first, then its siblings, and if none of them has the method
- * say which of them were asked: that is the difference between a five-minute diagnosis and a
- * night of builds.
- */
-static const char *const k_player_classes[] = {
-    "com/unity3d/player/UnityPlayer",
-    "com/unity3d/player/UnityPlayerForActivityOrService",
-    "com/unity3d/player/UnityPlayerForGameActivity",
-};
-
-static bool is_player_class(const char *cls)
-{
-    for (size_t i = 0; i < sizeof(k_player_classes) / sizeof(k_player_classes[0]); i++)
-        if (!strcmp(k_player_classes[i], cls)) return true;
-    return false;
-}
-
 static void *native_of(const char *cls, const char *name, const char *sig)
 {
     void *fn = tl_jni_native(cls, name, sig);
-    if (!fn && is_player_class(cls)) {
-        for (size_t i = 0; i < sizeof(k_player_classes) / sizeof(k_player_classes[0]); i++) {
-            if (!strcmp(k_player_classes[i], cls)) continue;
-            if ((fn = tl_jni_native(k_player_classes[i], name, sig))) {
-                tl_log_line("unity: %s%s is registered on %s, not %s", name, sig, k_player_classes[i], cls);
-                break;
-            }
-        }
+    /* Unity 6 registers the player's lifecycle natives (nativeRender, nativePause, ...) on the class that hosts it in an
+     * activity, not on UnityPlayer itself */
+    if (!fn && !strcmp(cls, "com/unity3d/player/UnityPlayer")) {
+        fn = tl_jni_native("com/unity3d/player/UnityPlayerForActivityOrService", name, sig);
+        if (!fn) fn = tl_jni_native("com/unity3d/player/UnityPlayerForGameActivity", name, sig);
     }
     if (!fn) tl_log_line("unity: native %s.%s%s was not registered", cls, name, sig);
     return fn;
-}
-
-/* The class Unity registered UnityPlayer's natives against: the engine's own object has to be of
- * that class, since its native code is handed this object and reads its fields. */
-static const char *player_class_with_natives(void)
-{
-    for (size_t i = 0; i < sizeof(k_player_classes) / sizeof(k_player_classes[0]); i++)
-        if (tl_jni_native(k_player_classes[i], "nativeRender", "()Z")) return k_player_classes[i];
-    return NULL;
 }
 
 bool tl_unity_start(const tl_unity_config *cfg)
@@ -120,14 +86,6 @@ bool tl_unity_start(const tl_unity_config *cfg)
     jobj *dir = tl_jni_new_string("/data/app/lib/arm64");
     uint8_t ok = load(tl_jni_env(), tl_jni_class_object("com/unity3d/player/NativeLoader"), dir);
     tl_log_line("unity: NativeLoader.load -> %d", ok);
-
-    /* The class the natives landed on is the class this driver's object must be: the engine's
-     * native code is handed that object and reads its fields. */
-    const char *pc = player_class_with_natives();
-    if (pc && strcmp(pc, "com/unity3d/player/UnityPlayer")) {
-        U.player = tl_jni_new_object(tl_jni_class(pc));
-        tl_log_line("unity: the engine's natives are on %s", pc);
-    }
     return ok != 0;
 }
 
@@ -171,28 +129,6 @@ static void *unity_main(void *arg)
         tl_log_line("unity: told the engine the volume (7 of 15) and that sound is on");
     }
 
-    /*
-     * UnityPlayer's natives are not registered by libmain -- that library registers only
-     * NativeLoader's own. They come from libunity's JNI_OnLoad, which the engine normally reaches
-     * through dlsym as it dlopens the library. If they are still missing when the frame loop is
-     * about to start, ask the engine's own libraries ourselves.
-     *
-     * Without them nativeRender resolves to nothing, the loop below never runs a frame, and the
-     * game sits at "alive: 0 frames" behind a log whose only clue is "was not registered".
-     */
-    if (!player_class_with_natives()) {
-        static const char *deps[] = { "libunity.so", "libil2cpp.so" };
-        for (size_t i = 0; i < sizeof(deps) / sizeof(deps[0]); i++) {
-            tl_lib *l = tl_ld_load(deps[i]);
-            onload_fn dep_load = l ? (onload_fn)tl_ld_sym(l, "JNI_OnLoad") : NULL;
-            if (!dep_load) { tl_log_line("unity: %s has no JNI_OnLoad to call", deps[i]); continue; }
-            int32_t dep_ver = dep_load(tl_jni_vm(), NULL);
-            tl_log_line("unity: %s JNI_OnLoad -> %#x", deps[i], dep_ver);
-        }
-        tl_log_line("unity: UnityPlayer's natives %s after asking them",
-                    player_class_with_natives() ? "are now registered" : "are STILL not registered");
-    }
-
     void *render = native_of("com/unity3d/player/UnityPlayer", "nativeRender", "()Z");
     bool was_paused = false;
     while (render && !atomic_load(&U.stop)) {
@@ -223,7 +159,9 @@ static void *unity_main(void *arg)
 bool tl_unity_run(void)
 {
     /* The UnityPlayer constructor's last native step before it starts the thread. */
-    NATIVE_VOID("initJni", "(Landroid/content/Context;)V", U.activity, 0);
+    /* Unity 6 adds the kind of host it runs in (0: an activity or service, 1: a GameActivity) */
+    if (tl_jni_native("com/unity3d/player/UnityPlayer", "initJni", "(Landroid/content/Context;)V")) NATIVE_VOID("initJni", "(Landroid/content/Context;)V", U.activity, 0);
+    else NATIVE_VOID("initJni", "(Landroid/content/Context;I)V", U.activity, 0);
     tl_log_line("unity: initJni done");
     /* The rest of the UnityPlayer constructor: the helpers it builds, whose constructors each call a
      * native that gives the engine its reference to the helper's Java class. Without these the engine

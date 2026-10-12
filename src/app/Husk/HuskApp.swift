@@ -13,9 +13,7 @@ enum HuskOrientation {
     ///
     /// A game's screen asks as it appears, while its full-screen cover is still being presented, and iOS can refuse then
     /// ("Supported: portrait") because it has not yet asked the cover what it allows. So a refusal is retried a few times,
-    /// a moment apart, for as long as `new` is still what is wanted. Each retry re-asserts the mask on every view
-    /// controller in the chain first: a freshly presented cover answers orientation from its own controller until it has
-    /// been asked once, and the refusal is what asks it.
+    /// a moment apart, for as long as `new` is still what is wanted.
     @MainActor static func set(_ new: UIInterfaceOrientationMask, attempt: Int = 0) {
         mask = new
         for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
@@ -23,43 +21,13 @@ enum HuskOrientation {
             while let v = vc { v.setNeedsUpdateOfSupportedInterfaceOrientations(); vc = v.presentedViewController }
             scene.requestGeometryUpdate(.iOS(interfaceOrientations: new)) { error in
                 HuskLog.log("ui", "orientation change refused (attempt \(attempt + 1)): \(error.localizedDescription)")
-                guard attempt < 12 else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                guard attempt < 5 else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     if mask == new { set(new, attempt: attempt + 1) }
                 }
             }
         }
     }
-}
-
-/// Hosts SwiftUI content in a view controller that reports the mask it is given, so iOS's
-/// orientation question ("Supported: portrait") is answered with the game's orientations rather
-/// than whatever the surrounding controller defaults to. Wrap a game's full-screen content in it,
-/// passing `HuskOrientation.mask`.
-struct OrientationHost<Content: View>: UIViewControllerRepresentable {
-    let mask: UIInterfaceOrientationMask
-    @ViewBuilder var content: () -> Content
-
-    func makeUIViewController(context: Context) -> UIViewController {
-        let host = MaskedHostingController(rootView: content())
-        host.mask = mask
-        return host
-    }
-
-    func updateUIViewController(_ vc: UIViewController, context: Context) {
-        guard let host = vc as? MaskedHostingController<Content> else { return }
-        host.mask = mask
-    }
-}
-
-/// A hosting controller whose `supportedInterfaceOrientations` is exactly the mask handed to it.
-final class MaskedHostingController<Content: View>: UIHostingController<Content> {
-    var mask: UIInterfaceOrientationMask = .all {
-        didSet {
-            if mask != oldValue { setNeedsUpdateOfSupportedInterfaceOrientations() }
-        }
-    }
-    override var supportedInterfaceOrientations: UIInterfaceOrientationMask { mask }
 }
 
 final class HuskAppDelegate: NSObject, UIApplicationDelegate {
@@ -116,7 +84,10 @@ struct HuskApp: App {
         WindowGroup {
             ContentView()
                 // An APK shared to Husk, or opened in it from Files.
-                .onOpenURL { IncomingFiles.shared.receive($0) }
+                .onOpenURL { url in
+                    // husk://open_app?unique_identifier=… from a Home Screen clip; anything else may be a shared APK
+                    if !AppClip.handle(url) { IncomingFiles.shared.receive(url) }
+                }
         }
     }
 }

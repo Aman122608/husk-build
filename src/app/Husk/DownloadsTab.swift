@@ -7,6 +7,7 @@ struct DownloadsTab: View {
     @ObservedObject private var updates = AppUpdates.shared
     @ObservedObject private var guest = GuestImage.shared
     @State private var adding = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -48,6 +49,7 @@ struct DownloadsTab: View {
             }
             .navigationTitle("Downloads")
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
                 ToolbarItem(placement: .primaryAction) {
                     Button { adding = true } label: { Label("Add", systemImage: "plus") }
                 }

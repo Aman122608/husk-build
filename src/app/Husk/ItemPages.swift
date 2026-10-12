@@ -100,8 +100,13 @@ struct GamePage: View {
     @State private var savesMessage: String?
     @State private var confirmRestore: URL?
     @State private var confirmQuit = false
+    @State private var reporting: CompatSubject?
 
     private var runs: Bool { app.report?.canRun == true }
+
+    private var compatSubject: CompatSubject? {
+        app.packageName.map { CompatSubject(package: $0, name: app.label, isGame: LibraryItem.game(app).isGame, iconPath: app.iconPath) }
+    }
 
     /// Another game already loaded in this run of Husk: engines cannot be unloaded, so this one cannot start until Husk is
     /// closed and opened again.
@@ -110,6 +115,8 @@ struct GamePage: View {
         else { return nil }
         return store.apps.first { $0.apks.first == loaded }?.label ?? "Another game"
     }
+
+    private var preflight: AppDiagnosis? { AppDiagnosis.preflight(app) }
 
     private var subtitle: String {
         if let used = LibraryItem.game(app).usedText { return used }
@@ -133,6 +140,25 @@ struct GamePage: View {
                 }
             }
             .heroRow()
+
+            // what the files say before it starts: a damaged APK, the wrong CPU, a missing piece, protection that refuses Husk
+            if let d = preflight {
+                Section {
+                    AppDiagnosisCard(diagnosis: d)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                }
+            }
+            // why it stopped last time, until it plays again
+            if let d = GameStatusStore.shared.diagnosis(app.id), d != preflight {
+                Section("Last Run") {
+                    AppDiagnosisCard(diagnosis: d, showsEvidence: true)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                }
+            }
+
+            if let compatSubject, !isGeodeLauncher {
+                CompatibilitySection(subject: compatSubject, reporting: $reporting)
+            }
 
             if !ShowcaseStore.shared.pictures(for: app.packageName).isEmpty {
                 Section("Screenshots") {
@@ -185,7 +211,8 @@ struct GamePage: View {
         .listStyle(.insetGrouped)
         .navigationTitle(app.label)
         .navigationBarTitleDisplayMode(.inline)
-        .fullScreenCover(isPresented: $playing) { OrientationHost(mask: HuskOrientation.mask) { TLAttemptView(app: app) } }
+        .fullScreenCover(isPresented: $playing, onDismiss: askHowItRan) { TLAttemptView(app: app) }
+        .sheet(item: $reporting) { CompatReportSheet(subject: $0) }
         .sheet(item: Binding(get: { backupFile.map(IdentifiedURL.init) }, set: { backupFile = $0?.url })) { f in
             ShareSheet(items: [f.url])
         }
@@ -228,13 +255,31 @@ struct GamePage: View {
     private func play() {
         guard TLAppSettings.load(app.id).geode, case .ready = GeodeSupport.shared.current(app) else {
             if TLAppSettings.load(app.id).geode {
-                Task { await GeodeSupport.shared.prepare(app); playing = true }
+                Task { await GeodeSupport.shared.prepare(app); start() }
             } else {
-                playing = true
+                start()
             }
             return
         }
-        playing = true
+        start()
+    }
+
+    /// After a session that got going: how did it run? Once per game per build, and only when it played (a crash has its own sheet).
+    private func askHowItRan() {
+        guard var subject = compatSubject, CompatibilityStore.shared.shouldAsk(subject.package),
+              GameStatusStore.shared.status(app.id)?.result == .plays else { return }
+        subject.afterPlaying = true
+        Task { try? await Task.sleep(nanoseconds: 500_000_000); reporting = subject }
+    }
+
+    /// Full screen, or in a window over Husk when Multitasking says so for this app.
+    private func start() {
+        if app.report?.runsOnNativeRuntime == true || app.report?.webKind != nil, AppWindows.opensInWindow(app) {
+            AppWindows.shared.open(app)
+        } else {
+            AppWindows.shared.close(app)
+            playing = true
+        }
     }
 
     /// This game's engine is loaded in this run of Husk, so its files may be open: no restoring under it.

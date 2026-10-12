@@ -77,23 +77,6 @@ void husk_tl_attempt_stop(void);
 void husk_tl_attempt_reset(void);
 
 /*
- * Name an address the guest is running at: "libUE4.so+0x61df71c".
- *
- * A crash report's guest frames came out as "??? 0x000000011c57771c 0x0 + 4770461468",
- * which is a number rather than a location. The loader is the only thing that knows where
- * each guest library was mapped, so it is the only thing that can say which one a frame
- * belongs to -- and an offset into libUE4.so is something you can look up, where a raw
- * address is not.
- *
- * The loader is also the only thing the translation layer hands a guest base to, so this
- * lives here and not in the app. It is called from a signal handler: it allocates nothing,
- * takes no lock, and formats by hand. Returns 1 and NUL-terminates `out` when the address
- * is inside a loaded guest library, 0 when it is not (a host frame, which the app names
- * itself through dladdr).
- */
-int husk_tl_describe_address(uintptr_t addr, char *out, size_t outlen);
-
-/*
  * The frame the guest last finished, for the UI to show.
  *
  * Frames are handed over without a copy. husk_tl_frame_acquire() pins the newest
@@ -122,25 +105,16 @@ void husk_tl_perf_snapshot(husk_tl_perf *out);
 
 void husk_tl_send_touch(int action, float x, float y);
 
-void husk_tl_free(void *p);
-
-/* --- What the crash handler needs to say where it died ----------------------
- *
- * A guest backtrace has to be walked, symbolised and mapped back to a library,
- * and on this stack it often comes back full of <host> frames with the one that
- * matters missing. Neither of these depends on any of that.
+/*
+ * Copy every entry under `prefix` (e.g. "assets/public/") out of an APK into `out_dir`, keeping the paths below the prefix.
+ * For web apps, whose pages and scripts are served from the copy. Returns how many files were written, or -1.
  */
+int husk_tl_extract(const char *apk, const char *prefix, const char *out_dir);
 
-/* The last initialiser the loader entered, as "<lib> init_array[N] <addr>", or
- * "" before any has run. Called from a signal handler: returns a pointer to a
- * static buffer, allocates nothing. */
-const char *husk_tl_last_init(void);
+/* Whether an APK has an entry by this name. */
+int husk_tl_has_entry(const char *apk, const char *name);
 
-/* Every general-purpose register, then fp, lr, sp and pc, to fd with write(2)
- * only -- no stdio, no locks, no allocation, so it is safe where the rest of the
- * logging is not. A null dereference shows up here as the register holding it. */
-void husk_tl_dump_fault(int fd, uintptr_t pc, uintptr_t lr, uintptr_t sp, uintptr_t fp,
-                        const uintptr_t *regs, size_t nregs);
+void husk_tl_free(void *p);
 
 #ifdef __cplusplus
 }

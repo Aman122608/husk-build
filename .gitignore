@@ -40,3 +40,6 @@ Husk-main.zip
 .local/
 __pycache__/
 *.pyc
+
+# Local CI scratch (downloaded IPA artifacts, logs)
+.ci/

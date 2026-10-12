@@ -26,12 +26,14 @@ final class CrashReport: ObservableObject {
         case signal(Int)        // a fatal signal the crash handler recorded
         case startFailed        // the runtime said the game could not be started, and Husk closed after that
         case unknown            // no record of why: memory (iOS ends the app without a word), or Husk swiped away
+        case diagnosed(AppDiagnosis)    // the run's log says why (AppDiagnosis)
 
         var title: String {
             switch self {
             case .signal: return "The game crashed"
             case .startFailed: return "The game could not start"
             case .unknown: return "Husk closed while the game was running"
+            case .diagnosed(let d): return d.title
             }
         }
         var detail: String {
@@ -45,6 +47,8 @@ final class CrashReport: ObservableObject {
                 return "The runtime could not start it. The report says which part was missing."
             case .unknown:
                 return "Nothing was recorded, which usually means iOS ended Husk for using too much memory, or Husk was closed from the app switcher."
+            case .diagnosed(let d):
+                return d.detail
             }
         }
     }
@@ -98,16 +102,13 @@ final class CrashReport: ObservableObject {
         let lines = ((try? String(contentsOf: Self.previousLogURL, encoding: .utf8)) ?? "")
             .split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
         var cause = Cause.unknown
-        // Two handlers can report a fatal signal: the native one, which writes
-        // "=== FATAL signal N ..." into the game's own log, and the Swift one, which
-        // writes "*** FATAL SIGNAL N" into husk.log. Matching only one of them made a
-        // real crash read as "Husk closed while the game was running".
-        if let fatal = lines.last(where: { $0.contains("*** FATAL SIGNAL") || $0.contains("=== FATAL signal") }),
+        if let fatal = lines.last(where: { $0.contains("*** FATAL SIGNAL") }),
            let n = fatal.split(separator: " ").compactMap({ Int($0) }).first {
             cause = .signal(n)
         } else if lines.contains(where: { $0.contains("the game could not be started") || $0.contains("native: launch refused") }) {
             cause = .startFailed
         }
+        if let d = AppDiagnosis.fromLog(lines.joined(separator: "\n")) { cause = .diagnosed(d) }
         let time = (info["time"] as? Double).map { Date(timeIntervalSince1970: $0) }
         pending = Report(game: info["label"] as? String ?? "A game", appID: info["id"] as? String ?? "",
                          cause: cause, when: time, excerpt: Array(Self.interesting(lines).suffix(14)))
@@ -116,6 +117,7 @@ final class CrashReport: ObservableObject {
         case .signal: GameStatusStore.shared.record(pending!.appID, .crashed)
         case .startFailed: GameStatusStore.shared.record(pending!.appID, .failed)
         case .unknown: break
+        case .diagnosed(let d): GameStatusStore.shared.record(pending!.appID, .crashed, diagnosis: d)
         }
     }
 
@@ -152,12 +154,7 @@ final class CrashReport: ObservableObject {
         text += "\n---- native output of that run ----\n"
         text += (try? String(contentsOf: HuskLog.previousNativeLogURL, encoding: .utf8)) ?? "(none)\n"
         let safe = r.game.replacingOccurrences(of: "/", with: "-")
-        // Written into Documents, not tmp. The sheet is otherwise the only way to this
-        // report, and it is gone the moment it is dismissed or Husk is relaunched --
-        // leaving the logs themselves but nothing that ties them to what happened.
-        // Documents is exposed to the Files app (UIFileSharingEnabled), so the report
-        // survives and can be retrieved and sent later.
-        let url = Self.docs.appendingPathComponent("crash report - \(safe).txt")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Husk crash report - \(safe).txt")
         do { try text.write(to: url, atomically: true, encoding: .utf8) } catch { return nil }
         return url
     }
@@ -168,6 +165,14 @@ struct CrashReportSheet: View {
     let report: CrashReport.Report
     @Environment(\.dismiss) private var dismiss
     @State private var file: URL?
+    @State private var reporting: CompatSubject?
+
+    /// The game, for a report to the compatibility list.
+    private var subject: CompatSubject? {
+        guard let app = TranslationLayerStore.shared.apps.first(where: { $0.id == report.appID }), let pkg = app.packageName else { return nil }
+        return CompatSubject(package: pkg, name: app.label, isGame: LibraryItem.game(app).isGame, iconPath: app.iconPath,
+                             crash: "\(report.cause.title). \(report.cause.detail)")
+    }
 
     var body: some View {
         NavigationStack {
@@ -205,7 +210,14 @@ struct CrashReportSheet: View {
                         SendLogToPCButton(file: file)
                             .padding(.top, 4)
                     }
-                    Text("The report holds the full log of that run and which device and build it was on. It is also saved as a file in Husk's folder, so it is still there later. Nothing is sent anywhere unless you share it.")
+                    if let subject {
+                        Button { reporting = subject } label: {
+                            Label("Report to the Compatibility List", systemImage: "list.bullet.clipboard")
+                                .frame(maxWidth: .infinity).padding(.vertical, 6)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    Text("The report holds the full log of that run and which device and build it was on. Nothing is sent anywhere unless you share it.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 .padding(20)
@@ -215,5 +227,6 @@ struct CrashReportSheet: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .task { file = CrashReport.writeReport(report) }
+        .sheet(item: $reporting) { CompatReportSheet(subject: $0) }
     }
 }

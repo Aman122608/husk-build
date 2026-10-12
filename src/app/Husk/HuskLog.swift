@@ -210,83 +210,6 @@ enum HuskLog {
         t.start()
     }
 
-    /// write(2) to the raw log descriptor -- the only way anything leaves a signal
-    /// handler safely.
-    fileprivate static func rawWrite(_ text: String) {
-        guard rawLogFD >= 0 else { return }
-        text.withCString { p in _ = write(rawLogFD, p, strlen(p)) }
-    }
-
-    /// Scratch for naming an address. Preallocated for the same reason crashBuf is:
-    /// nothing in a signal handler may allocate, and building an array there once
-    /// deadlocked inside malloc's own lock.
-    fileprivate static let crashName =
-        UnsafeMutablePointer<CChar>.allocate(capacity: 128)
-
-    /// "libUE4.so+0x61df71c", or `<host>` when the address is not in a guest library.
-    ///
-    /// The loader owns the guest mappings, so the app cannot work this out for itself --
-    /// and a raw address on its own tells you nothing, where an offset into libUE4.so is
-    /// something you can disassemble.
-    fileprivate static func describeGuest(_ label: String, _ address: UInt) {
-        guard address != 0 else { return }
-        crashName.pointee = 0
-        if husk_tl_describe_address(address, crashName, 128) == 1 {
-            rawWrite("  \(label) \(String(cString: crashName))\n")
-        } else {
-            rawWrite("  \(label) <host> \(address)\n")
-        }
-    }
-
-    /// The signal's faulting address, and the two registers that say where execution was.
-    ///
-    /// This is what a plain `signal()` handler can never report. `si_addr` is the address
-    /// the faulting instruction touched -- 0 for a NULL dereference, something wild for a
-    /// corrupt pointer -- and `pc` is the instruction itself, which is the one thing a
-    /// frame-pointer walk cannot give you: a walk yields return addresses, so it starts a
-    /// frame above whatever actually faulted.
-    fileprivate static func describeFault(_ info: UnsafeMutablePointer<siginfo_t>?,
-                                          _ context: UnsafeMutableRawPointer?) {
-        if let info {
-            // si_addr is the address the faulting instruction touched. For a
-            // SIGSEGV a null here is not "the kernel did not say" -- it IS the
-            // answer: the fault was a dereference of address 0. Testing it with
-            // `if let` reported the most informative case as the absent one.
-            let fault = info.pointee.si_addr
-            let value = fault == nil ? 0 : UInt(bitPattern: UnsafeRawPointer(fault!))
-            rawWrite("  fault address: \(value)"
-                     + (value == 0 ? "   (address 0 -- a null dereference)" : "") + "\n")
-        }
-        if let context {
-            let uc = context.assumingMemoryBound(to: ucontext_t.self).pointee
-            if let mc = uc.uc_mcontext {
-                let ss = mc.pointee.__ss
-                describeGuest("pc:", UInt(ss.__pc))
-                describeGuest("lr:", UInt(ss.__lr))
-            }
-        }
-    }
-
-    /// Every register, straight to the raw descriptor.
-    ///
-    /// The faulting instruction names one register as the culprit -- a null
-    /// dereference is a register holding zero -- and the ones around it say what
-    /// the code was doing with it. The formatting lives in C
-    /// (husk_tl_dump_fault) because this runs in a signal handler, where stdio,
-    /// allocation and locks are all off limits.
-    fileprivate static func dumpRegisters(_ context: UnsafeMutableRawPointer?) {
-        guard let context else { return }
-        let uc = context.assumingMemoryBound(to: ucontext_t.self).pointee
-        guard let mc = uc.uc_mcontext else { return }
-        let ss = mc.pointee.__ss
-        withUnsafeBytes(of: ss.__x) { raw in
-            let words = raw.bindMemory(to: UInt.self)
-            husk_tl_dump_fault(rawLogFD,
-                               UInt(ss.__pc), UInt(ss.__lr), UInt(ss.__sp), UInt(ss.__fp),
-                               words.baseAddress, words.count)
-        }
-    }
-
     /// Turn "the app vanished with no crash log" into a labelled last line.
     ///
     /// Deliberately does NOT touch SIGTRAP or SIGBUS: those belong to the JIT trap
@@ -296,26 +219,14 @@ enum HuskLog {
     private static func installCrashHandlers() {
         let fatal: [Int32] = [SIGSEGV, SIGABRT, SIGILL, SIGFPE, SIGSYS]
         for sig in fatal {
-            // sigaction with SA_SIGINFO rather than signal(). A plain handler is told the
-            // signal number and nothing else, so every hard crash reads "FATAL SIGNAL 11"
-            // -- the same line for a NULL dereference, a wild pointer and a smashed stack,
-            // and telling those apart is the whole diagnosis. SA_SIGINFO is what carries
-            // the faulting address and the register state.
-            var action = sigaction()
-            action.__sigaction_u.__sa_sigaction = { received, info, context in
+            signal(sig) { received in
                 // Async-signal-safe only: write(2) straight to the fds, no
                 // allocation, no locks, no Swift runtime.
-                HuskLog.rawWrite("\n*** FATAL SIGNAL \(received) ***\n")
-                HuskLog.describeFault(info, context)
-                // Which initialiser was running, from the loader's own note.
-                // A backtrace has to be walked and symbolised to say this; a
-                // note written just before the call does not.
-                if let last = husk_tl_last_init(), last.pointee != 0 {
-                    HuskLog.rawWrite("  last loader step: ")
-                    HuskLog.rawWrite(String(cString: last))
-                    HuskLog.rawWrite("\n")
+                let msg = "\n*** FATAL SIGNAL \(received) -- process is dying ***\n"
+                msg.withCString { p in
+                    let n = strlen(p)
+                    if HuskLog.rawLogFD >= 0 { _ = write(HuskLog.rawLogFD, p, n) }
                 }
-                HuskLog.dumpRegisters(context)
                 // Drain whatever C wrote but the reader thread never got to.
                 //
                 // QEMU's own abort messages -- assertion text, error_report --
@@ -357,28 +268,17 @@ enum HuskLog {
                 // buffer is taken at startup because nothing in a signal
                 // handler may allocate.
                 if HuskLog.rawLogFD >= 0 {
-                    HuskLog.rawWrite("\n--- backtrace ---\n")
-                    let frames = backtrace(HuskLog.crashFrames, 64)
-                    backtrace_symbols_fd(HuskLog.crashFrames, frames, HuskLog.rawLogFD)
-                    // backtrace_symbols_fd prints "???" for anything dladdr cannot name,
-                    // and it cannot name a single guest frame: those libraries were mapped
-                    // by the loader, so no system table knows them. The loader does -- this
-                    // turns "0x0 + 4770461468" into an offset worth disassembling.
-                    HuskLog.rawWrite("\n--- guest frames (library + offset) ---\n")
-                    for i in 0..<Int(frames) {
-                        if let frame = HuskLog.crashFrames[i] {
-                            HuskLog.describeGuest("frame \(i):",
-                                                  UInt(bitPattern: UnsafeRawPointer(frame)))
-                        }
+                    let header = "\n--- backtrace ---\n"
+                    header.withCString { p in
+                        _ = write(HuskLog.rawLogFD, p, strlen(p))
                     }
+                    let n = backtrace(HuskLog.crashFrames, 64)
+                    backtrace_symbols_fd(HuskLog.crashFrames, n, HuskLog.rawLogFD)
                 }
                 if HuskLog.rawLogFD >= 0 { fsync(HuskLog.rawLogFD) }
                 signal(received, SIG_DFL)
                 raise(received)
             }
-            action.sa_flags = SA_SIGINFO
-            sigemptyset(&action.sa_mask)
-            sigaction(sig, &action, nil)
         }
         NSSetUncaughtExceptionHandler { ex in
             HuskLog.log("crash", "uncaught exception: \(ex.name.rawValue) -- \(ex.reason ?? "")")

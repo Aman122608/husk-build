@@ -89,12 +89,29 @@ targets:
           - "-lz"
           # libresolv: the phone's DNS servers, for games that resolve names themselves (Geode's c-ares).
           - "-lresolv"
+          # SQLite for Java apps' android.database.sqlite (the system's own library).
+          - "-lsqlite3"
           - "-framework"
           - "AudioToolbox"
           - "-framework"
           - "CoreText"
           - "-framework"
           - "CoreGraphics"
+          # ImageIO decodes and encodes images for Java apps' BitmapFactory and Bitmap.compress.
+          - "-framework"
+          - "ImageIO"
+          # WebKit draws Java apps' android.webkit.WebView (WKWebView under the app's screen).
+          - "-framework"
+          - "WebKit"
+          # VideoToolbox (with CoreMedia and CoreVideo) decodes H.264/HEVC for Java apps' MediaCodec; Accelerate converts the frames.
+          - "-framework"
+          - "VideoToolbox"
+          - "-framework"
+          - "CoreMedia"
+          - "-framework"
+          - "CoreVideo"
+          - "-framework"
+          - "Accelerate"
           # Security verifies the licence signature Minecraft's UI engine checks through Java's Signature class.
           - "-framework"
           - "Security"
@@ -179,6 +196,27 @@ targets:
           rm -f "$VARS_SEED" "$VDB_SEED"
           "$QEMU_IMG" create -f qcow2 "$VARS_SEED" 64M
           "$QEMU_IMG" create -f qcow2 "$VDB_SEED" 16G
+
+          # The parts of Android's /system that apps on the translation layer read directly: CA certificates and the system
+          # fonts (scripts/build_android_system.sh makes them from the Lineage image). Flutter apps need both.
+          SYS="$SRCROOT/../../build/android-system"
+          if [ -d "$SYS/fonts" ]; then
+            rsync -a --delete "$SYS/" "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/android-system/"
+          else
+            echo "warning: build/android-system missing (scripts/build_android_system.sh): Flutter apps will have no system fonts" >&2
+          fi
+
+          # Husk's Dalvik runtime for Java apps (libGDX games and the like): libcore, ICU and Husk's Java framework
+          # (scripts/build_java_runtime.sh). ELF libraries and jars, so resources, not code the app links.
+          JRT="$SRCROOT/../../build/java-runtime"
+          if [ -f "$JRT/husk-framework.dex" ]; then
+            rsync -a --delete "$JRT/" "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/java-runtime/"
+          else
+            echo "warning: build/java-runtime missing (scripts/build_java_runtime.sh): Java apps will not start" >&2
+          fi
+        # Every build: the Java runtime it copies changes without Xcode knowing (it has outputs and no inputs, so dependency
+        # analysis skipped it once they existed, and IPAs shipped a day-old runtime).
+        basedOnDependencyAnalysis: false
         outputFiles:
           - "$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/vmlinuz-virt"
           - "$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/initramfs-virt"

@@ -33,41 +33,6 @@ fi
 
 cd "$WK/Source/ThirdParty/ANGLE"
 
-if [ "${HUSK_ANGLE_PROBE:-0}" = "1" ]; then
-    # Diagnostic. Instantiating an undefined template with a value makes clang name
-    # that value in the diagnostic, which is the only way to read a constexpr
-    # without running the build under a debugger.
-    echo "==> probing ResourceMap.h"
-    python3 - <<'PY'
-p = "src/libANGLE/ResourceMap.h"
-s = open(p).read()
-
-macro_probe = (
-    '#if defined(ANGLE_ENABLE_SHARE_CONTEXT_LOCK)\n'
-    '#pragma message("PROBE: ANGLE_ENABLE_SHARE_CONTEXT_LOCK is DEFINED")\n'
-    '#else\n'
-    '#pragma message("PROBE: ANGLE_ENABLE_SHARE_CONTEXT_LOCK is NOT defined")\n'
-    '#endif\n\n'
-)
-ns = ("namespace angle_probe {\n"
-      "template <bool B> struct Bool;\n"
-      "template <unsigned long long N> struct Size;\n"
-      "}  // namespace angle_probe\n\n")
-
-assert "\nnamespace gl" in s, "no namespace gl"
-s = s.replace("\nnamespace gl", "\n" + macro_probe + ns + "namespace gl", 1)
-
-old = "        static_assert(kNeedsLock);"
-assert old in s, "assert site not found"
-s = s.replace(old,
-    "        angle_probe::Bool<kNeedsLock> angle_probe_fn_needs_lock;\n"
-    "        angle_probe::Size<kAdditionalFlatResourcesSize> angle_probe_fn_additional;\n" + old, 1)
-
-open(p, "w").write(s)
-print("  injected probes")
-PY
-fi
-
 # Two overrides worth explaining.
 #
 # WK_AVAILABILITY_OVERLAY_FLAGS points at a clang VFS overlay that WebKit
@@ -95,34 +60,6 @@ angle_build () {
         ldflags=("OTHER_LDFLAGS=\$(inherited) -Wl,-alias_list,$1")
     fi
 
-    # -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1: required, not optional.
-    #
-    # ANGLE's GN build defines this (BUILD.gn: angle_enable_share_context_lock);
-    # WebKit's Xcode project defines nothing of the sort, so building ANGLE the
-    # Xcode way silently takes ResourceMap.h's "locks disabled" #else branch, where
-    # kNeedsLock and kAdditionalFlatResourcesSize are constants that do not depend
-    # on IDType. That makes clang evaluate the static_assert(kNeedsLock) inside
-    # if constexpr (kAdditionalFlatResourcesSize > 0), even though the branch
-    # should be discarded -- so the build dies on an assert that a dependency-based
-    # discard is supposed to hide.
-    #
-    # Measured, not inferred: with a probe injected at the assert the compiler
-    # reported ANGLE_ENABLE_SHARE_CONTEXT_LOCK undefined, kAdditionalFlatResourcesSize
-    # == 0, kNeedsLock == false -- and instantiated the branch anyway. Defining the
-    # macro makes both values depend on IDType (BufferID: 0x6000/true, every other
-    # ID: 0/false), so the branch is correctly discarded for the lockless types and
-    # the assert holds for BufferID. Pass 1 then builds clean.
-    local cflags='$(inherited) -Wno-unguarded-availability-new -Wno-thread-safety-attributes -Wno-thread-safety-analysis -DANGLE_ENABLE_SHARE_CONTEXT_LOCK=1'
-    local cxxflags="$cflags"
-
-    # -Wno-thread-safety-*: ANGLE's src/common/SimpleMutex.h annotates a
-    # std::mutex with acquire_capability/release_capability. clang 16+ diagnoses
-    # that as -Wthread-safety-attributes, and WebKit's xcconfigs build with
-    # -Werror, so the build dies on ANGLE's own annotation macros. It is ANGLE's
-    # internal bookkeeping, not a defect in anything Husk links, so the two
-    # diagnostics are silenced rather than the source patched -- ANGLE here is a
-    # WebKit HEAD checkout, which is a moving target that a local patch would not
-    # survive.
     env -i PATH="$PATH" HOME="$HOME" xcodebuild archive \
         -archivePath "ANGLE" -scheme "ANGLE" \
         -sdk iphoneos -arch arm64 -configuration Release \
@@ -130,12 +67,12 @@ angle_build () {
         CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
         WK_AVAILABILITY_OVERLAY_FLAGS="" WK_AVAILABILITY_OVERLAY_SWIFT_FLAGS="" \
         IPHONEOS_DEPLOYMENT_TARGET="15.5" \
-        OTHER_CFLAGS="$cflags" \
-        OTHER_CPLUSPLUSFLAGS="$cxxflags" \
+        OTHER_CFLAGS='$(inherited) -Wno-unguarded-availability-new' \
+        OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-unguarded-availability-new' \
         ${ldflags[@]+"${ldflags[@]}"} \
         > "$LOG" 2>&1 \
       || { echo "ANGLE build failed; last errors:" >&2
-           grep -a "error:\|^ld: " "$LOG" | head -40 >&2; exit 1; }
+           grep -a "error:\|^ld: " "$LOG" | head -10 >&2; exit 1; }
 }
 
 # Two passes, because of a name mismatch.
