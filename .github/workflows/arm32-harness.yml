@@ -1,19 +1,23 @@
 name: arm32-harness
 
-# The first increment of the AArch32 differential harness:
+# The AArch32 differential harness:
 #
 #   step0   (macos-26)     the go/no-go -- does a runner execute code the process
 #                          just wrote? Drives husk-tl-xmem.c's own self-test.
-#   golden  (ubuntu-latest) the oracle -- runs a small hand-written AArch32 case
-#                          set under qemu-arm and uploads the goldens.
+#   golden  (ubuntu-latest) the oracle -- runs the hand-written AArch32 case set
+#                          under qemu-arm and uploads the goldens.
 #   compare (macos-26)     loads the goldens, proves it can execute a generated
-#                          function on the runner, and validates the diff/report
-#                          path end to end.
+#                          function on the runner, runs EVERY case through the
+#                          a32_interp reference interpreter (tools/a32/a32_interp.c)
+#                          and diffs every architectural field, naming the case
+#                          and the field on any disagreement.
 #
-# No translator runs yet; this proves the pipeline, the formats and the failure
-# reporting. Keep it fast: it must stay a five-minute signal while build-ios.yml
-# is hours. See .hermes/plans/engine-reset/arm32-test-harness.md (the spec) and
-# .hermes/plans/engine-reset/arm32-harness-implemented.md (this increment).
+# This is the correctness infrastructure the translator will be developed
+# against: a translator that disagrees with the interpreter on any case fails
+# this workflow. Keep it fast: it must stay a five-minute signal while
+# build-ios.yml is hours. See .hermes/plans/engine-reset/arm32-test-harness.md
+# (the spec), arm32-harness-implemented.md (the pipeline) and
+# arm32-interp-implemented.md (the interpreter).
 #
 # NOTE: this workflow only ADDS a file; it touches no existing workflow.
 on:
@@ -144,13 +148,20 @@ jobs:
           name: a32-goldens
           path: goldens
 
-      - name: Build the comparer (it carries its own executable-memory proof)
+      - name: Build the comparer (interpreter + diff; carries its own RX proof)
         run: bash tools/a32/build.sh diff /tmp/a32diff
 
-      - name: Load the cases and goldens, validate structure, run the diff
+      - name: Run every case through the interpreter and diff against the goldens
+        # The default run now RUNS the reference interpreter: every case goes
+        # through a32_interp and every architectural field is diffed against the
+        # golden. A mismatch names the case and the field and exits non-zero, and
+        # a case the interpreter cannot complete is reported as NOT passing.
         run: |
-          set -o pipefail
+          set -euo pipefail
           /tmp/a32diff "$PWD/goldens" 2>&1 | tee compare.log
+          grep -qE 'interpreter: [0-9]+ passed, 0 failed' compare.log
+          grep -q 'compare: PASS' compare.log
+          echo "::notice::the A32 interpreter matched the qemu-arm oracle on every case."
 
       - name: Self-check - a planted mismatch must be reported (deliberate red)
         # This run is expected to report ONE mismatch; a32diff exits 0 when the

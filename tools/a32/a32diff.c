@@ -1,38 +1,33 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * a32diff.c -- the macos-26 side of the differential harness.
+ * a32diff.c -- the compare side of the differential harness.
  *
- * In THIS increment the translator does not exist yet, so a32diff does not run
- * cases through one. What it does, and proves, is the whole rest of the pipeline:
+ * It runs every case in the corpus through the a32_interp reference interpreter
+ * (tools/a32/a32_interp.c) and diffs the resulting architectural state against
+ * the golden the qemu-arm oracle produced (ubuntu job). A mismatch names the
+ * exact case and field; a case the interpreter cannot run to completion (a
+ * named fault or the step limit) is reported as NOT passing, never as a pass.
  *
- *   (a) it loads and executes a *generated* AArch64 function on the runner --
- *       through the layer's own executable-memory code (husk-tl-xmem.c), the
- *       same two-view shape the translator will use. This is the compare job's
- *       own copy of the Step-0 fact;
- *   (b) it loads the case manifest and the goldens the ubuntu job produced,
- *       validates their structure, and runs its diff/report path on a
- *       trivially-true comparison (every golden against itself), so the format,
- *       the diff and the failure reporting are exercised end to end;
- *   (c) with --self-check it plants ONE mismatched field in a copy of a golden
- *       and requires the report to name exactly that case and that field. A
- *       deliberate red here is the point: it is how we know a real red will say
- *       which case and which field disagreed. It is OFF by default.
+ * On Apple (the macos-26 compare job) it also proves, before anything else, that
+ * it can load and execute a *generated* AArch64 function on the runner through
+ * the layer's own executable-memory code (husk-tl-xmem.c) -- the same two-view
+ * shape the translator will use. That proof is guarded so the file also builds
+ * and runs on a plain host (no Apple executable-memory path) for local use.
  *
- * Usage:  a32diff <goldens-dir> [--self-check]
- * Exit:   0 ok; 1 a mismatch was reported (the red a real translator run wants);
- *         2 usage/IO/parse error, or a self-check that did not behave.
+ * It also keeps the --self-check planted-red path: it copies a golden, breaks
+ * one field, and REQUIRES the report to name exactly that case and field. A
+ * deliberate red here is how a real red is guaranteed to be actionable.
  *
- * Build (macos-26):
- *   clang -arch arm64 -g -O1 -Wall -I src/translation-layer-next \
- *     -I src/translation-layer tools/a32/a32diff.c \
- *     src/translation-layer-next/husk-tl-xmem.c -o /tmp/a32diff
+ * Usage:  a32diff <goldens-dir> [--self-check] [--no-interp]
+ * Exit:   0 all cases pass (and a --self-check behaved); 1 a mismatch was
+ *         reported (the red we want from a wrong interpreter); 2 usage/IO/parse
+ *         error, or a self-check that did not behave.
  *
- * What is compared, per case: id, the comparable GPRs (r0-r8, r10, r11), nzcvq
- * (cpsr masked to NZCV+Q), fpscr_masked (never raw fpscr), fp[0..31] (raw bits,
- * never floats), mem_size, mem_hash and stop_reason. regs[9] holds the scratch
- * address and regs[12..15] are forced 0, so they are not compared. The field
- * names in the report are the JSON key names, so a failure is actionable without
- * decoding anything.
+ * What is compared, per case: the comparable GPRs (r0-r8, r10-r15 -- r9 is the
+ * scratch window ADDRESS and is not architectural), nzcvq (cpsr masked to
+ * NZCV+Q), fpscr_masked (never raw fpscr), fp[0..31] (raw bits, never floats),
+ * mem_size, mem_hash, mem_first_diff and stop_reason. Field names in the report
+ * are the JSON key names, so a failure is actionable without decoding anything.
  */
 #include <stdarg.h>
 #include <stdint.h>
@@ -40,6 +35,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "a32_state.h"
+#include "a32_interp.h"
+#include "a32_cases_gen.h"
+
+#if defined(__APPLE__)
 #include "husk-tl-xmem.h"
 
 /* husk-tl-xmem.c calls this; normally the loader provides it. */
@@ -51,6 +51,7 @@ void tl_log_line(const char *fmt, ...)
     va_end(ap);
     fputc('\n', stderr);
 }
+#endif
 
 /* ====================================================================== JSON
  * A small, purpose-built JSON reader. The golden files are well-formed and have
@@ -332,6 +333,7 @@ static int validate_golden_case(jv *c, const char *file, size_t i)
 
 /* ============================================================== (a) RX proof */
 
+#if defined(__APPLE__)
 static int rx_proof(void)
 {
     char err[256] = "";
@@ -355,6 +357,71 @@ static int rx_proof(void)
     printf("compare: RX proof OK -- executed a function this process just wrote (0x%x)\n", rc);
     return 0;
 }
+#else
+static int rx_proof(void)
+{
+    printf("compare: RX proof skipped (built off Apple: no husk-tl-xmem path)\n");
+    return 0;
+}
+#endif
+
+/* ==================================== the interpreter vs the golden diff */
+
+/* The comparable GPRs when the reference interpreter is the left-hand side:
+ * r0-r8, r10 and r11 are what a case writes, and r12-r15 are 0 on both sides.
+ * r9 is the scratch window ADDRESS and is deliberately not compared. */
+static const int a32_interp_cmp_reg[] =
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15 };
+
+static int cmp_u32_golden(uint32_t x, jv *g, const char *field, int id, const char *name)
+{
+    uint64_t y = jhex(jget(g, field));
+    if ((uint64_t)x == y) return 0;
+    snprintf(g_last_field, sizeof(g_last_field), "%s", field);
+    printf("  MISMATCH case %d (%s) field %s: golden=0x%llx interpreter=0x%llx\n",
+           id, name, field, (unsigned long long)y, (unsigned long long)x);
+    return 1;
+}
+static int cmp_num_golden(uint32_t x, jv *g, const char *field, int id, const char *name)
+{
+    long y = jnum(jget(g, field));
+    if ((long)x == y) return 0;
+    snprintf(g_last_field, sizeof(g_last_field), "%s", field);
+    printf("  MISMATCH case %d (%s) field %s: golden=%ld interpreter=%lu\n",
+           id, name, field, y, (unsigned long)x);
+    return 1;
+}
+
+static int interp_cmp(struct a32_result *r, jv *g, int id, const char *name)
+{
+    int d = 0;
+    jv *gr = jget(g, "regs");
+    for (size_t k = 0; k < sizeof(a32_interp_cmp_reg) / sizeof(a32_interp_cmp_reg[0]); k++) {
+        int reg = a32_interp_cmp_reg[k];
+        uint64_t y = (gr && (size_t)reg < gr->n) ? jhex(gr->items[reg]) : 0;
+        if ((uint64_t)r->regs[reg] == y) continue;
+        d++;
+        snprintf(g_last_field, sizeof(g_last_field), "regs[%d]", reg);
+        printf("  MISMATCH case %d (%s) field regs[%d]: golden=0x%llx interpreter=0x%llx\n",
+               id, name, reg, (unsigned long long)y, (unsigned long long)r->regs[reg]);
+    }
+    d += cmp_u32_golden(r->cpsr & A32_CPSR_MASK, g, "nzcvq", id, name);
+    d += cmp_u32_golden(r->fpscr & A32_FPSCR_MASK, g, "fpscr_masked", id, name);
+    jv *gf = jget(g, "fp");
+    for (int i = 0; i < A32_NFP; i++) {
+        uint64_t y = (gf && (size_t)i < gf->n) ? jhex(gf->items[i]) : 0;
+        if (r->fp[i] == y) continue;
+        d++;
+        snprintf(g_last_field, sizeof(g_last_field), "fp[%d]", i);
+        printf("  MISMATCH case %d (%s) field fp[%d]: golden=0x%llx interpreter=0x%llx\n",
+               id, name, i, (unsigned long long)y, (unsigned long long)r->fp[i]);
+    }
+    d += cmp_num_golden(r->mem_size, g, "mem_size", id, name);
+    d += cmp_u32_golden(r->mem_hash, g, "mem_hash", id, name);
+    d += cmp_u32_golden(r->mem_first_diff, g, "mem_first_diff", id, name);
+    d += cmp_num_golden(r->stop_reason, g, "stop_reason", id, name);
+    return d;
+}
 
 /* ==================================================================== main */
 
@@ -365,9 +432,11 @@ int main(int argc, char **argv)
         return 2;
     }
     const char *dir = argv[1];
-    int self_check = 0;
-    for (int i = 2; i < argc; i++)
+    int self_check = 0, no_interp = 0;
+    for (int i = 2; i < argc; i++) {
         if (!strcmp(argv[i], "--self-check")) self_check = 1;
+        if (!strcmp(argv[i], "--no-interp")) no_interp = 1;
+    }
 
     if (rx_proof()) return 1;
 
@@ -426,11 +495,70 @@ int main(int argc, char **argv)
     printf("compare: trivial self-comparison: all %zu cases equal (diff/report path OK)\n",
            gcases->n);
 
-    if (!self_check) {
-        printf("compare: PASS (this increment validates structure and the report "
-               "path; the translator is not wired in yet)\n");
-        return 0;
+    /* -------------------------------------------------------------------
+     * (b) run every case through the a32_interp reference interpreter and
+     * diff it against the golden. This is the point of the harness: a
+     * mismatch names the case and the field, and a case the interpreter
+     * cannot complete (a named fault or the step limit) is a FAILURE, not a
+     * pass.
+     * ------------------------------------------------------------------- */
+    int fails = 0, passes = 0;
+    if (!no_interp) {
+        if (ccases->n != (size_t)A32_WORDS_COUNT) {
+            fprintf(stderr, "compare: %zu cases but %zu word-table entries\n",
+                    ccases->n, (size_t)A32_WORDS_COUNT);
+            return 2;
+        }
+        for (size_t i = 0; i < gcases->n; i++) {
+            jv *c = ccases->items[i], *g = gcases->items[i];
+            int id = (int)jnum(jget(g, "id"));
+            const char *name = jget(g, "name")->str;
+            const struct a32_case_words *w = &a32_case_words[i];
+            if (w->id != id) {
+                fprintf(stderr, "compare: case %zu: word-table id %d != golden id %d\n",
+                        i, w->id, id);
+                return 2;
+            }
+            if (strcmp(jget(c, "group")->str, w->group) != 0) {
+                fprintf(stderr, "compare: case %d: manifest and word-table group disagree ('%s' vs '%s')\n",
+                        id, jget(c, "group")->str, w->group);
+                return 2;
+            }
+            struct a32_interp_case ic;
+            memset(&ic, 0, sizeof(ic));
+            ic.id = (uint32_t)id;
+            for (int r = 0; r < A32_NREG; r++) ic.regs[r] = w->init[r];
+            ic.code = w->code;
+            ic.code_len = w->code_len;
+
+            struct a32_result res;
+            memset(&res, 0, sizeof(res));
+            res.id = (uint32_t)id;
+            char err[512];
+            err[0] = 0;
+            int rc = a32_interp_run(&ic, &res, err, sizeof(err));
+            int d = interp_cmp(&res, g, id, name);
+            if (d == 0 && rc == 0) {
+                passes++;
+            } else {
+                fails++;
+                if (err[0])
+                    printf("  case %d (%s): interpreter did NOT complete: %s\n", id, name, err);
+            }
+        }
+        printf("compare: interpreter: %d passed, %d failed of %zu cases\n",
+               passes, fails, (size_t)gcases->n);
+        if (fails)
+            printf("compare: FAIL -- %d case(s) disagreed with the golden\n", fails);
+        else
+            printf("compare: PASS -- the A32 interpreter matches the oracle on all %zu cases\n",
+                   (size_t)gcases->n);
+    } else {
+        printf("compare: interpreter run skipped (--no-interp)\n");
     }
+
+    if (!self_check)
+        return fails ? 1 : 0;
 
     /* -------------------------------------------------------------------
      * (c) --self-check: plant one field and require the report to name exactly
@@ -458,5 +586,5 @@ int main(int argc, char **argv)
 
     jfreev(cdoc); jfreev(gdoc); jfreev(b);
     free(ctext); free(gtext);
-    return 0;
+    return fails ? 1 : 0;
 }

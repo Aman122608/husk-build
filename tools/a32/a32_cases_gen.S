@@ -269,9 +269,9 @@ a32_case_1:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0007
-	movw	r2, #0x0005
-	add r0, r1, r2
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0010002	/* and r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -304,9 +304,10 @@ a32_case_2:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0007
-	movw	r2, #0x0005
-	sub r0, r1, r2
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0010002	/* and r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -339,11 +340,11 @@ a32_case_3:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0xf0f0
-	movt	r1, #0xf0f0
-	movw	r2, #0x0ff0
-	movt	r2, #0x0ff0
-	and r0, r1, r2
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0010002	/* and r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -376,11 +377,11 @@ a32_case_4:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0xf0f0
-	movt	r1, #0xf0f0
-	movw	r2, #0x0f0f
-	movt	r2, #0x0f0f
-	orr r0, r1, r2
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0010002	/* and r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -413,11 +414,10 @@ a32_case_5:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0xff00
-	movt	r1, #0xff00
-	movw	r2, #0x0ff0
-	movt	r2, #0x0ff0
-	bic r0, r1, r2
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe0010002	/* and r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -450,8 +450,10 @@ a32_case_6:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x1000
-	add r0, r1, #0x230
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0010002	/* and r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -484,9 +486,9 @@ a32_case_7:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0xbeef
-	movt	r1, #0xdead
-	and r0, r1, #0x0000FF00
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0210002	/* eor r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -519,7 +521,10 @@ a32_case_8:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	mov r0, #0xFF
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0210002	/* eor r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -552,8 +557,11 @@ a32_case_9:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw r0, #0xBEEF
-	movt r0, #0xDEAD
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0210002	/* eor r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -586,9 +594,11 @@ a32_case_10:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0001
-	movt	r1, #0x8000
-	mov r0, r1, LSL #4
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0210002	/* eor r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -621,9 +631,10 @@ a32_case_11:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0001
+	movw	r1, #0x0000
 	movt	r1, #0x8000
-	mov r0, r1, LSR #28
+	movw	r2, #0xffff
+	.word	0xe0210002	/* eor r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -656,9 +667,10 @@ a32_case_12:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0001
-	movt	r1, #0x8000
-	mov r0, r1, ASR #28
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0210002	/* eor r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -691,8 +703,9 @@ a32_case_13:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0081
-	mov r0, r1, ROR #4
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0410002	/* sub r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -726,8 +739,9 @@ a32_case_14:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0001
-	movw	r2, #0x000c
-	mov r0, r1, LSL r2
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0410002	/* sub r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -760,9 +774,11 @@ a32_case_15:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0001
-	movw	r2, #0x0002
-	add r0, r1, r2, LSL #3
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0410002	/* sub r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -796,9 +812,10 @@ a32_case_16:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xffff
-	movw	r2, #0x0001
-	movt	r2, #0x0001
-	mul r0, r1, r2
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0410002	/* sub r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -831,10 +848,10 @@ a32_case_17:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0xffff
-	movt	r1, #0xffff
-	movw	r2, #0x0002
-	umull r0, r3, r1, r2
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe0410002	/* sub r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -867,8 +884,10 @@ a32_case_18:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0005
-	cmp r1, #5
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0410002	/* sub r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -901,8 +920,9 @@ a32_case_19:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0005
-	tst r1, #1
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0610002	/* rsb r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -935,8 +955,10 @@ a32_case_20:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0005
-	cmn r1, #1
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0610002	/* rsb r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -969,8 +991,11 @@ a32_case_21:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0000
-	teq r1, r1
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0610002	/* rsb r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1005,7 +1030,9 @@ a32_case_22:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adds r0, r1, #1
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0610002	/* rsb r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1039,9 +1066,9 @@ a32_case_23:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	cmp r1, #0
-	moveq r0, #0x11
-	movne r0, #0x22
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe0610002	/* rsb r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1074,10 +1101,10 @@ a32_case_24:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x0001
-	cmp r1, #0
-	moveq r0, #0x11
-	movne r0, #0x22
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0610002	/* rsb r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1110,10 +1137,9 @@ a32_case_25:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x3344
-	movt	r1, #0x1122
-	str r1, [r9, #16]
-	ldr r0, [r9, #16]
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0810002	/* add r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1146,9 +1172,10 @@ a32_case_26:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0x00ab
-	strb r1, [r9, #3]
-	ldrb r0, [r9, #3]
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0810002	/* add r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1181,9 +1208,11 @@ a32_case_27:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r1, #0xbeef
-	strh r1, [r9, #6]
-	ldrh r0, [r9, #6]
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0810002	/* add r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1216,8 +1245,11 @@ a32_case_28:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	movw	r2, #0x0008
-	ldr r0, [r9, r2]
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0810002	/* add r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1250,11 +1282,10 @@ a32_case_29:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	mov r0, #0
-	b 1f
-	mov r0, #0x7F
-	1:
-	mov r1, #0x2A
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe0810002	/* add r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1287,14 +1318,10 @@ a32_case_30:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	mov r0, #0
-	bl 1f
-	mov r3, #0x99
-	b 2f
-	1:
-	mov r0, #0x11
-	bx lr
-	2:
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0810002	/* add r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1327,13 +1354,9 @@ a32_case_31:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr lr, 1f
-	bx lr
-	mov r5, #0xAB
-	b 2f
-	1:
-	mov r5, #0x5A
-	2:
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0a10002	/* adc r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1366,15 +1389,10 @@ a32_case_32:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr r4, 1f
-	adr r5, 2f
-	1:
-	nop
-	nop
-	2:
-	sub r0, r5, r4
-	mov r4, #0
-	mov r5, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0a10002	/* adc r0, r1, r2 */
 	stm	r12, {r0-r11}
 	mrs	r0, cpsr
 	str	r0, [r12, #64]
@@ -1385,4 +1403,16874 @@ a32_case_32:
 	str	r0, [r12, #60]
 	pop	{r4-r11, pc}
 	.size	a32_case_32, .-a32_case_32
+
+	.p2align 2
+	.globl	a32_case_33
+	.type	a32_case_33, %function
+a32_case_33:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0a10002	/* adc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_33, .-a32_case_33
+
+	.p2align 2
+	.globl	a32_case_34
+	.type	a32_case_34, %function
+a32_case_34:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0a10002	/* adc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_34, .-a32_case_34
+
+	.p2align 2
+	.globl	a32_case_35
+	.type	a32_case_35, %function
+a32_case_35:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe0a10002	/* adc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_35, .-a32_case_35
+
+	.p2align 2
+	.globl	a32_case_36
+	.type	a32_case_36, %function
+a32_case_36:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0a10002	/* adc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_36, .-a32_case_36
+
+	.p2align 2
+	.globl	a32_case_37
+	.type	a32_case_37, %function
+a32_case_37:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0c10002	/* sbc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_37, .-a32_case_37
+
+	.p2align 2
+	.globl	a32_case_38
+	.type	a32_case_38, %function
+a32_case_38:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0c10002	/* sbc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_38, .-a32_case_38
+
+	.p2align 2
+	.globl	a32_case_39
+	.type	a32_case_39, %function
+a32_case_39:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0c10002	/* sbc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_39, .-a32_case_39
+
+	.p2align 2
+	.globl	a32_case_40
+	.type	a32_case_40, %function
+a32_case_40:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0c10002	/* sbc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_40, .-a32_case_40
+
+	.p2align 2
+	.globl	a32_case_41
+	.type	a32_case_41, %function
+a32_case_41:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe0c10002	/* sbc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_41, .-a32_case_41
+
+	.p2align 2
+	.globl	a32_case_42
+	.type	a32_case_42, %function
+a32_case_42:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0c10002	/* sbc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_42, .-a32_case_42
+
+	.p2align 2
+	.globl	a32_case_43
+	.type	a32_case_43, %function
+a32_case_43:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0e10002	/* rsc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_43, .-a32_case_43
+
+	.p2align 2
+	.globl	a32_case_44
+	.type	a32_case_44, %function
+a32_case_44:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0e10002	/* rsc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_44, .-a32_case_44
+
+	.p2align 2
+	.globl	a32_case_45
+	.type	a32_case_45, %function
+a32_case_45:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0e10002	/* rsc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_45, .-a32_case_45
+
+	.p2align 2
+	.globl	a32_case_46
+	.type	a32_case_46, %function
+a32_case_46:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0e10002	/* rsc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_46, .-a32_case_46
+
+	.p2align 2
+	.globl	a32_case_47
+	.type	a32_case_47, %function
+a32_case_47:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe0e10002	/* rsc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_47, .-a32_case_47
+
+	.p2align 2
+	.globl	a32_case_48
+	.type	a32_case_48, %function
+a32_case_48:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe0e10002	/* rsc r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_48, .-a32_case_48
+
+	.p2align 2
+	.globl	a32_case_49
+	.type	a32_case_49, %function
+a32_case_49:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1110002	/* tsts r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_49, .-a32_case_49
+
+	.p2align 2
+	.globl	a32_case_50
+	.type	a32_case_50, %function
+a32_case_50:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1110002	/* tsts r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_50, .-a32_case_50
+
+	.p2align 2
+	.globl	a32_case_51
+	.type	a32_case_51, %function
+a32_case_51:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1110002	/* tsts r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_51, .-a32_case_51
+
+	.p2align 2
+	.globl	a32_case_52
+	.type	a32_case_52, %function
+a32_case_52:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1110002	/* tsts r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_52, .-a32_case_52
+
+	.p2align 2
+	.globl	a32_case_53
+	.type	a32_case_53, %function
+a32_case_53:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1110002	/* tsts r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_53, .-a32_case_53
+
+	.p2align 2
+	.globl	a32_case_54
+	.type	a32_case_54, %function
+a32_case_54:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1110002	/* tsts r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_54, .-a32_case_54
+
+	.p2align 2
+	.globl	a32_case_55
+	.type	a32_case_55, %function
+a32_case_55:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1310002	/* teqs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_55, .-a32_case_55
+
+	.p2align 2
+	.globl	a32_case_56
+	.type	a32_case_56, %function
+a32_case_56:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1310002	/* teqs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_56, .-a32_case_56
+
+	.p2align 2
+	.globl	a32_case_57
+	.type	a32_case_57, %function
+a32_case_57:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1310002	/* teqs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_57, .-a32_case_57
+
+	.p2align 2
+	.globl	a32_case_58
+	.type	a32_case_58, %function
+a32_case_58:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1310002	/* teqs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_58, .-a32_case_58
+
+	.p2align 2
+	.globl	a32_case_59
+	.type	a32_case_59, %function
+a32_case_59:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1310002	/* teqs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_59, .-a32_case_59
+
+	.p2align 2
+	.globl	a32_case_60
+	.type	a32_case_60, %function
+a32_case_60:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1310002	/* teqs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_60, .-a32_case_60
+
+	.p2align 2
+	.globl	a32_case_61
+	.type	a32_case_61, %function
+a32_case_61:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1510002	/* cmps r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_61, .-a32_case_61
+
+	.p2align 2
+	.globl	a32_case_62
+	.type	a32_case_62, %function
+a32_case_62:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1510002	/* cmps r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_62, .-a32_case_62
+
+	.p2align 2
+	.globl	a32_case_63
+	.type	a32_case_63, %function
+a32_case_63:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1510002	/* cmps r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_63, .-a32_case_63
+
+	.p2align 2
+	.globl	a32_case_64
+	.type	a32_case_64, %function
+a32_case_64:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1510002	/* cmps r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_64, .-a32_case_64
+
+	.p2align 2
+	.globl	a32_case_65
+	.type	a32_case_65, %function
+a32_case_65:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1510002	/* cmps r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_65, .-a32_case_65
+
+	.p2align 2
+	.globl	a32_case_66
+	.type	a32_case_66, %function
+a32_case_66:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1510002	/* cmps r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_66, .-a32_case_66
+
+	.p2align 2
+	.globl	a32_case_67
+	.type	a32_case_67, %function
+a32_case_67:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1710002	/* cmns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_67, .-a32_case_67
+
+	.p2align 2
+	.globl	a32_case_68
+	.type	a32_case_68, %function
+a32_case_68:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1710002	/* cmns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_68, .-a32_case_68
+
+	.p2align 2
+	.globl	a32_case_69
+	.type	a32_case_69, %function
+a32_case_69:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1710002	/* cmns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_69, .-a32_case_69
+
+	.p2align 2
+	.globl	a32_case_70
+	.type	a32_case_70, %function
+a32_case_70:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1710002	/* cmns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_70, .-a32_case_70
+
+	.p2align 2
+	.globl	a32_case_71
+	.type	a32_case_71, %function
+a32_case_71:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1710002	/* cmns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_71, .-a32_case_71
+
+	.p2align 2
+	.globl	a32_case_72
+	.type	a32_case_72, %function
+a32_case_72:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1710002	/* cmns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_72, .-a32_case_72
+
+	.p2align 2
+	.globl	a32_case_73
+	.type	a32_case_73, %function
+a32_case_73:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1810002	/* orr r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_73, .-a32_case_73
+
+	.p2align 2
+	.globl	a32_case_74
+	.type	a32_case_74, %function
+a32_case_74:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1810002	/* orr r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_74, .-a32_case_74
+
+	.p2align 2
+	.globl	a32_case_75
+	.type	a32_case_75, %function
+a32_case_75:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1810002	/* orr r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_75, .-a32_case_75
+
+	.p2align 2
+	.globl	a32_case_76
+	.type	a32_case_76, %function
+a32_case_76:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1810002	/* orr r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_76, .-a32_case_76
+
+	.p2align 2
+	.globl	a32_case_77
+	.type	a32_case_77, %function
+a32_case_77:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1810002	/* orr r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_77, .-a32_case_77
+
+	.p2align 2
+	.globl	a32_case_78
+	.type	a32_case_78, %function
+a32_case_78:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1810002	/* orr r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_78, .-a32_case_78
+
+	.p2align 2
+	.globl	a32_case_79
+	.type	a32_case_79, %function
+a32_case_79:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1a00002	/* mov r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_79, .-a32_case_79
+
+	.p2align 2
+	.globl	a32_case_80
+	.type	a32_case_80, %function
+a32_case_80:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1a00002	/* mov r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_80, .-a32_case_80
+
+	.p2align 2
+	.globl	a32_case_81
+	.type	a32_case_81, %function
+a32_case_81:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1a00002	/* mov r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_81, .-a32_case_81
+
+	.p2align 2
+	.globl	a32_case_82
+	.type	a32_case_82, %function
+a32_case_82:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1a00002	/* mov r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_82, .-a32_case_82
+
+	.p2align 2
+	.globl	a32_case_83
+	.type	a32_case_83, %function
+a32_case_83:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1a00002	/* mov r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_83, .-a32_case_83
+
+	.p2align 2
+	.globl	a32_case_84
+	.type	a32_case_84, %function
+a32_case_84:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1a00002	/* mov r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_84, .-a32_case_84
+
+	.p2align 2
+	.globl	a32_case_85
+	.type	a32_case_85, %function
+a32_case_85:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1c10002	/* bic r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_85, .-a32_case_85
+
+	.p2align 2
+	.globl	a32_case_86
+	.type	a32_case_86, %function
+a32_case_86:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1c10002	/* bic r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_86, .-a32_case_86
+
+	.p2align 2
+	.globl	a32_case_87
+	.type	a32_case_87, %function
+a32_case_87:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1c10002	/* bic r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_87, .-a32_case_87
+
+	.p2align 2
+	.globl	a32_case_88
+	.type	a32_case_88, %function
+a32_case_88:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1c10002	/* bic r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_88, .-a32_case_88
+
+	.p2align 2
+	.globl	a32_case_89
+	.type	a32_case_89, %function
+a32_case_89:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1c10002	/* bic r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_89, .-a32_case_89
+
+	.p2align 2
+	.globl	a32_case_90
+	.type	a32_case_90, %function
+a32_case_90:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1c10002	/* bic r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_90, .-a32_case_90
+
+	.p2align 2
+	.globl	a32_case_91
+	.type	a32_case_91, %function
+a32_case_91:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1e00002	/* mvn r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_91, .-a32_case_91
+
+	.p2align 2
+	.globl	a32_case_92
+	.type	a32_case_92, %function
+a32_case_92:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1e00002	/* mvn r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_92, .-a32_case_92
+
+	.p2align 2
+	.globl	a32_case_93
+	.type	a32_case_93, %function
+a32_case_93:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1e00002	/* mvn r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_93, .-a32_case_93
+
+	.p2align 2
+	.globl	a32_case_94
+	.type	a32_case_94, %function
+a32_case_94:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1e00002	/* mvn r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_94, .-a32_case_94
+
+	.p2align 2
+	.globl	a32_case_95
+	.type	a32_case_95, %function
+a32_case_95:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x8000
+	movw	r2, #0xffff
+	.word	0xe1e00002	/* mvn r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_95, .-a32_case_95
+
+	.p2align 2
+	.globl	a32_case_96
+	.type	a32_case_96, %function
+a32_case_96:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movw	r2, #0xbeef
+	movt	r2, #0xdead
+	.word	0xe1e00002	/* mvn r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_96, .-a32_case_96
+
+	.p2align 2
+	.globl	a32_case_97
+	.type	a32_case_97, %function
+a32_case_97:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0110002	/* ands r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_97, .-a32_case_97
+
+	.p2align 2
+	.globl	a32_case_98
+	.type	a32_case_98, %function
+a32_case_98:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0110002	/* ands r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_98, .-a32_case_98
+
+	.p2align 2
+	.globl	a32_case_99
+	.type	a32_case_99, %function
+a32_case_99:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0110002	/* ands r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_99, .-a32_case_99
+
+	.p2align 2
+	.globl	a32_case_100
+	.type	a32_case_100, %function
+a32_case_100:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0310002	/* eors r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_100, .-a32_case_100
+
+	.p2align 2
+	.globl	a32_case_101
+	.type	a32_case_101, %function
+a32_case_101:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0310002	/* eors r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_101, .-a32_case_101
+
+	.p2align 2
+	.globl	a32_case_102
+	.type	a32_case_102, %function
+a32_case_102:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0310002	/* eors r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_102, .-a32_case_102
+
+	.p2align 2
+	.globl	a32_case_103
+	.type	a32_case_103, %function
+a32_case_103:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0510002	/* subs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_103, .-a32_case_103
+
+	.p2align 2
+	.globl	a32_case_104
+	.type	a32_case_104, %function
+a32_case_104:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0510002	/* subs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_104, .-a32_case_104
+
+	.p2align 2
+	.globl	a32_case_105
+	.type	a32_case_105, %function
+a32_case_105:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0510002	/* subs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_105, .-a32_case_105
+
+	.p2align 2
+	.globl	a32_case_106
+	.type	a32_case_106, %function
+a32_case_106:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0710002	/* rsbs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_106, .-a32_case_106
+
+	.p2align 2
+	.globl	a32_case_107
+	.type	a32_case_107, %function
+a32_case_107:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0710002	/* rsbs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_107, .-a32_case_107
+
+	.p2align 2
+	.globl	a32_case_108
+	.type	a32_case_108, %function
+a32_case_108:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0710002	/* rsbs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_108, .-a32_case_108
+
+	.p2align 2
+	.globl	a32_case_109
+	.type	a32_case_109, %function
+a32_case_109:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_109, .-a32_case_109
+
+	.p2align 2
+	.globl	a32_case_110
+	.type	a32_case_110, %function
+a32_case_110:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_110, .-a32_case_110
+
+	.p2align 2
+	.globl	a32_case_111
+	.type	a32_case_111, %function
+a32_case_111:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_111, .-a32_case_111
+
+	.p2align 2
+	.globl	a32_case_112
+	.type	a32_case_112, %function
+a32_case_112:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0b10002	/* adcs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_112, .-a32_case_112
+
+	.p2align 2
+	.globl	a32_case_113
+	.type	a32_case_113, %function
+a32_case_113:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0b10002	/* adcs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_113, .-a32_case_113
+
+	.p2align 2
+	.globl	a32_case_114
+	.type	a32_case_114, %function
+a32_case_114:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0b10002	/* adcs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_114, .-a32_case_114
+
+	.p2align 2
+	.globl	a32_case_115
+	.type	a32_case_115, %function
+a32_case_115:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0d10002	/* sbcs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_115, .-a32_case_115
+
+	.p2align 2
+	.globl	a32_case_116
+	.type	a32_case_116, %function
+a32_case_116:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0d10002	/* sbcs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_116, .-a32_case_116
+
+	.p2align 2
+	.globl	a32_case_117
+	.type	a32_case_117, %function
+a32_case_117:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0d10002	/* sbcs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_117, .-a32_case_117
+
+	.p2align 2
+	.globl	a32_case_118
+	.type	a32_case_118, %function
+a32_case_118:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0f10002	/* rscs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_118, .-a32_case_118
+
+	.p2align 2
+	.globl	a32_case_119
+	.type	a32_case_119, %function
+a32_case_119:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0f10002	/* rscs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_119, .-a32_case_119
+
+	.p2align 2
+	.globl	a32_case_120
+	.type	a32_case_120, %function
+a32_case_120:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0f10002	/* rscs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_120, .-a32_case_120
+
+	.p2align 2
+	.globl	a32_case_121
+	.type	a32_case_121, %function
+a32_case_121:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1910002	/* orrs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_121, .-a32_case_121
+
+	.p2align 2
+	.globl	a32_case_122
+	.type	a32_case_122, %function
+a32_case_122:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1910002	/* orrs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_122, .-a32_case_122
+
+	.p2align 2
+	.globl	a32_case_123
+	.type	a32_case_123, %function
+a32_case_123:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1910002	/* orrs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_123, .-a32_case_123
+
+	.p2align 2
+	.globl	a32_case_124
+	.type	a32_case_124, %function
+a32_case_124:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1b00002	/* movs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_124, .-a32_case_124
+
+	.p2align 2
+	.globl	a32_case_125
+	.type	a32_case_125, %function
+a32_case_125:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1b00002	/* movs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_125, .-a32_case_125
+
+	.p2align 2
+	.globl	a32_case_126
+	.type	a32_case_126, %function
+a32_case_126:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1b00002	/* movs r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_126, .-a32_case_126
+
+	.p2align 2
+	.globl	a32_case_127
+	.type	a32_case_127, %function
+a32_case_127:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1d10002	/* bics r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_127, .-a32_case_127
+
+	.p2align 2
+	.globl	a32_case_128
+	.type	a32_case_128, %function
+a32_case_128:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1d10002	/* bics r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_128, .-a32_case_128
+
+	.p2align 2
+	.globl	a32_case_129
+	.type	a32_case_129, %function
+a32_case_129:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1d10002	/* bics r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_129, .-a32_case_129
+
+	.p2align 2
+	.globl	a32_case_130
+	.type	a32_case_130, %function
+a32_case_130:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe1f00002	/* mvns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_130, .-a32_case_130
+
+	.p2align 2
+	.globl	a32_case_131
+	.type	a32_case_131, %function
+a32_case_131:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe1f00002	/* mvns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_131, .-a32_case_131
+
+	.p2align 2
+	.globl	a32_case_132
+	.type	a32_case_132, %function
+a32_case_132:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe1f00002	/* mvns r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_132, .-a32_case_132
+
+	.p2align 2
+	.globl	a32_case_133
+	.type	a32_case_133, %function
+a32_case_133:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2010000	/* and r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_133, .-a32_case_133
+
+	.p2align 2
+	.globl	a32_case_134
+	.type	a32_case_134, %function
+a32_case_134:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2010001	/* and r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_134, .-a32_case_134
+
+	.p2align 2
+	.globl	a32_case_135
+	.type	a32_case_135, %function
+a32_case_135:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe20100ff	/* and r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_135, .-a32_case_135
+
+	.p2align 2
+	.globl	a32_case_136
+	.type	a32_case_136, %function
+a32_case_136:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2010c01	/* and r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_136, .-a32_case_136
+
+	.p2align 2
+	.globl	a32_case_137
+	.type	a32_case_137, %function
+a32_case_137:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2010e3f	/* and r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_137, .-a32_case_137
+
+	.p2align 2
+	.globl	a32_case_138
+	.type	a32_case_138, %function
+a32_case_138:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2010102	/* and r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_138, .-a32_case_138
+
+	.p2align 2
+	.globl	a32_case_139
+	.type	a32_case_139, %function
+a32_case_139:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2210000	/* eor r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_139, .-a32_case_139
+
+	.p2align 2
+	.globl	a32_case_140
+	.type	a32_case_140, %function
+a32_case_140:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2210001	/* eor r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_140, .-a32_case_140
+
+	.p2align 2
+	.globl	a32_case_141
+	.type	a32_case_141, %function
+a32_case_141:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe22100ff	/* eor r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_141, .-a32_case_141
+
+	.p2align 2
+	.globl	a32_case_142
+	.type	a32_case_142, %function
+a32_case_142:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2210c01	/* eor r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_142, .-a32_case_142
+
+	.p2align 2
+	.globl	a32_case_143
+	.type	a32_case_143, %function
+a32_case_143:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2210e3f	/* eor r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_143, .-a32_case_143
+
+	.p2align 2
+	.globl	a32_case_144
+	.type	a32_case_144, %function
+a32_case_144:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2210102	/* eor r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_144, .-a32_case_144
+
+	.p2align 2
+	.globl	a32_case_145
+	.type	a32_case_145, %function
+a32_case_145:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2410000	/* sub r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_145, .-a32_case_145
+
+	.p2align 2
+	.globl	a32_case_146
+	.type	a32_case_146, %function
+a32_case_146:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2410001	/* sub r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_146, .-a32_case_146
+
+	.p2align 2
+	.globl	a32_case_147
+	.type	a32_case_147, %function
+a32_case_147:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe24100ff	/* sub r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_147, .-a32_case_147
+
+	.p2align 2
+	.globl	a32_case_148
+	.type	a32_case_148, %function
+a32_case_148:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2410c01	/* sub r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_148, .-a32_case_148
+
+	.p2align 2
+	.globl	a32_case_149
+	.type	a32_case_149, %function
+a32_case_149:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2410e3f	/* sub r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_149, .-a32_case_149
+
+	.p2align 2
+	.globl	a32_case_150
+	.type	a32_case_150, %function
+a32_case_150:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2410102	/* sub r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_150, .-a32_case_150
+
+	.p2align 2
+	.globl	a32_case_151
+	.type	a32_case_151, %function
+a32_case_151:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2610000	/* rsb r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_151, .-a32_case_151
+
+	.p2align 2
+	.globl	a32_case_152
+	.type	a32_case_152, %function
+a32_case_152:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2610001	/* rsb r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_152, .-a32_case_152
+
+	.p2align 2
+	.globl	a32_case_153
+	.type	a32_case_153, %function
+a32_case_153:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe26100ff	/* rsb r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_153, .-a32_case_153
+
+	.p2align 2
+	.globl	a32_case_154
+	.type	a32_case_154, %function
+a32_case_154:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2610c01	/* rsb r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_154, .-a32_case_154
+
+	.p2align 2
+	.globl	a32_case_155
+	.type	a32_case_155, %function
+a32_case_155:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2610e3f	/* rsb r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_155, .-a32_case_155
+
+	.p2align 2
+	.globl	a32_case_156
+	.type	a32_case_156, %function
+a32_case_156:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2610102	/* rsb r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_156, .-a32_case_156
+
+	.p2align 2
+	.globl	a32_case_157
+	.type	a32_case_157, %function
+a32_case_157:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2810000	/* add r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_157, .-a32_case_157
+
+	.p2align 2
+	.globl	a32_case_158
+	.type	a32_case_158, %function
+a32_case_158:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2810001	/* add r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_158, .-a32_case_158
+
+	.p2align 2
+	.globl	a32_case_159
+	.type	a32_case_159, %function
+a32_case_159:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe28100ff	/* add r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_159, .-a32_case_159
+
+	.p2align 2
+	.globl	a32_case_160
+	.type	a32_case_160, %function
+a32_case_160:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2810c01	/* add r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_160, .-a32_case_160
+
+	.p2align 2
+	.globl	a32_case_161
+	.type	a32_case_161, %function
+a32_case_161:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2810e3f	/* add r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_161, .-a32_case_161
+
+	.p2align 2
+	.globl	a32_case_162
+	.type	a32_case_162, %function
+a32_case_162:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2810102	/* add r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_162, .-a32_case_162
+
+	.p2align 2
+	.globl	a32_case_163
+	.type	a32_case_163, %function
+a32_case_163:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2a10000	/* adc r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_163, .-a32_case_163
+
+	.p2align 2
+	.globl	a32_case_164
+	.type	a32_case_164, %function
+a32_case_164:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2a10001	/* adc r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_164, .-a32_case_164
+
+	.p2align 2
+	.globl	a32_case_165
+	.type	a32_case_165, %function
+a32_case_165:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2a100ff	/* adc r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_165, .-a32_case_165
+
+	.p2align 2
+	.globl	a32_case_166
+	.type	a32_case_166, %function
+a32_case_166:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2a10c01	/* adc r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_166, .-a32_case_166
+
+	.p2align 2
+	.globl	a32_case_167
+	.type	a32_case_167, %function
+a32_case_167:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2a10e3f	/* adc r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_167, .-a32_case_167
+
+	.p2align 2
+	.globl	a32_case_168
+	.type	a32_case_168, %function
+a32_case_168:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2a10102	/* adc r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_168, .-a32_case_168
+
+	.p2align 2
+	.globl	a32_case_169
+	.type	a32_case_169, %function
+a32_case_169:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2c10000	/* sbc r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_169, .-a32_case_169
+
+	.p2align 2
+	.globl	a32_case_170
+	.type	a32_case_170, %function
+a32_case_170:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2c10001	/* sbc r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_170, .-a32_case_170
+
+	.p2align 2
+	.globl	a32_case_171
+	.type	a32_case_171, %function
+a32_case_171:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2c100ff	/* sbc r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_171, .-a32_case_171
+
+	.p2align 2
+	.globl	a32_case_172
+	.type	a32_case_172, %function
+a32_case_172:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2c10c01	/* sbc r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_172, .-a32_case_172
+
+	.p2align 2
+	.globl	a32_case_173
+	.type	a32_case_173, %function
+a32_case_173:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2c10e3f	/* sbc r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_173, .-a32_case_173
+
+	.p2align 2
+	.globl	a32_case_174
+	.type	a32_case_174, %function
+a32_case_174:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2c10102	/* sbc r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_174, .-a32_case_174
+
+	.p2align 2
+	.globl	a32_case_175
+	.type	a32_case_175, %function
+a32_case_175:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2e10000	/* rsc r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_175, .-a32_case_175
+
+	.p2align 2
+	.globl	a32_case_176
+	.type	a32_case_176, %function
+a32_case_176:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2e10001	/* rsc r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_176, .-a32_case_176
+
+	.p2align 2
+	.globl	a32_case_177
+	.type	a32_case_177, %function
+a32_case_177:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2e100ff	/* rsc r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_177, .-a32_case_177
+
+	.p2align 2
+	.globl	a32_case_178
+	.type	a32_case_178, %function
+a32_case_178:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2e10c01	/* rsc r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_178, .-a32_case_178
+
+	.p2align 2
+	.globl	a32_case_179
+	.type	a32_case_179, %function
+a32_case_179:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2e10e3f	/* rsc r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_179, .-a32_case_179
+
+	.p2align 2
+	.globl	a32_case_180
+	.type	a32_case_180, %function
+a32_case_180:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe2e10102	/* rsc r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_180, .-a32_case_180
+
+	.p2align 2
+	.globl	a32_case_181
+	.type	a32_case_181, %function
+a32_case_181:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3110000	/* tsts r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_181, .-a32_case_181
+
+	.p2align 2
+	.globl	a32_case_182
+	.type	a32_case_182, %function
+a32_case_182:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3110001	/* tsts r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_182, .-a32_case_182
+
+	.p2align 2
+	.globl	a32_case_183
+	.type	a32_case_183, %function
+a32_case_183:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe31100ff	/* tsts r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_183, .-a32_case_183
+
+	.p2align 2
+	.globl	a32_case_184
+	.type	a32_case_184, %function
+a32_case_184:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3110c01	/* tsts r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_184, .-a32_case_184
+
+	.p2align 2
+	.globl	a32_case_185
+	.type	a32_case_185, %function
+a32_case_185:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3110e3f	/* tsts r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_185, .-a32_case_185
+
+	.p2align 2
+	.globl	a32_case_186
+	.type	a32_case_186, %function
+a32_case_186:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3110102	/* tsts r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_186, .-a32_case_186
+
+	.p2align 2
+	.globl	a32_case_187
+	.type	a32_case_187, %function
+a32_case_187:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3310000	/* teqs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_187, .-a32_case_187
+
+	.p2align 2
+	.globl	a32_case_188
+	.type	a32_case_188, %function
+a32_case_188:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3310001	/* teqs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_188, .-a32_case_188
+
+	.p2align 2
+	.globl	a32_case_189
+	.type	a32_case_189, %function
+a32_case_189:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe33100ff	/* teqs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_189, .-a32_case_189
+
+	.p2align 2
+	.globl	a32_case_190
+	.type	a32_case_190, %function
+a32_case_190:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3310c01	/* teqs r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_190, .-a32_case_190
+
+	.p2align 2
+	.globl	a32_case_191
+	.type	a32_case_191, %function
+a32_case_191:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3310e3f	/* teqs r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_191, .-a32_case_191
+
+	.p2align 2
+	.globl	a32_case_192
+	.type	a32_case_192, %function
+a32_case_192:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3310102	/* teqs r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_192, .-a32_case_192
+
+	.p2align 2
+	.globl	a32_case_193
+	.type	a32_case_193, %function
+a32_case_193:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3510000	/* cmps r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_193, .-a32_case_193
+
+	.p2align 2
+	.globl	a32_case_194
+	.type	a32_case_194, %function
+a32_case_194:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3510001	/* cmps r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_194, .-a32_case_194
+
+	.p2align 2
+	.globl	a32_case_195
+	.type	a32_case_195, %function
+a32_case_195:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe35100ff	/* cmps r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_195, .-a32_case_195
+
+	.p2align 2
+	.globl	a32_case_196
+	.type	a32_case_196, %function
+a32_case_196:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3510c01	/* cmps r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_196, .-a32_case_196
+
+	.p2align 2
+	.globl	a32_case_197
+	.type	a32_case_197, %function
+a32_case_197:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3510e3f	/* cmps r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_197, .-a32_case_197
+
+	.p2align 2
+	.globl	a32_case_198
+	.type	a32_case_198, %function
+a32_case_198:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3510102	/* cmps r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_198, .-a32_case_198
+
+	.p2align 2
+	.globl	a32_case_199
+	.type	a32_case_199, %function
+a32_case_199:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3710000	/* cmns r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_199, .-a32_case_199
+
+	.p2align 2
+	.globl	a32_case_200
+	.type	a32_case_200, %function
+a32_case_200:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3710001	/* cmns r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_200, .-a32_case_200
+
+	.p2align 2
+	.globl	a32_case_201
+	.type	a32_case_201, %function
+a32_case_201:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe37100ff	/* cmns r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_201, .-a32_case_201
+
+	.p2align 2
+	.globl	a32_case_202
+	.type	a32_case_202, %function
+a32_case_202:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3710c01	/* cmns r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_202, .-a32_case_202
+
+	.p2align 2
+	.globl	a32_case_203
+	.type	a32_case_203, %function
+a32_case_203:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3710e3f	/* cmns r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_203, .-a32_case_203
+
+	.p2align 2
+	.globl	a32_case_204
+	.type	a32_case_204, %function
+a32_case_204:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3710102	/* cmns r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_204, .-a32_case_204
+
+	.p2align 2
+	.globl	a32_case_205
+	.type	a32_case_205, %function
+a32_case_205:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3810000	/* orr r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_205, .-a32_case_205
+
+	.p2align 2
+	.globl	a32_case_206
+	.type	a32_case_206, %function
+a32_case_206:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3810001	/* orr r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_206, .-a32_case_206
+
+	.p2align 2
+	.globl	a32_case_207
+	.type	a32_case_207, %function
+a32_case_207:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe38100ff	/* orr r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_207, .-a32_case_207
+
+	.p2align 2
+	.globl	a32_case_208
+	.type	a32_case_208, %function
+a32_case_208:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3810c01	/* orr r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_208, .-a32_case_208
+
+	.p2align 2
+	.globl	a32_case_209
+	.type	a32_case_209, %function
+a32_case_209:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3810e3f	/* orr r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_209, .-a32_case_209
+
+	.p2align 2
+	.globl	a32_case_210
+	.type	a32_case_210, %function
+a32_case_210:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3810102	/* orr r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_210, .-a32_case_210
+
+	.p2align 2
+	.globl	a32_case_211
+	.type	a32_case_211, %function
+a32_case_211:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3a00000	/* mov r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_211, .-a32_case_211
+
+	.p2align 2
+	.globl	a32_case_212
+	.type	a32_case_212, %function
+a32_case_212:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3a00001	/* mov r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_212, .-a32_case_212
+
+	.p2align 2
+	.globl	a32_case_213
+	.type	a32_case_213, %function
+a32_case_213:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3a000ff	/* mov r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_213, .-a32_case_213
+
+	.p2align 2
+	.globl	a32_case_214
+	.type	a32_case_214, %function
+a32_case_214:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3a00c01	/* mov r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_214, .-a32_case_214
+
+	.p2align 2
+	.globl	a32_case_215
+	.type	a32_case_215, %function
+a32_case_215:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3a00e3f	/* mov r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_215, .-a32_case_215
+
+	.p2align 2
+	.globl	a32_case_216
+	.type	a32_case_216, %function
+a32_case_216:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3a00102	/* mov r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_216, .-a32_case_216
+
+	.p2align 2
+	.globl	a32_case_217
+	.type	a32_case_217, %function
+a32_case_217:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3c10000	/* bic r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_217, .-a32_case_217
+
+	.p2align 2
+	.globl	a32_case_218
+	.type	a32_case_218, %function
+a32_case_218:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3c10001	/* bic r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_218, .-a32_case_218
+
+	.p2align 2
+	.globl	a32_case_219
+	.type	a32_case_219, %function
+a32_case_219:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3c100ff	/* bic r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_219, .-a32_case_219
+
+	.p2align 2
+	.globl	a32_case_220
+	.type	a32_case_220, %function
+a32_case_220:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3c10c01	/* bic r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_220, .-a32_case_220
+
+	.p2align 2
+	.globl	a32_case_221
+	.type	a32_case_221, %function
+a32_case_221:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3c10e3f	/* bic r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_221, .-a32_case_221
+
+	.p2align 2
+	.globl	a32_case_222
+	.type	a32_case_222, %function
+a32_case_222:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3c10102	/* bic r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_222, .-a32_case_222
+
+	.p2align 2
+	.globl	a32_case_223
+	.type	a32_case_223, %function
+a32_case_223:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3e00000	/* mvn r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_223, .-a32_case_223
+
+	.p2align 2
+	.globl	a32_case_224
+	.type	a32_case_224, %function
+a32_case_224:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3e00001	/* mvn r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_224, .-a32_case_224
+
+	.p2align 2
+	.globl	a32_case_225
+	.type	a32_case_225, %function
+a32_case_225:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3e000ff	/* mvn r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_225, .-a32_case_225
+
+	.p2align 2
+	.globl	a32_case_226
+	.type	a32_case_226, %function
+a32_case_226:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3e00c01	/* mvn r0, r1, #0x100 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_226, .-a32_case_226
+
+	.p2align 2
+	.globl	a32_case_227
+	.type	a32_case_227, %function
+a32_case_227:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3e00e3f	/* mvn r0, r1, #0x3f0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_227, .-a32_case_227
+
+	.p2align 2
+	.globl	a32_case_228
+	.type	a32_case_228, %function
+a32_case_228:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	movt	r1, #0xdead
+	.word	0xe3e00102	/* mvn r0, r1, #0x80000000 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_228, .-a32_case_228
+
+	.p2align 2
+	.globl	a32_case_229
+	.type	a32_case_229, %function
+a32_case_229:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2110000	/* ands r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_229, .-a32_case_229
+
+	.p2align 2
+	.globl	a32_case_230
+	.type	a32_case_230, %function
+a32_case_230:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2110001	/* ands r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_230, .-a32_case_230
+
+	.p2align 2
+	.globl	a32_case_231
+	.type	a32_case_231, %function
+a32_case_231:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe21100ff	/* ands r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_231, .-a32_case_231
+
+	.p2align 2
+	.globl	a32_case_232
+	.type	a32_case_232, %function
+a32_case_232:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2310000	/* eors r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_232, .-a32_case_232
+
+	.p2align 2
+	.globl	a32_case_233
+	.type	a32_case_233, %function
+a32_case_233:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2310001	/* eors r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_233, .-a32_case_233
+
+	.p2align 2
+	.globl	a32_case_234
+	.type	a32_case_234, %function
+a32_case_234:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe23100ff	/* eors r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_234, .-a32_case_234
+
+	.p2align 2
+	.globl	a32_case_235
+	.type	a32_case_235, %function
+a32_case_235:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2510000	/* subs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_235, .-a32_case_235
+
+	.p2align 2
+	.globl	a32_case_236
+	.type	a32_case_236, %function
+a32_case_236:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2510001	/* subs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_236, .-a32_case_236
+
+	.p2align 2
+	.globl	a32_case_237
+	.type	a32_case_237, %function
+a32_case_237:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe25100ff	/* subs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_237, .-a32_case_237
+
+	.p2align 2
+	.globl	a32_case_238
+	.type	a32_case_238, %function
+a32_case_238:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2710000	/* rsbs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_238, .-a32_case_238
+
+	.p2align 2
+	.globl	a32_case_239
+	.type	a32_case_239, %function
+a32_case_239:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2710001	/* rsbs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_239, .-a32_case_239
+
+	.p2align 2
+	.globl	a32_case_240
+	.type	a32_case_240, %function
+a32_case_240:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe27100ff	/* rsbs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_240, .-a32_case_240
+
+	.p2align 2
+	.globl	a32_case_241
+	.type	a32_case_241, %function
+a32_case_241:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2910000	/* adds r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_241, .-a32_case_241
+
+	.p2align 2
+	.globl	a32_case_242
+	.type	a32_case_242, %function
+a32_case_242:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2910001	/* adds r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_242, .-a32_case_242
+
+	.p2align 2
+	.globl	a32_case_243
+	.type	a32_case_243, %function
+a32_case_243:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe29100ff	/* adds r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_243, .-a32_case_243
+
+	.p2align 2
+	.globl	a32_case_244
+	.type	a32_case_244, %function
+a32_case_244:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2b10000	/* adcs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_244, .-a32_case_244
+
+	.p2align 2
+	.globl	a32_case_245
+	.type	a32_case_245, %function
+a32_case_245:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2b10001	/* adcs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_245, .-a32_case_245
+
+	.p2align 2
+	.globl	a32_case_246
+	.type	a32_case_246, %function
+a32_case_246:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2b100ff	/* adcs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_246, .-a32_case_246
+
+	.p2align 2
+	.globl	a32_case_247
+	.type	a32_case_247, %function
+a32_case_247:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2d10000	/* sbcs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_247, .-a32_case_247
+
+	.p2align 2
+	.globl	a32_case_248
+	.type	a32_case_248, %function
+a32_case_248:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2d10001	/* sbcs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_248, .-a32_case_248
+
+	.p2align 2
+	.globl	a32_case_249
+	.type	a32_case_249, %function
+a32_case_249:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2d100ff	/* sbcs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_249, .-a32_case_249
+
+	.p2align 2
+	.globl	a32_case_250
+	.type	a32_case_250, %function
+a32_case_250:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2f10000	/* rscs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_250, .-a32_case_250
+
+	.p2align 2
+	.globl	a32_case_251
+	.type	a32_case_251, %function
+a32_case_251:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2f10001	/* rscs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_251, .-a32_case_251
+
+	.p2align 2
+	.globl	a32_case_252
+	.type	a32_case_252, %function
+a32_case_252:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe2f100ff	/* rscs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_252, .-a32_case_252
+
+	.p2align 2
+	.globl	a32_case_253
+	.type	a32_case_253, %function
+a32_case_253:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3910000	/* orrs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_253, .-a32_case_253
+
+	.p2align 2
+	.globl	a32_case_254
+	.type	a32_case_254, %function
+a32_case_254:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3910001	/* orrs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_254, .-a32_case_254
+
+	.p2align 2
+	.globl	a32_case_255
+	.type	a32_case_255, %function
+a32_case_255:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe39100ff	/* orrs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_255, .-a32_case_255
+
+	.p2align 2
+	.globl	a32_case_256
+	.type	a32_case_256, %function
+a32_case_256:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3b00000	/* movs r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_256, .-a32_case_256
+
+	.p2align 2
+	.globl	a32_case_257
+	.type	a32_case_257, %function
+a32_case_257:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3b00001	/* movs r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_257, .-a32_case_257
+
+	.p2align 2
+	.globl	a32_case_258
+	.type	a32_case_258, %function
+a32_case_258:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3b000ff	/* movs r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_258, .-a32_case_258
+
+	.p2align 2
+	.globl	a32_case_259
+	.type	a32_case_259, %function
+a32_case_259:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3d10000	/* bics r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_259, .-a32_case_259
+
+	.p2align 2
+	.globl	a32_case_260
+	.type	a32_case_260, %function
+a32_case_260:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3d10001	/* bics r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_260, .-a32_case_260
+
+	.p2align 2
+	.globl	a32_case_261
+	.type	a32_case_261, %function
+a32_case_261:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3d100ff	/* bics r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_261, .-a32_case_261
+
+	.p2align 2
+	.globl	a32_case_262
+	.type	a32_case_262, %function
+a32_case_262:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3f00000	/* mvns r0, r1, #0x0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_262, .-a32_case_262
+
+	.p2align 2
+	.globl	a32_case_263
+	.type	a32_case_263, %function
+a32_case_263:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3f00001	/* mvns r0, r1, #0x1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_263, .-a32_case_263
+
+	.p2align 2
+	.globl	a32_case_264
+	.type	a32_case_264, %function
+a32_case_264:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x5678
+	movt	r1, #0x1234
+	.word	0xe3f000ff	/* mvns r0, r1, #0xff */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_264, .-a32_case_264
+
+	.p2align 2
+	.globl	a32_case_265
+	.type	a32_case_265, %function
+a32_case_265:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00001	/* mov r0, r1, LSL #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_265, .-a32_case_265
+
+	.p2align 2
+	.globl	a32_case_266
+	.type	a32_case_266, %function
+a32_case_266:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00081	/* mov r0, r1, LSL #1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_266, .-a32_case_266
+
+	.p2align 2
+	.globl	a32_case_267
+	.type	a32_case_267, %function
+a32_case_267:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00281	/* mov r0, r1, LSL #5 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_267, .-a32_case_267
+
+	.p2align 2
+	.globl	a32_case_268
+	.type	a32_case_268, %function
+a32_case_268:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00f81	/* mov r0, r1, LSL #31 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_268, .-a32_case_268
+
+	.p2align 2
+	.globl	a32_case_269
+	.type	a32_case_269, %function
+a32_case_269:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00021	/* mov r0, r1, LSR #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_269, .-a32_case_269
+
+	.p2align 2
+	.globl	a32_case_270
+	.type	a32_case_270, %function
+a32_case_270:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a000a1	/* mov r0, r1, LSR #1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_270, .-a32_case_270
+
+	.p2align 2
+	.globl	a32_case_271
+	.type	a32_case_271, %function
+a32_case_271:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a002a1	/* mov r0, r1, LSR #5 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_271, .-a32_case_271
+
+	.p2align 2
+	.globl	a32_case_272
+	.type	a32_case_272, %function
+a32_case_272:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00fa1	/* mov r0, r1, LSR #31 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_272, .-a32_case_272
+
+	.p2align 2
+	.globl	a32_case_273
+	.type	a32_case_273, %function
+a32_case_273:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00041	/* mov r0, r1, ASR #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_273, .-a32_case_273
+
+	.p2align 2
+	.globl	a32_case_274
+	.type	a32_case_274, %function
+a32_case_274:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a000c1	/* mov r0, r1, ASR #1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_274, .-a32_case_274
+
+	.p2align 2
+	.globl	a32_case_275
+	.type	a32_case_275, %function
+a32_case_275:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a002c1	/* mov r0, r1, ASR #5 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_275, .-a32_case_275
+
+	.p2align 2
+	.globl	a32_case_276
+	.type	a32_case_276, %function
+a32_case_276:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00fc1	/* mov r0, r1, ASR #31 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_276, .-a32_case_276
+
+	.p2align 2
+	.globl	a32_case_277
+	.type	a32_case_277, %function
+a32_case_277:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00061	/* mov r0, r1, ROR #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_277, .-a32_case_277
+
+	.p2align 2
+	.globl	a32_case_278
+	.type	a32_case_278, %function
+a32_case_278:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a000e1	/* mov r0, r1, ROR #1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_278, .-a32_case_278
+
+	.p2align 2
+	.globl	a32_case_279
+	.type	a32_case_279, %function
+a32_case_279:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a002e1	/* mov r0, r1, ROR #5 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_279, .-a32_case_279
+
+	.p2align 2
+	.globl	a32_case_280
+	.type	a32_case_280, %function
+a32_case_280:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	.word	0xe1a00fe1	/* mov r0, r1, ROR #31 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_280, .-a32_case_280
+
+	.p2align 2
+	.globl	a32_case_281
+	.type	a32_case_281, %function
+a32_case_281:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0000
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_281, .-a32_case_281
+
+	.p2align 2
+	.globl	a32_case_282
+	.type	a32_case_282, %function
+a32_case_282:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0001
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_282, .-a32_case_282
+
+	.p2align 2
+	.globl	a32_case_283
+	.type	a32_case_283, %function
+a32_case_283:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0004
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_283, .-a32_case_283
+
+	.p2align 2
+	.globl	a32_case_284
+	.type	a32_case_284, %function
+a32_case_284:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0008
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_284, .-a32_case_284
+
+	.p2align 2
+	.globl	a32_case_285
+	.type	a32_case_285, %function
+a32_case_285:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0010
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_285, .-a32_case_285
+
+	.p2align 2
+	.globl	a32_case_286
+	.type	a32_case_286, %function
+a32_case_286:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001e
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_286, .-a32_case_286
+
+	.p2align 2
+	.globl	a32_case_287
+	.type	a32_case_287, %function
+a32_case_287:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001f
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_287, .-a32_case_287
+
+	.p2align 2
+	.globl	a32_case_288
+	.type	a32_case_288, %function
+a32_case_288:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0020
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_288, .-a32_case_288
+
+	.p2align 2
+	.globl	a32_case_289
+	.type	a32_case_289, %function
+a32_case_289:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0021
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_289, .-a32_case_289
+
+	.p2align 2
+	.globl	a32_case_290
+	.type	a32_case_290, %function
+a32_case_290:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x003f
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_290, .-a32_case_290
+
+	.p2align 2
+	.globl	a32_case_291
+	.type	a32_case_291, %function
+a32_case_291:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0040
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_291, .-a32_case_291
+
+	.p2align 2
+	.globl	a32_case_292
+	.type	a32_case_292, %function
+a32_case_292:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x00ff
+	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_292, .-a32_case_292
+
+	.p2align 2
+	.globl	a32_case_293
+	.type	a32_case_293, %function
+a32_case_293:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0000
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_293, .-a32_case_293
+
+	.p2align 2
+	.globl	a32_case_294
+	.type	a32_case_294, %function
+a32_case_294:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0001
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_294, .-a32_case_294
+
+	.p2align 2
+	.globl	a32_case_295
+	.type	a32_case_295, %function
+a32_case_295:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0004
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_295, .-a32_case_295
+
+	.p2align 2
+	.globl	a32_case_296
+	.type	a32_case_296, %function
+a32_case_296:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0008
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_296, .-a32_case_296
+
+	.p2align 2
+	.globl	a32_case_297
+	.type	a32_case_297, %function
+a32_case_297:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0010
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_297, .-a32_case_297
+
+	.p2align 2
+	.globl	a32_case_298
+	.type	a32_case_298, %function
+a32_case_298:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001e
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_298, .-a32_case_298
+
+	.p2align 2
+	.globl	a32_case_299
+	.type	a32_case_299, %function
+a32_case_299:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001f
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_299, .-a32_case_299
+
+	.p2align 2
+	.globl	a32_case_300
+	.type	a32_case_300, %function
+a32_case_300:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0020
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_300, .-a32_case_300
+
+	.p2align 2
+	.globl	a32_case_301
+	.type	a32_case_301, %function
+a32_case_301:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0021
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_301, .-a32_case_301
+
+	.p2align 2
+	.globl	a32_case_302
+	.type	a32_case_302, %function
+a32_case_302:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x003f
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_302, .-a32_case_302
+
+	.p2align 2
+	.globl	a32_case_303
+	.type	a32_case_303, %function
+a32_case_303:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0040
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_303, .-a32_case_303
+
+	.p2align 2
+	.globl	a32_case_304
+	.type	a32_case_304, %function
+a32_case_304:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x00ff
+	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_304, .-a32_case_304
+
+	.p2align 2
+	.globl	a32_case_305
+	.type	a32_case_305, %function
+a32_case_305:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0000
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_305, .-a32_case_305
+
+	.p2align 2
+	.globl	a32_case_306
+	.type	a32_case_306, %function
+a32_case_306:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0001
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_306, .-a32_case_306
+
+	.p2align 2
+	.globl	a32_case_307
+	.type	a32_case_307, %function
+a32_case_307:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0004
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_307, .-a32_case_307
+
+	.p2align 2
+	.globl	a32_case_308
+	.type	a32_case_308, %function
+a32_case_308:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0008
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_308, .-a32_case_308
+
+	.p2align 2
+	.globl	a32_case_309
+	.type	a32_case_309, %function
+a32_case_309:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0010
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_309, .-a32_case_309
+
+	.p2align 2
+	.globl	a32_case_310
+	.type	a32_case_310, %function
+a32_case_310:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001e
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_310, .-a32_case_310
+
+	.p2align 2
+	.globl	a32_case_311
+	.type	a32_case_311, %function
+a32_case_311:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001f
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_311, .-a32_case_311
+
+	.p2align 2
+	.globl	a32_case_312
+	.type	a32_case_312, %function
+a32_case_312:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0020
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_312, .-a32_case_312
+
+	.p2align 2
+	.globl	a32_case_313
+	.type	a32_case_313, %function
+a32_case_313:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0021
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_313, .-a32_case_313
+
+	.p2align 2
+	.globl	a32_case_314
+	.type	a32_case_314, %function
+a32_case_314:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x003f
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_314, .-a32_case_314
+
+	.p2align 2
+	.globl	a32_case_315
+	.type	a32_case_315, %function
+a32_case_315:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0040
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_315, .-a32_case_315
+
+	.p2align 2
+	.globl	a32_case_316
+	.type	a32_case_316, %function
+a32_case_316:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x00ff
+	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_316, .-a32_case_316
+
+	.p2align 2
+	.globl	a32_case_317
+	.type	a32_case_317, %function
+a32_case_317:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0000
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_317, .-a32_case_317
+
+	.p2align 2
+	.globl	a32_case_318
+	.type	a32_case_318, %function
+a32_case_318:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0001
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_318, .-a32_case_318
+
+	.p2align 2
+	.globl	a32_case_319
+	.type	a32_case_319, %function
+a32_case_319:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0004
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_319, .-a32_case_319
+
+	.p2align 2
+	.globl	a32_case_320
+	.type	a32_case_320, %function
+a32_case_320:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0008
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_320, .-a32_case_320
+
+	.p2align 2
+	.globl	a32_case_321
+	.type	a32_case_321, %function
+a32_case_321:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0010
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_321, .-a32_case_321
+
+	.p2align 2
+	.globl	a32_case_322
+	.type	a32_case_322, %function
+a32_case_322:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001e
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_322, .-a32_case_322
+
+	.p2align 2
+	.globl	a32_case_323
+	.type	a32_case_323, %function
+a32_case_323:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x001f
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_323, .-a32_case_323
+
+	.p2align 2
+	.globl	a32_case_324
+	.type	a32_case_324, %function
+a32_case_324:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0020
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_324, .-a32_case_324
+
+	.p2align 2
+	.globl	a32_case_325
+	.type	a32_case_325, %function
+a32_case_325:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0021
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_325, .-a32_case_325
+
+	.p2align 2
+	.globl	a32_case_326
+	.type	a32_case_326, %function
+a32_case_326:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x003f
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_326, .-a32_case_326
+
+	.p2align 2
+	.globl	a32_case_327
+	.type	a32_case_327, %function
+a32_case_327:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x0040
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_327, .-a32_case_327
+
+	.p2align 2
+	.globl	a32_case_328
+	.type	a32_case_328, %function
+a32_case_328:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0x00ff
+	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_328, .-a32_case_328
+
+	.p2align 2
+	.globl	a32_case_329
+	.type	a32_case_329, %function
+a32_case_329:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810002	/* add r0, r1, r2, LSL #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_329, .-a32_case_329
+
+	.p2align 2
+	.globl	a32_case_330
+	.type	a32_case_330, %function
+a32_case_330:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810182	/* add r0, r1, r2, LSL #3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_330, .-a32_case_330
+
+	.p2align 2
+	.globl	a32_case_331
+	.type	a32_case_331, %function
+a32_case_331:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810402	/* add r0, r1, r2, LSL #8 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_331, .-a32_case_331
+
+	.p2align 2
+	.globl	a32_case_332
+	.type	a32_case_332, %function
+a32_case_332:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810802	/* add r0, r1, r2, LSL #16 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_332, .-a32_case_332
+
+	.p2align 2
+	.globl	a32_case_333
+	.type	a32_case_333, %function
+a32_case_333:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810022	/* add r0, r1, r2, LSR #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_333, .-a32_case_333
+
+	.p2align 2
+	.globl	a32_case_334
+	.type	a32_case_334, %function
+a32_case_334:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe08101a2	/* add r0, r1, r2, LSR #3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_334, .-a32_case_334
+
+	.p2align 2
+	.globl	a32_case_335
+	.type	a32_case_335, %function
+a32_case_335:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810422	/* add r0, r1, r2, LSR #8 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_335, .-a32_case_335
+
+	.p2align 2
+	.globl	a32_case_336
+	.type	a32_case_336, %function
+a32_case_336:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810822	/* add r0, r1, r2, LSR #16 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_336, .-a32_case_336
+
+	.p2align 2
+	.globl	a32_case_337
+	.type	a32_case_337, %function
+a32_case_337:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810042	/* add r0, r1, r2, ASR #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_337, .-a32_case_337
+
+	.p2align 2
+	.globl	a32_case_338
+	.type	a32_case_338, %function
+a32_case_338:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe08101c2	/* add r0, r1, r2, ASR #3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_338, .-a32_case_338
+
+	.p2align 2
+	.globl	a32_case_339
+	.type	a32_case_339, %function
+a32_case_339:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810442	/* add r0, r1, r2, ASR #8 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_339, .-a32_case_339
+
+	.p2align 2
+	.globl	a32_case_340
+	.type	a32_case_340, %function
+a32_case_340:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810842	/* add r0, r1, r2, ASR #16 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_340, .-a32_case_340
+
+	.p2align 2
+	.globl	a32_case_341
+	.type	a32_case_341, %function
+a32_case_341:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810062	/* add r0, r1, r2, ROR #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_341, .-a32_case_341
+
+	.p2align 2
+	.globl	a32_case_342
+	.type	a32_case_342, %function
+a32_case_342:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe08101e2	/* add r0, r1, r2, ROR #3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_342, .-a32_case_342
+
+	.p2align 2
+	.globl	a32_case_343
+	.type	a32_case_343, %function
+a32_case_343:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810462	/* add r0, r1, r2, ROR #8 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_343, .-a32_case_343
+
+	.p2align 2
+	.globl	a32_case_344
+	.type	a32_case_344, %function
+a32_case_344:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0x5678
+	movt	r2, #0x1234
+	.word	0xe0810862	/* add r0, r1, r2, ROR #16 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_344, .-a32_case_344
+
+	.p2align 2
+	.globl	a32_case_345
+	.type	a32_case_345, %function
+a32_case_345:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	movw	r2, #0x0000
+	movt	r2, #0x4000
+	.word	0xe1120082	/* tst r2, r2, LSL #1 */
+	.word	0xe1a00061	/* mov r0, r1, RRX */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_345, .-a32_case_345
+
+	.p2align 2
+	.globl	a32_case_346
+	.type	a32_case_346, %function
+a32_case_346:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movt	r1, #0x8000
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe1120082	/* tst r2, r2, LSL #1 */
+	.word	0xe1a00061	/* mov r0, r1, RRX */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_346, .-a32_case_346
+
+	.p2align 2
+	.globl	a32_case_347
+	.type	a32_case_347, %function
+a32_case_347:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0000291	/* mul r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_347, .-a32_case_347
+
+	.p2align 2
+	.globl	a32_case_348
+	.type	a32_case_348, %function
+a32_case_348:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0000291	/* mul r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_348, .-a32_case_348
+
+	.p2align 2
+	.globl	a32_case_349
+	.type	a32_case_349, %function
+a32_case_349:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0000291	/* mul r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_349, .-a32_case_349
+
+	.p2align 2
+	.globl	a32_case_350
+	.type	a32_case_350, %function
+a32_case_350:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0x7fff
+	movw	r2, #0x0000
+	movt	r2, #0x8000
+	.word	0xe0000291	/* mul r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_350, .-a32_case_350
+
+	.p2align 2
+	.globl	a32_case_351
+	.type	a32_case_351, %function
+a32_case_351:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	movw	r3, #0x1111
+	movt	r3, #0x1111
+	.word	0xe0203291	/* mla r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_351, .-a32_case_351
+
+	.p2align 2
+	.globl	a32_case_352
+	.type	a32_case_352, %function
+a32_case_352:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	movw	r3, #0x1111
+	movt	r3, #0x1111
+	.word	0xe0203291	/* mla r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_352, .-a32_case_352
+
+	.p2align 2
+	.globl	a32_case_353
+	.type	a32_case_353, %function
+a32_case_353:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	movw	r3, #0x1111
+	movt	r3, #0x1111
+	.word	0xe0203291	/* mla r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_353, .-a32_case_353
+
+	.p2align 2
+	.globl	a32_case_354
+	.type	a32_case_354, %function
+a32_case_354:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	movw	r3, #0x1111
+	movt	r3, #0x1111
+	.word	0xe0603291	/* mls r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_354, .-a32_case_354
+
+	.p2align 2
+	.globl	a32_case_355
+	.type	a32_case_355, %function
+a32_case_355:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	movw	r3, #0x1111
+	movt	r3, #0x1111
+	.word	0xe0603291	/* mls r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_355, .-a32_case_355
+
+	.p2align 2
+	.globl	a32_case_356
+	.type	a32_case_356, %function
+a32_case_356:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	movw	r3, #0x1111
+	movt	r3, #0x1111
+	.word	0xe0603291	/* mls r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_356, .-a32_case_356
+
+	.p2align 2
+	.globl	a32_case_357
+	.type	a32_case_357, %function
+a32_case_357:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0830291	/* umull r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_357, .-a32_case_357
+
+	.p2align 2
+	.globl	a32_case_358
+	.type	a32_case_358, %function
+a32_case_358:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0830291	/* umull r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_358, .-a32_case_358
+
+	.p2align 2
+	.globl	a32_case_359
+	.type	a32_case_359, %function
+a32_case_359:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0830291	/* umull r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_359, .-a32_case_359
+
+	.p2align 2
+	.globl	a32_case_360
+	.type	a32_case_360, %function
+a32_case_360:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	movw	r3, #0x0001
+	.word	0xe0a30291	/* umlal r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_360, .-a32_case_360
+
+	.p2align 2
+	.globl	a32_case_361
+	.type	a32_case_361, %function
+a32_case_361:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	movw	r3, #0x0001
+	.word	0xe0a30291	/* umlal r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_361, .-a32_case_361
+
+	.p2align 2
+	.globl	a32_case_362
+	.type	a32_case_362, %function
+a32_case_362:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0c30291	/* smull r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_362, .-a32_case_362
+
+	.p2align 2
+	.globl	a32_case_363
+	.type	a32_case_363, %function
+a32_case_363:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0c30291	/* smull r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_363, .-a32_case_363
+
+	.p2align 2
+	.globl	a32_case_364
+	.type	a32_case_364, %function
+a32_case_364:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	movw	r2, #0xffff
+	movt	r2, #0x7fff
+	.word	0xe0c30291	/* smull r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_364, .-a32_case_364
+
+	.p2align 2
+	.globl	a32_case_365
+	.type	a32_case_365, %function
+a32_case_365:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	movw	r3, #0x0001
+	.word	0xe0e30291	/* smlal r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_365, .-a32_case_365
+
+	.p2align 2
+	.globl	a32_case_366
+	.type	a32_case_366, %function
+a32_case_366:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	movw	r3, #0x0001
+	.word	0xe0e30291	/* smlal r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_366, .-a32_case_366
+
+	.p2align 2
+	.globl	a32_case_367
+	.type	a32_case_367, %function
+a32_case_367:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0100291	/* muls r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_367, .-a32_case_367
+
+	.p2align 2
+	.globl	a32_case_368
+	.type	a32_case_368, %function
+a32_case_368:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0100291	/* muls r0, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_368, .-a32_case_368
+
+	.p2align 2
+	.globl	a32_case_369
+	.type	a32_case_369, %function
+a32_case_369:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movw	r2, #0x0001
+	.word	0xe0930291	/* umulls r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_369, .-a32_case_369
+
+	.p2align 2
+	.globl	a32_case_370
+	.type	a32_case_370, %function
+a32_case_370:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	movw	r2, #0xffff
+	movt	r2, #0xffff
+	.word	0xe0930291	/* umulls r0, r3, r1, r2 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_370, .-a32_case_370
+
+	.p2align 2
+	.globl	a32_case_371
+	.type	a32_case_371, %function
+a32_case_371:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_371, .-a32_case_371
+
+	.p2align 2
+	.globl	a32_case_372
+	.type	a32_case_372, %function
+a32_case_372:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_372, .-a32_case_372
+
+	.p2align 2
+	.globl	a32_case_373
+	.type	a32_case_373, %function
+a32_case_373:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_373, .-a32_case_373
+
+	.p2align 2
+	.globl	a32_case_374
+	.type	a32_case_374, %function
+a32_case_374:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3001000	/* movw r1, #0x0 */
+	.word	0xe34f1000	/* movt r1, #0xf000 */
+	.word	0xe128f001	/* msr cpsr_f, r1 */
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_374, .-a32_case_374
+
+	.p2align 2
+	.globl	a32_case_375
+	.type	a32_case_375, %function
+a32_case_375:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3001000	/* movw r1, #0x0 */
+	.word	0xe128f001	/* msr cpsr_f, r1 */
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_375, .-a32_case_375
+
+	.p2align 2
+	.globl	a32_case_376
+	.type	a32_case_376, %function
+a32_case_376:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3001000	/* movw r1, #0x0 */
+	.word	0xe3421000	/* movt r1, #0x2000 */
+	.word	0xe128f001	/* msr cpsr_f, r1 */
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_376, .-a32_case_376
+
+	.p2align 2
+	.globl	a32_case_377
+	.type	a32_case_377, %function
+a32_case_377:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3001000	/* movw r1, #0x0 */
+	.word	0xe34e1000	/* movt r1, #0xe000 */
+	.word	0xe128f001	/* msr cpsr_f, r1 */
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_377, .-a32_case_377
+
+	.p2align 2
+	.globl	a32_case_378
+	.type	a32_case_378, %function
+a32_case_378:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe328f102	/* msr cpsr_f, #0x80000000 */
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_378, .-a32_case_378
+
+	.p2align 2
+	.globl	a32_case_379
+	.type	a32_case_379, %function
+a32_case_379:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe328f101	/* msr cpsr_f, #0x40000000 */
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_379, .-a32_case_379
+
+	.p2align 2
+	.globl	a32_case_380
+	.type	a32_case_380, %function
+a32_case_380:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe328f20f	/* msr cpsr_f, #0xf0000000 */
+	.word	0xe10f0000	/* mrs r0, cpsr */
+	.word	0xe1a00e20	/* lsr r0, r0, #28 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_380, .-a32_case_380
+
+	.p2align 2
+	.globl	a32_case_381
+	.type	a32_case_381, %function
+a32_case_381:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe16f0f11	/* clz r0, r1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_381, .-a32_case_381
+
+	.p2align 2
+	.globl	a32_case_382
+	.type	a32_case_382, %function
+a32_case_382:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0001
+	.word	0xe16f0f11	/* clz r0, r1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_382, .-a32_case_382
+
+	.p2align 2
+	.globl	a32_case_383
+	.type	a32_case_383, %function
+a32_case_383:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	movt	r1, #0x0800
+	.word	0xe16f0f11	/* clz r0, r1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_383, .-a32_case_383
+
+	.p2align 2
+	.globl	a32_case_384
+	.type	a32_case_384, %function
+a32_case_384:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xffff
+	movt	r1, #0xffff
+	.word	0xe16f0f11	/* clz r0, r1 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_384, .-a32_case_384
+
+	.p2align 2
+	.globl	a32_case_385
+	.type	a32_case_385, %function
+a32_case_385:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x3344
+	movt	r1, #0x1122
+	.word	0xe5891000	/* str r1, [r9, #0] */
+	.word	0xe5990000	/* ldr r0, [r9, #0] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_385, .-a32_case_385
+
+	.p2align 2
+	.globl	a32_case_386
+	.type	a32_case_386, %function
+a32_case_386:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x3345
+	movt	r1, #0x1122
+	.word	0xe5891004	/* str r1, [r9, #4] */
+	.word	0xe5990004	/* ldr r0, [r9, #4] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_386, .-a32_case_386
+
+	.p2align 2
+	.globl	a32_case_387
+	.type	a32_case_387, %function
+a32_case_387:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x3346
+	movt	r1, #0x1122
+	.word	0xe5891008	/* str r1, [r9, #8] */
+	.word	0xe5990008	/* ldr r0, [r9, #8] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_387, .-a32_case_387
+
+	.p2align 2
+	.globl	a32_case_388
+	.type	a32_case_388, %function
+a32_case_388:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x3347
+	movt	r1, #0x1122
+	.word	0xe5891010	/* str r1, [r9, #16] */
+	.word	0xe5990010	/* ldr r0, [r9, #16] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_388, .-a32_case_388
+
+	.p2align 2
+	.globl	a32_case_389
+	.type	a32_case_389, %function
+a32_case_389:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x3348
+	movt	r1, #0x1122
+	.word	0xe5891020	/* str r1, [r9, #32] */
+	.word	0xe5990020	/* ldr r0, [r9, #32] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_389, .-a32_case_389
+
+	.p2align 2
+	.globl	a32_case_390
+	.type	a32_case_390, %function
+a32_case_390:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x3349
+	movt	r1, #0x1122
+	.word	0xe5891040	/* str r1, [r9, #64] */
+	.word	0xe5990040	/* ldr r0, [r9, #64] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_390, .-a32_case_390
+
+	.p2align 2
+	.globl	a32_case_391
+	.type	a32_case_391, %function
+a32_case_391:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x00ab
+	.word	0xe5c91000	/* strb r1, [r9, #0] */
+	.word	0xe5d90000	/* ldrb r0, [r9, #0] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_391, .-a32_case_391
+
+	.p2align 2
+	.globl	a32_case_392
+	.type	a32_case_392, %function
+a32_case_392:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x00ac
+	.word	0xe5c91003	/* strb r1, [r9, #3] */
+	.word	0xe5d90003	/* ldrb r0, [r9, #3] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_392, .-a32_case_392
+
+	.p2align 2
+	.globl	a32_case_393
+	.type	a32_case_393, %function
+a32_case_393:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x00ad
+	.word	0xe5c91007	/* strb r1, [r9, #7] */
+	.word	0xe5d90007	/* ldrb r0, [r9, #7] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_393, .-a32_case_393
+
+	.p2align 2
+	.globl	a32_case_394
+	.type	a32_case_394, %function
+a32_case_394:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x00ae
+	.word	0xe5c9100f	/* strb r1, [r9, #15] */
+	.word	0xe5d9000f	/* ldrb r0, [r9, #15] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_394, .-a32_case_394
+
+	.p2align 2
+	.globl	a32_case_395
+	.type	a32_case_395, %function
+a32_case_395:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	.word	0xe1c910b0	/* strh r1, [r9, #0] */
+	.word	0xe1d900b0	/* ldrh r0, [r9, #0] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_395, .-a32_case_395
+
+	.p2align 2
+	.globl	a32_case_396
+	.type	a32_case_396, %function
+a32_case_396:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	.word	0xe1c910b2	/* strh r1, [r9, #2] */
+	.word	0xe1d900b2	/* ldrh r0, [r9, #2] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_396, .-a32_case_396
+
+	.p2align 2
+	.globl	a32_case_397
+	.type	a32_case_397, %function
+a32_case_397:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	.word	0xe1c910b6	/* strh r1, [r9, #6] */
+	.word	0xe1d900b6	/* ldrh r0, [r9, #6] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_397, .-a32_case_397
+
+	.p2align 2
+	.globl	a32_case_398
+	.type	a32_case_398, %function
+a32_case_398:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbeef
+	.word	0xe1c910ba	/* strh r1, [r9, #10] */
+	.word	0xe1d900ba	/* ldrh r0, [r9, #10] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_398, .-a32_case_398
+
+	.p2align 2
+	.globl	a32_case_399
+	.type	a32_case_399, %function
+a32_case_399:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1d900d0	/* ldrsb r0, [r9, #0] */
+	.word	0xe1d910f0	/* ldrsh r1, [r9, #0] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_399, .-a32_case_399
+
+	.p2align 2
+	.globl	a32_case_400
+	.type	a32_case_400, %function
+a32_case_400:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1d900d4	/* ldrsb r0, [r9, #4] */
+	.word	0xe1d910f4	/* ldrsh r1, [r9, #4] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_400, .-a32_case_400
+
+	.p2align 2
+	.globl	a32_case_401
+	.type	a32_case_401, %function
+a32_case_401:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1d900d8	/* ldrsb r0, [r9, #8] */
+	.word	0xe1d910f8	/* ldrsh r1, [r9, #8] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_401, .-a32_case_401
+
+	.p2align 2
+	.globl	a32_case_402
+	.type	a32_case_402, %function
+a32_case_402:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1d900dc	/* ldrsb r0, [r9, #12] */
+	.word	0xe1d910fc	/* ldrsh r1, [r9, #12] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_402, .-a32_case_402
+
+	.p2align 2
+	.globl	a32_case_403
+	.type	a32_case_403, %function
+a32_case_403:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe0d900b4	/* ldrh r0, [r9], #4 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_403, .-a32_case_403
+
+	.p2align 2
+	.globl	a32_case_404
+	.type	a32_case_404, %function
+a32_case_404:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe0d900b8	/* ldrh r0, [r9], #8 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_404, .-a32_case_404
+
+	.p2align 2
+	.globl	a32_case_405
+	.type	a32_case_405, %function
+a32_case_405:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe0d901b4	/* ldrh r0, [r9], #20 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_405, .-a32_case_405
+
+	.p2align 2
+	.globl	a32_case_406
+	.type	a32_case_406, %function
+a32_case_406:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe0d902b8	/* ldrh r0, [r9], #40 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_406, .-a32_case_406
+
+	.p2align 2
+	.globl	a32_case_407
+	.type	a32_case_407, %function
+a32_case_407:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x7788
+	movt	r1, #0x5566
+	movw	r2, #0x0004
+	.word	0xe7891002	/* str r1, [r9, r2] */
+	.word	0xe7990002	/* ldr r0, [r9, r2] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_407, .-a32_case_407
+
+	.p2align 2
+	.globl	a32_case_408
+	.type	a32_case_408, %function
+a32_case_408:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x7788
+	movt	r1, #0x5566
+	movw	r2, #0x0008
+	.word	0xe7891002	/* str r1, [r9, r2] */
+	.word	0xe7990002	/* ldr r0, [r9, r2] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_408, .-a32_case_408
+
+	.p2align 2
+	.globl	a32_case_409
+	.type	a32_case_409, %function
+a32_case_409:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x7788
+	movt	r1, #0x5566
+	movw	r2, #0x000c
+	.word	0xe7891002	/* str r1, [r9, r2] */
+	.word	0xe7990002	/* ldr r0, [r9, r2] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_409, .-a32_case_409
+
+	.p2align 2
+	.globl	a32_case_410
+	.type	a32_case_410, %function
+a32_case_410:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x7788
+	movt	r1, #0x5566
+	movw	r2, #0x0010
+	.word	0xe7891002	/* str r1, [r9, r2] */
+	.word	0xe7990002	/* ldr r0, [r9, r2] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_410, .-a32_case_410
+
+	.p2align 2
+	.globl	a32_case_411
+	.type	a32_case_411, %function
+a32_case_411:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0x0004
+	.word	0xe7990002	/* ldr r0, [r9, r2, LSL #0] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_411, .-a32_case_411
+
+	.p2align 2
+	.globl	a32_case_412
+	.type	a32_case_412, %function
+a32_case_412:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0x0004
+	.word	0xe7990102	/* ldr r0, [r9, r2, LSL #2] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_412, .-a32_case_412
+
+	.p2align 2
+	.globl	a32_case_413
+	.type	a32_case_413, %function
+a32_case_413:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xcafe
+	movw	r4, #0x0006
+	.word	0xe18910b4	/* strh r1, [r9, r4] */
+	.word	0xe19900b4	/* ldrh r0, [r9, r4] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_413, .-a32_case_413
+
+	.p2align 2
+	.globl	a32_case_414
+	.type	a32_case_414, %function
+a32_case_414:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xcafe
+	movw	r8, #0x0006
+	.word	0xe18910b8	/* strh r1, [r9, r8] */
+	.word	0xe19900b8	/* ldrh r0, [r9, r8] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_414, .-a32_case_414
+
+	.p2align 2
+	.globl	a32_case_415
+	.type	a32_case_415, %function
+a32_case_415:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbbcc
+	movt	r1, #0x99aa
+	.word	0xe5a91004	/* str r1, [r9, #4]! */
+	.word	0xe5b90004	/* ldr r0, [r9, #4]! */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_415, .-a32_case_415
+
+	.p2align 2
+	.globl	a32_case_416
+	.type	a32_case_416, %function
+a32_case_416:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbbcc
+	movt	r1, #0x99aa
+	.word	0xe5a91008	/* str r1, [r9, #8]! */
+	.word	0xe5b90008	/* ldr r0, [r9, #8]! */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_416, .-a32_case_416
+
+	.p2align 2
+	.globl	a32_case_417
+	.type	a32_case_417, %function
+a32_case_417:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbbcc
+	movt	r1, #0x99aa
+	.word	0xe5a9100c	/* str r1, [r9, #12]! */
+	.word	0xe5b9000c	/* ldr r0, [r9, #12]! */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_417, .-a32_case_417
+
+	.p2align 2
+	.globl	a32_case_418
+	.type	a32_case_418, %function
+a32_case_418:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x1234
+	movt	r1, #0xdead
+	.word	0xe4891004	/* str r1, [r9], #4 */
+	.word	0xe4990004	/* ldr r0, [r9], #4 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_418, .-a32_case_418
+
+	.p2align 2
+	.globl	a32_case_419
+	.type	a32_case_419, %function
+a32_case_419:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x1234
+	movt	r1, #0xdead
+	.word	0xe4891008	/* str r1, [r9], #8 */
+	.word	0xe4990008	/* ldr r0, [r9], #8 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_419, .-a32_case_419
+
+	.p2align 2
+	.globl	a32_case_420
+	.type	a32_case_420, %function
+a32_case_420:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1a01009	/* mov r1, r9 */
+	.word	0xe2811040	/* add r1, r1, #64 */
+	.word	0xe5110004	/* ldr r0, [r1, #-4] */
+	.word	0xe3a01000	/* mov r1, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_420, .-a32_case_420
+
+	.p2align 2
+	.globl	a32_case_421
+	.type	a32_case_421, %function
+a32_case_421:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1a01009	/* mov r1, r9 */
+	.word	0xe2811040	/* add r1, r1, #64 */
+	.word	0xe5110008	/* ldr r0, [r1, #-8] */
+	.word	0xe3a01000	/* mov r1, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_421, .-a32_case_421
+
+	.p2align 2
+	.globl	a32_case_422
+	.type	a32_case_422, %function
+a32_case_422:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xbbbb
+	movt	r2, #0xaaaa
+	movw	r3, #0xdddd
+	movt	r3, #0xcccc
+	.word	0xe1c920f0	/* strd r2, [r9, #0] */
+	.word	0xe1c940d0	/* ldrd r4, [r9, #0] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_422, .-a32_case_422
+
+	.p2align 2
+	.globl	a32_case_423
+	.type	a32_case_423, %function
+a32_case_423:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xbbbb
+	movt	r2, #0xaaaa
+	movw	r3, #0xdddd
+	movt	r3, #0xcccc
+	.word	0xe1c920f4	/* strd r2, [r9, #4] */
+	.word	0xe1c940d4	/* ldrd r4, [r9, #4] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_423, .-a32_case_423
+
+	.p2align 2
+	.globl	a32_case_424
+	.type	a32_case_424, %function
+a32_case_424:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xbbbb
+	movt	r2, #0xaaaa
+	movw	r3, #0xdddd
+	movt	r3, #0xcccc
+	.word	0xe1c920f8	/* strd r2, [r9, #8] */
+	.word	0xe1c940d8	/* ldrd r4, [r9, #8] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_424, .-a32_case_424
+
+	.p2align 2
+	.globl	a32_case_425
+	.type	a32_case_425, %function
+a32_case_425:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xbbbb
+	movt	r2, #0xaaaa
+	movw	r3, #0xdddd
+	movt	r3, #0xcccc
+	.word	0xe1c921f0	/* strd r2, [r9, #16] */
+	.word	0xe1c941d0	/* ldrd r4, [r9, #16] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_425, .-a32_case_425
+
+	.p2align 2
+	.globl	a32_case_426
+	.type	a32_case_426, %function
+a32_case_426:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1c920f0	/* strd r2, [r9, #0] */
+	.word	0xe1c940d0	/* ldrd r4, [r9, #0] */
+	.word	0xe1a02000	/* mov r2, #0 */
+	.word	0xe1a03000	/* mov r3, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_426, .-a32_case_426
+
+	.p2align 2
+	.globl	a32_case_427
+	.type	a32_case_427, %function
+a32_case_427:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe1c920f8	/* strd r2, [r9, #8] */
+	.word	0xe1c940d8	/* ldrd r4, [r9, #8] */
+	.word	0xe1a02000	/* mov r2, #0 */
+	.word	0xe1a03000	/* mov r3, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_427, .-a32_case_427
+
+	.p2align 2
+	.globl	a32_case_428
+	.type	a32_case_428, %function
+a32_case_428:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0304
+	movt	r1, #0x0102
+	movw	r2, #0xface
+	movt	r2, #0xfeed
+	.word	0xe5891008	/* str r1, [r9, #8] */
+	.word	0xe1090092	/* swp r0, r2, [r9] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_428, .-a32_case_428
+
+	.p2align 2
+	.globl	a32_case_429
+	.type	a32_case_429, %function
+a32_case_429:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0304
+	movt	r1, #0x0102
+	movw	r2, #0xface
+	movt	r2, #0xfeed
+	.word	0xe5c91008	/* str r1, [r9, #8] */
+	.word	0xe1490092	/* swp r0, r2, [r9] */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_429, .-a32_case_429
+
+	.p2align 2
+	.globl	a32_case_430
+	.type	a32_case_430, %function
+a32_case_430:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0x1111
+	movt	r2, #0x1111
+	movw	r3, #0x2222
+	movt	r3, #0x2222
+	movw	r4, #0x3333
+	movt	r4, #0x3333
+	.word	0xe889001c	/* stmia r9, {r2-r4} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_430, .-a32_case_430
+
+	.p2align 2
+	.globl	a32_case_431
+	.type	a32_case_431, %function
+a32_case_431:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe8990007	/* ldmia r9, {r0-r2} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_431, .-a32_case_431
+
+	.p2align 2
+	.globl	a32_case_432
+	.type	a32_case_432, %function
+a32_case_432:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0x1111
+	movt	r2, #0x1111
+	movw	r3, #0x2222
+	movt	r3, #0x2222
+	movw	r4, #0x3333
+	movt	r4, #0x3333
+	.word	0xe989001c	/* stmib r9, {r2-r4} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_432, .-a32_case_432
+
+	.p2align 2
+	.globl	a32_case_433
+	.type	a32_case_433, %function
+a32_case_433:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe9990007	/* ldmib r9, {r0-r2} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_433, .-a32_case_433
+
+	.p2align 2
+	.globl	a32_case_434
+	.type	a32_case_434, %function
+a32_case_434:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0x1111
+	movt	r2, #0x1111
+	movw	r3, #0x2222
+	movt	r3, #0x2222
+	movw	r4, #0x3333
+	movt	r4, #0x3333
+	.word	0xe809001c	/* stmda r9, {r2-r4} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_434, .-a32_case_434
+
+	.p2align 2
+	.globl	a32_case_435
+	.type	a32_case_435, %function
+a32_case_435:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe8190007	/* ldmda r9, {r0-r2} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_435, .-a32_case_435
+
+	.p2align 2
+	.globl	a32_case_436
+	.type	a32_case_436, %function
+a32_case_436:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0x1111
+	movt	r2, #0x1111
+	movw	r3, #0x2222
+	movt	r3, #0x2222
+	movw	r4, #0x3333
+	movt	r4, #0x3333
+	.word	0xe909001c	/* stmdb r9, {r2-r4} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_436, .-a32_case_436
+
+	.p2align 2
+	.globl	a32_case_437
+	.type	a32_case_437, %function
+a32_case_437:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe9190007	/* ldmdb r9, {r0-r2} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_437, .-a32_case_437
+
+	.p2align 2
+	.globl	a32_case_438
+	.type	a32_case_438, %function
+a32_case_438:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xa3a4
+	movt	r2, #0xa1a2
+	movw	r3, #0xb3b4
+	movt	r3, #0xb1b2
+	.word	0xe1a01009	/* mov r1, r9 */
+	.word	0xe8a9000c	/* stmia r9!, {r2, r3} */
+	.word	0xe0490001	/* sub r0, r9, r1 */
+	.word	0xe3a01000	/* mov r1, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_438, .-a32_case_438
+
+	.p2align 2
+	.globl	a32_case_439
+	.type	a32_case_439, %function
+a32_case_439:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xa3a4
+	movt	r2, #0xa1a2
+	movw	r3, #0xb3b4
+	movt	r3, #0xb1b2
+	.word	0xe1a01009	/* mov r1, r9 */
+	.word	0xe9a9000c	/* stmib r9!, {r2, r3} */
+	.word	0xe0490001	/* sub r0, r9, r1 */
+	.word	0xe3a01000	/* mov r1, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_439, .-a32_case_439
+
+	.p2align 2
+	.globl	a32_case_440
+	.type	a32_case_440, %function
+a32_case_440:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xa3a4
+	movt	r2, #0xa1a2
+	movw	r3, #0xb3b4
+	movt	r3, #0xb1b2
+	.word	0xe1a01009	/* mov r1, r9 */
+	.word	0xe829000c	/* stmda r9!, {r2, r3} */
+	.word	0xe0490001	/* sub r0, r9, r1 */
+	.word	0xe3a01000	/* mov r1, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_440, .-a32_case_440
+
+	.p2align 2
+	.globl	a32_case_441
+	.type	a32_case_441, %function
+a32_case_441:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r2, #0xa3a4
+	movt	r2, #0xa1a2
+	movw	r3, #0xb3b4
+	movt	r3, #0xb1b2
+	.word	0xe1a01009	/* mov r1, r9 */
+	.word	0xe929000c	/* stmdb r9!, {r2, r3} */
+	.word	0xe0490001	/* sub r0, r9, r1 */
+	.word	0xe3a01000	/* mov r1, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_441, .-a32_case_441
+
+	.p2align 2
+	.globl	a32_case_442
+	.type	a32_case_442, %function
+a32_case_442:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe8b9000c	/* ldmia r9!, {r2, r3} */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_442, .-a32_case_442
+
+	.p2align 2
+	.globl	a32_case_443
+	.type	a32_case_443, %function
+a32_case_443:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe3a00000	/* mov r0, #0 */
+	.word	0xea000000	/* b skip */
+	.word	0xe3a0007f	/* mov r0, #0x7F */
+	.word	0xe3a0102a	/* mov r1, #0x2A */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_443, .-a32_case_443
+
+	.p2align 2
+	.globl	a32_case_444
+	.type	a32_case_444, %function
+a32_case_444:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe3a00000	/* mov r0, #0 */
+	.word	0xe2800001	/* add r0, r0, #1 */
+	.word	0xe3500004	/* cmp r0, #4 */
+	.word	0xbafffffc	/* b.lt top */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_444, .-a32_case_444
+
+	.p2align 2
+	.globl	a32_case_445
+	.type	a32_case_445, %function
+a32_case_445:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe3a00000	/* mov r0, #0 */
+	.word	0xeb000001	/* bl sub1 */
+	.word	0xe3a03099	/* mov r3, #0x99 */
+	.word	0xea000001	/* b end */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	.word	0xe12fff1e	/* bx lr */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_445, .-a32_case_445
+
+	.p2align 2
+	.globl	a32_case_446
+	.type	a32_case_446, %function
+a32_case_446:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe28fe008	/* adr r14, here (add r14, pc, #8) */
+	.word	0xe12fff1e	/* bx lr */
+	.word	0xe3a050ab	/* mov r5, #0xAB */
+	.word	0xea000000	/* b out */
+	.word	0xe3a0505a	/* mov r5, #0x5A */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_446, .-a32_case_446
+
+	.p2align 2
+	.globl	a32_case_447
+	.type	a32_case_447, %function
+a32_case_447:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe28f4000	/* adr r4, a (add r4, pc, #0) */
+	.word	0xe28f5008	/* adr r5, b (add r5, pc, #8) */
+	.word	0xe1a00000	/* nop */
+	.word	0xe1a00000	/* nop */
+	.word	0xe1a00000	/* nop */
+	.word	0xe0450004	/* sub r0, r5, r4 */
+	.word	0xe3a04000	/* mov r4, #0 */
+	.word	0xe3a05000	/* mov r5, #0 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_447, .-a32_case_447
+
+	.p2align 2
+	.globl	a32_case_448
+	.type	a32_case_448, %function
+a32_case_448:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe28f200c	/* adr r2, fn (add r2, pc, #12) */
+	.word	0xe12fff32	/* blx r2 */
+	.word	0xe3a03055	/* mov r3, #0x55 */
+	.word	0xe3a02000	/* mov r2, #0 */
+	.word	0xea000001	/* b done */
+	.word	0xe3a00066	/* mov r0, #0x66 */
+	.word	0xe12fff1e	/* bx lr */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_448, .-a32_case_448
+
+	.p2align 2
+	.globl	a32_case_449
+	.type	a32_case_449, %function
+a32_case_449:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x0a000001	/* b.eq taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_449, .-a32_case_449
+
+	.p2align 2
+	.globl	a32_case_450
+	.type	a32_case_450, %function
+a32_case_450:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x1a000001	/* b.ne taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_450, .-a32_case_450
+
+	.p2align 2
+	.globl	a32_case_451
+	.type	a32_case_451, %function
+a32_case_451:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x2a000001	/* b.hs taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_451, .-a32_case_451
+
+	.p2align 2
+	.globl	a32_case_452
+	.type	a32_case_452, %function
+a32_case_452:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x3a000001	/* b.lo taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_452, .-a32_case_452
+
+	.p2align 2
+	.globl	a32_case_453
+	.type	a32_case_453, %function
+a32_case_453:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x4a000001	/* b.mi taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_453, .-a32_case_453
+
+	.p2align 2
+	.globl	a32_case_454
+	.type	a32_case_454, %function
+a32_case_454:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x5a000001	/* b.pl taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_454, .-a32_case_454
+
+	.p2align 2
+	.globl	a32_case_455
+	.type	a32_case_455, %function
+a32_case_455:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x6a000001	/* b.vs taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_455, .-a32_case_455
+
+	.p2align 2
+	.globl	a32_case_456
+	.type	a32_case_456, %function
+a32_case_456:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x7a000001	/* b.vc taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_456, .-a32_case_456
+
+	.p2align 2
+	.globl	a32_case_457
+	.type	a32_case_457, %function
+a32_case_457:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x8a000001	/* b.hi taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_457, .-a32_case_457
+
+	.p2align 2
+	.globl	a32_case_458
+	.type	a32_case_458, %function
+a32_case_458:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x9a000001	/* b.ls taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_458, .-a32_case_458
+
+	.p2align 2
+	.globl	a32_case_459
+	.type	a32_case_459, %function
+a32_case_459:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xaa000001	/* b.ge taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_459, .-a32_case_459
+
+	.p2align 2
+	.globl	a32_case_460
+	.type	a32_case_460, %function
+a32_case_460:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xba000001	/* b.lt taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_460, .-a32_case_460
+
+	.p2align 2
+	.globl	a32_case_461
+	.type	a32_case_461, %function
+a32_case_461:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xca000001	/* b.gt taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_461, .-a32_case_461
+
+	.p2align 2
+	.globl	a32_case_462
+	.type	a32_case_462, %function
+a32_case_462:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xda000001	/* b.le taken */
+	.word	0xe3a00022	/* mov r0, #0x22 */
+	.word	0xea000000	/* b done */
+	.word	0xe3a00011	/* mov r0, #0x11 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_462, .-a32_case_462
+
+	.p2align 2
+	.globl	a32_case_463
+	.type	a32_case_463, %function
+a32_case_463:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x03a00011	/* moveq r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_463, .-a32_case_463
+
+	.p2align 2
+	.globl	a32_case_464
+	.type	a32_case_464, %function
+a32_case_464:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x13a00011	/* movne r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_464, .-a32_case_464
+
+	.p2align 2
+	.globl	a32_case_465
+	.type	a32_case_465, %function
+a32_case_465:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x23a00011	/* movcs r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_465, .-a32_case_465
+
+	.p2align 2
+	.globl	a32_case_466
+	.type	a32_case_466, %function
+a32_case_466:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x33a00011	/* movcc r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_466, .-a32_case_466
+
+	.p2align 2
+	.globl	a32_case_467
+	.type	a32_case_467, %function
+a32_case_467:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x43a00011	/* movmi r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_467, .-a32_case_467
+
+	.p2align 2
+	.globl	a32_case_468
+	.type	a32_case_468, %function
+a32_case_468:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x53a00011	/* movpl r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_468, .-a32_case_468
+
+	.p2align 2
+	.globl	a32_case_469
+	.type	a32_case_469, %function
+a32_case_469:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x63a00011	/* movvs r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_469, .-a32_case_469
+
+	.p2align 2
+	.globl	a32_case_470
+	.type	a32_case_470, %function
+a32_case_470:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x73a00011	/* movvc r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_470, .-a32_case_470
+
+	.p2align 2
+	.globl	a32_case_471
+	.type	a32_case_471, %function
+a32_case_471:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x83a00011	/* movhi r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_471, .-a32_case_471
+
+	.p2align 2
+	.globl	a32_case_472
+	.type	a32_case_472, %function
+a32_case_472:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0x93a00011	/* movls r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_472, .-a32_case_472
+
+	.p2align 2
+	.globl	a32_case_473
+	.type	a32_case_473, %function
+a32_case_473:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xa3a00011	/* movge r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_473, .-a32_case_473
+
+	.p2align 2
+	.globl	a32_case_474
+	.type	a32_case_474, %function
+a32_case_474:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xb3a00011	/* movlt r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_474, .-a32_case_474
+
+	.p2align 2
+	.globl	a32_case_475
+	.type	a32_case_475, %function
+a32_case_475:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xc3a00011	/* movgt r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_475, .-a32_case_475
+
+	.p2align 2
+	.globl	a32_case_476
+	.type	a32_case_476, %function
+a32_case_476:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0000
+	.word	0xe3a01000	/* mov r1, #0 */
+	.word	0xe3510000	/* cmp r1, #0 */
+	.word	0xd3a00011	/* movle r0, #0x11 */
+	.word	0xe3a02022	/* mov r2, #0x22 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_476, .-a32_case_476
+
+	.p2align 2
+	.globl	a32_case_477
+	.type	a32_case_477, %function
+a32_case_477:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe3a01001	/* mov r1, #1 */
+	.word	0xe0510001	/* subs r1, r1, r1 */
+	.word	0xe2510001	/* subs r1, r1, #1 */
+	.word	0x23a00033	/* movcs r0, #0x33 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_477, .-a32_case_477
+
+	.p2align 2
+	.globl	a32_case_478
+	.type	a32_case_478, %function
+a32_case_478:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe3a01001	/* mov r1, #1 */
+	.word	0xe0510001	/* subs r1, r1, r1 */
+	.word	0xe2910000	/* adds r1, r1, #0 */
+	.word	0x23a00033	/* movcs r0, #0x33 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_478, .-a32_case_478
+
+	.p2align 2
+	.globl	a32_case_479
+	.type	a32_case_479, %function
+a32_case_479:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe3a01001	/* mov r1, #1 */
+	.word	0xe0510001	/* subs r1, r1, r1 */
+	.word	0xe2510001	/* subs r1, r1, #1 */
+	.word	0x33a00033	/* movcc r0, #0x33 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_479, .-a32_case_479
+
+	.p2align 2
+	.globl	a32_case_480
+	.type	a32_case_480, %function
+a32_case_480:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	.word	0xe3a01001	/* mov r1, #1 */
+	.word	0xe0510001	/* subs r1, r1, r1 */
+	.word	0xe2910000	/* adds r1, r1, #0 */
+	.word	0x33a00033	/* movcc r0, #0x33 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_480, .-a32_case_480
+
+	.p2align 2
+	.globl	a32_case_481
+	.type	a32_case_481, %function
+a32_case_481:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x9ad2
+	movt	r1, #0xd62c
+	movw	r2, #0xffdf
+	movt	r2, #0x7ef0
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03080	/* mov r3, r0, LSL #1 */
+	.word	0xe5893000	/* str r3, [r9, #0] */
+	.word	0xe5994000	/* ldr r4, [r9, #0] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_481, .-a32_case_481
+
+	.p2align 2
+	.globl	a32_case_482
+	.type	a32_case_482, %function
+a32_case_482:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xf05f
+	movt	r1, #0x6082
+	movw	r2, #0xabce
+	movt	r2, #0x1dcd
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03120	/* mov r3, r0, LSR #2 */
+	.word	0xe5893004	/* str r3, [r9, #4] */
+	.word	0xe5994004	/* ldr r4, [r9, #4] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_482, .-a32_case_482
+
+	.p2align 2
+	.globl	a32_case_483
+	.type	a32_case_483, %function
+a32_case_483:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x08d5
+	movt	r1, #0xa80a
+	movw	r2, #0xa482
+	movt	r2, #0xa64f
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a031c0	/* mov r3, r0, ASR #3 */
+	.word	0xe5893008	/* str r3, [r9, #8] */
+	.word	0xe5994008	/* ldr r4, [r9, #8] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_483, .-a32_case_483
+
+	.p2align 2
+	.globl	a32_case_484
+	.type	a32_case_484, %function
+a32_case_484:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x093c
+	movt	r1, #0x6bdd
+	movw	r2, #0xb428
+	movt	r2, #0xc368
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03260	/* mov r3, r0, ROR #4 */
+	.word	0xe589300c	/* str r3, [r9, #12] */
+	.word	0xe599400c	/* ldr r4, [r9, #12] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_484, .-a32_case_484
+
+	.p2align 2
+	.globl	a32_case_485
+	.type	a32_case_485, %function
+a32_case_485:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xb720
+	movt	r1, #0x19bc
+	movw	r2, #0xb763
+	movt	r2, #0xfd6b
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03280	/* mov r3, r0, LSL #5 */
+	.word	0xe5893010	/* str r3, [r9, #16] */
+	.word	0xe5994010	/* ldr r4, [r9, #16] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_485, .-a32_case_485
+
+	.p2align 2
+	.globl	a32_case_486
+	.type	a32_case_486, %function
+a32_case_486:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x230d
+	movt	r1, #0x8340
+	movw	r2, #0x33e6
+	movt	r2, #0x5f1b
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03320	/* mov r3, r0, LSR #6 */
+	.word	0xe5893014	/* str r3, [r9, #20] */
+	.word	0xe5994014	/* ldr r4, [r9, #20] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_486, .-a32_case_486
+
+	.p2align 2
+	.globl	a32_case_487
+	.type	a32_case_487, %function
+a32_case_487:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xadee
+	movt	r1, #0x0eb9
+	movw	r2, #0x0afa
+	movt	r2, #0xca14
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a033c0	/* mov r3, r0, ASR #7 */
+	.word	0xe5893018	/* str r3, [r9, #24] */
+	.word	0xe5994018	/* ldr r4, [r9, #24] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_487, .-a32_case_487
+
+	.p2align 2
+	.globl	a32_case_488
+	.type	a32_case_488, %function
+a32_case_488:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x724b
+	movt	r1, #0x2a63
+	movw	r2, #0xd2d0
+	movt	r2, #0x1062
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a030e0	/* mov r3, r0, ROR #1 */
+	.word	0xe589301c	/* str r3, [r9, #28] */
+	.word	0xe599401c	/* ldr r4, [r9, #28] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_488, .-a32_case_488
+
+	.p2align 2
+	.globl	a32_case_489
+	.type	a32_case_489, %function
+a32_case_489:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x01b1
+	movt	r1, #0x2455
+	movw	r2, #0x34aa
+	movt	r2, #0xeda1
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03100	/* mov r3, r0, LSL #2 */
+	.word	0xe5893000	/* str r3, [r9, #0] */
+	.word	0xe5994000	/* ldr r4, [r9, #0] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_489, .-a32_case_489
+
+	.p2align 2
+	.globl	a32_case_490
+	.type	a32_case_490, %function
+a32_case_490:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x7658
+	movt	r1, #0x1967
+	movw	r2, #0x54fa
+	movt	r2, #0xb5e6
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a031a0	/* mov r3, r0, LSR #3 */
+	.word	0xe5893004	/* str r3, [r9, #4] */
+	.word	0xe5994004	/* ldr r4, [r9, #4] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_490, .-a32_case_490
+
+	.p2align 2
+	.globl	a32_case_491
+	.type	a32_case_491, %function
+a32_case_491:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xcd6e
+	movt	r1, #0xbec4
+	movw	r2, #0x09ad
+	movt	r2, #0x3cfc
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03240	/* mov r3, r0, ASR #4 */
+	.word	0xe5893008	/* str r3, [r9, #8] */
+	.word	0xe5994008	/* ldr r4, [r9, #8] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_491, .-a32_case_491
+
+	.p2align 2
+	.globl	a32_case_492
+	.type	a32_case_492, %function
+a32_case_492:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x0242
+	movt	r1, #0x2686
+	movw	r2, #0xe14a
+	movt	r2, #0x01e0
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a032e0	/* mov r3, r0, ROR #5 */
+	.word	0xe589300c	/* str r3, [r9, #12] */
+	.word	0xe599400c	/* ldr r4, [r9, #12] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_492, .-a32_case_492
+
+	.p2align 2
+	.globl	a32_case_493
+	.type	a32_case_493, %function
+a32_case_493:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xdf83
+	movt	r1, #0x3692
+	movw	r2, #0x69fe
+	movt	r2, #0xbcff
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03300	/* mov r3, r0, LSL #6 */
+	.word	0xe5893010	/* str r3, [r9, #16] */
+	.word	0xe5994010	/* ldr r4, [r9, #16] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_493, .-a32_case_493
+
+	.p2align 2
+	.globl	a32_case_494
+	.type	a32_case_494, %function
+a32_case_494:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xfa09
+	movt	r1, #0x25d8
+	movw	r2, #0x1a10
+	movt	r2, #0xb3eb
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a033a0	/* mov r3, r0, LSR #7 */
+	.word	0xe5893014	/* str r3, [r9, #20] */
+	.word	0xe5994014	/* ldr r4, [r9, #20] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_494, .-a32_case_494
+
+	.p2align 2
+	.globl	a32_case_495
+	.type	a32_case_495, %function
+a32_case_495:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x69c9
+	movt	r1, #0xe0fa
+	movw	r2, #0xbb43
+	movt	r2, #0xf940
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a030c0	/* mov r3, r0, ASR #1 */
+	.word	0xe5893018	/* str r3, [r9, #24] */
+	.word	0xe5994018	/* ldr r4, [r9, #24] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_495, .-a32_case_495
+
+	.p2align 2
+	.globl	a32_case_496
+	.type	a32_case_496, %function
+a32_case_496:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x1e70
+	movt	r1, #0xaf6e
+	movw	r2, #0x9717
+	movt	r2, #0xa6c7
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03160	/* mov r3, r0, ROR #2 */
+	.word	0xe589301c	/* str r3, [r9, #28] */
+	.word	0xe599401c	/* ldr r4, [r9, #28] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_496, .-a32_case_496
+
+	.p2align 2
+	.globl	a32_case_497
+	.type	a32_case_497, %function
+a32_case_497:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x1f5f
+	movt	r1, #0x7fbb
+	movw	r2, #0x3c82
+	movt	r2, #0x71ba
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03180	/* mov r3, r0, LSL #3 */
+	.word	0xe5893000	/* str r3, [r9, #0] */
+	.word	0xe5994000	/* ldr r4, [r9, #0] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_497, .-a32_case_497
+
+	.p2align 2
+	.globl	a32_case_498
+	.type	a32_case_498, %function
+a32_case_498:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0x2df6
+	movt	r1, #0xc5d5
+	movw	r2, #0xaf0e
+	movt	r2, #0x594a
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03220	/* mov r3, r0, LSR #4 */
+	.word	0xe5893004	/* str r3, [r9, #4] */
+	.word	0xe5994004	/* ldr r4, [r9, #4] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_498, .-a32_case_498
+
+	.p2align 2
+	.globl	a32_case_499
+	.type	a32_case_499, %function
+a32_case_499:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xa50b
+	movt	r1, #0x9465
+	movw	r2, #0x2fc7
+	movt	r2, #0xc6f5
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a032c0	/* mov r3, r0, ASR #5 */
+	.word	0xe5893008	/* str r3, [r9, #8] */
+	.word	0xe5994008	/* ldr r4, [r9, #8] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_499, .-a32_case_499
+
+	.p2align 2
+	.globl	a32_case_500
+	.type	a32_case_500, %function
+a32_case_500:
+	push	{r4-r11, lr}
+	mov	r12, r0
+	add	r12, r12, #260
+	mov	r9, r1
+	mov	r0, #0
+	cmp	r0, #0
+	mov	r0, #0
+	mov	r1, #0
+	mov	r2, #0
+	mov	r3, #0
+	mov	r4, #0
+	mov	r5, #0
+	mov	r6, #0
+	mov	r7, #0
+	mov	r8, #0
+	mov	r10, #0
+	mov	r11, #0
+	movw	r1, #0xbbec
+	movt	r1, #0xf847
+	movw	r2, #0x2e33
+	movt	r2, #0x048f
+	.word	0xe0910002	/* adds r0, r1, r2 */
+	.word	0xe1a03360	/* mov r3, r0, ROR #6 */
+	.word	0xe589300c	/* str r3, [r9, #12] */
+	.word	0xe599400c	/* ldr r4, [r9, #12] */
+	.word	0xe0245003	/* eor r5, r4, r3 */
+	stm	r12, {r0-r11}
+	mrs	r0, cpsr
+	str	r0, [r12, #64]
+	mov	r0, #0
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
+	pop	{r4-r11, pc}
+	.size	a32_case_500, .-a32_case_500
 

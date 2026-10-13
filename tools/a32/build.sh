@@ -30,7 +30,7 @@ case "$target" in
   step0)
     out="${out:-/tmp/a32-step0}"
     rm -f "$out"
-    clang -g -O1 -Wall -I"$T" -I"$N" -o "$out" "$A/step0_xmem.c" "$N/husk-tl-xmem.c" -lpthread
+    clang -g -O1 -Wall -I"$T" -I"$N" -o "$out" "$A/step0_xmem.c" "$N/husk-tl-xmem.c" "$A/xmem_errno_stub.c" -lpthread
     echo "built $out"
     echo "run:   TL_XMEM_SELF=1 $out   # the layer's own self-test"
     echo "       $out                   # the ordinary Mac two-view path"
@@ -38,7 +38,19 @@ case "$target" in
   diff)
     out="${out:-/tmp/a32diff}"
     rm -f "$out"
-    clang -g -O1 -Wall -I"$T" -I"$N" -o "$out" "$A/a32diff.c" "$N/husk-tl-xmem.c" -lpthread
+    clang -g -O1 -Wall -I"$T" -I"$N" -I"$A" -o "$out" \
+          "$A/a32diff.c" "$A/a32_interp.c" "$N/husk-tl-xmem.c" "$A/xmem_errno_stub.c" -lpthread
+    echo "built $out"
+    echo "run:   $out <goldens-dir> [--self-check] | [--no-interp]"
+    ;;
+  diff-plain)
+    # No Apple executable-memory path: runs the interpreter + diff only. This is
+    # how the compare code path is exercised on a plain host (no Mac, no qemu).
+    out="${out:-/tmp/a32diff-plain}"
+    cc="${A32_CC:-cc}"
+    command -v "$cc" >/dev/null || { echo "$cc not found" >&2; exit 2; }
+    rm -f "$out"
+    "$cc" -std=c11 -O1 -Wall -I"$A" -o "$out" "$A/a32diff.c" "$A/a32_interp.c"
     echo "built $out"
     echo "run:   $out <goldens-dir> [--self-check]"
     ;;
