@@ -33,7 +33,20 @@
  *       LDR/STR imm12 (+/-) and register offset, wide byte/half and
  *       signed-byte/half loads, LDRD/STRD, TBB/TBH, BL/BLX immediate,
  *       MRS/MSR, SXTB/SXTH/UXTB/UXTH, REV/REV16/REVSH, CLZ, SSAT/USAT,
- *       BFI/BFC/UBFX/SBFX.
+ *       BFI/BFC/UBFX/SBFX;
+ *       16-bit Thumb SXTB/SXTH/UXTB/UXTH and REV/REV16/REVSH (the 1011
+ *       extend/reverse group);
+ *       wide Thumb-2 multiply (1111 1011 xxxx): MUL/MLA/MLS and the long
+ *       multiplies SMULL/UMULL/SMLAL/UMLAL;
+ *       the wide Thumb-2 load/store single forms in full: imm12, the imm8
+ *       form with every P/U/W addressing combination, and the register
+ *       offset (the "1101 form");
+ *       DMB/DSB/ISB (a barrier has no effect on a single observer).
+ *   - VFP LOAD/STORE (register file <-> memory, no arithmetic): VLDR/VSTR
+ *     (single and double), VLDM/VSTM in all four addressing modes and the
+ *     VPUSH/VPOP aliases, in both ARM and Thumb-2 encodings. The s0..s31
+ *     register file is tracked and compared (fp[]); VFP *arithmetic* is still
+ *     a named unimplemented fault.
  *   - INTERWORKING: the CPSR T bit is tracked honestly; BX/BLX to an odd
  *     address enters Thumb and an even address returns to ARM; BLX immediate
  *     enters Thumb; a PC whose alignment disagrees with the current state, or
@@ -42,11 +55,13 @@
  *     state-transition bug cannot pass.
  *
  * Deliberately OUT of scope, and reported as a named unimplemented-instruction
- * fault if a case reaches one: VFP / NEON / coprocessor / CP15, exceptions,
- * interrupts, CPU modes other than user, banked registers, MMU and
- * permissions, syscalls (SVC is a named fault in user mode), threads;
- * saturating QADD family, SEL, PKH, RBIT, CPS, SETEND; the Thumb-2 encodings
- * not listed above.
+ * fault if a case reaches one: VFP / NEON arithmetic and the coprocessor data
+ * path (VMOV/VMRS/VCMP/CDP), CP15, exceptions, interrupts, CPU modes other
+ * than user, banked registers, MMU and permissions, syscalls (SVC is a named
+ * fault in user mode), threads; saturating QADD family, SEL, PKH, RBIT, CPS,
+ * SETEND; the Thumb-2 encodings not listed above (the media multiplies, wide
+ * LDM/STM/PUSH/POP kept apart from VFP, the parallel add/sub, B.W's
+ * modified-immediate space).
  *
  * Memory model: one flat little-endian arena (ARENA_SIZE bytes) holding the
  * case's code and its 4 KiB scratch window next to each other. Every access is

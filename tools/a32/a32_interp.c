@@ -38,6 +38,7 @@ struct cpu {
     uint32_t r[16];
     uint32_t cpsr;
     uint32_t itstate;           /* Thumb IT block state (cond:mask), 0 = none */
+    uint32_t s[32];             /* VFP single-precision view of s0..s31 (d_n = s[2n]:s[2n+1]) */
     uint32_t base;
     uint8_t *mem;
     uint32_t case_id;
@@ -83,6 +84,14 @@ static void wr32(struct cpu *c, uint32_t a, uint32_t v) {
     c->mem[a - c->base + 1] = (uint8_t)(v >> 8);
     c->mem[a - c->base + 2] = (uint8_t)(v >> 16);
     c->mem[a - c->base + 3] = (uint8_t)(v >> 24);
+}
+/* 64-bit little-endian access, for the VFP doubleword forms (d_n = s[2n]:s[2n+1]). */
+static uint64_t rd64(struct cpu *c, uint32_t a) {
+    return (uint64_t)rd32(c, a) | ((uint64_t)rd32(c, a + 4u) << 32);
+}
+static void wr64(struct cpu *c, uint32_t a, uint64_t v) {
+    wr32(c, a, (uint32_t)v);
+    wr32(c, a + 4u, (uint32_t)(v >> 32));
 }
 
 /* ------------------------------------------------------------ helpers */
@@ -368,6 +377,112 @@ static int decode_block(struct cpu *c, uint32_t pc, uint32_t insn)
         else   c->r[rn] = base - (uint32_t)n * 4u;
     }
     return 0;
+}
+
+/* ==========================================================================
+ *                             VFP load / store
+ * ==========================================================================
+ * The reference interpreter carries no floating-point arithmetic, but a real
+ * game executes the VFP load/store forms from its very first prologue:
+ * VLDR/VSTR (single and double), VLDM/VSTM (all four addressing modes) and the
+ * VPUSH/VPOP aliases. Those are pure register-file <-> memory moves, so they can
+ * be executed exactly without a floating-point unit -- only the s0..s31 register
+ * file is needed, which is already recorded and compared (the harness diffs
+ * fp[]). The VFP *arithmetic* (VADD/VMUL/... = the CDP space) stays a named
+ * unimplemented fault.
+ *
+ * The architectural field layout is common to A32 and T32:
+ *   P U D W L Rn | Vd 101{s,d} imm8
+ * P==1 && W==0 is VLDR/VSTR (imm8 is a word offset); otherwise VLDM/VSTM with
+ * imm8 a register count. The register number is built from Vd and D:
+ * a single is S(Vd<<1|D), a double is D(D<<4|Vd). For a doubleword multiple the
+ * count is imm8/2 (imm8 counts 32-bit words). VPUSH is STMDB sp! and VPOP is
+ * LDMIA sp!; both are just the P/U/W aliases of VLDM/VSTM.
+ */
+static int vfp_transfer(struct cpu *c, uint32_t pc, uint32_t word,
+                        int P, int U, int D, int W, int L, int Rn,
+                        int Vd, int dbl, uint32_t imm8, int thumb)
+{
+    uint32_t base = (Rn == 15)
+                    ? (thumb ? (pc + 4u) : (pc + 8u))
+                    : c->r[Rn];
+
+    if (P && !W) {                                  /* VLDR / VSTR */
+        uint32_t off = imm8 << 2;
+        uint32_t addr = U ? base + off : base - off;
+        uint32_t size = dbl ? 8u : 4u;
+        int first = dbl ? ((D << 4) | Vd) : ((Vd << 1) | D);
+        if (!in_arena(addr, size)) { a32_fault(c, pc, word, "VFP load/store outside the arena"); return 1; }
+        if (L) {
+            if (dbl) { uint64_t v = rd64(c, addr);
+                       c->s[first * 2] = (uint32_t)v; c->s[first * 2 + 1] = (uint32_t)(v >> 32); }
+            else       c->s[first] = rd32(c, addr);
+        } else {
+            if (dbl) wr64(c, addr, ((uint64_t)c->s[first * 2 + 1] << 32) | c->s[first * 2]);
+            else     wr32(c, addr, c->s[first]);
+        }
+        return 0;
+    }
+
+    /* VLDM / VSTM (and the VPUSH/VPOP aliases) */
+    if (imm8 == 0u) {
+        a32_fault(c, pc, word, "VFP VLDM/VSTM with an empty register list not implemented");
+        return 1;
+    }
+    if (dbl && (imm8 & 1u)) {
+        a32_fault(c, pc, word, "VFP VLDM/VSTM with an odd doubleword count");
+        return 1;
+    }
+    int count = dbl ? (int)(imm8 >> 1) : (int)imm8;
+    if (count < 1 || (dbl && count > 16) || (!dbl && count > 32)) {
+        a32_fault(c, pc, word, "VFP VLDM/VSTM with an out-of-range register count");
+        return 1;
+    }
+    int first = dbl ? ((D << 4) | Vd) : ((Vd << 1) | D);
+    uint32_t esz = dbl ? 8u : 4u;
+    uint32_t lo;
+    if (P == 0 && U == 1)      lo = base;                              /* IA */
+    else if (P == 1 && U == 1) lo = base + esz;                        /* IB */
+    else if (P == 0 && U == 0) lo = base - (uint32_t)(count - 1) * esz;/* DA */
+    else                       lo = base - (uint32_t)count * esz;      /* DB */
+
+    if (!in_arena(lo, (uint32_t)count * esz)) {
+        a32_fault(c, pc, word, "VFP VLDM/VSTM outside the arena");
+        return 1;
+    }
+    uint32_t a = lo;
+    for (int k = 0; k < count; k++) {
+        int r = first + k;
+        if (dbl) {
+            if (L) { uint64_t v = rd64(c, a);
+                     c->s[r * 2] = (uint32_t)v; c->s[r * 2 + 1] = (uint32_t)(v >> 32); }
+            else     wr64(c, a, ((uint64_t)c->s[r * 2 + 1] << 32) | c->s[r * 2]);
+        } else {
+            if (L) c->s[r] = rd32(c, a);
+            else   wr32(c, a, c->s[r]);
+        }
+        a += esz;
+    }
+    if (W) c->r[Rn] = U ? base + (uint32_t)count * esz
+                        : base - (uint32_t)count * esz;
+    return 0;
+}
+
+/* A32 coprocessor space (bits[27:25] == 110). Only the VFP load/store
+ * encodings (coprocessor 1010/1011) are executed; every other coprocessor --
+ * and the legacy FPA/CP10 forms the corpus still shows -- is a named fault. */
+static int a32_coproc(struct cpu *c, uint32_t pc, uint32_t insn)
+{
+    uint32_t coproc = (insn >> 8) & 0xFu;
+    if (coproc == 0xAu || coproc == 0xBu) {
+        int P = (insn >> 24) & 1, U = (insn >> 23) & 1, D = (insn >> 22) & 1;
+        int W = (insn >> 21) & 1, L = (insn >> 20) & 1;
+        int Rn = (insn >> 16) & 0xF, Vd = (insn >> 12) & 0xF;
+        return vfp_transfer(c, pc, insn, P, U, D, W, L, Rn, Vd,
+                            coproc == 0xBu, insn & 0xFFu, 0);
+    }
+    a32_fault(c, pc, insn, "coprocessor load/store not implemented");
+    return 1;
 }
 
 /* ==========================================================================
@@ -689,6 +804,36 @@ static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next)
             }
             return 0;
         }
+        /* 1011 0010 01xx: SXTH/SXTB/UXTH/UXTB. */
+        if ((h & 0xFF00u) == 0xB200u) {
+            uint32_t op = (h >> 6) & 3u, rm = (h >> 3) & 7u, rd = h & 7u;
+            if (op == 0u)      c->r[rd] = sx(c->r[rm] & 0xFFFFu, 16);   /* SXTH */
+            else if (op == 1u) c->r[rd] = sx(c->r[rm] & 0xFFu, 8);      /* SXTB */
+            else if (op == 2u) c->r[rd] = c->r[rm] & 0xFFFFu;           /* UXTH */
+            else               c->r[rd] = c->r[rm] & 0xFFu;             /* UXTB */
+            return 0;
+        }
+        /* 1011 1010 00xx: REV/REV16/REVSH. */
+        if ((h & 0xFF00u) == 0xBA00u) {
+            uint32_t op = (h >> 6) & 3u, rm = (h >> 3) & 7u, rd = h & 7u;
+            uint32_t v = c->r[rm];
+            if (op == 0u) {                                             /* REV */
+                c->r[rd] = ((v & 0xFFu) << 24) | ((v & 0xFF00u) << 8) |
+                           ((v >> 8) & 0xFF00u) | ((v >> 24) & 0xFFu);
+                return 0;
+            }
+            if (op == 1u) {                                             /* REV16 */
+                c->r[rd] = ((v & 0xFFu) << 8) | ((v >> 8) & 0xFFu) |
+                           ((v & 0xFF0000u) << 8) | ((v >> 8) & 0xFF0000u);
+                return 0;
+            }
+            if (op == 3u) {                                             /* REVSH */
+                c->r[rd] = (uint32_t)(int32_t)(int16_t)(((v & 0xFFu) << 8) | ((v >> 8) & 0xFFu));
+                return 0;
+            }
+            a32_fault(c, pc, h, "Thumb REVSH encoding 1011 1010 10xx is undefined");
+            return 1;
+        }
         if ((h & 0xFF00u) == 0xBE00u) { a32_fault(c, pc, h, "Thumb BKPT not implemented"); return 1; }
         a32_fault(c, pc, h, "unimplemented Thumb 1011 encoding"); return 1;
     }
@@ -730,46 +875,65 @@ static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next)
     a32_fault(c, pc, h, "unimplemented 16-bit Thumb encoding"); return 1;
 }
 
-/* Wide Thumb-2 load/store single (11111 group). */
+/* Wide Thumb-2 load/store single (11111 group). Every form real code shows is
+ * decoded here: the imm12 form, the imm8 form in all four P/U/W addressing
+ * combinations (pre/post-indexed, writeback or not) and the register-offset
+ * form, for word, byte and halfword plus the signed byte/half loads. The
+ * opcode is h1[11:4] (bits[11:8]=1000 unsigned / 1001 signed, bits[7:4] the
+ * size and kind). */
 static int thumb_wide_ldst(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2)
 {
-    uint32_t key = h1 & 0xFFF0u;
+    uint32_t key = (h1 >> 4) & 0xFFu;       /* bits[11:4]: the load/store opcode */
+    uint32_t op = key & 0xFu;               /* size / kind */
+    uint32_t sn = (key >> 4) & 1u;          /* 1 = the 1111 1001 signed space */
     uint32_t rn = h1 & 0xFu;
     uint32_t rt = (h2 >> 12) & 0xFu;
     uint32_t base = c->r[rn];
-    uint32_t imm12 = h2 & 0xFFFu;
-    uint32_t addr = 0, sz = 0;
-    int load = 0, sign = 0;
+    int sz, load, sign = 0, imm12_form;
 
     if (rt == 15) { a32_fault(c, pc, h1, "Thumb-2 load/store to PC not implemented"); return 1; }
 
-    switch (key) {
-    case 0xF8D0u: load = 1; sz = 4; addr = base + imm12; break;   /* LDR  imm12 */
-    case 0xF8C0u: load = 0; sz = 4; addr = base + imm12; break;   /* STR  imm12 */
-    case 0xF890u: load = 1; sz = 1; addr = base + imm12; break;   /* LDRB imm12 */
-    case 0xF880u: load = 0; sz = 1; addr = base + imm12; break;   /* STRB imm12 */
-    case 0xF8B0u: load = 1; sz = 2; addr = base + imm12; break;   /* LDRH imm12 */
-    case 0xF8A0u: load = 0; sz = 2; addr = base + imm12; break;   /* STRH imm12 */
-    case 0xF990u: load = 1; sign = 1; sz = 1; addr = base + imm12; break; /* LDRSB imm12 */
-    case 0xF9B0u: load = 1; sign = 1; sz = 2; addr = base + imm12; break; /* LDRSH imm12 */
-    case 0xF850u: case 0xF840u:                    /* LDR/STR word: imm8 (neg) or reg */
-        load = (key == 0xF850u);
-        sz = 4;
-        if ((h2 & 0x0F00u) == 0x0C00u) {
-            addr = base - (h2 & 0xFFu);            /* negative 8-bit immediate */
-        } else if ((h2 & 0x0FC0u) == 0u) {
-            uint32_t rm = h2 & 0xFu, imm2 = (h2 >> 4) & 3u;
-            addr = base + c->r[rm];
-            if (imm2 != 0u) { a32_fault(c, pc, h1, "Thumb-2 load/store with a non-zero shift on a register offset"); return 1; }
-        } else {
-            a32_fault(c, pc, h1, "unimplemented Thumb-2 load/store encoding (1101 form)"); return 1;
+    if (sn) {
+        if (op == 0x1u || op == 0x9u) { load = 1; sign = 1; sz = 1; }       /* LDRSB */
+        else if (op == 0x3u || op == 0xBu) { load = 1; sign = 1; sz = 2; }  /* LDRSH */
+        else { a32_fault(c, pc, h1, "unimplemented Thumb-2 load/store encoding"); return 1; }
+        imm12_form = (op == 0x9u || op == 0xBu);
+    } else {
+        switch (op) {
+        case 0x0u: load = 0; sz = 1; break;   /* STRB      */
+        case 0x1u: load = 1; sz = 1; break;   /* LDRB      */
+        case 0x2u: load = 0; sz = 2; break;   /* STRH      */
+        case 0x3u: load = 1; sz = 2; break;   /* LDRH      */
+        case 0x4u: load = 0; sz = 4; break;   /* STR       */
+        case 0x5u: load = 1; sz = 4; break;   /* LDR       */
+        case 0x8u: load = 0; sz = 1; break;   /* STRB imm12 */
+        case 0x9u: load = 1; sz = 1; break;   /* LDRB imm12 */
+        case 0xAu: load = 0; sz = 2; break;   /* STRH imm12 */
+        case 0xBu: load = 1; sz = 2; break;   /* LDRH imm12 */
+        case 0xCu: load = 0; sz = 4; break;   /* STR  imm12 */
+        case 0xDu: load = 1; sz = 4; break;   /* LDR  imm12 */
+        default: a32_fault(c, pc, h1, "unimplemented Thumb-2 load/store encoding"); return 1;
         }
-        break;
-    default:
-        a32_fault(c, pc, h1, "unimplemented Thumb-2 load/store encoding"); return 1;
+        imm12_form = (op >= 0x8u && op <= 0xDu);
     }
-    (void)sign;
-    if (!in_arena(addr, sz)) { a32_fault(c, pc, h1, "Thumb-2 load/store outside the arena"); return 1; }
+
+    uint32_t addr, wb_addr = 0;
+    int writeback = 0;
+    if (imm12_form) {
+        addr = base + (h2 & 0xFFFu);
+    } else if (h2 & 0x0800u) {                 /* Rt 1 P U W imm8 */
+        uint32_t P = (h2 >> 10) & 1u, U = (h2 >> 9) & 1u, W = (h2 >> 8) & 1u;
+        uint32_t imm8 = h2 & 0xFFu;
+        uint32_t off_addr = U ? base + imm8 : base - imm8;
+        addr = P ? off_addr : base;
+        if (!P || W) { writeback = 1; wb_addr = off_addr; }
+    } else {                                   /* Rt 000000 imm2 Rm */
+        if (h2 & 0x0FC0u) { a32_fault(c, pc, h1, "unimplemented Thumb-2 load/store encoding (1101 form)"); return 1; }
+        uint32_t rm = h2 & 0xFu, imm2 = (h2 >> 4) & 3u;
+        addr = base + (c->r[rm] << imm2);
+    }
+
+    if (!in_arena(addr, (uint32_t)sz)) { a32_fault(c, pc, h1, "Thumb-2 load/store outside the arena"); return 1; }
     if (load) {
         if (sz == 4)      c->r[rt] = rd32(c, addr);
         else if (sz == 2) c->r[rt] = sign ? sx(rd16(c, addr), 16) : rd16(c, addr);
@@ -779,7 +943,48 @@ static int thumb_wide_ldst(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2)
         else if (sz == 2) wr16(c, addr, c->r[rt]);
         else              wr8(c, addr, c->r[rt]);
     }
+    if (writeback) c->r[rn] = wb_addr;
     return 0;
+}
+
+/* Wide Thumb-2 multiply (1111 1011 xxxx). The op nibble is h1[7:4]:
+ *   0 = MUL / MLA / MLS, 8 = SMULL, A = UMULL, C = SMLAL, E = UMLAL.
+ * MUL is the Ra==15 alias of MLA; MLS has h2[7:4]==1. The media variants
+ * (SMULBB/SMLAWx/SMMLA, op 1..6) and the dual multiplies stay named faults. */
+static int thumb_mulwide(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2)
+{
+    uint32_t op = (h1 >> 4) & 0xFu, rn = h1 & 0xFu;
+    uint32_t ra = (h2 >> 12) & 0xFu, rd = (h2 >> 8) & 0xFu;
+    uint32_t sub = (h2 >> 4) & 0xFu, rm = h2 & 0xFu;
+    uint32_t a = c->r[rn], b = c->r[rm];
+
+    if (op == 0x0u) {
+        if (sub == 0u && ra == 15u) { c->r[rd] = a * b; return 0; }       /* MUL */
+        if (sub == 0u) { c->r[rd] = c->r[ra] + a * b; return 0; }         /* MLA */
+        if (sub == 1u) { c->r[rd] = c->r[ra] - a * b; return 0; }         /* MLS */
+        a32_fault(c, pc, h1, "unimplemented Thumb-2 multiply encoding");
+        return 1;
+    }
+    /* Long multiplies: bits[15:12] = RdLo, bits[11:8] = RdHi. */
+    if (op == 0x8u || op == 0xAu || op == 0xCu || op == 0xEu) {
+        if (sub != 0u) { a32_fault(c, pc, h1, "unimplemented Thumb-2 multiply encoding"); return 1; }
+        int uns = (int)((op >> 1) & 1u), acc = (int)((op >> 2) & 1u);
+        uint32_t rdlo = ra, rdhi = rd;
+        if (uns) {
+            uint64_t p = (uint64_t)a * (uint64_t)b;
+            uint64_t r = acc ? ((((uint64_t)c->r[rdhi] << 32) | c->r[rdlo]) + p) : p;
+            c->r[rdlo] = (uint32_t)r; c->r[rdhi] = (uint32_t)(r >> 32);
+        } else {
+            int64_t p = (int64_t)(int32_t)a * (int64_t)(int32_t)b;
+            uint64_t r = acc ? (uint64_t)((int64_t)(((uint64_t)c->r[rdhi] << 32) |
+                                                    c->r[rdlo]) + p)
+                             : (uint64_t)p;
+            c->r[rdlo] = (uint32_t)r; c->r[rdhi] = (uint32_t)(r >> 32);
+        }
+        return 0;
+    }
+    a32_fault(c, pc, h1, "unimplemented Thumb-2 multiply encoding");
+    return 1;
 }
 
 /* 32-bit Thumb-2 execute. `ins` = h1:h2 as a 32-bit instruction word. */
@@ -823,6 +1028,10 @@ static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
         }
         /* Misc: MRS / MSR / SSAT / USAT / BFI / BFC / UBFX / SBFX (1111 0011 ..) */
         if ((h1 & 0xFF00u) == 0xF300u) {
+            /* DMB / DSB / ISB (1111 0011 1011 1111 | 1000 option 1111): a
+             * memory barrier is a no-op for a single sequentially-consistent
+             * observer, which is what this interpreter is. */
+            if ((h1 & 0xFFF0u) == 0xF3B0u && (h2 & 0xFF00u) == 0x8F00u) return 0;
             if (h1 == 0xF3EFu) {                              /* MRS Rd, APSR/CPSR */
                 uint32_t rd = (h2 >> 8) & 0xFu;
                 uint32_t sysm = h2 & 0xFFu;
@@ -993,6 +1202,21 @@ static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
             if (dp_execute(c, pc, opc, (int)s, (int)rn, (int)rd, op2, cout)) return 1;
             return 0;
         }
+        /* VFP load/store (1110 110x ... | Vd 101{s,d} imm8). Covers VLDR/VSTR
+         * (P==1,W==0) and VLDM/VSTM/VPUSH/VPOP (P/U/W as a block transfer). */
+        if ((h1 & 0xFE00u) == 0xEC00u) {
+            uint32_t coproc = (h2 >> 8) & 0xFu;
+            if (coproc == 0xAu || coproc == 0xBu) {
+                int P = (h1 >> 8) & 1, U = (h1 >> 7) & 1, D = (h1 >> 6) & 1;
+                int W = (h1 >> 5) & 1, L = (h1 >> 4) & 1;
+                int rn = h1 & 0xF, Vd = (h2 >> 12) & 0xF;
+                return vfp_transfer(c, pc, ((uint32_t)h1 << 16) | h2,
+                                    P, U, D, W, L, rn, Vd, coproc == 0xBu,
+                                    h2 & 0xFFu, 1);
+            }
+            a32_fault(c, pc, h1, "Thumb-2 coprocessor load/store not implemented");
+            return 1;
+        }
         /* TBB / TBH */
         if ((h1 & 0xFFF0u) == 0xE8D0u && (h2 & 0xFFE0u) == 0xF000u) {
             uint32_t rn = h1 & 0xFu, hw = (h2 >> 4) & 1u, rm = h2 & 0xFu;
@@ -1071,6 +1295,8 @@ static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
             }
             a32_fault(c, pc, h1, "unimplemented Thumb-2 extend/reverse encoding"); return 1;
         }
+        /* wide multiply (1111 1011 xxxx) */
+        if ((h1 & 0xFF00u) == 0xFB00u) return thumb_mulwide(c, pc, h1, h2);
         /* load/store single */
         if ((h1 & 0xFE00u) == 0xF800u) return thumb_wide_ldst(c, pc, h1, h2);
         a32_fault(c, pc, h1, "unimplemented Thumb-2 11111 encoding"); return 1;
@@ -1128,6 +1354,13 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
     c->r[9] = SCRATCH;
     c->r[15] = CODE_BASE;
     c->cpsr = CPSR_INIT | (in->thumb ? F_T : 0u);
+    /* The harness's agreed VFP init: gen_cases.py's a32_fp_init writes
+     * `movw r1,#i` + `movt r1,#0x3f80`, so s_i starts at 0x3f800000 + i
+     * (1.0f + i ulp). Integer cases never touch the register file, so a case
+     * that does not reach VFP records exactly this -- the same value the old
+     * hard-coded out->fp[] produced, which is why the 500 A32 cases are
+     * unchanged. A VFP case writes real values over it. */
+    for (int i = 0; i < 32; i++) c->s[i] = 0x3f800000u + (uint32_t)i;
 
     uint32_t pc = CODE_BASE;
     while (!c->tfault) {
@@ -1167,6 +1400,16 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
                 c->cpsr |= F_T;                          /* BLX immediate enters Thumb */
                 pc = pc + 8u + sx(off << 2, 26);
                 continue;
+            }
+            /* DMB / DSB / ISB. A barrier orders memory accesses between
+             * observers; this interpreter is a single sequentially-consistent
+             * observer, so the architecturally correct effect here is no
+             * effect. (The other unconditional encodings -- PLD, the legacy
+             * coprocessor stc2/ldc2 -- stay named faults.) */
+            if ((insn & 0xFFFF0FF0u) == 0xF57F0040u ||   /* DSB */
+                (insn & 0xFFFF0FF0u) == 0xF57F0050u ||   /* DMB */
+                (insn & 0xFFFF0FF0u) == 0xF57F0060u) {   /* ISB */
+                pc = next; continue;
             }
             a32_fault(c, pc, insn, "unimplemented unconditional instruction");
             break;
@@ -1384,6 +1627,12 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
             continue;
         }
 
+        /* ================= coprocessor load/store (g == 6) ================ */
+        if (g == 6) {
+            if (a32_coproc(c, pc, insn)) break;
+            pc = next; continue;
+        }
+
         a32_fault(c, pc, insn, "unimplemented instruction");
         break;
     }
@@ -1400,12 +1649,10 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
     out->mem_size = A32_MEM_SIZE;
     out->mem_hash = fnv1a(mem + (SCRATCH - ARENA_BASE), A32_MEM_SIZE);
     out->mem_first_diff = 0;
-    /* The harness's agreed VFP init: gen_cases.py's a32_fp_init writes
-     * `movw r1,#i` + `movt r1,#0x3f80`, so s_i starts at 0x3f800000 + i
-     * (1.0f + i ulp). Integer cases never touch VFP, so the recorded fp[] is
-     * exactly this; hardcoding 0x3f800000 here made every case fail on the
-     * initial state against a real oracle. */
-    for (int i = 0; i < A32_NFP; i++) out->fp[i] = 0x3f800000ull + (unsigned)i;
+    /* The register file as the case left it (s0..s31 zero-extended into u64),
+     * whether it is still the agreed init or a VFP load/store has overwritten
+     * it. See the init note above. */
+    for (int i = 0; i < A32_NFP; i++) out->fp[i] = c->s[i];
 
     free(mem);
     return failed;

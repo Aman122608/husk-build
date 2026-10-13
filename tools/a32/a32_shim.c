@@ -57,3 +57,42 @@ A32_EXPORT int a32_shim_run(const uint8_t *code, uint32_t code_len, int thumb,
     if (out_stop) *out_stop = r.stop_reason;
     return rc;
 }
+
+/* The same run, but also returning the VFP register file and the scratch
+ * memory hash, so a host can diff the two fields a VFP load/store case is the
+ * whole point of (fp[] and mem_hash) without a second copy of the interpreter.
+ * out_fp receives 32 u32 (the low word of each s0..s31; the high word is always
+ * zero for a single-precision register file). */
+A32_EXPORT int a32_shim_run_full(const uint8_t *code, uint32_t code_len, int thumb,
+                                 const uint32_t *in_regs, uint32_t id,
+                                 uint32_t *out_regs, uint32_t *out_cpsr,
+                                 uint32_t *out_fp, uint32_t *out_mem_hash,
+                                 uint32_t *out_stop, char *err, size_t errn)
+{
+    struct a32_interp_case c;
+    struct a32_result r;
+    int rc, i;
+
+    memset(&c, 0, sizeof(c));
+    c.id = id;
+    c.code = code;
+    c.code_len = code_len;
+    c.thumb = thumb ? 1 : 0;
+    if (in_regs)
+        for (i = 0; i < A32_NREG; i++)
+            c.regs[i] = in_regs[i];
+
+    memset(&r, 0, sizeof(r));
+    rc = a32_interp_run(&c, &r, err, errn);
+
+    if (out_regs)
+        for (i = 0; i < A32_NREG; i++)
+            out_regs[i] = r.regs[i];
+    if (out_cpsr) *out_cpsr = r.cpsr;
+    if (out_fp)
+        for (i = 0; i < A32_NFP; i++)
+            out_fp[i] = (uint32_t)r.fp[i];
+    if (out_mem_hash) *out_mem_hash = r.mem_hash;
+    if (out_stop) *out_stop = r.stop_reason;
+    return rc;
+}
