@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -211,6 +212,7 @@ typedef struct looper {
     pthread_cond_t cv;
     ev *head;
     bool started, quit;
+    atomic_bool alive;                  /* its thread is running (read by a session close to count survivors) */
     char name[48];
     jobj *mirror;                       /* the android.os.Looper object */
     jobj *choreographer;
@@ -223,6 +225,18 @@ static looper *g_main;
 static pthread_mutex_t g_main_mu = PTHREAD_MUTEX_INITIALIZER;
 static void *looper_thread(void *arg);
 
+/*
+ * Every Looper the layer has made, so a session close can stop the ones a game left running. A Looper's thread
+ * is ours, but what it runs is the game's code (dispatch -> JNIBridge.invoke -> the app's C#/Java), so it is
+ * stopped the way the guest's own Looper.quit() stops it -- set quit and let it unwind the callback it is in --
+ * and never cancelled, because cancelling a thread that ran guest code runs its TLS destructors. The objects
+ * are left where they are; the next app builds its own.
+ */
+#define LOOP_MAX 32
+static looper *g_loopers[LOOP_MAX];
+static int g_nloopers;
+static pthread_mutex_t g_reg_mu = PTHREAD_MUTEX_INITIALIZER;
+
 static looper *looper_new(const char *name)
 {
     looper *l = calloc(1, sizeof(*l));
@@ -232,6 +246,9 @@ static looper *looper_new(const char *name)
     l->mirror = tl_jni_new_object(C("android/os/Looper"));
     l->mirror->native = l;
     tl_jni_ref(l->mirror);
+    pthread_mutex_lock(&g_reg_mu);
+    if (g_nloopers < LOOP_MAX) g_loopers[g_nloopers++] = l;
+    pthread_mutex_unlock(&g_reg_mu);
     return l;
 }
 
@@ -354,6 +371,7 @@ static void *looper_thread(void *arg)
 {
     looper *l = arg;
     t_looper = l;
+    atomic_store(&l->alive, true);
     pthread_setname_np(l->name);
     pthread_mutex_lock(&l->mu);
     while (!l->quit) {
@@ -373,7 +391,51 @@ static void *looper_thread(void *arg)
         pthread_mutex_lock(&l->mu);
     }
     pthread_mutex_unlock(&l->mu);
+    atomic_store(&l->alive, false);
     return NULL;
+}
+
+/*
+ * Ask every Looper the layer has made to unwind, and report how many threads were running when asked. A close
+ * lasting longer than the guest threads it cannot kill is the whole point: Unity dispatches its frames, its
+ * Handler messages and the app's JNI callbacks (its own U.handleMessage) from a HandlerThread looper that
+ * tl_javaapp_reset never touched, which is why a closed game still ran. Cooperative only -- set quit, wake the
+ * wait, let the thread finish the callback it is in -- never a cancel.
+ */
+int tl_loop_quit_all(void)
+{
+    int n = 0, live = 0;
+    pthread_mutex_lock(&g_reg_mu);
+    for (int i = 0; i < g_nloopers; i++) {
+        looper *l = g_loopers[i];
+        n++;
+        if (atomic_load(&l->alive)) live++;
+        pthread_mutex_lock(&l->mu); l->quit = true; pthread_cond_signal(&l->cv); pthread_mutex_unlock(&l->mu);
+    }
+    pthread_mutex_unlock(&g_reg_mu);
+    if (n) tl_log_line("husk: session close: asked %d looper thread(s) to unwind (%d running)", n, live);
+    return live;
+}
+
+/* How many Looper threads are still running: guest code is still being dispatched if this is not zero. */
+int tl_loop_live_count(void)
+{
+    int live = 0;
+    pthread_mutex_lock(&g_reg_mu);
+    for (int i = 0; i < g_nloopers; i++) if (atomic_load(&g_loopers[i]->alive)) live++;
+    pthread_mutex_unlock(&g_reg_mu);
+    return live;
+}
+
+/*
+ * Forget the old loopers once their fate has been reported, so the next app in this process builds fresh ones:
+ * the main looper is re-created on first use and a HandlerThread makes its own. The old objects are left where
+ * they are -- a detached thread may still be unwinding inside one -- and the old g_main has quit already.
+ */
+void tl_loop_reset(void)
+{
+    pthread_mutex_lock(&g_reg_mu); g_nloopers = 0; pthread_mutex_unlock(&g_reg_mu);
+    pthread_mutex_lock(&g_main_mu); g_main = NULL; pthread_mutex_unlock(&g_main_mu);
 }
 
 /* ------------------------------------------------------------- Looper */

@@ -427,10 +427,20 @@ void tl_thread_altstack(void)
     stack_t ss = { .ss_sp = malloc(64 << 10), .ss_size = 64 << 10, .ss_flags = 0 };
     if (ss.ss_sp) sigaltstack(&ss, NULL);
 }
+/*
+ * How many guest threads the shim has started and that have not returned. There is no registry to walk -- a
+ * guest pthread is pthread_create'd onto start_thunk and its own frames are free to run guest code -- so a
+ * counter is the most a session close can honestly keep: it does not let us stop or suspend a guest thread, only
+ * count the ones a close could not stop. It is for reporting, and that is the whole of its use.
+ */
+static atomic_int g_guest_threads;
+int tl_guest_thread_live_count(void) { return atomic_load(&g_guest_threads); }
+
 static void *start_thunk(void *p)
 {
     start_ctx c = *(start_ctx *)p;
     free(p);
+    atomic_fetch_add(&g_guest_threads, 1);
     /* a stack of its own for fault handlers: a crash that leaves the thread's stack unusable is then still reported (macOS kills a
        thread it can not deliver a signal to with SIGILL, and nothing is said) */
     tl_thread_altstack();
@@ -442,6 +452,7 @@ static void *start_thunk(void *p)
     }
     void *r = c.fn(c.arg);
     if (g_thread_trace) { char nm[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); tl_log_line("thread: '%s' EXITED", nm); }
+    atomic_fetch_sub(&g_guest_threads, 1);
     return r;
 }
 

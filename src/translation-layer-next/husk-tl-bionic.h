@@ -91,6 +91,10 @@ void tl_log_line(const char *fmt, ...);
 /* A one-line note, once per distinct text, for things that are stubbed. */
 void tl_note_once(const char *what);
 
+/* How many guest threads the pthread shim has started and that have not returned (for a session close to report
+ * what it could not stop; there is no registry to enumerate or suspend them). */
+int tl_guest_thread_live_count(void);
+
 #ifdef __cplusplus
 }
 #endif

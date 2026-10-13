@@ -63,6 +63,7 @@ typedef struct { bool used, paused; int sample, id, loops; double pos, step; flo
 static struct {
     pthread_mutex_t mu; pthread_cond_t room, work;
     pthread_t thread; bool started;
+    bool stop;                                  /* set by a session close: the mixer returns and the next app restarts it */
     stream s[MAX_STREAMS];
     sample smp[MAX_SAMPLES];
     voice v[MAX_VOICES];
@@ -86,7 +87,8 @@ static void *mixer_main(void *arg)
     static int16_t out[BLOCK * 2];
     for (;;) {
         pthread_mutex_lock(&M.mu);
-        while (!active_locked()) pthread_cond_wait(&M.work, &M.mu);
+        while (!active_locked() && !M.stop) pthread_cond_wait(&M.work, &M.mu);
+        if (M.stop) { pthread_mutex_unlock(&M.mu); break; }        /* a session close: return, do not mix silence forever */
         memset(acc, 0, sizeof(acc));
         for (int i = 0; i < MAX_STREAMS; i++) {
             stream *s = &M.s[i];
@@ -132,6 +134,30 @@ static void ensure_started_locked(void)
     if (!tl_cocos_audio_hook) tl_audio_install();
     pthread_attr_t at; pthread_attr_init(&at);
     pthread_create(&M.thread, &at, mixer_main, NULL);
+}
+
+/*
+ * The session close's DVM-audio call: end the mixer thread the layer started. It is our own thread (it is the
+ * layer that calls tl_cocos_audio_hook), so it is joined, never cancelled; the join is short because the close
+ * calls this while the host sink is still live, so a mix in progress returns from the hook instead of parking.
+ * Every stream and voice is cleared so the thread cannot go on mixing a closed game's audio. The struct's mutex
+ * and condition are left alone (a parked writer could still be waiting on them), and .started is cleared so the
+ * next app in this process starts its own mixer on its first play.
+ */
+void tl_dvm_audio_stop(void)
+{
+    pthread_mutex_lock(&M.mu);
+    bool was = M.started;
+    M.stop = true;
+    for (int i = 0; i < MAX_STREAMS; i++) if (M.s[i].used) { M.s[i].used = false; M.s[i].playing = false; M.s[i].count = 0; }
+    for (int i = 0; i < MAX_VOICES; i++) M.v[i].used = false;
+    pthread_cond_broadcast(&M.work);
+    pthread_cond_broadcast(&M.room);
+    pthread_mutex_unlock(&M.mu);
+    if (was) { pthread_join(M.thread, NULL); tl_log_line("husk: audio close: stopped the dvm mixer"); }
+    pthread_mutex_lock(&M.mu);
+    M.stop = false; M.started = false;
+    pthread_mutex_unlock(&M.mu);
 }
 
 /* ------------------------------------------------------------------ streams */

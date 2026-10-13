@@ -362,6 +362,14 @@ typedef struct aa_stream {
     bool thread_started;
 } aa_stream;
 
+/* Every AAudio stream the layer has opened, so a session close can stop the pumps a game left running. The
+ * pump thread (aa_pump) is the layer's own -- it is the layer that calls the game's callback, in that thread --
+ * so it is stopped the way the guest's own requestStop stops it: clear run and join. A stream object is left
+ * where it is; the next app opens its own. */
+#define AA_MAX_LIVE 16
+static aa_stream *g_aa_live[AA_MAX_LIVE];
+static pthread_mutex_t g_aa_live_mu = PTHREAD_MUTEX_INITIALIZER;
+
 static int b_AAudio_createStreamBuilder(void **builder) { aa_builder *b = calloc(1, sizeof(*b)); *builder = b; return b ? AA_OK : AA_UNAVAILABLE; }
 static int b_AAudioStreamBuilder_delete(aa_builder *b) { free(b); return AA_OK; }
 static void b_AAudioStreamBuilder_setDataCallback(aa_builder *b, aa_data_cb cb, void *user) { b->cb = cb; b->user = user; }
@@ -382,6 +390,9 @@ static int b_AAudioStreamBuilder_openStream(aa_builder *b, aa_stream **out)
     s->format = b->format == AA_FORMAT_FLOAT ? AA_FORMAT_FLOAT : AA_FORMAT_I16;
     s->channels = b->channels == 1 ? 1 : AA_CHANNELS;
     atomic_store(&s->state, AA_STATE_OPEN); atomic_store(&s->buffer_size, s->burst * 2);
+    pthread_mutex_lock(&g_aa_live_mu);
+    for (int i = 0; i < AA_MAX_LIVE; i++) if (!g_aa_live[i]) { g_aa_live[i] = s; break; }
+    pthread_mutex_unlock(&g_aa_live_mu);
     *out = s;
     tl_log_line("aaudio: stream opened (%d Hz, %d channels, %s, %s, burst %d)", AA_RATE, s->channels, s->format == AA_FORMAT_FLOAT ? "float" : "16-bit",
                 s->cb ? "data callback" : "written", s->burst);
@@ -446,8 +457,33 @@ static int aa_stop(aa_stream *s, int state)
     atomic_store(&s->state, state);
     return AA_OK;
 }
+/* Drop a stream from the live list (before it is freed, so a close cannot hand the list a dangling pointer). */
+static void aa_forget(aa_stream *s)
+{
+    pthread_mutex_lock(&g_aa_live_mu);
+    for (int i = 0; i < AA_MAX_LIVE; i++) if (g_aa_live[i] == s) g_aa_live[i] = NULL;
+    pthread_mutex_unlock(&g_aa_live_mu);
+}
+/*
+ * Stop every AAudio stream the layer has opened and still holds. A game that closes its stream itself is
+ * unaffected (it was forgotten); one that does not -- robot gf's music -- has its pump thread ended here, so
+ * the game's audio callback is no longer called and the game's audio thread comes to rest with it. The list is
+ * emptied, not the streams freed: the guest may still hold the stream pointer, and the next app opens its own.
+ */
+void tl_aaudio_stop_all(void)
+{
+    aa_stream *live[AA_MAX_LIVE];
+    int n = 0;
+    pthread_mutex_lock(&g_aa_live_mu);
+    for (int i = 0; i < AA_MAX_LIVE; i++) { live[n] = g_aa_live[i]; if (live[n]) n++; g_aa_live[i] = NULL; }
+    pthread_mutex_unlock(&g_aa_live_mu);
+    for (int i = 0; i < n; i++) {
+        aa_stop(live[i], AA_STATE_STOPPED);
+        tl_log_line("husk: audio close: stopped an aaudio pump (%d frames it had written)", (int)atomic_load(&live[i]->frames));
+    }
+}
 static int b_AAudioStream_requestStop(aa_stream *s) { return aa_stop(s, AA_STATE_STOPPED); }
-static int b_AAudioStream_close(aa_stream *s) { aa_stop(s, AA_STATE_CLOSED); free(s); return AA_OK; }
+static int b_AAudioStream_close(aa_stream *s) { aa_stop(s, AA_STATE_CLOSED); aa_forget(s); free(s); return AA_OK; }
 static int b_AAudioStream_getSampleRate(aa_stream *s) { (void)s; return AA_RATE; }
 static int b_AAudioStream_getChannelCount(aa_stream *s) { return s->channels; }
 static int b_AAudioStream_getFormat(aa_stream *s) { return s->format; }

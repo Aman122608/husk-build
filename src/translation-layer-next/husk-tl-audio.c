@@ -3,6 +3,7 @@
 #include "husk-tl-audio.h"
 
 #include <AudioToolbox/AudioToolbox.h>
+#include <dlfcn.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdio.h>
@@ -25,7 +26,7 @@ static struct {
     int rate, channels;
     int16_t *ring;
     size_t head, count;           /* frames */
-    bool paused, failed;
+    bool paused, failed, closed;
 } A = { .mu = PTHREAD_MUTEX_INITIALIZER, .cv = PTHREAD_COND_INITIALIZER };
 
 /* The audio thread asks for samples; an empty ring is silence, never a wait. */
@@ -112,6 +113,14 @@ static void host_write(const int16_t *samples, int frames, int channels, int rat
 static void ring_write(const int16_t *samples, int frames, int channels, int rate)
 {
     pthread_mutex_lock(&A.mu);
+    if (A.closed) {
+        /* The session is over. A writer that outlived its game -- a guest thread we could not stop -- is
+         * dropped here, and paced as a device would, so it cannot reopen the queue or spin filling a ring
+         * that belongs to a run that is gone. tl_audio_install() clears this for the next app. */
+        pthread_mutex_unlock(&A.mu);
+        sleep_for(frames, rate);
+        return;
+    }
     if (!A.q && !A.failed) { if (!open_queue(rate, channels)) A.failed = true; }
     if (A.failed || channels != A.channels) { pthread_mutex_unlock(&A.mu); sleep_for(frames, rate); return; }
     int done = 0;
@@ -149,7 +158,20 @@ static void muted_write(const int16_t *samples, int frames, int channels, int ra
     sleep_for(frames, rate);
 }
 
-void tl_audio_install(void) { tl_cocos_audio_hook = getenv("TL_AUDIO_MUTE") ? muted_write : host_write; }
+static void tl_audio_session_active(bool active);
+
+void tl_audio_install(void)
+{
+    tl_cocos_audio_hook = getenv("TL_AUDIO_MUTE") ? muted_write : host_write;
+    /* A launch re-arms the sink a previous session close silenced, so the next game in this process plays:
+     * the closed flag and the pause are cleared and the queue is started again if it was only paused. */
+    pthread_mutex_lock(&A.mu);
+    A.paused = false; A.closed = false; A.failed = false;    /* a fresh session gets a fresh try at the queue too */
+    if (A.q) AudioQueueStart(A.q, NULL);
+    pthread_cond_broadcast(&A.cv);
+    pthread_mutex_unlock(&A.mu);
+    tl_audio_session_active(true);
+}
 
 void tl_audio_set_paused(bool paused)
 {
@@ -158,4 +180,28 @@ void tl_audio_set_paused(bool paused)
     if (A.q) { if (paused) AudioQueuePause(A.q); else AudioQueueStart(A.q, NULL); }
     pthread_cond_broadcast(&A.cv);
     pthread_mutex_unlock(&A.mu);
+}
+
+/*
+ * The host audio session. Pausing the AudioQueue stops the sound, but iOS keeps the session -- and with it the
+ * "audio is playing" indicator and the route lock -- active until the app deactivates it. AudioSessionSetActive
+ * is the C entry point for that; it is looked up once, because macOS has no such session and a missing symbol
+ * simply means the queue pause is all there is to do here.
+ */
+static void tl_audio_session_active(bool active)
+{
+    static int (*set_active)(int);
+    static bool looked;
+    if (!looked) { looked = true; set_active = (int (*)(int))dlsym(RTLD_DEFAULT, "AudioSessionSetActive"); }
+    if (set_active) set_active(active ? 1 : 0);
+}
+
+void tl_audio_close(void)
+{
+    pthread_mutex_lock(&A.mu);
+    A.paused = true; A.closed = true;
+    if (A.q) AudioQueuePause(A.q);                    /* the clock stops and the ring is not drained */
+    pthread_cond_broadcast(&A.cv);
+    pthread_mutex_unlock(&A.mu);
+    tl_audio_session_active(false);                   /* the system's "audio is playing" indicator goes too */
 }

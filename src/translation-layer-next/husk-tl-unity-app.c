@@ -205,12 +205,16 @@ static void *heartbeat_thread(void *arg)
     for (int tick = 0;; tick++) {
         if (tick < 40) usleep(500000); else sleep(3);          /* twice a second for the first twenty seconds */
         unsigned long f = engine_frames();
-#if TARGET_OS_IPHONE
-        tl_log_line("unity: alive: %lu frames (+%lu), %zu MiB left before jetsam", f, f - last, os_proc_available_memory() >> 20);
-#else
-        tl_log_line("unity: alive: %lu frames (+%lu)", f, f - last);
-#endif
+        /* The frame counter is reset to 0 at a session close, so a heartbeat that logs one more time before it
+         * sees the state change would otherwise print a huge wrapped delta (0 - last). Clamp it: a drop to zero
+         * is "no new frames", never a negative. */
+        unsigned long delta = f >= last ? f - last : 0;
         last = f;
+#if TARGET_OS_IPHONE
+        tl_log_line("unity: alive: %lu frames (+%lu), %zu MiB left before jetsam", f, delta, os_proc_available_memory() >> 20);
+#else
+        tl_log_line("unity: alive: %lu frames (+%lu)", f, delta);
+#endif
         { extern volatile struct { uint64_t count, x21, impl, mask; } tl_va_clobber;
           static uint64_t seen;
           if (tl_va_clobber.count != seen) {
@@ -794,7 +798,10 @@ int husk_tl_session_close(void)
             int  app_ok = tl_javaapp_reset();
             bool dvm_ok = tl_dvm_end_app();
             tl_log_line("husk: session close step java: tl_javaapp_reset=%d, tl_dvm_end_app=%d", app_ok, dvm_ok ? 1 : 0);
-            verdict = !dvm_ok ? SWAP_NEEDS_RESTART : !app_ok ? SWAP_PARTIAL : SWAP_OK;
+            /* tl_javaapp_reset returns 0 when it unwound both of its threads, 1 when a thread was asked to stop
+             * and would not (quarantined), 2 when nothing could ask it (irreversible). A clean 0 is not a leak:
+             * reading it as one is what once reported a working close as "swapped, leaked". */
+            verdict = !dvm_ok ? SWAP_NEEDS_RESTART : app_ok != 0 ? SWAP_PARTIAL : SWAP_OK;
         }
         break;
     default:
@@ -808,13 +815,63 @@ int husk_tl_session_close(void)
     }
 
     if (verdict == SWAP_NEEDS_RESTART) {
-        /* Put the run back the way we found it, so the user keeps a working game (plan §2b). */
+        /* Put the run back the way we found it, so the user keeps a working game (plan §2b). The game is still
+         * running, so nothing below -- which tears down the layer's audio and its message loops -- may run. */
         atomic_store(&A.state, from);
         g_swap_verdict = verdict;
         snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
         tl_log_line("husk: session close refused (%s); the gate stays closed, relaunch needed", engine_name(engine));
         return verdict;
     }
+
+    /*
+     * The close proceeds. An app the user closed must not make noise, whatever happens next, and the threads the
+     * LAYER owns must actually end rather than be inherited by the next app -- for every engine, and whether or
+     * not a guest thread survives:
+     *   1. stop the layer's own audio producer threads while the host sink is still live, so an in-flight
+     *      tl_cocos_audio_hook returns instead of parking and the joins cannot hang;
+     *   2. ask every Android Looper thread to unwind. Unity dispatches its frames, its Handler messages and the
+     *      app's own JNI callbacks (robot gf's U.handleMessage) from a HandlerThread looper that the Java reset
+     *      never touched, which is why a closed game still ran;
+     *   3. silence the sink and deactivate the host session (paused, closed, indicator off), so a writer we could
+     *      not stop -- a guest thread -- drops its samples instead of reopening the queue.
+     */
+    tl_aaudio_stop_all();
+    tl_opensl_stop_all();
+    tl_dvm_audio_stop();
+    int loops_live = tl_loop_quit_all();
+    tl_audio_close();
+
+    /*
+     * A Looper that will not unwind is a guest thread still running guest code -- the design's "quarantined".
+     * Give the looper threads a short grace to finish the callback they were in, then report what remains
+     * honestly: it downgrades the close to a partial, and one line names the count. No false clean close.
+     */
+    for (int i = 0; i < 20 && (loops_live = tl_loop_live_count()) > 0; i++) {
+        struct timespec ts = { 0, 10 * 1000 * 1000 };       /* 20 * 10 ms = 200 ms */
+        nanosleep(&ts, NULL);
+    }
+    if (loops_live > 0) {
+        tl_log_line("husk: session close: %d looper thread(s) still running; guest threads are quarantined", loops_live);
+        if (verdict == SWAP_OK) verdict = SWAP_PARTIAL;
+    } else {
+        tl_log_line("husk: session close: every looper thread unwound");
+    }
+
+    /*
+     * Threads the guest started through the pthread shim are not ours to stop: there is no registry to walk, so
+     * nothing can be suspended or cancelled (and cancelling a thread that ran guest code runs its TLS
+     * destructors, which the design forbids). The count is all this can honestly say, and a nonzero count is
+     * quarantined -- reported, and reflected in the verdict rather than hidden behind a clean close.
+     */
+    int guest_live = tl_guest_thread_live_count();
+    if (guest_live > 0) {
+        tl_log_line("husk: session close: %d guest thread(s) still running (not ours to stop; quarantined)", guest_live);
+        if (verdict == SWAP_OK) verdict = SWAP_PARTIAL;
+    }
+
+    /* Forget the old loopers once reported: the next app builds its own main looper and HandlerThreads. */
+    tl_loop_reset();
 
     /* The linker's session generation: stale mappings stay mapped but stop being reachable by name. */
     tl_ld_end_session();

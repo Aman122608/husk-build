@@ -40,7 +40,7 @@ typedef struct { bool on; int sound, stream, loops; double pos, step; float left
 static struct {
     pthread_mutex_t lock;
     pthread_t thread;
-    bool running, paused;
+    bool running, paused, stop;
     sound sounds[MAX_SOUNDS];
     int nsounds;
     voice voices[MAX_VOICES];
@@ -78,6 +78,7 @@ static void *mixer_main(void *arg)
         memset(mix, 0, sizeof(mix));
         bool any = false;
         pthread_mutex_lock(&S.lock);
+        if (S.stop) { pthread_mutex_unlock(&S.lock); break; }   /* a session stop: return, do not mix silence forever */
         if (!S.paused) {
             for (int v = 0; v < MAX_VOICES; v++) {
                 voice *vo = &S.voices[v];
@@ -154,4 +155,19 @@ void tl_sound_stop_all(void)
     pthread_mutex_lock(&S.lock);
     for (int v = 0; v < MAX_VOICES; v++) S.voices[v].on = false;
     pthread_mutex_unlock(&S.lock);
+}
+
+/*
+ * End the SoundPool mixer when the session stops: set the stop flag its loop returns on, clear every voice so it
+ * cannot go on mixing a closed game's audio, and mark it not running so a later session starts a new one. The
+ * thread is detached, so it is not joined -- it leaves at its own check, which is the only safe way to end a
+ * thread that may be inside tl_cocos_audio_hook.
+ */
+void tl_sound_shutdown(void)
+{
+    pthread_mutex_lock(&S.lock);
+    S.stop = true;
+    for (int v = 0; v < MAX_VOICES; v++) S.voices[v].on = false;
+    pthread_mutex_unlock(&S.lock);
+    S.running = false;
 }

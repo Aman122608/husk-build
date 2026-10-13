@@ -155,10 +155,11 @@ static uint32_t o_GetInterface(const void *self, const sl_iid *iid, const void *
 static uint32_t o_RegisterCallback(const void *self, void *cb, void *ctx) { (void)self; (void)cb; (void)ctx; return SL_OK; }
 static void o_AbortAsyncOperation(const void *self) { (void)self; }
 static void player_stop_thread(sl_object *o);
+static void sl_forget(sl_object *o);
 static void o_Destroy(const void *self)
 {
     sl_object *o = obj_of_object(self);
-    if (o->kind == K_PLAYER) player_stop_thread(o);
+    if (o->kind == K_PLAYER) { player_stop_thread(o); sl_forget(o); }
     free(o);
 }
 static uint32_t o_SetPriority(const void *self, int32_t p, uint32_t pre) { (void)self; (void)p; (void)pre; return SL_OK; }
@@ -214,6 +215,32 @@ static void player_stop_thread(sl_object *o)
     atomic_store(&o->thread_run, false);
     pthread_join(o->thread, NULL);
     o->thread_started = false;
+}
+
+/* Every audio player the layer has created, so a session close can end the pumps a game left running: a
+ * player_pump thread is the layer's own (it is the layer that calls the game's buffer-queue callback), so it is
+ * flagged and joined exactly as o_Destroy joins it. The objects are left where they are; the next app makes its
+ * own, and p_SetPlayState(SL_PLAYING) restarts a stopped player pump if a game reuses one. */
+#define SL_MAX_PLAYERS 16
+static sl_object *g_sl_players[SL_MAX_PLAYERS];
+static pthread_mutex_t g_sl_mu = PTHREAD_MUTEX_INITIALIZER;
+
+static void sl_forget(sl_object *o)
+{
+    pthread_mutex_lock(&g_sl_mu);
+    for (int i = 0; i < SL_MAX_PLAYERS; i++) if (g_sl_players[i] == o) g_sl_players[i] = NULL;
+    pthread_mutex_unlock(&g_sl_mu);
+}
+
+void tl_opensl_stop_all(void)
+{
+    sl_object *live[SL_MAX_PLAYERS];
+    int n = 0;
+    pthread_mutex_lock(&g_sl_mu);
+    for (int i = 0; i < SL_MAX_PLAYERS; i++) { live[n] = g_sl_players[i]; if (live[n]) n++; g_sl_players[i] = NULL; }
+    pthread_mutex_unlock(&g_sl_mu);
+    for (int i = 0; i < n; i++) player_stop_thread(live[i]);
+    if (n) tl_log_line("husk: audio close: stopped %d opensl player pump(s)", n);
 }
 
 static uint32_t p_SetPlayState(const void *self, uint32_t state)
@@ -293,6 +320,9 @@ static uint32_t e_CreateAudioPlayer(const void *self, const void **out, const sl
         if (f->type == SL_DATAFORMAT_PCM) { o->channels = (int)f->channels; o->rate = (int)(f->rate_mhz / 1000); }
     }
     atomic_store(&o->play_state, SL_STOPPED);
+    pthread_mutex_lock(&g_sl_mu);
+    for (int i = 0; i < SL_MAX_PLAYERS; i++) if (!g_sl_players[i]) { g_sl_players[i] = o; break; }
+    pthread_mutex_unlock(&g_sl_mu);
     tl_log_line("opensl: audio player (%d channels, %d Hz)", o->channels, o->rate);
     *out = o;
     return SL_OK;

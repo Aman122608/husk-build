@@ -130,6 +130,15 @@ const char *tl_jni_reflected_sig(const jobj *member);        /* a method's or fi
 /* Call a Java method by name from C (HLE-implemented or not), as native code would. */
 jvalue tl_jni_call(jobj *self_or_class, const char *name, const char *sig, const jvalue *args);
 
+/*
+ * The Android message loops (husk-tl-jni-loop.c) a session close must stop. A Looper thread runs the game's
+ * own callbacks, so it is asked to unwind (quit), never cancelled; live_count says how many are still running,
+ * and reset forgets the old ones so the next app builds fresh.
+ */
+int  tl_loop_quit_all(void);
+int  tl_loop_live_count(void);
+void tl_loop_reset(void);
+
 #ifdef __cplusplus
 }
 #endif

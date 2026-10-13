@@ -14,5 +14,6 @@ int  tl_sound_play(int id, float left, float right, int loops, float rate);
 void tl_sound_stop(int stream);
 void tl_sound_stop_all(void);
 void tl_sound_set_paused(bool paused);
+void tl_sound_shutdown(void);
 
 #endif

@@ -2018,6 +2018,7 @@ void husk_tl_attempt_stop(void)
 {
     tl_loader_request_stop();
     tl_sound_stop_all();
+    tl_sound_shutdown();                 /* end the SoundPool mixer's thread too, not just its voices */
 }
 
 void husk_tl_send_touch(int action, float x, float y)
