@@ -144,7 +144,7 @@ static char *b___gnu_strerror_r(int e, char *buf, size_t n)
 static void b___assert(const char *file, int line, const char *msg)
 {
     tl_log_line("bionic: assertion failed at %s:%d: %s", file ? file : "?", line, msg ? msg : "");
-    abort();
+    tl_guest_exit_unwind("__assert", 6 /* SIGABRT */);     /* a guest assert ends the APP, never Husk */
 }
 
 typedef size_t (*fread_fn)(void *, size_t, size_t, void *);

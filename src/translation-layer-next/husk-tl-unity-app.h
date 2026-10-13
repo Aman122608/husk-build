@@ -18,7 +18,9 @@ extern "C" {
 
 /*
  * The state of the one run this process can have at a time.
- * IDLE -> STARTING -> RUNNING | FAILED -> ENDED, and STOPPING -> IDLE on the way back:
+ * IDLE -> STARTING -> RUNNING | FAILED -> ENDED. The session close takes any live or terminal
+ * state to STOPPING while it tears the run down, then opens the gate back to IDLE from every
+ * terminal marker (STOPPING, ENDED, FAILED) -- but never from a live run (RUNNING/STARTING).
  * husk_tl_session_close() is the ONLY writer of HUSK_UNITY_IDLE (nothing else may restore the gate).
  */
 enum { HUSK_UNITY_IDLE = 0, HUSK_UNITY_STARTING = 1, HUSK_UNITY_RUNNING = 2, HUSK_UNITY_FAILED = 3, HUSK_UNITY_ENDED = 4, HUSK_UNITY_STOPPING = 5 };

@@ -187,11 +187,30 @@ static void install_crash_reporter(void)
 
 /* ------------------------------------------------------------------- launch */
 
-/* exit() from the game ends the game, and the thread that asked. */
+/*
+ * A guest exit()/_exit() from a native engine ends the app, not Husk, and ends the thread that asked.
+ * The layer's exit shim already named the call (husk_tl_guest_exit_requested). During a session close
+ * the close owns the state machine, so this does not touch it -- the closing side treats the exit as
+ * the app confirming it is done -- and only the calling thread is ended. The app's own teardown
+ * (Ren'Py's Saving/Pausing audio/onStop) has already run by the time this is reached.
+ */
 static void guest_exit(int status)
 {
-    tl_log_line("native: the game exited (%d)", status);
-    atomic_store(&A.state, HUSK_UNITY_ENDED);
+    tl_log_line("native: the app exited (%d)", status);
+    tl_javaapp_request_exit();
+    tl_javaapp_thread_leaving();
+    /* Promote this run to ENDED unless a session close already owns the state (its own marker is STOPPING or IDLE,
+     * and the close will open the gate itself -- see husk_tl_session_close). A blind store here would clobber the
+     * close's marker or re-close the gate it just opened, so CAS from the value just read and let a changed state
+     * win: the app asking to exit and the close that is tearing it down must agree, and the close finishes with the
+     * gate open and the next game startable. */
+    if (!tl_guest_exit_close_in_flight()) {
+        int cur = atomic_load(&A.state);
+        if (cur != HUSK_UNITY_IDLE && cur != HUSK_UNITY_STOPPING) {
+            int expect_cur = cur;
+            atomic_compare_exchange_strong(&A.state, &expect_cur, HUSK_UNITY_ENDED);
+        }
+    }
     pthread_exit(NULL);
 }
 
@@ -224,7 +243,15 @@ static void *heartbeat_thread(void *arg)
               tl_log_line("unity: a variadic shim's implementation (%s) changed callee-saved registers (%llu times; x21 then %#llx, diff mask %#llx)",
                           nm, (unsigned long long)seen, (unsigned long long)tl_va_clobber.x21, (unsigned long long)tl_va_clobber.mask);
           } }
-        if ((A.engine == ENGINE_COCOS && tl_cocos_ended()) || (A.engine == ENGINE_GODOT && tl_godot_ended()) || (A.engine == ENGINE_GAMEMAKER && tl_gm_ended()) || (A.engine == ENGINE_JAVA && tl_javaapp_ended())) atomic_store(&A.state, HUSK_UNITY_ENDED);
+        /* A run that is still RUNNING may be promoted to ENDED, and only by CAS -- never a blind store here.
+         * During a session close the state is STOPPING (the close's own marker); a blind store would clobber it,
+         * and the close's final gate CAS (which then finds a state it did not set) fails -- the log's
+         * "the gate was not opened (state ended)". It would also re-close the gate in the tick right after the
+         * close opened it. Promote RUNNING -> ENDED and nothing else; husk_unity_state() below does the same. */
+        if ((A.engine == ENGINE_COCOS && tl_cocos_ended()) || (A.engine == ENGINE_GODOT && tl_godot_ended()) || (A.engine == ENGINE_GAMEMAKER && tl_gm_ended()) || (A.engine == ENGINE_JAVA && tl_javaapp_ended())) {
+            int expect_running = HUSK_UNITY_RUNNING;
+            atomic_compare_exchange_strong(&A.state, &expect_running, HUSK_UNITY_ENDED);
+        }
         /* Stop for any state that means this run is over, including the session close (STOPPING) and the
          * closed gate (IDLE): the heartbeat has nothing left to say and must not log into a torn-down run. */
         int st = atomic_load(&A.state);
@@ -783,6 +810,11 @@ int husk_tl_session_close(void)
                        : from == HUSK_UNITY_RUNNING ? "forced" : "starting";
     tl_log_line("husk: session close (%s, %s)", engine_name(engine), reason);
 
+    /* From here the close is in flight: a guest quit call (Runtime.exit, System.exit, Process.killProcess, exit()/_exit())
+     * that arrives now is the app confirming it is done, not a new request -- husk_tl_guest_exit_requested() sees this and
+     * the shim lets the app unwind instead of re-entering the close. Cleared on every way out below. */
+    tl_guest_exit_set_close_in_flight(true);
+
     /* Re-arm the producers: no input reaches the old engine from here on. */
     tl_pad_set_sink(NULL);
 
@@ -821,6 +853,7 @@ int husk_tl_session_close(void)
         g_swap_verdict = verdict;
         snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
         tl_log_line("husk: session close refused (%s); the gate stays closed, relaunch needed", engine_name(engine));
+        tl_guest_exit_set_close_in_flight(false);
         return verdict;
     }
 
@@ -883,13 +916,49 @@ int husk_tl_session_close(void)
     A.nextra = 0;
     A.layer = NULL; A.width = 0; A.height = 0;
 
-    /* Open the gate LAST, by CAS: this is the only writer of HUSK_UNITY_IDLE (plan §2/§4, F §3.9). */
-    int expect_idle = HUSK_UNITY_STOPPING;
-    int opened = atomic_compare_exchange_strong(&A.state, &expect_idle, HUSK_UNITY_IDLE);
+    /*
+     * Open the gate LAST, by CAS: this is the only writer of HUSK_UNITY_IDLE (plan §2/§4, F §3.9).
+     *
+     * The teardown above has run, so the process holds no live session, and a completed close must leave the machine
+     * at IDLE whatever terminal state the run reached. Leaving it anywhere else keeps the gate shut, so the library
+     * greys every other game out ("another game is loaded") until Husk is relaunched -- the exact fault this gate
+     * exists to prevent. Accept every state that is a terminal marker and not a live session:
+     *   STOPPING   the close's own marker -- the normal case;
+     *   ENDED      the app's own exit, or a guest exit()/Runtime.exit that arrived during the close and finished the
+     *              run (husk_tl_guest_exit_requested saw the close in flight and let the app unwind): still no session;
+     *   FAILED     a launch that never came up: there is nothing to protect, and leaving it FAILED would lock the user
+     *              out for good with no session even open.
+     * Refuse anything that still means a live session -- this is deliberately not "anything goes":
+     *   RUNNING    the engine is producing frames; a second app must not load over a live session;
+     *   STARTING   a launch is in flight: neither terminal nor idle.
+     * A refusal here is a real refusal -- the teardown did not leave the run idle -- and the log says which state and why.
+     */
+    int opened = 0, gate_from = -1;
+    for (int i = 0; i < 64; i++) {
+        int cur = atomic_load(&A.state);
+        gate_from = cur;
+        if (cur == HUSK_UNITY_IDLE) { opened = 1; break; }        /* already open: nothing left to do (idempotent) */
+        if (cur != HUSK_UNITY_STOPPING && cur != HUSK_UNITY_ENDED && cur != HUSK_UNITY_FAILED) break;
+        int expect = cur;
+        if (atomic_compare_exchange_strong(&A.state, &expect, HUSK_UNITY_IDLE)) { opened = 1; break; }
+    }
     g_swap_verdict = verdict;
     snprintf(g_swap_status, sizeof(g_swap_status), verdict == SWAP_OK ? "swapped cleanly" : "swapped, leaked (detail in the log)");
-    if (opened) tl_log_line("husk: session closed (%s), ready for the next app", engine_name(engine));
-    else tl_log_line("husk: session close: the gate was not opened (state %s)", state_name(atomic_load(&A.state)));
+    if (!opened) {
+        const char *why = gate_from == HUSK_UNITY_STARTING ? "a launch is still in flight"
+                        : gate_from == HUSK_UNITY_RUNNING  ? "the engine is still running frames"
+                        : "the run was not torn down";
+        tl_log_line("husk: session close: the gate was not opened (state %s); %s, so this is not a torn-down run -- relaunch needed",
+                    state_name(gate_from), why);
+    } else if (gate_from == HUSK_UNITY_IDLE) {
+        tl_log_line("husk: session close: the gate was already open; ready for the next app (%s)", engine_name(engine));
+    } else if (gate_from == HUSK_UNITY_STOPPING) {
+        tl_log_line("husk: session close: state %s -> idle; ready for the next app (%s)", state_name(from), engine_name(engine));
+    } else {
+        tl_log_line("husk: session close: state %s -> idle (the run had settled at %s when the gate opened); ready for the next app (%s)",
+                    state_name(from), state_name(gate_from), engine_name(engine));
+    }
+    tl_guest_exit_set_close_in_flight(false);
     return verdict;
 }
 
@@ -948,7 +1017,12 @@ int husk_tl_verify_swap(const char *apk, const char *package)
 
 int husk_unity_state(void)
 {
-    if (atomic_load(&A.state) == HUSK_UNITY_RUNNING && ((A.engine == ENGINE_COCOS && tl_cocos_ended()) || (A.engine == ENGINE_GODOT && tl_godot_ended()) || (A.engine == ENGINE_GAMEMAKER && tl_gm_ended()) || (A.engine == ENGINE_JAVA && tl_javaapp_ended()))) atomic_store(&A.state, HUSK_UNITY_ENDED);
+    /* RUNNING -> ENDED, by CAS and not a store: the same rule as the heartbeat, so the UI polling this during a
+     * session close cannot clobber the close's STOPPING marker or re-close the gate the close has just opened. */
+    if (atomic_load(&A.state) == HUSK_UNITY_RUNNING && ((A.engine == ENGINE_COCOS && tl_cocos_ended()) || (A.engine == ENGINE_GODOT && tl_godot_ended()) || (A.engine == ENGINE_GAMEMAKER && tl_gm_ended()) || (A.engine == ENGINE_JAVA && tl_javaapp_ended()))) {
+        int expect_running = HUSK_UNITY_RUNNING;
+        atomic_compare_exchange_strong(&A.state, &expect_running, HUSK_UNITY_ENDED);
+    }
     return atomic_load(&A.state);
 }
 static unsigned long engine_frames(void)

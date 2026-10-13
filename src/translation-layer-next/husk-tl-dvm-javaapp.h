@@ -52,6 +52,14 @@ void tl_javaapp_set_insets(int left, int top, int right, int bottom, int ime_bot
 unsigned long tl_javaapp_frames(void);
 bool tl_javaapp_ended(void);
 
+/* A guest call that means "quit my app" reached the layer (Runtime.exit, System.exit, Process.killProcess, exit()/_exit()).
+ * Mark the app ended so its own loops and the state machine unwind -- Husk's process is never ended for it. Idempotent. */
+void tl_javaapp_request_exit(void);
+/* The calling thread is unwinding after such a call: if it is one of the app's own driver threads (the app main thread or
+ * the GL thread), mark its done flag, so a session close's bounded wait does not sit out its budget on a thread that is
+ * already leaving. Never joins or cancels a thread. */
+void tl_javaapp_thread_leaving(void);
+
 /* Close the app's session, so a different app can run in this process: ask the app's main Looper to quit (so Looper.loop()
  * returns, AppRunner.run returns and the app's main thread returns) and set the end flag the GL thread's loop checks -- then
  * wait (bounded: Darwin has no pthread_timedjoin_np) for both threads to return. Never ends, cancels or joins a thread that

@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "husk-tl-bionic.h"
+#include "husk-tl-dvm-javaapp.h"
 #include "husk-tl-internal.h"
 #include <strings.h>
 
@@ -824,7 +825,28 @@ NAT(Throwable_getStack)
 NAT(Runtime_freeMemory) { UNUSED; *ret = J(256ll << 20); return true; }
 NAT(Runtime_maxMemory) { UNUSED; *ret = J(512ll << 20); return true; }
 NAT(Runtime_gc) { UNUSED; return true; }
-NAT(Runtime_exit) { (void)self; (void)ret; tl_log_line("dvm: Runtime.exit(%d)", a[0].i); _exit(a[0].i); }
+/*
+ * Runtime.exit(int)/System.exit(int): the app's own quit. On Android this ends the app's process; the
+ * guest shares Husk's process, so forwarding it to the host's _exit() took Husk down the moment a
+ * Ren'Py game quit and killed the session close already running (the log's last line was
+ * "dvm: Runtime.exit(0)"). Name the call, mark the app ended and RETURN: the app's own teardown goes
+ * on, and a close in flight completes when the app's main thread returns. Never the host process.
+ */
+NAT(Runtime_exit)
+{
+    (void)self; (void)ret;
+    husk_tl_guest_exit_requested("Runtime.exit", a[0].i);
+    tl_javaapp_request_exit();
+    return true;
+}
+/* Runtime.halt(int): the same act through the VM's halt entry, if libcore routes it to its own native. */
+NAT(Runtime_halt)
+{
+    (void)self; (void)ret;
+    husk_tl_guest_exit_requested("Runtime.halt", a[0].i);
+    tl_javaapp_request_exit();
+    return true;
+}
 NAT(Runtime_nativeLoad)
 {
     (void)self;
@@ -1941,6 +1963,7 @@ static const entry k_natives[] = {
     { "java/lang/Runtime", "maxMemory", "()J", Runtime_maxMemory },
     { "java/lang/Runtime", "nativeGc", "()V", Runtime_gc },
     { "java/lang/Runtime", "nativeExit", "(I)V", Runtime_exit },
+    { "java/lang/Runtime", "nativeHalt", "(I)V", Runtime_halt },
     { "java/lang/Runtime", "nativeLoad", "(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/String;", Runtime_nativeLoad },
 
     { "java/lang/Float", "floatToRawIntBits", "(F)I", Float_toBits },

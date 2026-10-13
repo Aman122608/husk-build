@@ -19,6 +19,7 @@
 
 extern bool tl_dvm_load_library(const char *name_or_path);
 extern void tl_va_snprintf(void);
+void tl_javaapp_request_exit(void);   /* husk-tl-dvm-android.c: a guest quit call reached the layer */
 
 static int64_t J_CurrentTimeMillis(void *env, void *cls) { (void)env; (void)cls; struct timeval tv; gettimeofday(&tv, NULL); return (int64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000; }
 static int64_t J_GetNanoTimeAdjustment(void *env, void *cls, int64_t offset_secs)
@@ -29,7 +30,13 @@ static int64_t J_GetNanoTimeAdjustment(void *env, void *cls, int64_t offset_secs
     if (secs > 0xFFFFFFFFll || secs < -0xFFFFFFFFll) return -1;
     return secs * 1000000000ll + ts.tv_nsec;
 }
-static void J_Exit(int code) { tl_log_line("dvm: JVM_Exit(%d)", code); _exit(code); }
+/* JVM_Exit is libopenjdk asking to end the VM. The guest shares Husk's process, so this ends the APP, never the host
+ * (it used to call _exit() and took Husk down with it). Return so libopenjdk's own shutdown continues. */
+static void J_Exit(int code)
+{
+    husk_tl_guest_exit_requested("JVM_Exit", code);
+    tl_javaapp_request_exit();
+}
 static void *J_FindLibraryEntry(void *handle, const char *name) { (void)handle; (void)name; return NULL; }
 static int64_t J_FreeMemory(void) { return 256ll << 20; }
 static int64_t J_MaxMemory(void) { return 512ll << 20; }

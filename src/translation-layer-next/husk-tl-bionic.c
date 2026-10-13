@@ -277,7 +277,8 @@ static void bionic___android_log_write_log_message(guest_log_message *m)
 static void bionic___android_log_default_aborter(const char *msg)
 {
     tl_log_line("bionic: abort message: %s", msg ? msg : "");
-    abort();
+    /* a guest LOG_ALWAYS_FATAL ends the APP, not Husk (the guest shares Husk's process) */
+    tl_guest_exit_unwind("__android_log_default_aborter", 6 /* SIGABRT */);
 }
 static void bionic___android_log_set_aborter(guest_aborter fn) { g_aborter = fn; }
 static void bionic___android_log_call_aborter(const char *msg)
@@ -387,7 +388,8 @@ static void guest_abort(const char *why)
     char where[200];
     describe_caller(__builtin_return_address(0), where, sizeof(where));
     tl_log_line("bionic: guest abort (%s) at %s", why, where);
-    abort();
+    /* a guest abort (a failed assertion, a stack smash) ends the APP, never Husk: the guest shares Husk's process */
+    tl_guest_exit_unwind("abort", 6 /* SIGABRT */);
 }
 
 static void bionic_abort(void)
@@ -395,11 +397,62 @@ static void bionic_abort(void)
     char where[200];
     describe_caller(__builtin_return_address(0), where, sizeof(where));
     tl_log_line("bionic: abort() called from %s", where);
-    abort();
+    tl_guest_exit_unwind("abort", 6 /* SIGABRT */);
 }
 
 /* When set, a guest exit() ends the guest, not the app that is hosting it. The hook does not return. */
 void (*tl_guest_exit_hook)(int status);
+
+/* --------------------------------------------------------- the guest exit family */
+
+/*
+ * The guest shares Husk's process, so any guest call that means "quit my app" must end the APP, never
+ * the process. Before this, Runtime.exit/System.exit/Process.killProcess/JVM_Exit called the host's
+ * _exit() straight through, and exit()/abort() fell through to Darwin's: a Ren'Py game ran its own
+ * real quit path (working as designed) and Husk died with it -- the log's last line was
+ * "dvm: Runtime.exit(0)" and the session close already running never finished (no "session closed").
+ * A close in flight is the app confirming it is done, not a new request; the caller unwinds the app
+ * and lets the close complete. This flag is set by husk_tl_session_close() for its duration.
+ */
+static _Atomic bool g_guest_exit_close_in_flight;
+
+void tl_guest_exit_set_close_in_flight(bool in_flight) { atomic_store(&g_guest_exit_close_in_flight, in_flight); }
+bool tl_guest_exit_close_in_flight(void) { return atomic_load(&g_guest_exit_close_in_flight); }
+
+/* One honest line naming the call, one saying what the layer did instead. Returns true if a session
+ * close is already in flight (the caller must let the app unwind itself, never re-enter the close). */
+bool husk_tl_guest_exit_requested(const char *call, int status)
+{
+    bool closing = atomic_load(&g_guest_exit_close_in_flight);
+    const char *c = call ? call : "exit";
+    tl_log_line("husk: the app asked to exit (%s(%d))", c, status);
+    if (closing)
+        tl_log_line("husk: %s(%d) arrived while the session was closing; the app is being unwound, Husk stays", c, status);
+    else
+        tl_log_line("husk: %s(%d) from guest code: the app is unwound and Husk stays for the next app (never the host process)", c, status);
+    return closing;
+}
+
+/* The Java driver's side of a guest exit (husk-tl-dvm-android.c): mark the running app ended, and
+ * note that the calling thread is leaving if it is one of the app's own. Declared here rather than
+ * pulling the DVM headers into the bionic shim. */
+void tl_javaapp_request_exit(void);
+void tl_javaapp_thread_leaving(void);
+
+/*
+ * The one way a guest exit()/_exit()/abort() is honoured: end the app's world and the CALLING thread,
+ * never the host process. A native engine's own hook runs first when set; the calling thread then
+ * ends itself, which is exactly what exit() means and is not a cancel of anyone else's thread (the
+ * design forbids pthread_kill/pthread_cancel on a thread that ran guest code). Never returns.
+ */
+void tl_guest_exit_unwind(const char *call, int status)
+{
+    husk_tl_guest_exit_requested(call, status);
+    tl_javaapp_request_exit();
+    tl_javaapp_thread_leaving();
+    if (tl_guest_exit_hook) tl_guest_exit_hook(status);
+    pthread_exit(NULL);
+}
 
 static void bionic_exit(int status)
 {
@@ -407,8 +460,16 @@ static void bionic_exit(int status)
     describe_caller(__builtin_return_address(0), where, sizeof(where));
     tl_log_line("bionic: exit(%d) called from %s", status, where);
     log_guest_frames(__builtin_frame_address(1));
-    if (tl_guest_exit_hook) tl_guest_exit_hook(status);
-    exit(status);
+    tl_guest_exit_unwind("exit", status);
+}
+
+/* _exit/_Exit: the same act, skipping the guest's stdio flush and the frames it passed over */
+static void bionic__exit(int status)
+{
+    char where[200];
+    describe_caller(__builtin_return_address(0), where, sizeof(where));
+    tl_log_line("bionic: _exit(%d) called from %s", status, where);
+    tl_guest_exit_unwind("_exit", status);
 }
 
 static void bionic___stack_chk_fail(void) { guest_abort("stack smashing detected"); }
@@ -418,7 +479,7 @@ static void bionic___assert2(const char *file, int line, const char *func, const
     char where[200];
     describe_caller(__builtin_return_address(0), where, sizeof(where));
     tl_log_line("bionic: assertion failed: %s:%d: %s: %s (from %s)", file, line, func ? func : "?", expr, where);
-    abort();
+    tl_guest_exit_unwind("__assert2", 6 /* SIGABRT */);
 }
 
 /* fdsan: Android's file descriptor ownership checks. Owner tags are kept per descriptor and never enforced. */
@@ -775,7 +836,7 @@ const tl_bionic_entry tl_tab_core[] = {
     TL_WRAP("closelog", bionic_closelog),
     TL_WRAP("abort", bionic_abort),
     TL_WRAP("exit", bionic_exit),
-    TL_DIRECT(_exit), TL_DIRECT(_Exit),
+    TL_WRAP("_exit", bionic__exit), TL_WRAP("_Exit", bionic__exit),
     TL_WRAP("__stack_chk_fail", bionic___stack_chk_fail),
     TL_WRAP("__assert2", bionic___assert2),
     TL_WRAP("android_set_abort_message", bionic_android_set_abort_message),

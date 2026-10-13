@@ -152,6 +152,7 @@ static void Helper_terminate(tl_jcall *c)
 {
     (void)c;
     tl_log_line("cocos: the game asked to terminate the process");
+    husk_tl_guest_exit_requested("Cocos2dxHelper.terminateProcess", 0);
     if (tl_guest_exit_hook) tl_guest_exit_hook(0);
 }
 static void Helper_showEditText(tl_jcall *c)

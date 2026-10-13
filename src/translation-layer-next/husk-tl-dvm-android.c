@@ -275,7 +275,16 @@ NAT(N_requestRender) { (void)self; (void)a; (void)ret; atomic_store(&A.render_re
 NAT(N_setContentView) { (void)self; (void)ret; A.content = a[0].l; return true; }
 NAT(N_vibrate) { (void)self; (void)a; (void)ret; if (A.cfg.vibrate) A.cfg.vibrate((int)a[0].j); return true; }
 NAT(N_openUrl) { (void)self; (void)ret; const char *u = tl_jni_string(a[0].l); tl_log_line("javaapp: open %s", u ? u : "?"); if (A.cfg.open_url && u) A.cfg.open_url(u); return true; }
-NAT(N_exit) { (void)self; (void)a; (void)ret; tl_log_line("javaapp: the app finished"); atomic_store(&A.ended, true); return true; }
+NAT(N_exit)
+{
+    (void)self; (void)a; (void)ret;
+    /* husk.Native.exit() is the framework's app-quit path (Process.killProcess, Activity.moveTaskToBack, AppRunner's own
+     * finish once the activity stack is empty). The app shares Husk's process: name the call, mark the app ended and
+     * return -- its own teardown goes on and a session close already running can complete. Never the host's exit(). */
+    husk_tl_guest_exit_requested("husk.Native.exit", 0);
+    atomic_store(&A.ended, true);
+    return true;
+}
 NAT(N_uptimeNanos) { (void)self; (void)a; struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t); *ret = J((int64_t)t.tv_sec * 1000000000ll + t.tv_nsec); return true; }
 NAT(N_pollInput)
 {
@@ -1179,6 +1188,20 @@ void tl_javaapp_set_paused(bool p)
 }
 unsigned long tl_javaapp_frames(void) { return atomic_load(&A.frames); }
 bool tl_javaapp_ended(void) { return atomic_load(&A.ended); }
+
+/* The app's own quit call reached the layer: mark it ended. Its GL loop leaves at its own check, its main thread unwinds
+ * itself -- the layer ends nothing, and neither does the host. Idempotent (A.ended is only ever set true here). */
+void tl_javaapp_request_exit(void) { atomic_store(&A.ended, true); }
+
+/* The calling thread is leaving after a guest exit()/_exit()/abort(). If it is one of the app's own driver threads, its
+ * done flag is set now, so tl_javaapp_reset()'s bounded wait does not spend its whole budget on a thread that is already
+ * gone. Compared by handle; the thread is never joined, cancelled or signalled. */
+void tl_javaapp_thread_leaving(void)
+{
+    pthread_t self = pthread_self();
+    if (A.app_thread_live && pthread_equal(self, A.app_thread)) atomic_store(&A.app_done, true);
+    if (A.gl_thread_live && pthread_equal(self, A.gl_thread)) atomic_store(&A.gl_done, true);
+}
 
 /* ================================================================== closing the app's session */
 

@@ -95,6 +95,7 @@ static int b_kill(int pid, int sig)
 {
     if (pid == getpid() && sig != 0) {
         tl_log_line("cxx: the game raised signal %d on its own process", sig);
+        husk_tl_guest_exit_requested("kill(self)", sig);
         if (tl_guest_exit_hook) tl_guest_exit_hook(128 + sig);
         return 0;
     }

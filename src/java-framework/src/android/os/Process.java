@@ -10,7 +10,42 @@ public class Process {
     public static void setThreadPriority(int p) {}
     public static void setThreadPriority(int tid, int p) {}
     public static int getThreadPriority(int tid) { return 0; }
-    public static void killProcess(int pid) { husk.Native.exit(); }
+    /* Every way an app asks the platform to end itself must end THIS app, never Husk: the app runs in Husk's own process,
+     * so a self-kill forwarded to the host's exit() would take Husk down with it and kill the session close already running.
+     * husk.Native.exit() marks the app ended -- its own threads unwind and the close completes -- and never exits the process.
+     * killProcess keeps its old meaning (any call is the app quitting); the pid-carrying variants end the app only for a
+     * self-kill and say so, rather than silently doing nothing. */
+    public static void killProcess(int pid) {
+        husk.Native.log(4, "Husk", "android.os.Process.killProcess(" + pid + "): the app is quitting");
+        husk.Native.exit();
+    }
+    public static void killProcessQuiet(int pid) {
+        if (isSelf(pid)) {
+            husk.Native.log(4, "Husk", "android.os.Process.killProcessQuiet(" + pid + "): the app is quitting");
+            husk.Native.exit();
+        } else {
+            husk.Native.log(4, "Husk", "android.os.Process.killProcessQuiet(" + pid + "): another process -- not ours to end; ignored");
+        }
+    }
+    /** A signal whose default action would end our own process ends the APP (SIGHUP, SIGINT, SIGQUIT, SIGABRT, SIGKILL,
+     *  SIGTERM); any other signal is not a quit and is reported rather than silently dropped. */
+    public static void sendSignal(int pid, int sig) {
+        if (fatalToSelf(pid, sig)) {
+            husk.Native.log(4, "Husk", "android.os.Process.sendSignal(" + pid + ", " + sig + "): the app is quitting");
+            husk.Native.exit();
+        } else {
+            husk.Native.log(4, "Husk", "android.os.Process.sendSignal(" + pid + ", " + sig + "): not a self-terminating signal; ignored");
+        }
+    }
+    public static void sendSignalQuiet(int pid, int sig) {
+        if (fatalToSelf(pid, sig)) husk.Native.exit();
+    }
+    /* pid 0 is our own process group and a negative pid a group/broadcast (both include us); otherwise it must be ours. */
+    private static boolean isSelf(int pid) { return pid == 0 || pid < 0 || pid == myPid(); }
+    private static boolean fatalToSelf(int pid, int sig) {
+        if (!isSelf(pid) || sig == 0) return false;
+        return sig == 1 || sig == 2 || sig == 3 || sig == 6 || sig == 9 || sig == 15;    /* HUP, INT, QUIT, ABRT, KILL, TERM */
+    }
     /* when the process started: the first use of this class, early in the app's start */
     private static final long START_NANOS = System.nanoTime(), START_ELAPSED = SystemClock.elapsedRealtime(), START_UPTIME = SystemClock.uptimeMillis();
     public static boolean is64Bit() { return true; }
@@ -153,7 +188,6 @@ public class Process {
     public static boolean isSdkSandboxUid(int p0) { return false; }
     public static boolean isThreadInProcess(int p0, int p1) { return false; }
     public static int killProcessGroup(int p0, int p1) { return 0; }
-    public static void killProcessQuiet(int p0) {}
     public static int myPpid() { return 0; }
     public static android.os.UserHandle myUserHandle() { return new android.os.UserHandle(0); }
     public static java.io.FileDescriptor openPidFd(int p0, int p1) { return null; }
@@ -161,8 +195,6 @@ public class Process {
     public static boolean readProcFile(java.lang.String p0, int[] p1, java.lang.String[] p2, long[] p3, float[] p4) { return false; }
     public static void readProcLines(java.lang.String p0, java.lang.String[] p1, long[] p2) {}
     public static void removeAllProcessGroups() {}
-    public static void sendSignal(int p0, int p1) {}
-    public static void sendSignalQuiet(int p0, int p1) {}
     public static boolean sendSignalToProcessGroup(int p0, int p1, int p2) { return false; }
     public static void setArgV0(java.lang.String p0) {}
     public static void setCanSelfBackground(boolean p0) {}

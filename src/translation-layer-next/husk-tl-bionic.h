@@ -58,6 +58,28 @@ bool tl_vk_available(void);                /* a MoltenVK was configured, so libv
 
 extern void (*tl_guest_exit_hook)(int status);   /* set by an app host: exit() from guest code calls it instead of exiting */
 
+/*
+ * The exit family. A guest call that means "quit my app" -- Runtime.exit/halt, System.exit,
+ * Process.killProcess, exit/_exit/_Exit/abort -- must never be forwarded to the HOST process: the
+ * guest shares Husk's process, so the host's exit() takes Husk down at the moment the app quits and
+ * kills the session close that is already running (the log showed "dvm: Runtime.exit(0)" and then
+ * ended, with no "session closed"). husk_tl_guest_exit_requested() records the request and names the
+ * call in the log; the caller then unwinds the APP and never the process. A close already in flight
+ * is treated as the app confirming it is done. tl_guest_exit_set_close_in_flight() is set by
+ * husk_tl_session_close() for the duration of the close; tl_guest_exit_close_in_flight() reads it.
+ */
+bool husk_tl_guest_exit_requested(const char *call, int status);
+bool tl_guest_exit_close_in_flight(void);
+void tl_guest_exit_set_close_in_flight(bool in_flight);
+
+/*
+ * The one way a guest exit()/_exit()/abort()/failed assert is honoured: it ends the app's world and
+ * the CALLING thread, never the host process, and never returns. A native engine's own hook
+ * (tl_guest_exit_hook) runs first when set. This is for guest-triggered fatals and exits whose caller
+ * cannot return; a Java Runtime.exit/System.exit returns instead (see husk_tl_guest_exit_requested).
+ */
+void tl_guest_exit_unwind(const char *call, int status);
+
 void *tl_bionic_find(const char *name);
 bool  tl_bionic_is_system_lib(const char *soname);
 

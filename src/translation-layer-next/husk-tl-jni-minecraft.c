@@ -251,7 +251,7 @@ static void GTI_keyboard(tl_jcall *c) { tl_ga_keyboard(c->args[0].z != 0); }
 static void GTI_imeFields(tl_jcall *c) { tl_ga_ime_options(c->args[2].i); }
 void (*tl_cocos_open_url_hook_mc)(const char *url);
 static void MA_launchUri(tl_jcall *c) { tl_log_line("minecraft: launchUri %s", S(c->args[0].l)); if (tl_cocos_open_url_hook_mc) tl_cocos_open_url_hook_mc(S(c->args[0].l)); }
-static void MA_quit(tl_jcall *c) { (void)c; tl_log_line("minecraft: the game asked to quit"); if (tl_guest_exit_hook) tl_guest_exit_hook(0); }
+static void MA_quit(tl_jcall *c) { (void)c; tl_log_line("minecraft: the game asked to quit"); husk_tl_guest_exit_requested("Minecraft.quit", 0); if (tl_guest_exit_hook) tl_guest_exit_hook(0); }
 static void MA_setClipboard(tl_jcall *c) { tl_log_line("minecraft: clipboard <- %.60s", S(c->args[0].l)); }
 
 /* runOnUiThread(() -> nativeRunNativeCallbackOnUiThread(cb)), and wait for it. */
