@@ -19305,14 +19305,14 @@ a32_case_501:
 	.p2align 1
 1:
 	.hword	0x0008	/* lsl r0, r1, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret501
 	bx	r3
 	.p2align 2
@@ -19357,14 +19357,14 @@ a32_case_502:
 	.p2align 1
 1:
 	.hword	0x0048	/* lsl r0, r1, #1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret502
 	bx	r3
 	.p2align 2
@@ -19409,14 +19409,14 @@ a32_case_503:
 	.p2align 1
 1:
 	.hword	0x0148	/* lsl r0, r1, #5 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret503
 	bx	r3
 	.p2align 2
@@ -19461,14 +19461,14 @@ a32_case_504:
 	.p2align 1
 1:
 	.hword	0x07c8	/* lsl r0, r1, #31 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret504
 	bx	r3
 	.p2align 2
@@ -19513,14 +19513,14 @@ a32_case_505:
 	.p2align 1
 1:
 	.hword	0x0808	/* lsr r0, r1, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret505
 	bx	r3
 	.p2align 2
@@ -19565,14 +19565,14 @@ a32_case_506:
 	.p2align 1
 1:
 	.hword	0x0848	/* lsr r0, r1, #1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret506
 	bx	r3
 	.p2align 2
@@ -19617,14 +19617,14 @@ a32_case_507:
 	.p2align 1
 1:
 	.hword	0x0948	/* lsr r0, r1, #5 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret507
 	bx	r3
 	.p2align 2
@@ -19669,14 +19669,14 @@ a32_case_508:
 	.p2align 1
 1:
 	.hword	0x0fc8	/* lsr r0, r1, #31 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret508
 	bx	r3
 	.p2align 2
@@ -19721,14 +19721,14 @@ a32_case_509:
 	.p2align 1
 1:
 	.hword	0x1008	/* asr r0, r1, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret509
 	bx	r3
 	.p2align 2
@@ -19773,14 +19773,14 @@ a32_case_510:
 	.p2align 1
 1:
 	.hword	0x1048	/* asr r0, r1, #1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret510
 	bx	r3
 	.p2align 2
@@ -19825,14 +19825,14 @@ a32_case_511:
 	.p2align 1
 1:
 	.hword	0x1148	/* asr r0, r1, #5 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret511
 	bx	r3
 	.p2align 2
@@ -19877,14 +19877,14 @@ a32_case_512:
 	.p2align 1
 1:
 	.hword	0x17c8	/* asr r0, r1, #31 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret512
 	bx	r3
 	.p2align 2
@@ -19929,14 +19929,14 @@ a32_case_513:
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret513
 	bx	r3
 	.p2align 2
@@ -19982,14 +19982,14 @@ a32_case_514:
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret514
 	bx	r3
 	.p2align 2
@@ -20036,14 +20036,14 @@ a32_case_515:
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret515
 	bx	r3
 	.p2align 2
@@ -20090,14 +20090,14 @@ a32_case_516:
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret516
 	bx	r3
 	.p2align 2
@@ -20142,14 +20142,14 @@ a32_case_517:
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret517
 	bx	r3
 	.p2align 2
@@ -20195,14 +20195,14 @@ a32_case_518:
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret518
 	bx	r3
 	.p2align 2
@@ -20249,14 +20249,14 @@ a32_case_519:
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret519
 	bx	r3
 	.p2align 2
@@ -20303,14 +20303,14 @@ a32_case_520:
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret520
 	bx	r3
 	.p2align 2
@@ -20355,14 +20355,14 @@ a32_case_521:
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret521
 	bx	r3
 	.p2align 2
@@ -20408,14 +20408,14 @@ a32_case_522:
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret522
 	bx	r3
 	.p2align 2
@@ -20462,14 +20462,14 @@ a32_case_523:
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret523
 	bx	r3
 	.p2align 2
@@ -20516,14 +20516,14 @@ a32_case_524:
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret524
 	bx	r3
 	.p2align 2
@@ -20568,14 +20568,14 @@ a32_case_525:
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret525
 	bx	r3
 	.p2align 2
@@ -20621,14 +20621,14 @@ a32_case_526:
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret526
 	bx	r3
 	.p2align 2
@@ -20675,14 +20675,14 @@ a32_case_527:
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret527
 	bx	r3
 	.p2align 2
@@ -20729,14 +20729,14 @@ a32_case_528:
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret528
 	bx	r3
 	.p2align 2
@@ -20781,14 +20781,14 @@ a32_case_529:
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret529
 	bx	r3
 	.p2align 2
@@ -20834,14 +20834,14 @@ a32_case_530:
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret530
 	bx	r3
 	.p2align 2
@@ -20888,14 +20888,14 @@ a32_case_531:
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret531
 	bx	r3
 	.p2align 2
@@ -20942,14 +20942,14 @@ a32_case_532:
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret532
 	bx	r3
 	.p2align 2
@@ -20994,14 +20994,14 @@ a32_case_533:
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret533
 	bx	r3
 	.p2align 2
@@ -21047,14 +21047,14 @@ a32_case_534:
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret534
 	bx	r3
 	.p2align 2
@@ -21101,14 +21101,14 @@ a32_case_535:
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret535
 	bx	r3
 	.p2align 2
@@ -21155,14 +21155,14 @@ a32_case_536:
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret536
 	bx	r3
 	.p2align 2
@@ -21207,14 +21207,14 @@ a32_case_537:
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret537
 	bx	r3
 	.p2align 2
@@ -21260,14 +21260,14 @@ a32_case_538:
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret538
 	bx	r3
 	.p2align 2
@@ -21314,14 +21314,14 @@ a32_case_539:
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret539
 	bx	r3
 	.p2align 2
@@ -21368,14 +21368,14 @@ a32_case_540:
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret540
 	bx	r3
 	.p2align 2
@@ -21420,14 +21420,14 @@ a32_case_541:
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret541
 	bx	r3
 	.p2align 2
@@ -21473,14 +21473,14 @@ a32_case_542:
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret542
 	bx	r3
 	.p2align 2
@@ -21527,14 +21527,14 @@ a32_case_543:
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret543
 	bx	r3
 	.p2align 2
@@ -21581,14 +21581,14 @@ a32_case_544:
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret544
 	bx	r3
 	.p2align 2
@@ -21633,14 +21633,14 @@ a32_case_545:
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret545
 	bx	r3
 	.p2align 2
@@ -21686,14 +21686,14 @@ a32_case_546:
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret546
 	bx	r3
 	.p2align 2
@@ -21740,14 +21740,14 @@ a32_case_547:
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret547
 	bx	r3
 	.p2align 2
@@ -21794,14 +21794,14 @@ a32_case_548:
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret548
 	bx	r3
 	.p2align 2
@@ -21846,14 +21846,14 @@ a32_case_549:
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret549
 	bx	r3
 	.p2align 2
@@ -21899,14 +21899,14 @@ a32_case_550:
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret550
 	bx	r3
 	.p2align 2
@@ -21953,14 +21953,14 @@ a32_case_551:
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret551
 	bx	r3
 	.p2align 2
@@ -22007,14 +22007,14 @@ a32_case_552:
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret552
 	bx	r3
 	.p2align 2
@@ -22059,14 +22059,14 @@ a32_case_553:
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret553
 	bx	r3
 	.p2align 2
@@ -22112,14 +22112,14 @@ a32_case_554:
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret554
 	bx	r3
 	.p2align 2
@@ -22166,14 +22166,14 @@ a32_case_555:
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret555
 	bx	r3
 	.p2align 2
@@ -22220,14 +22220,14 @@ a32_case_556:
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret556
 	bx	r3
 	.p2align 2
@@ -22272,14 +22272,14 @@ a32_case_557:
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret557
 	bx	r3
 	.p2align 2
@@ -22325,14 +22325,14 @@ a32_case_558:
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret558
 	bx	r3
 	.p2align 2
@@ -22379,14 +22379,14 @@ a32_case_559:
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret559
 	bx	r3
 	.p2align 2
@@ -22433,14 +22433,14 @@ a32_case_560:
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret560
 	bx	r3
 	.p2align 2
@@ -22485,14 +22485,14 @@ a32_case_561:
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret561
 	bx	r3
 	.p2align 2
@@ -22538,14 +22538,14 @@ a32_case_562:
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret562
 	bx	r3
 	.p2align 2
@@ -22592,14 +22592,14 @@ a32_case_563:
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret563
 	bx	r3
 	.p2align 2
@@ -22646,14 +22646,14 @@ a32_case_564:
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret564
 	bx	r3
 	.p2align 2
@@ -22698,14 +22698,14 @@ a32_case_565:
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret565
 	bx	r3
 	.p2align 2
@@ -22751,14 +22751,14 @@ a32_case_566:
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret566
 	bx	r3
 	.p2align 2
@@ -22805,14 +22805,14 @@ a32_case_567:
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret567
 	bx	r3
 	.p2align 2
@@ -22859,14 +22859,14 @@ a32_case_568:
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret568
 	bx	r3
 	.p2align 2
@@ -22911,14 +22911,14 @@ a32_case_569:
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret569
 	bx	r3
 	.p2align 2
@@ -22964,14 +22964,14 @@ a32_case_570:
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret570
 	bx	r3
 	.p2align 2
@@ -23018,14 +23018,14 @@ a32_case_571:
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret571
 	bx	r3
 	.p2align 2
@@ -23072,14 +23072,14 @@ a32_case_572:
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret572
 	bx	r3
 	.p2align 2
@@ -23124,14 +23124,14 @@ a32_case_573:
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret573
 	bx	r3
 	.p2align 2
@@ -23177,14 +23177,14 @@ a32_case_574:
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret574
 	bx	r3
 	.p2align 2
@@ -23231,14 +23231,14 @@ a32_case_575:
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret575
 	bx	r3
 	.p2align 2
@@ -23285,14 +23285,14 @@ a32_case_576:
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret576
 	bx	r3
 	.p2align 2
@@ -23337,14 +23337,14 @@ a32_case_577:
 	.p2align 1
 1:
 	.hword	0x2000	/* movs r0, #0x0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret577
 	bx	r3
 	.p2align 2
@@ -23389,14 +23389,14 @@ a32_case_578:
 	.p2align 1
 1:
 	.hword	0x2001	/* movs r0, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret578
 	bx	r3
 	.p2align 2
@@ -23441,14 +23441,14 @@ a32_case_579:
 	.p2align 1
 1:
 	.hword	0x207f	/* movs r0, #0x7f */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret579
 	bx	r3
 	.p2align 2
@@ -23493,14 +23493,14 @@ a32_case_580:
 	.p2align 1
 1:
 	.hword	0x20ff	/* movs r0, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret580
 	bx	r3
 	.p2align 2
@@ -23545,14 +23545,14 @@ a32_case_581:
 	.p2align 1
 1:
 	.hword	0x2800	/* cmp r0, #0x0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret581
 	bx	r3
 	.p2align 2
@@ -23597,14 +23597,14 @@ a32_case_582:
 	.p2align 1
 1:
 	.hword	0x2801	/* cmp r0, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret582
 	bx	r3
 	.p2align 2
@@ -23649,14 +23649,14 @@ a32_case_583:
 	.p2align 1
 1:
 	.hword	0x287f	/* cmp r0, #0x7f */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret583
 	bx	r3
 	.p2align 2
@@ -23701,14 +23701,14 @@ a32_case_584:
 	.p2align 1
 1:
 	.hword	0x28ff	/* cmp r0, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret584
 	bx	r3
 	.p2align 2
@@ -23753,14 +23753,14 @@ a32_case_585:
 	.p2align 1
 1:
 	.hword	0x3000	/* adds r0, #0x0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret585
 	bx	r3
 	.p2align 2
@@ -23805,14 +23805,14 @@ a32_case_586:
 	.p2align 1
 1:
 	.hword	0x3001	/* adds r0, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret586
 	bx	r3
 	.p2align 2
@@ -23857,14 +23857,14 @@ a32_case_587:
 	.p2align 1
 1:
 	.hword	0x307f	/* adds r0, #0x7f */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret587
 	bx	r3
 	.p2align 2
@@ -23909,14 +23909,14 @@ a32_case_588:
 	.p2align 1
 1:
 	.hword	0x30ff	/* adds r0, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret588
 	bx	r3
 	.p2align 2
@@ -23961,14 +23961,14 @@ a32_case_589:
 	.p2align 1
 1:
 	.hword	0x3800	/* subs r0, #0x0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret589
 	bx	r3
 	.p2align 2
@@ -24013,14 +24013,14 @@ a32_case_590:
 	.p2align 1
 1:
 	.hword	0x3801	/* subs r0, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret590
 	bx	r3
 	.p2align 2
@@ -24065,14 +24065,14 @@ a32_case_591:
 	.p2align 1
 1:
 	.hword	0x387f	/* subs r0, #0x7f */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret591
 	bx	r3
 	.p2align 2
@@ -24117,14 +24117,14 @@ a32_case_592:
 	.p2align 1
 1:
 	.hword	0x38ff	/* subs r0, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret592
 	bx	r3
 	.p2align 2
@@ -24169,14 +24169,14 @@ a32_case_593:
 	.p2align 1
 1:
 	.hword	0x1850	/* adds r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret593
 	bx	r3
 	.p2align 2
@@ -24221,14 +24221,14 @@ a32_case_594:
 	.p2align 1
 1:
 	.hword	0x1a50	/* subs r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret594
 	bx	r3
 	.p2align 2
@@ -24274,14 +24274,14 @@ a32_case_595:
 	.p2align 1
 1:
 	.hword	0x1850	/* adds r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret595
 	bx	r3
 	.p2align 2
@@ -24327,14 +24327,14 @@ a32_case_596:
 	.p2align 1
 1:
 	.hword	0x1a50	/* subs r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret596
 	bx	r3
 	.p2align 2
@@ -24381,14 +24381,14 @@ a32_case_597:
 	.p2align 1
 1:
 	.hword	0x1850	/* adds r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret597
 	bx	r3
 	.p2align 2
@@ -24435,14 +24435,14 @@ a32_case_598:
 	.p2align 1
 1:
 	.hword	0x1a50	/* subs r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret598
 	bx	r3
 	.p2align 2
@@ -24487,14 +24487,14 @@ a32_case_599:
 	.p2align 1
 1:
 	.hword	0x1c08	/* adds r0, r1, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret599
 	bx	r3
 	.p2align 2
@@ -24538,14 +24538,14 @@ a32_case_600:
 	.p2align 1
 1:
 	.hword	0x1e08	/* subs r0, r1, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret600
 	bx	r3
 	.p2align 2
@@ -24590,14 +24590,14 @@ a32_case_601:
 	.p2align 1
 1:
 	.hword	0x1c48	/* adds r0, r1, #1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret601
 	bx	r3
 	.p2align 2
@@ -24641,14 +24641,14 @@ a32_case_602:
 	.p2align 1
 1:
 	.hword	0x1e48	/* subs r0, r1, #1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret602
 	bx	r3
 	.p2align 2
@@ -24693,14 +24693,14 @@ a32_case_603:
 	.p2align 1
 1:
 	.hword	0x1cc8	/* adds r0, r1, #3 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret603
 	bx	r3
 	.p2align 2
@@ -24744,14 +24744,14 @@ a32_case_604:
 	.p2align 1
 1:
 	.hword	0x1ec8	/* subs r0, r1, #3 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret604
 	bx	r3
 	.p2align 2
@@ -24796,14 +24796,14 @@ a32_case_605:
 	.p2align 1
 1:
 	.hword	0x1dc8	/* adds r0, r1, #7 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret605
 	bx	r3
 	.p2align 2
@@ -24847,14 +24847,14 @@ a32_case_606:
 	.p2align 1
 1:
 	.hword	0x1fc8	/* subs r0, r1, #7 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret606
 	bx	r3
 	.p2align 2
@@ -24898,14 +24898,14 @@ a32_case_607:
 	.p2align 1
 1:
 	.hword	0x4440	/* add r0, r8 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret607
 	bx	r3
 	.p2align 2
@@ -24949,14 +24949,14 @@ a32_case_608:
 	.p2align 1
 1:
 	.hword	0x4693	/* mov r11, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret608
 	bx	r3
 	.p2align 2
@@ -25002,14 +25002,14 @@ a32_case_609:
 1:
 	.hword	0x4588	/* cmp r8, r1 */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret609
 	bx	r3
 	.p2align 2
@@ -25053,14 +25053,14 @@ a32_case_610:
 	.p2align 1
 1:
 	.hword	0x4440	/* add r0, r8 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret610
 	bx	r3
 	.p2align 2
@@ -25104,14 +25104,14 @@ a32_case_611:
 	.p2align 1
 1:
 	.hword	0x4693	/* mov r11, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret611
 	bx	r3
 	.p2align 2
@@ -25158,14 +25158,14 @@ a32_case_612:
 1:
 	.hword	0x4588	/* cmp r8, r1 */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret612
 	bx	r3
 	.p2align 2
@@ -25210,14 +25210,14 @@ a32_case_613:
 	.p2align 1
 1:
 	.hword	0x4440	/* add r0, r8 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret613
 	bx	r3
 	.p2align 2
@@ -25262,14 +25262,14 @@ a32_case_614:
 	.p2align 1
 1:
 	.hword	0x4693	/* mov r11, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret614
 	bx	r3
 	.p2align 2
@@ -25317,14 +25317,14 @@ a32_case_615:
 1:
 	.hword	0x4588	/* cmp r8, r1 */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret615
 	bx	r3
 	.p2align 2
@@ -25374,14 +25374,14 @@ a32_case_616:
 	.hword	0xe001	/* b done */
 	.hword	0x2266	/* movs r2, #0x66 */
 	.hword	0x4770	/* bx lr */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret616
 	bx	r3
 	.p2align 2
@@ -25431,14 +25431,14 @@ a32_case_617:
 	.hword	0xe001	/* b done */
 	.hword	0x2266	/* movs r2, #0x66 */
 	.hword	0x4770	/* bx lr */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret617
 	bx	r3
 	.p2align 2
@@ -25487,14 +25487,14 @@ a32_case_618:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x50b8	/* str r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret618
 	bx	r3
 	.p2align 2
@@ -25543,14 +25543,14 @@ a32_case_619:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5138	/* str r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret619
 	bx	r3
 	.p2align 2
@@ -25599,14 +25599,14 @@ a32_case_620:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x51b8	/* str r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret620
 	bx	r3
 	.p2align 2
@@ -25655,14 +25655,14 @@ a32_case_621:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x52b8	/* strh r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret621
 	bx	r3
 	.p2align 2
@@ -25711,14 +25711,14 @@ a32_case_622:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5338	/* strh r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret622
 	bx	r3
 	.p2align 2
@@ -25767,14 +25767,14 @@ a32_case_623:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x53b8	/* strh r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret623
 	bx	r3
 	.p2align 2
@@ -25823,14 +25823,14 @@ a32_case_624:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x54b8	/* strb r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret624
 	bx	r3
 	.p2align 2
@@ -25879,14 +25879,14 @@ a32_case_625:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5538	/* strb r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret625
 	bx	r3
 	.p2align 2
@@ -25935,14 +25935,14 @@ a32_case_626:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x55b8	/* strb r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret626
 	bx	r3
 	.p2align 2
@@ -25991,14 +25991,14 @@ a32_case_627:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x56b8	/* ldrsb r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret627
 	bx	r3
 	.p2align 2
@@ -26047,14 +26047,14 @@ a32_case_628:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5738	/* ldrsb r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret628
 	bx	r3
 	.p2align 2
@@ -26103,14 +26103,14 @@ a32_case_629:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x57b8	/* ldrsb r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret629
 	bx	r3
 	.p2align 2
@@ -26159,14 +26159,14 @@ a32_case_630:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x58b8	/* ldr r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret630
 	bx	r3
 	.p2align 2
@@ -26215,14 +26215,14 @@ a32_case_631:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5938	/* ldr r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret631
 	bx	r3
 	.p2align 2
@@ -26271,14 +26271,14 @@ a32_case_632:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x59b8	/* ldr r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret632
 	bx	r3
 	.p2align 2
@@ -26327,14 +26327,14 @@ a32_case_633:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5ab8	/* ldrh r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret633
 	bx	r3
 	.p2align 2
@@ -26383,14 +26383,14 @@ a32_case_634:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5b38	/* ldrh r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret634
 	bx	r3
 	.p2align 2
@@ -26439,14 +26439,14 @@ a32_case_635:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5bb8	/* ldrh r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret635
 	bx	r3
 	.p2align 2
@@ -26495,14 +26495,14 @@ a32_case_636:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5cb8	/* ldrb r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret636
 	bx	r3
 	.p2align 2
@@ -26551,14 +26551,14 @@ a32_case_637:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5d38	/* ldrb r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret637
 	bx	r3
 	.p2align 2
@@ -26607,14 +26607,14 @@ a32_case_638:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5db8	/* ldrb r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret638
 	bx	r3
 	.p2align 2
@@ -26663,14 +26663,14 @@ a32_case_639:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5eb8	/* ldrsh r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret639
 	bx	r3
 	.p2align 2
@@ -26719,14 +26719,14 @@ a32_case_640:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5f38	/* ldrsh r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret640
 	bx	r3
 	.p2align 2
@@ -26775,14 +26775,14 @@ a32_case_641:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5fb8	/* ldrsh r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret641
 	bx	r3
 	.p2align 2
@@ -26830,14 +26830,14 @@ a32_case_642:
 	.hword	0x6039	/* str r1, [r7, #0] */
 	.hword	0x6838	/* ldr r0, [r7, #0] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret642
 	bx	r3
 	.p2align 2
@@ -26885,14 +26885,14 @@ a32_case_643:
 	.hword	0x6079	/* str r1, [r7, #4] */
 	.hword	0x6878	/* ldr r0, [r7, #4] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret643
 	bx	r3
 	.p2align 2
@@ -26940,14 +26940,14 @@ a32_case_644:
 	.hword	0x6179	/* str r1, [r7, #20] */
 	.hword	0x6978	/* ldr r0, [r7, #20] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret644
 	bx	r3
 	.p2align 2
@@ -26995,14 +26995,14 @@ a32_case_645:
 	.hword	0x63f9	/* str r1, [r7, #60] */
 	.hword	0x6bf8	/* ldr r0, [r7, #60] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret645
 	bx	r3
 	.p2align 2
@@ -27049,14 +27049,14 @@ a32_case_646:
 	.hword	0x8039	/* strh r1, [r7, #0] */
 	.hword	0x8838	/* ldrh r0, [r7, #0] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret646
 	bx	r3
 	.p2align 2
@@ -27103,14 +27103,14 @@ a32_case_647:
 	.hword	0x8079	/* strh r1, [r7, #2] */
 	.hword	0x8878	/* ldrh r0, [r7, #2] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret647
 	bx	r3
 	.p2align 2
@@ -27157,14 +27157,14 @@ a32_case_648:
 	.hword	0x83f9	/* strh r1, [r7, #30] */
 	.hword	0x8bf8	/* ldrh r0, [r7, #30] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret648
 	bx	r3
 	.p2align 2
@@ -27211,14 +27211,14 @@ a32_case_649:
 	.hword	0x7039	/* strb r1, [r7, #0] */
 	.hword	0x7838	/* ldrb r0, [r7, #0] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret649
 	bx	r3
 	.p2align 2
@@ -27265,14 +27265,14 @@ a32_case_650:
 	.hword	0x7079	/* strb r1, [r7, #1] */
 	.hword	0x7878	/* ldrb r0, [r7, #1] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret650
 	bx	r3
 	.p2align 2
@@ -27319,14 +27319,14 @@ a32_case_651:
 	.hword	0x71f9	/* strb r1, [r7, #7] */
 	.hword	0x79f8	/* ldrb r0, [r7, #7] */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret651
 	bx	r3
 	.p2align 2
@@ -27371,14 +27371,14 @@ a32_case_652:
 	.hword	0x4801	/* ldr r0, [pc, #4] */
 	.hword	0xbf00	/* nop */
 	.word	0x12345678	/* literal read by this fragment */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret652
 	bx	r3
 	.p2align 2
@@ -27425,14 +27425,14 @@ a32_case_653:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.word	0x12345679	/* literal read by this fragment */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret653
 	bx	r3
 	.p2align 2
@@ -27481,14 +27481,14 @@ a32_case_654:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.word	0x1234567a	/* literal read by this fragment */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret654
 	bx	r3
 	.p2align 2
@@ -27536,14 +27536,14 @@ a32_case_655:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x9100	/* str r1, [sp, #0] */
 	.hword	0x9800	/* ldr r0, [sp, #0] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret655
 	bx	r3
 	.p2align 2
@@ -27591,14 +27591,14 @@ a32_case_656:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x9101	/* str r1, [sp, #4] */
 	.hword	0x9801	/* ldr r0, [sp, #4] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret656
 	bx	r3
 	.p2align 2
@@ -27646,14 +27646,14 @@ a32_case_657:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x9104	/* str r1, [sp, #16] */
 	.hword	0x9804	/* ldr r0, [sp, #16] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret657
 	bx	r3
 	.p2align 2
@@ -27701,14 +27701,14 @@ a32_case_658:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x910f	/* str r1, [sp, #60] */
 	.hword	0x980f	/* ldr r0, [sp, #60] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret658
 	bx	r3
 	.p2align 2
@@ -27754,14 +27754,14 @@ a32_case_659:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa902	/* add r1, sp, #8 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret659
 	bx	r3
 	.p2align 2
@@ -27807,14 +27807,14 @@ a32_case_660:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa903	/* add r1, sp, #12 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret660
 	bx	r3
 	.p2align 2
@@ -27860,14 +27860,14 @@ a32_case_661:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa906	/* add r1, sp, #24 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret661
 	bx	r3
 	.p2align 2
@@ -27913,14 +27913,14 @@ a32_case_662:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa911	/* add r1, sp, #68 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret662
 	bx	r3
 	.p2align 2
@@ -27969,14 +27969,14 @@ a32_case_663:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret663
 	bx	r3
 	.p2align 2
@@ -28025,14 +28025,14 @@ a32_case_664:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret664
 	bx	r3
 	.p2align 2
@@ -28084,14 +28084,14 @@ a32_case_665:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb403	/* push {list} */
 	.hword	0xbc03	/* pop {list} */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret665
 	bx	r3
 	.p2align 2
@@ -28143,14 +28143,14 @@ a32_case_666:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb40f	/* push {list} */
 	.hword	0xbc0f	/* pop {list} */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret666
 	bx	r3
 	.p2align 2
@@ -28202,14 +28202,14 @@ a32_case_667:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb481	/* push {list} */
 	.hword	0xbc81	/* pop {list} */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret667
 	bx	r3
 	.p2align 2
@@ -28257,14 +28257,14 @@ a32_case_668:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc02	/* pop {r1} */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret668
 	bx	r3
 	.p2align 2
@@ -28312,14 +28312,14 @@ a32_case_669:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc02	/* pop {r1} */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret669
 	bx	r3
 	.p2align 2
@@ -28367,14 +28367,14 @@ a32_case_670:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc03	/* pop {r0, r1} */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret670
 	bx	r3
 	.p2align 2
@@ -28422,14 +28422,14 @@ a32_case_671:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc03	/* pop {r0, r1} */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret671
 	bx	r3
 	.p2align 2
@@ -28481,14 +28481,14 @@ a32_case_672:
 	.hword	0xc70c	/* stmia r7!, {list} */
 	.hword	0xcf0c	/* ldmia r7, {list} */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret672
 	bx	r3
 	.p2align 2
@@ -28540,14 +28540,14 @@ a32_case_673:
 	.hword	0xc706	/* stmia r7!, {list} */
 	.hword	0xcf06	/* ldmia r7, {list} */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret673
 	bx	r3
 	.p2align 2
@@ -28596,14 +28596,14 @@ a32_case_674:
 	.hword	0x464f	/* mov r7, r9 */
 	.hword	0xc70c	/* stmia r7!, {r2,r3} */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret674
 	bx	r3
 	.p2align 2
@@ -28652,14 +28652,14 @@ a32_case_675:
 	.hword	0x464f	/* mov r7, r9 */
 	.hword	0xc70c	/* stmia r7!, {r2,r3} */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret675
 	bx	r3
 	.p2align 2
@@ -28705,14 +28705,14 @@ a32_case_676:
 	.hword	0xe000	/* b skip */
 	.hword	0x207f	/* movs r0, #0x7F */
 	.hword	0x212a	/* movs r1, #0x2A */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret676
 	bx	r3
 	.p2align 2
@@ -28758,14 +28758,14 @@ a32_case_677:
 	.hword	0x3001	/* adds r0, #1 */
 	.hword	0x2804	/* cmp r0, #4 */
 	.hword	0xdbfc	/* b.lt top */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret677
 	bx	r3
 	.p2align 2
@@ -28813,14 +28813,14 @@ a32_case_678:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret678
 	bx	r3
 	.p2align 2
@@ -28868,14 +28868,14 @@ a32_case_679:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret679
 	bx	r3
 	.p2align 2
@@ -28923,14 +28923,14 @@ a32_case_680:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret680
 	bx	r3
 	.p2align 2
@@ -28978,14 +28978,14 @@ a32_case_681:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret681
 	bx	r3
 	.p2align 2
@@ -29033,14 +29033,14 @@ a32_case_682:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret682
 	bx	r3
 	.p2align 2
@@ -29088,14 +29088,14 @@ a32_case_683:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret683
 	bx	r3
 	.p2align 2
@@ -29143,14 +29143,14 @@ a32_case_684:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret684
 	bx	r3
 	.p2align 2
@@ -29198,14 +29198,14 @@ a32_case_685:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret685
 	bx	r3
 	.p2align 2
@@ -29253,14 +29253,14 @@ a32_case_686:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret686
 	bx	r3
 	.p2align 2
@@ -29308,14 +29308,14 @@ a32_case_687:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret687
 	bx	r3
 	.p2align 2
@@ -29363,14 +29363,14 @@ a32_case_688:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret688
 	bx	r3
 	.p2align 2
@@ -29418,14 +29418,14 @@ a32_case_689:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret689
 	bx	r3
 	.p2align 2
@@ -29473,14 +29473,14 @@ a32_case_690:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret690
 	bx	r3
 	.p2align 2
@@ -29528,14 +29528,14 @@ a32_case_691:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret691
 	bx	r3
 	.p2align 2
@@ -29582,14 +29582,14 @@ a32_case_692:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret692
 	bx	r3
 	.p2align 2
@@ -29636,14 +29636,14 @@ a32_case_693:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret693
 	bx	r3
 	.p2align 2
@@ -29690,14 +29690,14 @@ a32_case_694:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret694
 	bx	r3
 	.p2align 2
@@ -29745,14 +29745,14 @@ a32_case_695:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret695
 	bx	r3
 	.p2align 2
@@ -29799,14 +29799,14 @@ a32_case_696:
 	.hword	0x2033	/* movs r0, #0x33 */
 	.hword	0xe000	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret696
 	bx	r3
 	.p2align 2
@@ -29853,14 +29853,14 @@ a32_case_697:
 	.hword	0x2033	/* movs r0, #0x33 */
 	.hword	0xe000	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret697
 	bx	r3
 	.p2align 2
@@ -29908,14 +29908,14 @@ a32_case_698:
 	.hword	0xe001	/* b end */
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0x4770	/* bx lr */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret698
 	bx	r3
 	.p2align 2
@@ -29962,14 +29962,14 @@ a32_case_699:
 	.hword	0xbf08	/* it eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* movs r2, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret699
 	bx	r3
 	.p2align 2
@@ -30016,14 +30016,14 @@ a32_case_700:
 	.hword	0xbf08	/* it eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* movs r2, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret700
 	bx	r3
 	.p2align 2
@@ -30070,14 +30070,14 @@ a32_case_701:
 	.hword	0xbf0c	/* ite eq */
 	.hword	0x20aa	/* moveq r0, #0xAA */
 	.hword	0x20bb	/* movne r0, #0xBB */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret701
 	bx	r3
 	.p2align 2
@@ -30124,14 +30124,14 @@ a32_case_702:
 	.hword	0xbf0c	/* ite eq */
 	.hword	0x20aa	/* moveq r0, #0xAA */
 	.hword	0x20bb	/* movne r0, #0xBB */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret702
 	bx	r3
 	.p2align 2
@@ -30178,14 +30178,14 @@ a32_case_703:
 	.hword	0xbf04	/* itt eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* moveq r2, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret703
 	bx	r3
 	.p2align 2
@@ -30232,14 +30232,14 @@ a32_case_704:
 	.hword	0xbf04	/* itt eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* moveq r2, #0x22 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret704
 	bx	r3
 	.p2align 2
@@ -30288,14 +30288,14 @@ a32_case_705:
 	.hword	0x2202	/* moveq r2, #2 */
 	.hword	0x2303	/* moveq r3, #3 */
 	.hword	0x2404	/* moveq r4, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret705
 	bx	r3
 	.p2align 2
@@ -30344,14 +30344,14 @@ a32_case_706:
 	.hword	0x2202	/* moveq r2, #2 */
 	.hword	0x2303	/* moveq r3, #3 */
 	.hword	0x2404	/* moveq r4, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret706
 	bx	r3
 	.p2align 2
@@ -30398,14 +30398,14 @@ a32_case_707:
 	.hword	0xbf08	/* it eq */
 	.hword	0x2055	/* moveq r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret707
 	bx	r3
 	.p2align 2
@@ -30452,14 +30452,14 @@ a32_case_708:
 	.hword	0xbf18	/* it ne */
 	.hword	0x2055	/* movne r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret708
 	bx	r3
 	.p2align 2
@@ -30506,14 +30506,14 @@ a32_case_709:
 	.hword	0xbf38	/* it cc */
 	.hword	0x2055	/* movcc r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret709
 	bx	r3
 	.p2align 2
@@ -30560,14 +30560,14 @@ a32_case_710:
 	.hword	0xbf28	/* it cs */
 	.hword	0x2055	/* movcs r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret710
 	bx	r3
 	.p2align 2
@@ -30612,14 +30612,14 @@ a32_case_711:
 	.p2align 1
 1:
 	.word	0x0002ea01	/* and.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret711
 	bx	r3
 	.p2align 2
@@ -30664,14 +30664,14 @@ a32_case_712:
 	.p2align 1
 1:
 	.word	0x0082ea01	/* and.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret712
 	bx	r3
 	.p2align 2
@@ -30717,14 +30717,14 @@ a32_case_713:
 	.p2align 1
 1:
 	.word	0x0002ea01	/* and.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret713
 	bx	r3
 	.p2align 2
@@ -30770,14 +30770,14 @@ a32_case_714:
 	.p2align 1
 1:
 	.word	0x0082ea01	/* and.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret714
 	bx	r3
 	.p2align 2
@@ -30824,14 +30824,14 @@ a32_case_715:
 	.p2align 1
 1:
 	.word	0x0002ea01	/* and.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret715
 	bx	r3
 	.p2align 2
@@ -30878,14 +30878,14 @@ a32_case_716:
 	.p2align 1
 1:
 	.word	0x0082ea01	/* and.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret716
 	bx	r3
 	.p2align 2
@@ -30930,14 +30930,14 @@ a32_case_717:
 	.p2align 1
 1:
 	.word	0x0002ea21	/* bic.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret717
 	bx	r3
 	.p2align 2
@@ -30982,14 +30982,14 @@ a32_case_718:
 	.p2align 1
 1:
 	.word	0x0082ea21	/* bic.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret718
 	bx	r3
 	.p2align 2
@@ -31035,14 +31035,14 @@ a32_case_719:
 	.p2align 1
 1:
 	.word	0x0002ea21	/* bic.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret719
 	bx	r3
 	.p2align 2
@@ -31088,14 +31088,14 @@ a32_case_720:
 	.p2align 1
 1:
 	.word	0x0082ea21	/* bic.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret720
 	bx	r3
 	.p2align 2
@@ -31142,14 +31142,14 @@ a32_case_721:
 	.p2align 1
 1:
 	.word	0x0002ea21	/* bic.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret721
 	bx	r3
 	.p2align 2
@@ -31196,14 +31196,14 @@ a32_case_722:
 	.p2align 1
 1:
 	.word	0x0082ea21	/* bic.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret722
 	bx	r3
 	.p2align 2
@@ -31248,14 +31248,14 @@ a32_case_723:
 	.p2align 1
 1:
 	.word	0x0002ea41	/* orr.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret723
 	bx	r3
 	.p2align 2
@@ -31300,14 +31300,14 @@ a32_case_724:
 	.p2align 1
 1:
 	.word	0x0082ea41	/* orr.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret724
 	bx	r3
 	.p2align 2
@@ -31353,14 +31353,14 @@ a32_case_725:
 	.p2align 1
 1:
 	.word	0x0002ea41	/* orr.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret725
 	bx	r3
 	.p2align 2
@@ -31406,14 +31406,14 @@ a32_case_726:
 	.p2align 1
 1:
 	.word	0x0082ea41	/* orr.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret726
 	bx	r3
 	.p2align 2
@@ -31460,14 +31460,14 @@ a32_case_727:
 	.p2align 1
 1:
 	.word	0x0002ea41	/* orr.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret727
 	bx	r3
 	.p2align 2
@@ -31514,14 +31514,14 @@ a32_case_728:
 	.p2align 1
 1:
 	.word	0x0082ea41	/* orr.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret728
 	bx	r3
 	.p2align 2
@@ -31566,14 +31566,14 @@ a32_case_729:
 	.p2align 1
 1:
 	.word	0x0002ea61	/* orn.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret729
 	bx	r3
 	.p2align 2
@@ -31618,14 +31618,14 @@ a32_case_730:
 	.p2align 1
 1:
 	.word	0x0082ea61	/* orn.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret730
 	bx	r3
 	.p2align 2
@@ -31671,14 +31671,14 @@ a32_case_731:
 	.p2align 1
 1:
 	.word	0x0002ea61	/* orn.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret731
 	bx	r3
 	.p2align 2
@@ -31724,14 +31724,14 @@ a32_case_732:
 	.p2align 1
 1:
 	.word	0x0082ea61	/* orn.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret732
 	bx	r3
 	.p2align 2
@@ -31778,14 +31778,14 @@ a32_case_733:
 	.p2align 1
 1:
 	.word	0x0002ea61	/* orn.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret733
 	bx	r3
 	.p2align 2
@@ -31832,14 +31832,14 @@ a32_case_734:
 	.p2align 1
 1:
 	.word	0x0082ea61	/* orn.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret734
 	bx	r3
 	.p2align 2
@@ -31884,14 +31884,14 @@ a32_case_735:
 	.p2align 1
 1:
 	.word	0x0002ea81	/* eor.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret735
 	bx	r3
 	.p2align 2
@@ -31936,14 +31936,14 @@ a32_case_736:
 	.p2align 1
 1:
 	.word	0x0082ea81	/* eor.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret736
 	bx	r3
 	.p2align 2
@@ -31989,14 +31989,14 @@ a32_case_737:
 	.p2align 1
 1:
 	.word	0x0002ea81	/* eor.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret737
 	bx	r3
 	.p2align 2
@@ -32042,14 +32042,14 @@ a32_case_738:
 	.p2align 1
 1:
 	.word	0x0082ea81	/* eor.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret738
 	bx	r3
 	.p2align 2
@@ -32096,14 +32096,14 @@ a32_case_739:
 	.p2align 1
 1:
 	.word	0x0002ea81	/* eor.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret739
 	bx	r3
 	.p2align 2
@@ -32150,14 +32150,14 @@ a32_case_740:
 	.p2align 1
 1:
 	.word	0x0082ea81	/* eor.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret740
 	bx	r3
 	.p2align 2
@@ -32202,14 +32202,14 @@ a32_case_741:
 	.p2align 1
 1:
 	.word	0x0002eb01	/* add.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret741
 	bx	r3
 	.p2align 2
@@ -32254,14 +32254,14 @@ a32_case_742:
 	.p2align 1
 1:
 	.word	0x0082eb01	/* add.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret742
 	bx	r3
 	.p2align 2
@@ -32307,14 +32307,14 @@ a32_case_743:
 	.p2align 1
 1:
 	.word	0x0002eb01	/* add.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret743
 	bx	r3
 	.p2align 2
@@ -32360,14 +32360,14 @@ a32_case_744:
 	.p2align 1
 1:
 	.word	0x0082eb01	/* add.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret744
 	bx	r3
 	.p2align 2
@@ -32414,14 +32414,14 @@ a32_case_745:
 	.p2align 1
 1:
 	.word	0x0002eb01	/* add.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret745
 	bx	r3
 	.p2align 2
@@ -32468,14 +32468,14 @@ a32_case_746:
 	.p2align 1
 1:
 	.word	0x0082eb01	/* add.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret746
 	bx	r3
 	.p2align 2
@@ -32520,14 +32520,14 @@ a32_case_747:
 	.p2align 1
 1:
 	.word	0x0002eb41	/* adc.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret747
 	bx	r3
 	.p2align 2
@@ -32572,14 +32572,14 @@ a32_case_748:
 	.p2align 1
 1:
 	.word	0x0082eb41	/* adc.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret748
 	bx	r3
 	.p2align 2
@@ -32625,14 +32625,14 @@ a32_case_749:
 	.p2align 1
 1:
 	.word	0x0002eb41	/* adc.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret749
 	bx	r3
 	.p2align 2
@@ -32678,14 +32678,14 @@ a32_case_750:
 	.p2align 1
 1:
 	.word	0x0082eb41	/* adc.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret750
 	bx	r3
 	.p2align 2
@@ -32732,14 +32732,14 @@ a32_case_751:
 	.p2align 1
 1:
 	.word	0x0002eb41	/* adc.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret751
 	bx	r3
 	.p2align 2
@@ -32786,14 +32786,14 @@ a32_case_752:
 	.p2align 1
 1:
 	.word	0x0082eb41	/* adc.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret752
 	bx	r3
 	.p2align 2
@@ -32838,14 +32838,14 @@ a32_case_753:
 	.p2align 1
 1:
 	.word	0x0002eb61	/* sbc.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret753
 	bx	r3
 	.p2align 2
@@ -32890,14 +32890,14 @@ a32_case_754:
 	.p2align 1
 1:
 	.word	0x0082eb61	/* sbc.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret754
 	bx	r3
 	.p2align 2
@@ -32943,14 +32943,14 @@ a32_case_755:
 	.p2align 1
 1:
 	.word	0x0002eb61	/* sbc.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret755
 	bx	r3
 	.p2align 2
@@ -32996,14 +32996,14 @@ a32_case_756:
 	.p2align 1
 1:
 	.word	0x0082eb61	/* sbc.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret756
 	bx	r3
 	.p2align 2
@@ -33050,14 +33050,14 @@ a32_case_757:
 	.p2align 1
 1:
 	.word	0x0002eb61	/* sbc.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret757
 	bx	r3
 	.p2align 2
@@ -33104,14 +33104,14 @@ a32_case_758:
 	.p2align 1
 1:
 	.word	0x0082eb61	/* sbc.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret758
 	bx	r3
 	.p2align 2
@@ -33156,14 +33156,14 @@ a32_case_759:
 	.p2align 1
 1:
 	.word	0x0002eba1	/* sub.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret759
 	bx	r3
 	.p2align 2
@@ -33208,14 +33208,14 @@ a32_case_760:
 	.p2align 1
 1:
 	.word	0x0082eba1	/* sub.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret760
 	bx	r3
 	.p2align 2
@@ -33261,14 +33261,14 @@ a32_case_761:
 	.p2align 1
 1:
 	.word	0x0002eba1	/* sub.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret761
 	bx	r3
 	.p2align 2
@@ -33314,14 +33314,14 @@ a32_case_762:
 	.p2align 1
 1:
 	.word	0x0082eba1	/* sub.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret762
 	bx	r3
 	.p2align 2
@@ -33368,14 +33368,14 @@ a32_case_763:
 	.p2align 1
 1:
 	.word	0x0002eba1	/* sub.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret763
 	bx	r3
 	.p2align 2
@@ -33422,14 +33422,14 @@ a32_case_764:
 	.p2align 1
 1:
 	.word	0x0082eba1	/* sub.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret764
 	bx	r3
 	.p2align 2
@@ -33474,14 +33474,14 @@ a32_case_765:
 	.p2align 1
 1:
 	.word	0x0002ebc1	/* rsb.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret765
 	bx	r3
 	.p2align 2
@@ -33526,14 +33526,14 @@ a32_case_766:
 	.p2align 1
 1:
 	.word	0x0082ebc1	/* rsb.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret766
 	bx	r3
 	.p2align 2
@@ -33579,14 +33579,14 @@ a32_case_767:
 	.p2align 1
 1:
 	.word	0x0002ebc1	/* rsb.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret767
 	bx	r3
 	.p2align 2
@@ -33632,14 +33632,14 @@ a32_case_768:
 	.p2align 1
 1:
 	.word	0x0082ebc1	/* rsb.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret768
 	bx	r3
 	.p2align 2
@@ -33686,14 +33686,14 @@ a32_case_769:
 	.p2align 1
 1:
 	.word	0x0002ebc1	/* rsb.w r0, r1, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret769
 	bx	r3
 	.p2align 2
@@ -33740,14 +33740,14 @@ a32_case_770:
 	.p2align 1
 1:
 	.word	0x0082ebc1	/* rsb.w r0, r1, r2 lsl #2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret770
 	bx	r3
 	.p2align 2
@@ -33791,14 +33791,14 @@ a32_case_771:
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret771
 	bx	r3
 	.p2align 2
@@ -33842,14 +33842,14 @@ a32_case_772:
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret772
 	bx	r3
 	.p2align 2
@@ -33893,14 +33893,14 @@ a32_case_773:
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret773
 	bx	r3
 	.p2align 2
@@ -33944,14 +33944,14 @@ a32_case_774:
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret774
 	bx	r3
 	.p2align 2
@@ -33996,14 +33996,14 @@ a32_case_775:
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret775
 	bx	r3
 	.p2align 2
@@ -34048,14 +34048,14 @@ a32_case_776:
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret776
 	bx	r3
 	.p2align 2
@@ -34100,14 +34100,14 @@ a32_case_777:
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret777
 	bx	r3
 	.p2align 2
@@ -34152,14 +34152,14 @@ a32_case_778:
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret778
 	bx	r3
 	.p2align 2
@@ -34204,14 +34204,14 @@ a32_case_779:
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret779
 	bx	r3
 	.p2align 2
@@ -34256,14 +34256,14 @@ a32_case_780:
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret780
 	bx	r3
 	.p2align 2
@@ -34307,14 +34307,14 @@ a32_case_781:
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret781
 	bx	r3
 	.p2align 2
@@ -34358,14 +34358,14 @@ a32_case_782:
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret782
 	bx	r3
 	.p2align 2
@@ -34410,14 +34410,14 @@ a32_case_783:
 	.p2align 1
 1:
 	.word	0x0001f001	/* and.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret783
 	bx	r3
 	.p2align 2
@@ -34462,14 +34462,14 @@ a32_case_784:
 	.p2align 1
 1:
 	.word	0x00fff001	/* and.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret784
 	bx	r3
 	.p2align 2
@@ -34514,14 +34514,14 @@ a32_case_785:
 	.p2align 1
 1:
 	.word	0x7080f401	/* and.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret785
 	bx	r3
 	.p2align 2
@@ -34566,14 +34566,14 @@ a32_case_786:
 	.p2align 1
 1:
 	.word	0x4000f001	/* and.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret786
 	bx	r3
 	.p2align 2
@@ -34618,14 +34618,14 @@ a32_case_787:
 	.p2align 1
 1:
 	.word	0x407ff401	/* and.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret787
 	bx	r3
 	.p2align 2
@@ -34670,14 +34670,14 @@ a32_case_788:
 	.p2align 1
 1:
 	.word	0x000ff001	/* and.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret788
 	bx	r3
 	.p2align 2
@@ -34722,14 +34722,14 @@ a32_case_789:
 	.p2align 1
 1:
 	.word	0x0001f021	/* bic.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret789
 	bx	r3
 	.p2align 2
@@ -34774,14 +34774,14 @@ a32_case_790:
 	.p2align 1
 1:
 	.word	0x00fff021	/* bic.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret790
 	bx	r3
 	.p2align 2
@@ -34826,14 +34826,14 @@ a32_case_791:
 	.p2align 1
 1:
 	.word	0x7080f421	/* bic.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret791
 	bx	r3
 	.p2align 2
@@ -34878,14 +34878,14 @@ a32_case_792:
 	.p2align 1
 1:
 	.word	0x4000f021	/* bic.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret792
 	bx	r3
 	.p2align 2
@@ -34930,14 +34930,14 @@ a32_case_793:
 	.p2align 1
 1:
 	.word	0x407ff421	/* bic.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret793
 	bx	r3
 	.p2align 2
@@ -34982,14 +34982,14 @@ a32_case_794:
 	.p2align 1
 1:
 	.word	0x000ff021	/* bic.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret794
 	bx	r3
 	.p2align 2
@@ -35034,14 +35034,14 @@ a32_case_795:
 	.p2align 1
 1:
 	.word	0x0001f041	/* orr.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret795
 	bx	r3
 	.p2align 2
@@ -35086,14 +35086,14 @@ a32_case_796:
 	.p2align 1
 1:
 	.word	0x00fff041	/* orr.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret796
 	bx	r3
 	.p2align 2
@@ -35138,14 +35138,14 @@ a32_case_797:
 	.p2align 1
 1:
 	.word	0x7080f441	/* orr.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret797
 	bx	r3
 	.p2align 2
@@ -35190,14 +35190,14 @@ a32_case_798:
 	.p2align 1
 1:
 	.word	0x4000f041	/* orr.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret798
 	bx	r3
 	.p2align 2
@@ -35242,14 +35242,14 @@ a32_case_799:
 	.p2align 1
 1:
 	.word	0x407ff441	/* orr.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret799
 	bx	r3
 	.p2align 2
@@ -35294,14 +35294,14 @@ a32_case_800:
 	.p2align 1
 1:
 	.word	0x000ff041	/* orr.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret800
 	bx	r3
 	.p2align 2
@@ -35346,14 +35346,14 @@ a32_case_801:
 	.p2align 1
 1:
 	.word	0x0001f061	/* orn.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret801
 	bx	r3
 	.p2align 2
@@ -35398,14 +35398,14 @@ a32_case_802:
 	.p2align 1
 1:
 	.word	0x00fff061	/* orn.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret802
 	bx	r3
 	.p2align 2
@@ -35450,14 +35450,14 @@ a32_case_803:
 	.p2align 1
 1:
 	.word	0x7080f461	/* orn.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret803
 	bx	r3
 	.p2align 2
@@ -35502,14 +35502,14 @@ a32_case_804:
 	.p2align 1
 1:
 	.word	0x4000f061	/* orn.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret804
 	bx	r3
 	.p2align 2
@@ -35554,14 +35554,14 @@ a32_case_805:
 	.p2align 1
 1:
 	.word	0x407ff461	/* orn.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret805
 	bx	r3
 	.p2align 2
@@ -35606,14 +35606,14 @@ a32_case_806:
 	.p2align 1
 1:
 	.word	0x000ff061	/* orn.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret806
 	bx	r3
 	.p2align 2
@@ -35658,14 +35658,14 @@ a32_case_807:
 	.p2align 1
 1:
 	.word	0x0001f081	/* eor.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret807
 	bx	r3
 	.p2align 2
@@ -35710,14 +35710,14 @@ a32_case_808:
 	.p2align 1
 1:
 	.word	0x00fff081	/* eor.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret808
 	bx	r3
 	.p2align 2
@@ -35762,14 +35762,14 @@ a32_case_809:
 	.p2align 1
 1:
 	.word	0x7080f481	/* eor.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret809
 	bx	r3
 	.p2align 2
@@ -35814,14 +35814,14 @@ a32_case_810:
 	.p2align 1
 1:
 	.word	0x4000f081	/* eor.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret810
 	bx	r3
 	.p2align 2
@@ -35866,14 +35866,14 @@ a32_case_811:
 	.p2align 1
 1:
 	.word	0x407ff481	/* eor.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret811
 	bx	r3
 	.p2align 2
@@ -35918,14 +35918,14 @@ a32_case_812:
 	.p2align 1
 1:
 	.word	0x000ff081	/* eor.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret812
 	bx	r3
 	.p2align 2
@@ -35970,14 +35970,14 @@ a32_case_813:
 	.p2align 1
 1:
 	.word	0x0001f101	/* add.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret813
 	bx	r3
 	.p2align 2
@@ -36022,14 +36022,14 @@ a32_case_814:
 	.p2align 1
 1:
 	.word	0x00fff101	/* add.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret814
 	bx	r3
 	.p2align 2
@@ -36074,14 +36074,14 @@ a32_case_815:
 	.p2align 1
 1:
 	.word	0x7080f501	/* add.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret815
 	bx	r3
 	.p2align 2
@@ -36126,14 +36126,14 @@ a32_case_816:
 	.p2align 1
 1:
 	.word	0x4000f101	/* add.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret816
 	bx	r3
 	.p2align 2
@@ -36178,14 +36178,14 @@ a32_case_817:
 	.p2align 1
 1:
 	.word	0x407ff501	/* add.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret817
 	bx	r3
 	.p2align 2
@@ -36230,14 +36230,14 @@ a32_case_818:
 	.p2align 1
 1:
 	.word	0x000ff101	/* add.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret818
 	bx	r3
 	.p2align 2
@@ -36282,14 +36282,14 @@ a32_case_819:
 	.p2align 1
 1:
 	.word	0x0001f141	/* adc.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret819
 	bx	r3
 	.p2align 2
@@ -36334,14 +36334,14 @@ a32_case_820:
 	.p2align 1
 1:
 	.word	0x00fff141	/* adc.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret820
 	bx	r3
 	.p2align 2
@@ -36386,14 +36386,14 @@ a32_case_821:
 	.p2align 1
 1:
 	.word	0x7080f541	/* adc.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret821
 	bx	r3
 	.p2align 2
@@ -36438,14 +36438,14 @@ a32_case_822:
 	.p2align 1
 1:
 	.word	0x4000f141	/* adc.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret822
 	bx	r3
 	.p2align 2
@@ -36490,14 +36490,14 @@ a32_case_823:
 	.p2align 1
 1:
 	.word	0x407ff541	/* adc.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret823
 	bx	r3
 	.p2align 2
@@ -36542,14 +36542,14 @@ a32_case_824:
 	.p2align 1
 1:
 	.word	0x000ff141	/* adc.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret824
 	bx	r3
 	.p2align 2
@@ -36594,14 +36594,14 @@ a32_case_825:
 	.p2align 1
 1:
 	.word	0x0001f161	/* sbc.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret825
 	bx	r3
 	.p2align 2
@@ -36646,14 +36646,14 @@ a32_case_826:
 	.p2align 1
 1:
 	.word	0x00fff161	/* sbc.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret826
 	bx	r3
 	.p2align 2
@@ -36698,14 +36698,14 @@ a32_case_827:
 	.p2align 1
 1:
 	.word	0x7080f561	/* sbc.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret827
 	bx	r3
 	.p2align 2
@@ -36750,14 +36750,14 @@ a32_case_828:
 	.p2align 1
 1:
 	.word	0x4000f161	/* sbc.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret828
 	bx	r3
 	.p2align 2
@@ -36802,14 +36802,14 @@ a32_case_829:
 	.p2align 1
 1:
 	.word	0x407ff561	/* sbc.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret829
 	bx	r3
 	.p2align 2
@@ -36854,14 +36854,14 @@ a32_case_830:
 	.p2align 1
 1:
 	.word	0x000ff161	/* sbc.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret830
 	bx	r3
 	.p2align 2
@@ -36906,14 +36906,14 @@ a32_case_831:
 	.p2align 1
 1:
 	.word	0x0001f1a1	/* sub.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret831
 	bx	r3
 	.p2align 2
@@ -36958,14 +36958,14 @@ a32_case_832:
 	.p2align 1
 1:
 	.word	0x00fff1a1	/* sub.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret832
 	bx	r3
 	.p2align 2
@@ -37010,14 +37010,14 @@ a32_case_833:
 	.p2align 1
 1:
 	.word	0x7080f5a1	/* sub.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret833
 	bx	r3
 	.p2align 2
@@ -37062,14 +37062,14 @@ a32_case_834:
 	.p2align 1
 1:
 	.word	0x4000f1a1	/* sub.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret834
 	bx	r3
 	.p2align 2
@@ -37114,14 +37114,14 @@ a32_case_835:
 	.p2align 1
 1:
 	.word	0x407ff5a1	/* sub.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret835
 	bx	r3
 	.p2align 2
@@ -37166,14 +37166,14 @@ a32_case_836:
 	.p2align 1
 1:
 	.word	0x000ff1a1	/* sub.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret836
 	bx	r3
 	.p2align 2
@@ -37218,14 +37218,14 @@ a32_case_837:
 	.p2align 1
 1:
 	.word	0x0001f1c1	/* rsb.w r0, r1, #0x1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret837
 	bx	r3
 	.p2align 2
@@ -37270,14 +37270,14 @@ a32_case_838:
 	.p2align 1
 1:
 	.word	0x00fff1c1	/* rsb.w r0, r1, #0xff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret838
 	bx	r3
 	.p2align 2
@@ -37322,14 +37322,14 @@ a32_case_839:
 	.p2align 1
 1:
 	.word	0x7080f5c1	/* rsb.w r0, r1, #0x100 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret839
 	bx	r3
 	.p2align 2
@@ -37374,14 +37374,14 @@ a32_case_840:
 	.p2align 1
 1:
 	.word	0x4000f1c1	/* rsb.w r0, r1, #0x80000000 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret840
 	bx	r3
 	.p2align 2
@@ -37426,14 +37426,14 @@ a32_case_841:
 	.p2align 1
 1:
 	.word	0x407ff5c1	/* rsb.w r0, r1, #0xff00 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret841
 	bx	r3
 	.p2align 2
@@ -37478,14 +37478,14 @@ a32_case_842:
 	.p2align 1
 1:
 	.word	0x000ff1c1	/* rsb.w r0, r1, #0xf */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret842
 	bx	r3
 	.p2align 2
@@ -37528,14 +37528,14 @@ a32_case_843:
 	.p2align 1
 1:
 	.word	0x2034f241	/* movw r0, #0x1234 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret843
 	bx	r3
 	.p2align 2
@@ -37579,14 +37579,14 @@ a32_case_844:
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x2034f2c1	/* movt r0, #0x1234 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret844
 	bx	r3
 	.p2align 2
@@ -37629,14 +37629,14 @@ a32_case_845:
 	.p2align 1
 1:
 	.word	0x60eff64b	/* movw r0, #0xbeef */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret845
 	bx	r3
 	.p2align 2
@@ -37680,14 +37680,14 @@ a32_case_846:
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x60eff6cb	/* movt r0, #0xbeef */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret846
 	bx	r3
 	.p2align 2
@@ -37730,14 +37730,14 @@ a32_case_847:
 	.p2align 1
 1:
 	.word	0x0000f240	/* movw r0, #0x0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret847
 	bx	r3
 	.p2align 2
@@ -37781,14 +37781,14 @@ a32_case_848:
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x0000f2c0	/* movt r0, #0x0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret848
 	bx	r3
 	.p2align 2
@@ -37831,14 +37831,14 @@ a32_case_849:
 	.p2align 1
 1:
 	.word	0x70fff64f	/* movw r0, #0xffff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret849
 	bx	r3
 	.p2align 2
@@ -37882,14 +37882,14 @@ a32_case_850:
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x70fff6cf	/* movt r0, #0xffff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret850
 	bx	r3
 	.p2align 2
@@ -37933,14 +37933,14 @@ a32_case_851:
 	.p2align 1
 1:
 	.word	0x1023f201	/* addw r0, r1, #0x123 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret851
 	bx	r3
 	.p2align 2
@@ -37984,14 +37984,14 @@ a32_case_852:
 	.p2align 1
 1:
 	.word	0x1023f2a1	/* subw r0, r1, #0x123 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret852
 	bx	r3
 	.p2align 2
@@ -38035,14 +38035,14 @@ a32_case_853:
 	.p2align 1
 1:
 	.word	0x70fff601	/* addw r0, r1, #0xfff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret853
 	bx	r3
 	.p2align 2
@@ -38086,14 +38086,14 @@ a32_case_854:
 	.p2align 1
 1:
 	.word	0x70fff6a1	/* subw r0, r1, #0xfff */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret854
 	bx	r3
 	.p2align 2
@@ -38137,14 +38137,14 @@ a32_case_855:
 	.p2align 1
 1:
 	.word	0x0010f201	/* addw r0, r1, #0x10 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret855
 	bx	r3
 	.p2align 2
@@ -38188,14 +38188,14 @@ a32_case_856:
 	.p2align 1
 1:
 	.word	0x0010f2a1	/* subw r0, r1, #0x10 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret856
 	bx	r3
 	.p2align 2
@@ -38241,14 +38241,14 @@ a32_case_857:
 1:
 	.word	0x0000f8c9	/* str.w r0, [r9, #0] */
 	.word	0x1000f8d9	/* ldr.w r1, [r9, #0] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret857
 	bx	r3
 	.p2align 2
@@ -38294,14 +38294,14 @@ a32_case_858:
 1:
 	.word	0x0004f8c9	/* str.w r0, [r9, #4] */
 	.word	0x1004f8d9	/* ldr.w r1, [r9, #4] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret858
 	bx	r3
 	.p2align 2
@@ -38347,14 +38347,14 @@ a32_case_859:
 1:
 	.word	0x0040f8c9	/* str.w r0, [r9, #64] */
 	.word	0x1040f8d9	/* ldr.w r1, [r9, #64] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret859
 	bx	r3
 	.p2align 2
@@ -38400,14 +38400,14 @@ a32_case_860:
 1:
 	.word	0x0100f8c9	/* str.w r0, [r9, #256] */
 	.word	0x1100f8d9	/* ldr.w r1, [r9, #256] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret860
 	bx	r3
 	.p2align 2
@@ -38453,14 +38453,14 @@ a32_case_861:
 	.word	0x1c04f859	/* ldr.w r1, [r9, #-4] */
 	.hword	0x46cd	/* mov sp, r9 */
 	.hword	0xb010	/* add sp, #64 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret861
 	bx	r3
 	.p2align 2
@@ -38506,14 +38506,14 @@ a32_case_862:
 	.word	0x1c40f859	/* ldr.w r1, [r9, #-64] */
 	.hword	0x46cd	/* mov sp, r9 */
 	.hword	0xb010	/* add sp, #64 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret862
 	bx	r3
 	.p2align 2
@@ -38560,14 +38560,14 @@ a32_case_863:
 1:
 	.word	0x0002f849	/* str.w r0, [r9, r2] */
 	.word	0x1002f859	/* ldr.w r1, [r9, r2] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret863
 	bx	r3
 	.p2align 2
@@ -38614,14 +38614,14 @@ a32_case_864:
 1:
 	.word	0x0003f849	/* str.w r0, [r9, r3] */
 	.word	0x1003f859	/* ldr.w r1, [r9, r3] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret864
 	bx	r3
 	.p2align 2
@@ -38666,14 +38666,14 @@ a32_case_865:
 1:
 	.word	0x0000f889	/* strb.w r0, [r9, #0] */
 	.word	0x1000f899	/* ldrb.w r1, [r9, #0] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret865
 	bx	r3
 	.p2align 2
@@ -38718,14 +38718,14 @@ a32_case_866:
 1:
 	.word	0x0004f889	/* strb.w r0, [r9, #4] */
 	.word	0x1004f899	/* ldrb.w r1, [r9, #4] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret866
 	bx	r3
 	.p2align 2
@@ -38770,14 +38770,14 @@ a32_case_867:
 1:
 	.word	0x0014f889	/* strb.w r0, [r9, #20] */
 	.word	0x1014f899	/* ldrb.w r1, [r9, #20] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret867
 	bx	r3
 	.p2align 2
@@ -38823,14 +38823,14 @@ a32_case_868:
 1:
 	.word	0x0000f8a9	/* strh.w r0, [r9, #0] */
 	.word	0x1000f8b9	/* ldrh.w r1, [r9, #0] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret868
 	bx	r3
 	.p2align 2
@@ -38876,14 +38876,14 @@ a32_case_869:
 1:
 	.word	0x0002f8a9	/* strh.w r0, [r9, #2] */
 	.word	0x1002f8b9	/* ldrh.w r1, [r9, #2] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret869
 	bx	r3
 	.p2align 2
@@ -38929,14 +38929,14 @@ a32_case_870:
 1:
 	.word	0x000af8a9	/* strh.w r0, [r9, #10] */
 	.word	0x100af8b9	/* ldrh.w r1, [r9, #10] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret870
 	bx	r3
 	.p2align 2
@@ -38981,14 +38981,14 @@ a32_case_871:
 1:
 	.word	0x0000f8a9	/* strh.w r0, [r9, #0] */
 	.word	0x1000f999	/* ldrsb.w r1, [r9, #0] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret871
 	bx	r3
 	.p2align 2
@@ -39033,14 +39033,14 @@ a32_case_872:
 1:
 	.word	0x0002f8a9	/* strh.w r0, [r9, #2] */
 	.word	0x1002f999	/* ldrsb.w r1, [r9, #2] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret872
 	bx	r3
 	.p2align 2
@@ -39085,14 +39085,14 @@ a32_case_873:
 1:
 	.word	0x0000f8a9	/* strh.w r0, [r9, #0] */
 	.word	0x1000f9b9	/* ldrsh.w r1, [r9, #0] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret873
 	bx	r3
 	.p2align 2
@@ -39137,14 +39137,14 @@ a32_case_874:
 1:
 	.word	0x0004f8a9	/* strh.w r0, [r9, #4] */
 	.word	0x1004f9b9	/* ldrsh.w r1, [r9, #4] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret874
 	bx	r3
 	.p2align 2
@@ -39192,14 +39192,14 @@ a32_case_875:
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9, #0] */
 	.word	0x2300e9d9	/* ldrd r2, r3, [r9, #0] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret875
 	bx	r3
 	.p2align 2
@@ -39247,14 +39247,14 @@ a32_case_876:
 1:
 	.word	0x0101e9c9	/* strd r0, r1, [r9, #4] */
 	.word	0x2301e9d9	/* ldrd r2, r3, [r9, #4] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret876
 	bx	r3
 	.p2align 2
@@ -39302,14 +39302,14 @@ a32_case_877:
 1:
 	.word	0x0102e9c9	/* strd r0, r1, [r9, #8] */
 	.word	0x2302e9d9	/* ldrd r2, r3, [r9, #8] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret877
 	bx	r3
 	.p2align 2
@@ -39357,14 +39357,14 @@ a32_case_878:
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9] */
 	.word	0x2301e9f9	/* ldrd r2, r3, [r9, #4]! */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret878
 	bx	r3
 	.p2align 2
@@ -39412,14 +39412,14 @@ a32_case_879:
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9] */
 	.word	0x2300e959	/* ldrd r2, r3, [r9, #-2] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret879
 	bx	r3
 	.p2align 2
@@ -39467,14 +39467,14 @@ a32_case_880:
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9] */
 	.word	0x2301e959	/* ldrd r2, r3, [r9, #-4] */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret880
 	bx	r3
 	.p2align 2
@@ -39525,14 +39525,14 @@ a32_case_881:
 	.hword	0xe001	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret881
 	bx	r3
 	.p2align 2
@@ -39583,14 +39583,14 @@ a32_case_882:
 	.hword	0xe001	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret882
 	bx	r3
 	.p2align 2
@@ -39641,14 +39641,14 @@ a32_case_883:
 	.hword	0xe001	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret883
 	bx	r3
 	.p2align 2
@@ -39699,14 +39699,14 @@ a32_case_884:
 	.hword	0xe001	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret884
 	bx	r3
 	.p2align 2
@@ -39750,14 +39750,14 @@ a32_case_885:
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret885
 	bx	r3
 	.p2align 2
@@ -39801,14 +39801,14 @@ a32_case_886:
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret886
 	bx	r3
 	.p2align 2
@@ -39853,14 +39853,14 @@ a32_case_887:
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret887
 	bx	r3
 	.p2align 2
@@ -39904,14 +39904,14 @@ a32_case_888:
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret888
 	bx	r3
 	.p2align 2
@@ -39955,14 +39955,14 @@ a32_case_889:
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret889
 	bx	r3
 	.p2align 2
@@ -40006,14 +40006,14 @@ a32_case_890:
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret890
 	bx	r3
 	.p2align 2
@@ -40058,14 +40058,14 @@ a32_case_891:
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret891
 	bx	r3
 	.p2align 2
@@ -40109,14 +40109,14 @@ a32_case_892:
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret892
 	bx	r3
 	.p2align 2
@@ -40160,14 +40160,14 @@ a32_case_893:
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret893
 	bx	r3
 	.p2align 2
@@ -40211,14 +40211,14 @@ a32_case_894:
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret894
 	bx	r3
 	.p2align 2
@@ -40263,14 +40263,14 @@ a32_case_895:
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret895
 	bx	r3
 	.p2align 2
@@ -40314,14 +40314,14 @@ a32_case_896:
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret896
 	bx	r3
 	.p2align 2
@@ -40365,14 +40365,14 @@ a32_case_897:
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret897
 	bx	r3
 	.p2align 2
@@ -40416,14 +40416,14 @@ a32_case_898:
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret898
 	bx	r3
 	.p2align 2
@@ -40468,14 +40468,14 @@ a32_case_899:
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret899
 	bx	r3
 	.p2align 2
@@ -40519,14 +40519,14 @@ a32_case_900:
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret900
 	bx	r3
 	.p2align 2
@@ -40571,14 +40571,14 @@ a32_case_901:
 	.p2align 1
 1:
 	.word	0xf081fa91	/* rev r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret901
 	bx	r3
 	.p2align 2
@@ -40622,14 +40622,14 @@ a32_case_902:
 	.p2align 1
 1:
 	.word	0xf081fa91	/* rev r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret902
 	bx	r3
 	.p2align 2
@@ -40673,14 +40673,14 @@ a32_case_903:
 	.p2align 1
 1:
 	.word	0xf081fa91	/* rev r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret903
 	bx	r3
 	.p2align 2
@@ -40725,14 +40725,14 @@ a32_case_904:
 	.p2align 1
 1:
 	.word	0xf091fa91	/* rev16 r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret904
 	bx	r3
 	.p2align 2
@@ -40776,14 +40776,14 @@ a32_case_905:
 	.p2align 1
 1:
 	.word	0xf091fa91	/* rev16 r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret905
 	bx	r3
 	.p2align 2
@@ -40827,14 +40827,14 @@ a32_case_906:
 	.p2align 1
 1:
 	.word	0xf091fa91	/* rev16 r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret906
 	bx	r3
 	.p2align 2
@@ -40879,14 +40879,14 @@ a32_case_907:
 	.p2align 1
 1:
 	.word	0xf0b1fa91	/* revsh r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret907
 	bx	r3
 	.p2align 2
@@ -40930,14 +40930,14 @@ a32_case_908:
 	.p2align 1
 1:
 	.word	0xf0b1fa91	/* revsh r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret908
 	bx	r3
 	.p2align 2
@@ -40981,14 +40981,14 @@ a32_case_909:
 	.p2align 1
 1:
 	.word	0xf0b1fa91	/* revsh r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret909
 	bx	r3
 	.p2align 2
@@ -41032,14 +41032,14 @@ a32_case_910:
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret910
 	bx	r3
 	.p2align 2
@@ -41083,14 +41083,14 @@ a32_case_911:
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret911
 	bx	r3
 	.p2align 2
@@ -41135,14 +41135,14 @@ a32_case_912:
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret912
 	bx	r3
 	.p2align 2
@@ -41187,14 +41187,14 @@ a32_case_913:
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret913
 	bx	r3
 	.p2align 2
@@ -41239,14 +41239,14 @@ a32_case_914:
 	.p2align 1
 1:
 	.word	0x0003f3c1	/* ubfx r0, r1, #0, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret914
 	bx	r3
 	.p2align 2
@@ -41291,14 +41291,14 @@ a32_case_915:
 	.p2align 1
 1:
 	.word	0x0003f341	/* sbfx r0, r1, #0, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret915
 	bx	r3
 	.p2align 2
@@ -41343,14 +41343,14 @@ a32_case_916:
 	.p2align 1
 1:
 	.word	0x1003f3c1	/* ubfx r0, r1, #4, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret916
 	bx	r3
 	.p2align 2
@@ -41395,14 +41395,14 @@ a32_case_917:
 	.p2align 1
 1:
 	.word	0x1003f341	/* sbfx r0, r1, #4, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret917
 	bx	r3
 	.p2align 2
@@ -41447,14 +41447,14 @@ a32_case_918:
 	.p2align 1
 1:
 	.word	0x2007f3c1	/* ubfx r0, r1, #8, #8 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret918
 	bx	r3
 	.p2align 2
@@ -41499,14 +41499,14 @@ a32_case_919:
 	.p2align 1
 1:
 	.word	0x2007f341	/* sbfx r0, r1, #8, #8 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret919
 	bx	r3
 	.p2align 2
@@ -41551,14 +41551,14 @@ a32_case_920:
 	.p2align 1
 1:
 	.word	0x000ff3c1	/* ubfx r0, r1, #0, #16 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret920
 	bx	r3
 	.p2align 2
@@ -41603,14 +41603,14 @@ a32_case_921:
 	.p2align 1
 1:
 	.word	0x000ff341	/* sbfx r0, r1, #0, #16 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret921
 	bx	r3
 	.p2align 2
@@ -41656,14 +41656,14 @@ a32_case_922:
 	.p2align 1
 1:
 	.word	0x0003f361	/* bfi r0, r1, #0, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret922
 	bx	r3
 	.p2align 2
@@ -41708,14 +41708,14 @@ a32_case_923:
 	.p2align 1
 1:
 	.word	0x0003f36f	/* bfc r0, #0, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret923
 	bx	r3
 	.p2align 2
@@ -41761,14 +41761,14 @@ a32_case_924:
 	.p2align 1
 1:
 	.word	0x1007f361	/* bfi r0, r1, #4, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret924
 	bx	r3
 	.p2align 2
@@ -41813,14 +41813,14 @@ a32_case_925:
 	.p2align 1
 1:
 	.word	0x1007f36f	/* bfc r0, #4, #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret925
 	bx	r3
 	.p2align 2
@@ -41866,14 +41866,14 @@ a32_case_926:
 	.p2align 1
 1:
 	.word	0x200ff361	/* bfi r0, r1, #8, #8 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret926
 	bx	r3
 	.p2align 2
@@ -41918,14 +41918,14 @@ a32_case_927:
 	.p2align 1
 1:
 	.word	0x200ff36f	/* bfc r0, #8, #8 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret927
 	bx	r3
 	.p2align 2
@@ -41970,14 +41970,14 @@ a32_case_928:
 	.p2align 1
 1:
 	.word	0x0007f301	/* ssat r0, #8, r1, lsl #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret928
 	bx	r3
 	.p2align 2
@@ -42022,14 +42022,14 @@ a32_case_929:
 	.p2align 1
 1:
 	.word	0x0008f381	/* usat r0, #8, r1, lsl #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret929
 	bx	r3
 	.p2align 2
@@ -42074,14 +42074,14 @@ a32_case_930:
 	.p2align 1
 1:
 	.word	0x1007f301	/* ssat r0, #8, r1, lsl #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret930
 	bx	r3
 	.p2align 2
@@ -42126,14 +42126,14 @@ a32_case_931:
 	.p2align 1
 1:
 	.word	0x1008f381	/* usat r0, #8, r1, lsl #4 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret931
 	bx	r3
 	.p2align 2
@@ -42178,14 +42178,14 @@ a32_case_932:
 	.p2align 1
 1:
 	.word	0x000ff301	/* ssat r0, #16, r1, lsl #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret932
 	bx	r3
 	.p2align 2
@@ -42230,14 +42230,14 @@ a32_case_933:
 	.p2align 1
 1:
 	.word	0x0010f381	/* usat r0, #16, r1, lsl #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret933
 	bx	r3
 	.p2align 2
@@ -42282,14 +42282,14 @@ a32_case_934:
 	.p2align 1
 1:
 	.word	0x0003f301	/* ssat r0, #4, r1, lsl #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret934
 	bx	r3
 	.p2align 2
@@ -42334,14 +42334,14 @@ a32_case_935:
 	.p2align 1
 1:
 	.word	0x0004f381	/* usat r0, #4, r1, lsl #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret935
 	bx	r3
 	.p2align 2
@@ -42386,14 +42386,14 @@ a32_case_936:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x211c	/* movs r1, #28 */
 	.hword	0x40c8	/* lsrs r0, r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret936
 	bx	r3
 	.p2align 2
@@ -42438,14 +42438,14 @@ a32_case_937:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x211c	/* movs r1, #28 */
 	.hword	0x40c8	/* lsrs r0, r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret937
 	bx	r3
 	.p2align 2
@@ -42490,14 +42490,14 @@ a32_case_938:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x211c	/* movs r1, #28 */
 	.hword	0x40c8	/* lsrs r0, r0, r1 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret938
 	bx	r3
 	.p2align 2
@@ -42545,14 +42545,14 @@ a32_case_939:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x221c	/* movs r2, #28 */
 	.hword	0x40d0	/* lsrs r0, r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret939
 	bx	r3
 	.p2align 2
@@ -42599,14 +42599,14 @@ a32_case_940:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x221c	/* movs r2, #28 */
 	.hword	0x40d0	/* lsrs r0, r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret940
 	bx	r3
 	.p2align 2
@@ -42654,14 +42654,14 @@ a32_case_941:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x221c	/* movs r2, #28 */
 	.hword	0x40d0	/* lsrs r0, r0, r2 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret941
 	bx	r3
 	.p2align 2
@@ -42709,14 +42709,14 @@ a32_case_942:
 	.hword	0xe001	/* b end */
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0x4770	/* bx lr */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret942
 	bx	r3
 	.p2align 2
@@ -42769,14 +42769,14 @@ a32_case_943:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret943
 	bx	r3
 	.p2align 2
@@ -42829,14 +42829,14 @@ a32_case_944:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret944
 	bx	r3
 	.p2align 2
@@ -42889,14 +42889,14 @@ a32_case_945:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret945
 	bx	r3
 	.p2align 2
@@ -42949,14 +42949,14 @@ a32_case_946:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret946
 	bx	r3
 	.p2align 2
@@ -43009,14 +43009,14 @@ a32_case_947:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret947
 	bx	r3
 	.p2align 2
@@ -43069,14 +43069,14 @@ a32_case_948:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret948
 	bx	r3
 	.p2align 2
@@ -43129,14 +43129,14 @@ a32_case_949:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret949
 	bx	r3
 	.p2align 2
@@ -43189,14 +43189,14 @@ a32_case_950:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret950
 	bx	r3
 	.p2align 2
@@ -43249,14 +43249,14 @@ a32_case_951:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret951
 	bx	r3
 	.p2align 2
@@ -43309,14 +43309,14 @@ a32_case_952:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret952
 	bx	r3
 	.p2align 2
@@ -43369,14 +43369,14 @@ a32_case_953:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret953
 	bx	r3
 	.p2align 2
@@ -43429,14 +43429,14 @@ a32_case_954:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret954
 	bx	r3
 	.p2align 2
@@ -43489,14 +43489,14 @@ a32_case_955:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret955
 	bx	r3
 	.p2align 2
@@ -43549,14 +43549,14 @@ a32_case_956:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret956
 	bx	r3
 	.p2align 2
@@ -43609,14 +43609,14 @@ a32_case_957:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret957
 	bx	r3
 	.p2align 2
@@ -43669,14 +43669,14 @@ a32_case_958:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret958
 	bx	r3
 	.p2align 2
@@ -43729,14 +43729,14 @@ a32_case_959:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret959
 	bx	r3
 	.p2align 2
@@ -43789,14 +43789,14 @@ a32_case_960:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret960
 	bx	r3
 	.p2align 2
@@ -43849,14 +43849,14 @@ a32_case_961:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret961
 	bx	r3
 	.p2align 2
@@ -43909,14 +43909,14 @@ a32_case_962:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret962
 	bx	r3
 	.p2align 2
@@ -43973,14 +43973,14 @@ a32_case_963:
 	.thumb
 	.p2align 1
 	.hword	0x2233	/* movs r2, #0x33 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret963
 	bx	r3
 	.p2align 2
@@ -44037,14 +44037,14 @@ a32_case_964:
 	.thumb
 	.p2align 1
 	.hword	0x2233	/* movs r2, #0x33 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret964
 	bx	r3
 	.p2align 2
@@ -44101,14 +44101,14 @@ a32_case_965:
 	.thumb
 	.p2align 1
 	.hword	0x2233	/* movs r2, #0x33 */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret965
 	bx	r3
 	.p2align 2
@@ -44291,14 +44291,14 @@ a32_case_969:
 	.p2align 2
 	.word	0xe3a02088	/* mov r2, #0x88 */
 	.word	0xe12fff1e	/* bx lr */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret969
 	bx	r3
 	.p2align 2
@@ -44349,14 +44349,14 @@ a32_case_970:
 	.p2align 2
 	.word	0xe3a02088	/* mov r2, #0x88 */
 	.word	0xe12fff1e	/* bx lr */
-	stmia.w	r12, {r0-r11}
+	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
-	str.w	r0, [r12, #64]
+	str	r0, [r12, #64]
 	movs	r0, #0
-	str.w	r0, [r12, #48]
-	str.w	r0, [r12, #52]
-	str.w	r0, [r12, #56]
-	str.w	r0, [r12, #60]
+	str	r0, [r12, #48]
+	str	r0, [r12, #52]
+	str	r0, [r12, #56]
+	str	r0, [r12, #60]
 	ldr	r3, .Lret970
 	bx	r3
 	.p2align 2

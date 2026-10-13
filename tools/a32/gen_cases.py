@@ -1584,14 +1584,20 @@ def emit_s():
                 o.append("\t.word\t0x%08x\t/* literal read by this fragment */" % (w & 0xFFFFFFFF))
             # Thumb capture (not executed by the interpreter: it stops at the
             # fragment's byte end). Capture BEFORE the return gadget clobbers r3.
-            o += ["\tstmia.w\tr12, {r0-r11}",
+            # NO .w width suffixes: an interworking case may already have
+            # returned to ARM inside its fragment, and GNU as rejects width
+            # suffixes in ARM mode ("width suffixes are invalid in ARM mode") --
+            # which is what broke this job while clang's assembler accepted it.
+            # The plain mnemonics assemble in EITHER state, and the width does
+            # not matter here: this block only saves registers for the readout.
+            o += ["\tstmia\tr12, {r0-r11}",
                   "\tmrs\tr0, cpsr",
-                  "\tstr.w\tr0, [r12, #64]",
+                  "\tstr\tr0, [r12, #64]",
                   "\tmovs\tr0, #0",
-                  "\tstr.w\tr0, [r12, #48]",
-                  "\tstr.w\tr0, [r12, #52]",
-                  "\tstr.w\tr0, [r12, #56]",
-                  "\tstr.w\tr0, [r12, #60]",
+                  "\tstr\tr0, [r12, #48]",
+                  "\tstr\tr0, [r12, #52]",
+                  "\tstr\tr0, [r12, #56]",
+                  "\tstr\tr0, [r12, #60]",
                   "\tldr\tr3, .Lret%d" % cid,
                   "\tbx\tr3",
                   "\t.p2align 2",
