@@ -265,6 +265,12 @@ final class TLUnityUIView: UIView, UIKeyInput {
             try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try? session.setActive(true)
         }
+        // A boundary marker for whoever reads the log later. One log file holds several apps' runs back to back, and the
+        // previous run's tail is reprinted at boot under a [prev] banner, so "the same error appeared in the other app"
+        // has been a misreading that cost real diagnosis time (a Ren'Py module error appearing to be a Unity app's). This
+        // line exists so that question can be answered by position instead of by inference: everything below belongs to
+        // THIS app.
+        HuskLog.log("tl", "==== new app: \(apk) -- every line below this one belongs to THIS app; anything from an earlier run is prefixed [prev] ====")
         HuskLog.log("tl", "native: launching \(apk) at \(width)x\(height) (\(engine == .cocos ? "cocos2d-x" : engine == .minecraft ? "gameactivity" : engine == .sdl ? "sdl" : engine == .ue4 ? "ue4" : engine == .gta ? "gta" : engine == .godot ? "godot" : engine == .nativeactivity ? "nativeactivity" : engine == .flutter ? "flutter" : engine == .gamemaker ? "gamemaker" : engine == .java ? "java" : "unity"))")
         // Splits and the asset pack are part of the app, whatever its engine; the game's libraries and data may be in any of
         // them (a Google Play install keeps a Unity game's libraries in one split and its data in an asset pack).
