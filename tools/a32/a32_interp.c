@@ -647,7 +647,14 @@ static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next)
     }
 
     if ((h & 0xF000u) == 0xB000u) {                    /* 1011: format 13/14 (and CBZ/CBNZ/BKPT) */
-        if ((h & 0xFF80u) == 0xB000u) {                /* ADD/SUB SP, #imm7*4 */
+        if ((h & 0xFF00u) == 0xB000u) {                /* ADD/SUB SP, #imm7*4 */
+            /* The mask must be 0xFF00, not 0xFF80: SUB SP is 1011 0000 1xxx xxxx
+               (0xB080-0xB0FF) and can never equal 0xB000 under a 0xFF80 mask, so
+               every Thumb-1 SUB SP went undecoded and faulted -- the single
+               most-executed refused encoding in the dynmix run over the real
+               corpus games (2466 occurrences, more than everything else on the
+               list combined). The sign bit that distinguishes ADD from SUB is
+               read on the next line, so one mask serves both. */
             uint32_t sign = (h >> 7) & 1u, imm7 = h & 0x7Fu;
             if (sign) c->r[13] -= (imm7 << 2); else c->r[13] += (imm7 << 2);
             return 0;
