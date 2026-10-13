@@ -101,15 +101,6 @@ static const char *engine_name(const engine_scan *s)
     if ((s->il2cpp || s->unity) && s->unity6) return "Unity 6";
     if (s->il2cpp) return "Unity (IL2CPP)";
     if (s->unity) return s->mono_unity ? "Unity (Mono)" : "Unity";
-    /* A Flutter shell around a real game engine is a *launcher*, not a Flutter app, and calling it
-     * one sends the game down the Java runtime -- the launcher's runtime -- where it never starts.
-     * GTA San Andreas Definitive is exactly this: a Flutter Rockstar launcher with libUE4.so (193 MB)
-     * behind it. The Rockstar check above catches the classic trio, but this build ships no libGame.so,
-     * no libopenal and no mpg123, so it fell through to here and was reported as a Flutter app.
-     * Same rule as supercell below: an engine that is definitely present outranks the shell.
-     * (Cocos, Godot and GameMaker shells around a launcher would want the same exclusion; only the
-     * Unreal case has been measured, so only it is excluded here.) */
-    if (s->flutter && !s->supercell && !s->unreal) return "Flutter";
     if (s->gamemaker) return "GameMaker";
     /* Web apps: the app is HTML and JavaScript in a WebView (Ionic is one or the other underneath). */
     if (s->capacitor) return "Capacitor";
@@ -127,6 +118,20 @@ static const char *engine_name(const engine_scan *s)
     if (s->gdx) return "libGDX";
     /* A game that is only a NativeActivity library of its own (sokol, android_native_app_glue): the runtime drives the activity itself. */
     if (s->native_activity) return "NativeActivity";
+    /* Flutter is the weakest signal here, so it is asked last: a Flutter module in an APK is usually
+     * not the app. It is a launcher, or -- in a modded APK -- an injected mod menu, and in either case
+     * the real engine is one that the checks above name.
+     *
+     * Naming Flutter before them sent GTA San Andreas Definitive (a Flutter **mod menu** wrapped around
+     * libUE4.so, 193 MB) to the Java runtime, where it died on a missing boot class path: the launch
+     * line said `(java)` and the translation layer never ran a line. The old test sat above Unreal and
+     * excluded `supercell` and `unreal` only, which left the identical trap for a mod menu injected
+     * into a cocos, Godot, GameMaker, SDL, libGDX or Minecraft build -- every one of them checked
+     * below it. Asking last fixes the whole shape rather than the one engine that was measured.
+     *
+     * supercell is still excluded: their games carry a Flutter module for some screens and their own
+     * engine is reached through a Java activity, so "Flutter" was deliberately not the answer there. */
+    if (s->flutter && !s->supercell) return "Flutter";
     return NULL;
 }
 
