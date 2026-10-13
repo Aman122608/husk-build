@@ -9,8 +9,7 @@ import SwiftUI
 /// the router feels like it. The server answers a plain HTTP request, so the app can look for it instead:
 ///
 ///   1. sweep this device's own /24 for port 8642, every address at once, `GET /list` with a short timeout;
-///   2. the address that worked last time (remembered across launches);
-///   3. the address compiled in below, as it was when this build was made.
+///   2. the address that worked last time (remembered across launches).
 ///
 /// Whichever answers is remembered, so the common case costs one request and no sweep.
 ///
@@ -23,8 +22,9 @@ final class ServeFolder: ObservableObject {
 
     /// The port serve-folder.py listens on.
     static let port = 8642
-    /// Where the computer was when this build was made. The last resort, not the plan.
-    static let compiledIn = "192.168.1.123:8642"
+    /// There is deliberately no address compiled in. One would be a particular person's machine, which
+    /// is wrong for every other user and says where that machine was, so the build is made without one:
+    /// the sweep finds the computer, and what it found is remembered on this device.
     private static let rememberKey = "husk.serveFolder.host"
 
     struct Entry: Identifiable, Hashable {
@@ -78,7 +78,7 @@ final class ServeFolder: ObservableObject {
         }
         HuskLog.log("discovery", "the sweep found nothing")
 
-        for candidate in [remembered, Self.compiledIn].compactMap({ $0 }) {
+        for candidate in [remembered].compactMap({ $0 }) {
             if await Self.probe(candidate) {
                 await adopt(candidate, how: "the last address that worked")
                 return

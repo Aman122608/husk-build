@@ -67,9 +67,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_GET(self) -> None:                  # a phone-side check that the address is right
+    # How the phone FINDS this receiver. Nothing is compiled into Husk: it sweeps its own /24 for the
+    # port and takes the first machine that answers with the marker below, so a build carries no
+    # address of anybody's. The marker is what makes that safe -- a different server that merely holds
+    # the port does not say this, and is not used.
+    MARKER = "husk-log-receiver ready"
+
+    def do_GET(self) -> None:                  # the discovery probe, and a check that the address is right
         if self.path in ("/", "/log") or self.path.startswith("/log/"):
-            self._plain(200, "husk log receiver ready\n")
+            self._plain(200, self.MARKER + "\n")
         else:
             self._plain(404, "not found\n")
 
@@ -124,7 +130,8 @@ def main() -> int:
     Handler.out_dir = out_dir
 
     print(f"writing logs to {out_dir}", flush=True)
-    print(f"put this in Husk's settings:  http://{lan_address()}:{a.port}" + (f"/log/{TOKEN}" if TOKEN else "/log"), flush=True)
+    print("Husk finds this by itself when the phone is on the same Wi-Fi (Send, on the Logs screen);", flush=True)
+    print(f"the address below is only for typing in by hand:  http://{lan_address()}:{a.port}" + (f"/log/{TOKEN}" if TOKEN else "/log"), flush=True)
     if TOKEN:
         print("a token is required (HUSK_LOG_TOKEN is set)", flush=True)
     else:

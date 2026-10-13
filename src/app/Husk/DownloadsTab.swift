@@ -137,7 +137,7 @@ private struct AddDownloadSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("https://… or http://192.168.1.20:8642/", text: $link)
+                    TextField("https://… or http://computer:8642/", text: $link)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
