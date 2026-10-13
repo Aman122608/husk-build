@@ -1,0 +1,176 @@
+name: arm32-harness
+
+# The first increment of the AArch32 differential harness:
+#
+#   step0   (macos-26)     the go/no-go -- does a runner execute code the process
+#                          just wrote? Drives husk-tl-xmem.c's own self-test.
+#   golden  (ubuntu-latest) the oracle -- runs a small hand-written AArch32 case
+#                          set under qemu-arm and uploads the goldens.
+#   compare (macos-26)     loads the goldens, proves it can execute a generated
+#                          function on the runner, and validates the diff/report
+#                          path end to end.
+#
+# No translator runs yet; this proves the pipeline, the formats and the failure
+# reporting. Keep it fast: it must stay a five-minute signal while build-ios.yml
+# is hours. See .hermes/plans/engine-reset/arm32-test-harness.md (the spec) and
+# .hermes/plans/engine-reset/arm32-harness-implemented.md (this increment).
+#
+# NOTE: this workflow only ADDS a file; it touches no existing workflow.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/a32/**'
+      - 'src/translation-layer-next/**'
+      - 'src/translation-layer/**'
+      - '.github/workflows/arm32-harness.yml'
+  pull_request:
+    paths:
+      - 'tools/a32/**'
+      - 'src/translation-layer-next/**'
+      - 'src/translation-layer/**'
+      - '.github/workflows/arm32-harness.yml'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # STEP 0 -- the single fact that decides whether a translator can be developed
+  # in CI at all. It is its own job so its verdict is a distinct, nameable signal;
+  # the compare job also depends on it, so a refusal stops the pipeline.
+  # ---------------------------------------------------------------------------
+  step0:
+    name: step0 (macos-26) - execute code this process just wrote
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the host executable-memory harness
+        run: bash tools/a32/build.sh step0 /tmp/a32-step0
+
+      - name: STEP 0 (go/no-go) - the layer's self-test and an own-written function
+        run: |
+          set -euo pipefail
+          # husk-tl-xmem.c's grant_self path, which runs the layer's built-in
+          # self_selftest (movz/ret, requires 0x5a5a) before returning.
+          if ! TL_XMEM_SELF=1 /tmp/a32-step0; then
+            echo "::error::STEP0 FAIL: a macos-26 runner did not execute code this process wrote (grant_self/self_selftest)."
+            echo "::error::An AArch32 -> AArch64 translator cannot be developed in CI without this; nothing downstream can run."
+            exit 1
+          fi
+          # The ordinary Mac two-view path (mmap RW + mach_vm_remap alias + RX),
+          # which is the shape the translator will use.
+          if ! /tmp/a32-step0; then
+            echo "::error::STEP0 FAIL: the ordinary Mac two-view path could not execute freshly written code."
+            exit 1
+          fi
+          echo "::notice::STEP0 VERDICT: PASS - a macos-26 runner executes code the process just wrote."
+
+  # ---------------------------------------------------------------------------
+  # The oracle. An armhf (AArch32) ELF run under qemu-arm on Linux, which is
+  # where QEMU user-mode lives and where the repo already puts qemu-as-oracle
+  # (tests/translation-layer/run.sh). Upstream QEMU, so a translator bug cannot be
+  # masked by a matching bug in the vendored UTM fork.
+  # ---------------------------------------------------------------------------
+  golden:
+    name: golden (ubuntu-latest) - AArch32 ground truth under qemu-arm
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the armhf cross-compiler and qemu user-mode
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-linux-gnueabi qemu-user qemu-user-static
+          arm-linux-gnueabi-gcc --version | head -1
+          (qemu-arm --version || qemu-arm-static --version) | head -2
+
+      - name: Regenerate the cases and check the tree is in sync
+        # The generator is the single source of truth for the case set; a stale
+        # checked-in a32_cases_gen.{S,h} would silently test the wrong thing.
+        run: |
+          set -euo pipefail
+          python3 tools/a32/gen_cases.py
+          git diff --exit-code -- tools/a32/a32_cases_gen.S tools/a32/a32_cases_gen.h
+
+      - name: Build the oracle (armhf, static)
+        run: bash tools/a32/build.sh oracle /tmp/a32oracle
+
+      - name: Run the cases under qemu-arm and write the goldens
+        run: |
+          set -euo pipefail
+          mkdir -p goldens
+          QEMU="$(command -v qemu-arm || command -v qemu-arm-static)"
+          echo "qemu: $QEMU"
+          "$QEMU" -cpu cortex-a15 /tmp/a32oracle "$PWD/goldens"
+          "$QEMU" --version > goldens/qemu-version.txt
+          python3 - <<'PY'
+          import json
+          g = json.load(open("goldens/a32_goldens.json"))
+          c = json.load(open("goldens/a32_cases.json"))
+          assert g["format"] == "a32-goldens/1", g["format"]
+          assert c["format"] == "a32-cases/1", c["format"]
+          assert g["count"] == c["count"] == len(g["cases"]) == len(c["cases"])
+          for rec in g["cases"]:
+              assert len(rec["regs"]) == 16 and len(rec["fp"]) == 32, rec["id"]
+              assert rec["stop_reason"] == 0, rec["id"]
+          print("goldens: %s, %d cases, all structurally sound" % (g["format"], g["count"]))
+          PY
+
+      - name: Upload the goldens
+        uses: actions/upload-artifact@v4
+        with:
+          name: a32-goldens
+          path: goldens/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # The compare side. No translator yet: this proves the mac runner executes a
+  # generated function, loads and validates the goldens, and produces a correct
+  # failure report (a planted mismatch is named by case and field).
+  # ---------------------------------------------------------------------------
+  compare:
+    name: compare (macos-26) - load goldens, prove RX, validate the report
+    runs-on: macos-26
+    needs: [step0, golden]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the goldens
+        uses: actions/download-artifact@v4
+        with:
+          name: a32-goldens
+          path: goldens
+
+      - name: Build the comparer (it carries its own executable-memory proof)
+        run: bash tools/a32/build.sh diff /tmp/a32diff
+
+      - name: Load the cases and goldens, validate structure, run the diff
+        run: |
+          set -o pipefail
+          /tmp/a32diff "$PWD/goldens" 2>&1 | tee compare.log
+
+      - name: Self-check - a planted mismatch must be reported (deliberate red)
+        # This run is expected to report ONE mismatch; a32diff exits 0 when the
+        # report behaved. It stays a step inside the green workflow on purpose:
+        # the red proves the failure path names the case and the field.
+        run: |
+          set -o pipefail
+          /tmp/a32diff "$PWD/goldens" --self-check 2>&1 | tee -a compare.log
+
+      - name: Assert the report named the case and the field
+        run: |
+          set -euo pipefail
+          grep -q "MISMATCH case" compare.log
+          grep -q "field regs\[3\]" compare.log
+          echo "::notice::the failure report names the case and the field; a real translator red will too."
+
+      - name: Upload the compare log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a32-compare-log
+          path: compare.log
+          if-no-files-found: ignore
