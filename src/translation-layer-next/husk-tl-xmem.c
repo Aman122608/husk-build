@@ -26,6 +26,11 @@
 
 void tl_log_line(const char *fmt, ...);
 static void xmem_report_open(void);
+#if defined(__APPLE__)
+/* The guarded write-then-execute, defined beside the other mach probes far below; declared here so
+ * the StikDebug path's adopt_exec_view (just above open_platform) can be written before it. */
+static bool xmem_writable_fetches(uintptr_t at, int *stage);
+#endif
 
 static struct {
     uint8_t *rx, *rw;
@@ -38,6 +43,13 @@ static struct {
      * "MAP_JIT" when the mapping the guest addresses is a MAP_JIT mmap, "plain" when it is
      * plain RWX, NULL when the guest-facing view is a vm_remap (no authorisation of its own). */
     const char *route;
+    /* True in the W^X fallback: the guest was handed the executable view, but that view could not
+     * be HELD writable-and-executable in place (iOS enforces W^X -- the guarded store faulted), so
+     * a store into it is serviced by flipping the one page writable for the store and back to
+     * executable for the fetch (tl_xmem_wx_fallback, tl_xmem_page_set_writable/executable). False
+     * everywhere the guest has a genuinely RWX address of its own (Fix A, or the StikDebug
+     * executable view proven RWX). */
+    bool wx_fallback;
     pthread_mutex_t lock;
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
 
@@ -100,6 +112,11 @@ static __thread volatile sig_atomic_t g_self_running;
  * alone cannot tell a fault (SIGBUS with si_code KERN_PROTECTION_FAILURE) from a device that ends
  * the process for fetching unblessed memory; the run must name the signal and the si_code. */
 static __thread volatile sig_atomic_t g_self_sig, g_self_code;
+/* Which step of the guarded write-then-execute was running when it faulted: 0 none, 1 the store
+ * into the guest's address, 2 the fetch of what was stored. The two answers call for different
+ * things -- a store fault means the page cannot be WRITTEN (W^X), a fetch fault means it can be
+ * written but cannot be EXECUTED -- so the verdict line names which. */
+static __thread volatile sig_atomic_t g_self_stage;
 static void self_fault_info(int sig, siginfo_t *info, void *uctx)
 {
     (void)uctx;
@@ -356,6 +373,10 @@ static void near_alias(void)
     tl_log_line("xmem: the writable view is %td MiB from the executable one and no address near it is free", d >> 20);
 }
 
+/* The StikDebug executable view, made writable-in-place and proven by a guarded write-then-execute
+ * before it is adopted as the guest's arena; defined beside the mach probes below. */
+static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen);
+
 /* The phone: an arena the layer makes for ITSELF if the device allows it (with CS_DEBUGGED set, MAP_JIT is honoured), and only
  * then StikDebug's region -- whose owner is QEMU, which is reserved rather than populated and whose guest-facing view is a
  * vm_remap iOS will not execute. Nothing is trusted by version: both routes are proven by running a function written into the
@@ -389,20 +410,40 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
     }
 
     if (m && m->rw_addr && m->rx_addr) {
+        /* The debugger hands back TWO views of one set of pages, and the boot log has already
+         * measured which one works: the EXECUTABLE view (m->rx_addr) executed generated code the
+         * debugger wrote through the writable alias, and its mappings persist after the debugger
+         * detaches; the writable alias -- a vm_remap -- FAULTED when a page of IT was made
+         * executable and fetched (xmem_probe_guest_view below). iOS authorises execute per mapping
+         * ENTRY and an alias never inherits it, so the vm_remap can never be the guest's arena.
+         * So hand the guest the EXECUTABLE view -- the one whose generated code provably ran --
+         * made writable IN PLACE: vm_protect(RWX) on that view, then PROVE it by writing a function
+         * through that very address and calling it there (adopt_exec_view). Only if that call RAN
+         * is the address adopted, as BOTH views, so the single address the guest both writes and
+         * executes is the one it already holds -- what PvZ's A64HookFunction computed and what
+         * robot gf's UnityMain branched to. */
+        char why[240] = "";
+        if (adopt_exec_view(m, why, sizeof(why))) {
+            tl_log_line("xmem: open: StikDebug's prewarmed region -- guest arena %p is the EXECUTABLE view (made RWX in place); the guest writes AND executes at this one address (rx == rw, delta %td). Guarded write-then-execute RAN",
+                        (void *)g_x.rw, tl_xmem_delta());
+            return true;
+        }
+        /* The executable view could not be HELD writable-and-executable: its store (or its fetch)
+         * faulted -- iOS keeps W^X. The guest is still handed the executable view (it is the one
+         * that fetches), but as RX: a store into it is serviced by the codewrite guard, which flips
+         * the one page writable for the store and back to executable for the fetch, at the mmap
+         * level (tl_xmem_wx_fallback, tl_xmem_page_set_writable/executable). The loader keeps its
+         * own writable view (the vm_remap) for bulk emission, so no library image is faulted in
+         * page by page. */
         g_x.rx = m->rx_addr;
         g_x.rw = m->rw_addr;
         g_x.size = m->size;
         g_x.guest_view_jit = false;
-        g_x.route = "vm_remap";
+        g_x.wx_fallback = true;
+        g_x.route = "vm_remap (W^X fallback: the executable view is RX; stores into it are serviced one page at a time)";
         near_alias();
-        /* This path used to say nothing, which is why the PvZ runs' region could not be identified:
-         * their rw/rx pair sits exactly +0x37e6000 from the region the husk-jit log blessed (the same
-         * offset in both PvZ runs) and no line in the log accounted for it. Say which region was
-         * taken and on which view the JIT authorisation sits, every run. */
-        tl_log_line("xmem: open: StikDebug's prewarmed region -- rx %p rw %p size %zu MiB, delta %td; the view the guest addresses is %s",
-                    (void *)g_x.rx, (void *)g_x.rw, g_x.size >> 20, tl_xmem_delta(),
-                    g_x.guest_view_jit ? "the JIT-authorised mapping"
-                                       : "the vm_remap of it: Fix A cannot run on this path (the debugger owns both views), so a guest arena here can only be refused honestly");
+        tl_log_line("xmem: open: StikDebug's prewarmed region -- the EXECUTABLE view %p could NOT be made writable in place (%s); keeping the two-view order (rx %p rw %p size %zu MiB, delta %td) and servicing a guest store into the executable view in the JIT guard, one page at a time",
+                    (void *)m->rx_addr, why[0] ? why : "refused", (void *)g_x.rx, (void *)g_x.rw, g_x.size >> 20, tl_xmem_delta());
         return true;
     }
     /* Reached only if tl_find_stikdebug_prewarmed changed its mind between the two calls. */
@@ -579,7 +620,7 @@ static xmem_entry xmem_probe_entry(uintptr_t p)
  * call happens in execute mode -- the two states a guest's arena passes through as it writes and then
  * runs its own trampoline.
  */
-static bool xmem_writable_fetches(uintptr_t at)
+static bool xmem_writable_fetches(uintptr_t at, int *stage)
 {
     static const uint32_t code[2] = { 0x528B4B40u, 0xD65F03C0u };   /* movz w0, #0x5a5a ; ret */
     uint32_t saved[2];
@@ -590,21 +631,98 @@ static bool xmem_writable_fetches(uintptr_t at)
     bool ok = false;
     g_self_running = 1;
     g_self_sig = g_self_code = 0;
+    g_self_stage = 0;
     if (sigsetjmp(g_self_jump, 1) == 0) {
         xmem_write_mode(true);
+        g_self_stage = 1;                                    /* the store into the guest's address */
         memcpy((void *)at, code, sizeof(code));
+        g_self_stage = 2;                                    /* the fetch of what was stored */
         xmem_write_mode(false);
         sys_icache_invalidate((void *)at, sizeof(code));
         ok = ((int (*)(void))(void *)at)() == 0x5a5a;
     }
     g_self_running = 0;
     sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
-    xmem_write_mode(true);
-    memcpy((void *)at, saved, sizeof(saved));
-    xmem_write_mode(false);
-    sys_icache_invalidate((void *)at, sizeof(saved));
+    /* Put the guest's bytes back ONLY if the store actually landed. A store that itself faulted (the
+     * page cannot be written at all -- W^X) must not be retried here: the guard has been left, and a
+     * second fault would end the process. Nothing was changed in that case, so there is nothing to
+     * restore. */
+    if (g_self_stage != 1) {
+        xmem_write_mode(true);
+        memcpy((void *)at, saved, sizeof(saved));
+        xmem_write_mode(false);
+        sys_icache_invalidate((void *)at, sizeof(saved));
+    }
+    if (stage) *stage = (int)g_self_stage;
     return ok;
 }
+
+#if defined(__APPLE__) && !TARGET_OS_OSX
+/*
+ * Hand the guest the StikDebug EXECUTABLE view, made writable in place, and do not trust it until
+ * it has proven itself. The two views have already answered for themselves in the boot log: the
+ * executable view EXECUTED generated code written through the writable alias (the debugger's own
+ * selftest, "PASS -- executed generated code from the RX alias, got 42") and its mappings persist
+ * after the debugger detaches; the writable alias -- a vm_remap -- FAULTED when a page of IT was
+ * made executable and fetched. iOS authorises execute per mapping ENTRY and an alias never inherits
+ * it, so the vm_remap can never be the guest's arena; the executable view is the one whose generated
+ * code provably ran. So:
+ *
+ *   1. raise this entry's maximum to RWX, then vm_protect the whole view RWX in place (the region
+ *      reports max 7 = RWX, so this is within the entry's contract); and
+ *   2. write a movz/ret through the address the guest is given and CALL it there, under the same
+ *      signal guard self_runs uses (xmem_writable_fetches). Only if that call returns 0x5a5a is the
+ *      address adopted -- as BOTH views, rw == rx == m->rx_addr, so the single address the guest
+ *      both writes and executes is the one it already holds.
+ *
+ * A vm_protect that returned KERN_SUCCESS is NOT proof: on this family of devices a protection
+ * field can name EXECUTE while the pmap refuses the store or the fetch. The guarded call is the
+ * verdict, and the stage it faulted at (store vs fetch) is carried out in `err` so the caller's one
+ * line says which -- a store fault means iOS keeps W^X (the fallback), a fetch fault means the view
+ * will not execute. Nothing is unmapped and no thread is ended: on failure the caller keeps the
+ * debugger's two views exactly as they were.
+ */
+static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen)
+{
+    task_t me = mach_task_self();
+    vm_address_t base = (vm_address_t)(uintptr_t)m->rx_addr;
+    size_t size = m->size;
+    /* set_maximum first: vm_protect below cannot name a right the entry's max_protection never
+     * allowed, and the region's own read-back already says max 7 = RWX. If even the maximum cannot
+     * be raised, the entry was capped and this fails for the right reason. */
+    kern_return_t kr = vm_protect(me, base, size, TRUE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
+    if (kr == KERN_SUCCESS)
+        kr = vm_protect(me, base, size, FALSE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
+    xmem_entry e = xmem_probe_entry((uintptr_t)base);
+    if (kr != KERN_SUCCESS) {
+        snprintf(err, errlen, "vm_protect(RWX) on the executable view returned %d (%s); entry %p..%p prot %d max %d depth %u tag %u",
+                 (int)kr, mach_error_string(kr),
+                 (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag);
+        return false;
+    }
+    int stage = 0;
+    bool ran = xmem_writable_fetches((uintptr_t)base, &stage);
+    if (!ran) {
+        /* Leave the view exactly as it was (RX): the fallback relies on a store into it faulting so
+         * the codewrite guard can service it in place, and a view left nominally RWX would let the
+         * guest store straight into a page that would not run -- no fault, no service, no fix. */
+        (void)vm_protect(me, base, size, FALSE, VM_PROT_READ | VM_PROT_EXECUTE);
+        snprintf(err, errlen, "the executable view names RWX (entry %p..%p prot %d max %d depth %u tag %u) but the guarded write-then-execute %s (signal %d, si_code %d)",
+                 (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
+                 stage == 1 ? "FAULTED ON THE STORE -- iOS keeps W^X here"
+                            : stage == 2 ? "FAULTED ON THE FETCH -- the view names RWX but will not run"
+                                         : "FAULTED",
+                 (int)g_self_sig, (int)g_self_code);
+        return false;
+    }
+    g_x.rx = g_x.rw = m->rx_addr;
+    g_x.size = m->size;
+    g_x.guest_view_jit = true;      /* the guest-facing view carries the authorisation: it is RWX */
+    g_x.wx_fallback = false;
+    g_x.route = "the executable view, made RWX in place";
+    return true;
+}
+#endif
 
 /*
  * The one line that must end the guessing: the arena's own address and size, how many MiB of it the kernel says are MAPPED and
@@ -653,12 +771,15 @@ static void xmem_probe_guest_view(void)
 {
     uintptr_t at = (uintptr_t)g_x.rw;
     xmem_entry e = xmem_probe_entry(at);
-    bool f = xmem_writable_fetches(at);
-    tl_log_line("xmem: guest-facing view %p: read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write-then-execute %s%s",
+    int stage = 0;
+    bool f = xmem_writable_fetches(at, &stage);
+    tl_log_line("xmem: guest-facing view %p: read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write-then-execute %s%s", 
                 (void *)at, e.kr == KERN_SUCCESS ? "ok" : "FAILED",
                 (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
-                f ? "RAN -- the guest's JIT is live at this address" : "FAULTED -- the guest's arena still cannot fetch",
-                f ? "" : " (an unblessed fetch here is a caught fault, not a dead process)");
+                f ? "RAN -- the guest's JIT is live at this address"
+                  : stage == 1 ? "FAULTED ON THE STORE -- the guest cannot write here (W^X)"
+                               : "FAULTED ON THE FETCH -- the guest's arena names RWX but will not run",
+                f ? "" : " (a guarded fault is caught, not a dead process)");
 }
 
 static void xmem_report_open(void)
@@ -726,7 +847,7 @@ bool tl_xmem_allow_exec(void *p, size_t n)
                                   VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
     xmem_entry e = xmem_probe_entry(page);
     bool named = kr == KERN_SUCCESS && e.kr == KERN_SUCCESS && (e.prot & VM_PROT_EXECUTE) != 0;
-    bool fetched = xmem_writable_fetches(page);   /* the ground truth, and it runs either way */
+    bool fetched = xmem_writable_fetches(page, NULL);   /* the ground truth, and it runs either way */
     ok = readback_decides ? (named && fetched) : fetched;
     if (kr != KERN_SUCCESS)
         snprintf(why, sizeof(why), "the kernel's vm_protect returned %d (the entry was never given execute)", (int)kr);
@@ -770,6 +891,37 @@ size_t tl_xmem_used(void) { return g_x.used; }
 size_t tl_xmem_size(void)  { return g_x.size; }
 
 bool tl_xmem_guest_view_is_jit(void) { return g_x.open && g_x.guest_view_jit; }
+
+/* True only in the W^X fallback: the guest was handed the executable view but it could not be HELD
+ * writable-and-executable, so a store into it is serviced page by page (below). */
+bool tl_xmem_wx_fallback(void) { return g_x.open && g_x.wx_fallback; }
+
+/*
+ * Flip the pages covering [p, p+n) to writable (RW) or back to executable (RX), at the MMAP level
+ * -- which is the level iOS honours. The per-thread pthread_jit_write_protect (xmem_write_mode) only
+ * governs MAP_JIT mappings; a page that was made executable with vm_protect is toggled with
+ * vm_protect and nothing else. These are the two halves of the W^X fallback's per-page bracket,
+ * called from the codewrite store-fault guard: a store into the executable view faults, the page is
+ * made writable for the store, stored, then made executable again for the guest's fetch.
+ *
+ * One whole page at each end is covered, so a store that straddles a 16 KiB boundary is bracketed on
+ * both sides. Returns false if the kernel refused (then the caller must NOT attempt the store: a
+ * second fault inside the signal handler would end the process).
+ */
+#if defined(__APPLE__)
+static bool xmem_page_prot(void *p, size_t n, vm_prot_t prot)
+{
+    uintptr_t lo = (uintptr_t)p, hi = lo + (n ? n - 1 : 0);
+    uintptr_t page = lo & ~(uintptr_t)(TL_XMEM_PAGE - 1);
+    uintptr_t last = (hi + TL_XMEM_PAGE) & ~(uintptr_t)(TL_XMEM_PAGE - 1);
+    return vm_protect(mach_task_self(), (vm_address_t)page, (vm_size_t)(last - page), FALSE, prot) == KERN_SUCCESS;
+}
+bool tl_xmem_page_set_writable(void *p, size_t n)   { return xmem_page_prot(p, n, VM_PROT_READ | VM_PROT_WRITE); }
+bool tl_xmem_page_set_executable(void *p, size_t n) { return xmem_page_prot(p, n, VM_PROT_READ | VM_PROT_EXECUTE); }
+#else
+bool tl_xmem_page_set_writable(void *p, size_t n)   { (void)p; (void)n; return false; }
+bool tl_xmem_page_set_executable(void *p, size_t n) { (void)p; (void)n; return false; }
+#endif
 
 /*
  * The layer's own emission into the region, bracketed so a device that enforces W^X lets the store

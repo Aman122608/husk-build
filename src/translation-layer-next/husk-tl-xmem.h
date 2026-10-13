@@ -107,6 +107,25 @@ bool tl_xmem_allow_exec(void *p, size_t n);
 bool tl_xmem_guest_view_is_jit(void);
 
 /*
+ * True only in the W^X FALLBACK: the guest was handed the executable view, but that view could not
+ * be HELD writable-and-executable in place (iOS enforces W^X -- the open-time guarded store faulted),
+ * so a store into it is serviced one page at a time by the codewrite guard
+ * (tl_xmem_page_set_writable / tl_xmem_page_set_executable). False wherever the guest has a genuinely
+ * RWX address of its own. Fixed once at open; valid after tl_xmem_open succeeds.
+ */
+bool tl_xmem_wx_fallback(void);
+
+/*
+ * The two halves of the W^X fallback's per-page bracket, at the mmap level (vm_protect) -- the level
+ * iOS honours, unlike the per-thread pthread_jit_write_protect, which only governs MAP_JIT. Flip the
+ * page(s) covering [p, p+n) writable for a store, then executable again for the fetch. Return false
+ * if the kernel refused, in which case the caller must NOT attempt the store (a second fault inside
+ * the signal handler would end the process). No-ops returning false off the phone.
+ */
+bool tl_xmem_page_set_writable(void *p, size_t n);
+bool tl_xmem_page_set_executable(void *p, size_t n);
+
+/*
  * Put the calling thread in write mode (emit_begin) or back in execute mode (emit_end) around the
  * layer's OWN emission into the region. Only meaningful when tl_xmem_guest_view_is_jit(): the
  * guest-facing view is then a MAP_JIT mapping, which on a device that enforces W^X is writable or

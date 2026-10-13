@@ -70,6 +70,24 @@ static void set_xreg(struct __darwin_arm_thread_state64 *ss, unsigned r, uint64_
 static bool put(uint64_t addr, const void *value, unsigned bytes)
 {
     if (tl_xmem_is_rx((const void *)addr) && tl_xmem_is_rx((const void *)(addr + bytes - 1))) {
+        /* The store already faulted here. W^X fallback (the guest was handed the executable view,
+         * but it could not be held writable-and-executable): land the store IN PLACE on that very
+         * page, by flipping the one page writable for the store and back to executable for the
+         * fetch -- at the mmap level, which is the level iOS honours. The guest's next instruction
+         * fetch at this same address then finds the byte it wrote. If the kernel refuses the flip,
+         * do NOT attempt the store: a second fault inside the handler would end the process. */
+        if (tl_xmem_wx_fallback()) {
+            bool w_ok = tl_xmem_page_set_writable((void *)addr, bytes);
+            if (w_ok) {
+                static int said;
+                if (said++ < 4)
+                    tl_log_line("husk: W^X fallback: store into the executable view at %p (%u bytes) serviced in place -- the page was made writable for the store and executable again for the fetch (the guest writes and fetches at this one address)", (void *)addr, bytes);
+                memcpy((void *)addr, value, bytes);
+                tl_xmem_page_set_executable((void *)addr, bytes);
+                tl_xmem_flush((const void *)addr, bytes);
+            }
+            return w_ok;
+        }
         tl_xmem_emit_begin();
         memcpy((void *)(addr + (uint64_t)tl_xmem_delta()), value, bytes);
         tl_xmem_emit_end();
