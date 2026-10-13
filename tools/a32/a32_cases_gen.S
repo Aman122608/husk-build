@@ -255,6 +255,7 @@ a32_case_1:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -271,6 +272,7 @@ a32_case_1:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0010002	/* and r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -282,6 +284,7 @@ a32_case_1:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_1, .-a32_case_1
 
@@ -292,6 +295,7 @@ a32_case_2:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -309,6 +313,7 @@ a32_case_2:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0010002	/* and r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -320,6 +325,7 @@ a32_case_2:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_2, .-a32_case_2
 
@@ -330,6 +336,7 @@ a32_case_3:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -348,6 +355,7 @@ a32_case_3:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0010002	/* and r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -359,6 +367,7 @@ a32_case_3:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_3, .-a32_case_3
 
@@ -369,6 +378,7 @@ a32_case_4:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -387,6 +397,7 @@ a32_case_4:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0010002	/* and r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -398,6 +409,7 @@ a32_case_4:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_4, .-a32_case_4
 
@@ -408,6 +420,7 @@ a32_case_5:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -425,6 +438,7 @@ a32_case_5:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0010002	/* and r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -436,6 +450,7 @@ a32_case_5:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_5, .-a32_case_5
 
@@ -446,6 +461,7 @@ a32_case_6:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -463,6 +479,7 @@ a32_case_6:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0010002	/* and r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -474,6 +491,7 @@ a32_case_6:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_6, .-a32_case_6
 
@@ -484,6 +502,7 @@ a32_case_7:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -500,6 +519,7 @@ a32_case_7:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0210002	/* eor r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -511,6 +531,7 @@ a32_case_7:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_7, .-a32_case_7
 
@@ -521,6 +542,7 @@ a32_case_8:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -538,6 +560,7 @@ a32_case_8:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0210002	/* eor r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -549,6 +572,7 @@ a32_case_8:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_8, .-a32_case_8
 
@@ -559,6 +583,7 @@ a32_case_9:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -577,6 +602,7 @@ a32_case_9:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0210002	/* eor r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -588,6 +614,7 @@ a32_case_9:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_9, .-a32_case_9
 
@@ -598,6 +625,7 @@ a32_case_10:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -616,6 +644,7 @@ a32_case_10:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0210002	/* eor r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -627,6 +656,7 @@ a32_case_10:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_10, .-a32_case_10
 
@@ -637,6 +667,7 @@ a32_case_11:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -654,6 +685,7 @@ a32_case_11:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0210002	/* eor r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -665,6 +697,7 @@ a32_case_11:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_11, .-a32_case_11
 
@@ -675,6 +708,7 @@ a32_case_12:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -692,6 +726,7 @@ a32_case_12:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0210002	/* eor r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -703,6 +738,7 @@ a32_case_12:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_12, .-a32_case_12
 
@@ -713,6 +749,7 @@ a32_case_13:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -729,6 +766,7 @@ a32_case_13:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0410002	/* sub r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -740,6 +778,7 @@ a32_case_13:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_13, .-a32_case_13
 
@@ -750,6 +789,7 @@ a32_case_14:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -767,6 +807,7 @@ a32_case_14:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0410002	/* sub r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -778,6 +819,7 @@ a32_case_14:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_14, .-a32_case_14
 
@@ -788,6 +830,7 @@ a32_case_15:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -806,6 +849,7 @@ a32_case_15:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0410002	/* sub r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -817,6 +861,7 @@ a32_case_15:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_15, .-a32_case_15
 
@@ -827,6 +872,7 @@ a32_case_16:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -845,6 +891,7 @@ a32_case_16:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0410002	/* sub r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -856,6 +903,7 @@ a32_case_16:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_16, .-a32_case_16
 
@@ -866,6 +914,7 @@ a32_case_17:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -883,6 +932,7 @@ a32_case_17:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0410002	/* sub r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -894,6 +944,7 @@ a32_case_17:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_17, .-a32_case_17
 
@@ -904,6 +955,7 @@ a32_case_18:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -921,6 +973,7 @@ a32_case_18:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0410002	/* sub r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -932,6 +985,7 @@ a32_case_18:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_18, .-a32_case_18
 
@@ -942,6 +996,7 @@ a32_case_19:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -958,6 +1013,7 @@ a32_case_19:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0610002	/* rsb r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -969,6 +1025,7 @@ a32_case_19:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_19, .-a32_case_19
 
@@ -979,6 +1036,7 @@ a32_case_20:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -996,6 +1054,7 @@ a32_case_20:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0610002	/* rsb r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1007,6 +1066,7 @@ a32_case_20:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_20, .-a32_case_20
 
@@ -1017,6 +1077,7 @@ a32_case_21:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1035,6 +1096,7 @@ a32_case_21:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0610002	/* rsb r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1046,6 +1108,7 @@ a32_case_21:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_21, .-a32_case_21
 
@@ -1056,6 +1119,7 @@ a32_case_22:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1074,6 +1138,7 @@ a32_case_22:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0610002	/* rsb r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1085,6 +1150,7 @@ a32_case_22:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_22, .-a32_case_22
 
@@ -1095,6 +1161,7 @@ a32_case_23:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1112,6 +1179,7 @@ a32_case_23:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0610002	/* rsb r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1123,6 +1191,7 @@ a32_case_23:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_23, .-a32_case_23
 
@@ -1133,6 +1202,7 @@ a32_case_24:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1150,6 +1220,7 @@ a32_case_24:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0610002	/* rsb r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1161,6 +1232,7 @@ a32_case_24:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_24, .-a32_case_24
 
@@ -1171,6 +1243,7 @@ a32_case_25:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1187,6 +1260,7 @@ a32_case_25:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0810002	/* add r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1198,6 +1272,7 @@ a32_case_25:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_25, .-a32_case_25
 
@@ -1208,6 +1283,7 @@ a32_case_26:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1225,6 +1301,7 @@ a32_case_26:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0810002	/* add r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1236,6 +1313,7 @@ a32_case_26:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_26, .-a32_case_26
 
@@ -1246,6 +1324,7 @@ a32_case_27:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1264,6 +1343,7 @@ a32_case_27:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0810002	/* add r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1275,6 +1355,7 @@ a32_case_27:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_27, .-a32_case_27
 
@@ -1285,6 +1366,7 @@ a32_case_28:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1303,6 +1385,7 @@ a32_case_28:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0810002	/* add r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1314,6 +1397,7 @@ a32_case_28:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_28, .-a32_case_28
 
@@ -1324,6 +1408,7 @@ a32_case_29:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1341,6 +1426,7 @@ a32_case_29:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0810002	/* add r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1352,6 +1438,7 @@ a32_case_29:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_29, .-a32_case_29
 
@@ -1362,6 +1449,7 @@ a32_case_30:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1379,6 +1467,7 @@ a32_case_30:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0810002	/* add r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1390,6 +1479,7 @@ a32_case_30:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_30, .-a32_case_30
 
@@ -1400,6 +1490,7 @@ a32_case_31:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1416,6 +1507,7 @@ a32_case_31:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0a10002	/* adc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1427,6 +1519,7 @@ a32_case_31:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_31, .-a32_case_31
 
@@ -1437,6 +1530,7 @@ a32_case_32:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1454,6 +1548,7 @@ a32_case_32:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0a10002	/* adc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1465,6 +1560,7 @@ a32_case_32:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_32, .-a32_case_32
 
@@ -1475,6 +1571,7 @@ a32_case_33:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1493,6 +1590,7 @@ a32_case_33:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0a10002	/* adc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1504,6 +1602,7 @@ a32_case_33:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_33, .-a32_case_33
 
@@ -1514,6 +1613,7 @@ a32_case_34:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1532,6 +1632,7 @@ a32_case_34:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0a10002	/* adc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1543,6 +1644,7 @@ a32_case_34:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_34, .-a32_case_34
 
@@ -1553,6 +1655,7 @@ a32_case_35:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1570,6 +1673,7 @@ a32_case_35:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0a10002	/* adc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1581,6 +1685,7 @@ a32_case_35:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_35, .-a32_case_35
 
@@ -1591,6 +1696,7 @@ a32_case_36:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1608,6 +1714,7 @@ a32_case_36:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0a10002	/* adc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1619,6 +1726,7 @@ a32_case_36:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_36, .-a32_case_36
 
@@ -1629,6 +1737,7 @@ a32_case_37:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1645,6 +1754,7 @@ a32_case_37:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0c10002	/* sbc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1656,6 +1766,7 @@ a32_case_37:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_37, .-a32_case_37
 
@@ -1666,6 +1777,7 @@ a32_case_38:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1683,6 +1795,7 @@ a32_case_38:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0c10002	/* sbc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1694,6 +1807,7 @@ a32_case_38:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_38, .-a32_case_38
 
@@ -1704,6 +1818,7 @@ a32_case_39:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1722,6 +1837,7 @@ a32_case_39:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0c10002	/* sbc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1733,6 +1849,7 @@ a32_case_39:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_39, .-a32_case_39
 
@@ -1743,6 +1860,7 @@ a32_case_40:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1761,6 +1879,7 @@ a32_case_40:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0c10002	/* sbc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1772,6 +1891,7 @@ a32_case_40:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_40, .-a32_case_40
 
@@ -1782,6 +1902,7 @@ a32_case_41:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1799,6 +1920,7 @@ a32_case_41:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0c10002	/* sbc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1810,6 +1932,7 @@ a32_case_41:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_41, .-a32_case_41
 
@@ -1820,6 +1943,7 @@ a32_case_42:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1837,6 +1961,7 @@ a32_case_42:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0c10002	/* sbc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1848,6 +1973,7 @@ a32_case_42:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_42, .-a32_case_42
 
@@ -1858,6 +1984,7 @@ a32_case_43:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1874,6 +2001,7 @@ a32_case_43:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0e10002	/* rsc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1885,6 +2013,7 @@ a32_case_43:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_43, .-a32_case_43
 
@@ -1895,6 +2024,7 @@ a32_case_44:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1912,6 +2042,7 @@ a32_case_44:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0e10002	/* rsc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1923,6 +2054,7 @@ a32_case_44:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_44, .-a32_case_44
 
@@ -1933,6 +2065,7 @@ a32_case_45:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1951,6 +2084,7 @@ a32_case_45:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0e10002	/* rsc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -1962,6 +2096,7 @@ a32_case_45:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_45, .-a32_case_45
 
@@ -1972,6 +2107,7 @@ a32_case_46:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -1990,6 +2126,7 @@ a32_case_46:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0e10002	/* rsc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2001,6 +2138,7 @@ a32_case_46:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_46, .-a32_case_46
 
@@ -2011,6 +2149,7 @@ a32_case_47:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2028,6 +2167,7 @@ a32_case_47:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0e10002	/* rsc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2039,6 +2179,7 @@ a32_case_47:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_47, .-a32_case_47
 
@@ -2049,6 +2190,7 @@ a32_case_48:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2066,6 +2208,7 @@ a32_case_48:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe0e10002	/* rsc r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2077,6 +2220,7 @@ a32_case_48:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_48, .-a32_case_48
 
@@ -2087,6 +2231,7 @@ a32_case_49:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2103,6 +2248,7 @@ a32_case_49:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1110002	/* tsts r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2114,6 +2260,7 @@ a32_case_49:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_49, .-a32_case_49
 
@@ -2124,6 +2271,7 @@ a32_case_50:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2141,6 +2289,7 @@ a32_case_50:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1110002	/* tsts r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2152,6 +2301,7 @@ a32_case_50:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_50, .-a32_case_50
 
@@ -2162,6 +2312,7 @@ a32_case_51:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2180,6 +2331,7 @@ a32_case_51:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1110002	/* tsts r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2191,6 +2343,7 @@ a32_case_51:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_51, .-a32_case_51
 
@@ -2201,6 +2354,7 @@ a32_case_52:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2219,6 +2373,7 @@ a32_case_52:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1110002	/* tsts r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2230,6 +2385,7 @@ a32_case_52:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_52, .-a32_case_52
 
@@ -2240,6 +2396,7 @@ a32_case_53:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2257,6 +2414,7 @@ a32_case_53:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1110002	/* tsts r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2268,6 +2426,7 @@ a32_case_53:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_53, .-a32_case_53
 
@@ -2278,6 +2437,7 @@ a32_case_54:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2295,6 +2455,7 @@ a32_case_54:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1110002	/* tsts r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2306,6 +2467,7 @@ a32_case_54:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_54, .-a32_case_54
 
@@ -2316,6 +2478,7 @@ a32_case_55:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2332,6 +2495,7 @@ a32_case_55:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1310002	/* teqs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2343,6 +2507,7 @@ a32_case_55:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_55, .-a32_case_55
 
@@ -2353,6 +2518,7 @@ a32_case_56:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2370,6 +2536,7 @@ a32_case_56:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1310002	/* teqs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2381,6 +2548,7 @@ a32_case_56:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_56, .-a32_case_56
 
@@ -2391,6 +2559,7 @@ a32_case_57:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2409,6 +2578,7 @@ a32_case_57:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1310002	/* teqs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2420,6 +2590,7 @@ a32_case_57:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_57, .-a32_case_57
 
@@ -2430,6 +2601,7 @@ a32_case_58:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2448,6 +2620,7 @@ a32_case_58:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1310002	/* teqs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2459,6 +2632,7 @@ a32_case_58:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_58, .-a32_case_58
 
@@ -2469,6 +2643,7 @@ a32_case_59:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2486,6 +2661,7 @@ a32_case_59:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1310002	/* teqs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2497,6 +2673,7 @@ a32_case_59:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_59, .-a32_case_59
 
@@ -2507,6 +2684,7 @@ a32_case_60:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2524,6 +2702,7 @@ a32_case_60:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1310002	/* teqs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2535,6 +2714,7 @@ a32_case_60:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_60, .-a32_case_60
 
@@ -2545,6 +2725,7 @@ a32_case_61:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2561,6 +2742,7 @@ a32_case_61:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1510002	/* cmps r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2572,6 +2754,7 @@ a32_case_61:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_61, .-a32_case_61
 
@@ -2582,6 +2765,7 @@ a32_case_62:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2599,6 +2783,7 @@ a32_case_62:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1510002	/* cmps r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2610,6 +2795,7 @@ a32_case_62:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_62, .-a32_case_62
 
@@ -2620,6 +2806,7 @@ a32_case_63:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2638,6 +2825,7 @@ a32_case_63:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1510002	/* cmps r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2649,6 +2837,7 @@ a32_case_63:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_63, .-a32_case_63
 
@@ -2659,6 +2848,7 @@ a32_case_64:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2677,6 +2867,7 @@ a32_case_64:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1510002	/* cmps r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2688,6 +2879,7 @@ a32_case_64:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_64, .-a32_case_64
 
@@ -2698,6 +2890,7 @@ a32_case_65:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2715,6 +2908,7 @@ a32_case_65:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1510002	/* cmps r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2726,6 +2920,7 @@ a32_case_65:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_65, .-a32_case_65
 
@@ -2736,6 +2931,7 @@ a32_case_66:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2753,6 +2949,7 @@ a32_case_66:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1510002	/* cmps r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2764,6 +2961,7 @@ a32_case_66:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_66, .-a32_case_66
 
@@ -2774,6 +2972,7 @@ a32_case_67:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2790,6 +2989,7 @@ a32_case_67:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1710002	/* cmns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2801,6 +3001,7 @@ a32_case_67:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_67, .-a32_case_67
 
@@ -2811,6 +3012,7 @@ a32_case_68:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2828,6 +3030,7 @@ a32_case_68:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1710002	/* cmns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2839,6 +3042,7 @@ a32_case_68:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_68, .-a32_case_68
 
@@ -2849,6 +3053,7 @@ a32_case_69:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2867,6 +3072,7 @@ a32_case_69:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1710002	/* cmns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2878,6 +3084,7 @@ a32_case_69:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_69, .-a32_case_69
 
@@ -2888,6 +3095,7 @@ a32_case_70:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2906,6 +3114,7 @@ a32_case_70:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1710002	/* cmns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2917,6 +3126,7 @@ a32_case_70:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_70, .-a32_case_70
 
@@ -2927,6 +3137,7 @@ a32_case_71:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2944,6 +3155,7 @@ a32_case_71:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1710002	/* cmns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2955,6 +3167,7 @@ a32_case_71:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_71, .-a32_case_71
 
@@ -2965,6 +3178,7 @@ a32_case_72:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -2982,6 +3196,7 @@ a32_case_72:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1710002	/* cmns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -2993,6 +3208,7 @@ a32_case_72:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_72, .-a32_case_72
 
@@ -3003,6 +3219,7 @@ a32_case_73:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3019,6 +3236,7 @@ a32_case_73:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1810002	/* orr r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3030,6 +3248,7 @@ a32_case_73:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_73, .-a32_case_73
 
@@ -3040,6 +3259,7 @@ a32_case_74:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3057,6 +3277,7 @@ a32_case_74:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1810002	/* orr r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3068,6 +3289,7 @@ a32_case_74:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_74, .-a32_case_74
 
@@ -3078,6 +3300,7 @@ a32_case_75:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3096,6 +3319,7 @@ a32_case_75:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1810002	/* orr r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3107,6 +3331,7 @@ a32_case_75:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_75, .-a32_case_75
 
@@ -3117,6 +3342,7 @@ a32_case_76:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3135,6 +3361,7 @@ a32_case_76:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1810002	/* orr r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3146,6 +3373,7 @@ a32_case_76:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_76, .-a32_case_76
 
@@ -3156,6 +3384,7 @@ a32_case_77:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3173,6 +3402,7 @@ a32_case_77:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1810002	/* orr r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3184,6 +3414,7 @@ a32_case_77:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_77, .-a32_case_77
 
@@ -3194,6 +3425,7 @@ a32_case_78:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3211,6 +3443,7 @@ a32_case_78:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1810002	/* orr r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3222,6 +3455,7 @@ a32_case_78:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_78, .-a32_case_78
 
@@ -3232,6 +3466,7 @@ a32_case_79:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3248,6 +3483,7 @@ a32_case_79:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1a00002	/* mov r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3259,6 +3495,7 @@ a32_case_79:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_79, .-a32_case_79
 
@@ -3269,6 +3506,7 @@ a32_case_80:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3286,6 +3524,7 @@ a32_case_80:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1a00002	/* mov r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3297,6 +3536,7 @@ a32_case_80:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_80, .-a32_case_80
 
@@ -3307,6 +3547,7 @@ a32_case_81:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3325,6 +3566,7 @@ a32_case_81:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1a00002	/* mov r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3336,6 +3578,7 @@ a32_case_81:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_81, .-a32_case_81
 
@@ -3346,6 +3589,7 @@ a32_case_82:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3364,6 +3608,7 @@ a32_case_82:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1a00002	/* mov r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3375,6 +3620,7 @@ a32_case_82:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_82, .-a32_case_82
 
@@ -3385,6 +3631,7 @@ a32_case_83:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3402,6 +3649,7 @@ a32_case_83:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1a00002	/* mov r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3413,6 +3661,7 @@ a32_case_83:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_83, .-a32_case_83
 
@@ -3423,6 +3672,7 @@ a32_case_84:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3440,6 +3690,7 @@ a32_case_84:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1a00002	/* mov r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3451,6 +3702,7 @@ a32_case_84:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_84, .-a32_case_84
 
@@ -3461,6 +3713,7 @@ a32_case_85:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3477,6 +3730,7 @@ a32_case_85:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1c10002	/* bic r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3488,6 +3742,7 @@ a32_case_85:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_85, .-a32_case_85
 
@@ -3498,6 +3753,7 @@ a32_case_86:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3515,6 +3771,7 @@ a32_case_86:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1c10002	/* bic r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3526,6 +3783,7 @@ a32_case_86:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_86, .-a32_case_86
 
@@ -3536,6 +3794,7 @@ a32_case_87:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3554,6 +3813,7 @@ a32_case_87:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1c10002	/* bic r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3565,6 +3825,7 @@ a32_case_87:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_87, .-a32_case_87
 
@@ -3575,6 +3836,7 @@ a32_case_88:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3593,6 +3855,7 @@ a32_case_88:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1c10002	/* bic r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3604,6 +3867,7 @@ a32_case_88:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_88, .-a32_case_88
 
@@ -3614,6 +3878,7 @@ a32_case_89:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3631,6 +3896,7 @@ a32_case_89:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1c10002	/* bic r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3642,6 +3908,7 @@ a32_case_89:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_89, .-a32_case_89
 
@@ -3652,6 +3919,7 @@ a32_case_90:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3669,6 +3937,7 @@ a32_case_90:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1c10002	/* bic r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3680,6 +3949,7 @@ a32_case_90:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_90, .-a32_case_90
 
@@ -3690,6 +3960,7 @@ a32_case_91:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3706,6 +3977,7 @@ a32_case_91:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1e00002	/* mvn r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3717,6 +3989,7 @@ a32_case_91:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_91, .-a32_case_91
 
@@ -3727,6 +4000,7 @@ a32_case_92:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3744,6 +4018,7 @@ a32_case_92:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1e00002	/* mvn r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3755,6 +4030,7 @@ a32_case_92:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_92, .-a32_case_92
 
@@ -3765,6 +4041,7 @@ a32_case_93:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3783,6 +4060,7 @@ a32_case_93:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1e00002	/* mvn r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3794,6 +4072,7 @@ a32_case_93:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_93, .-a32_case_93
 
@@ -3804,6 +4083,7 @@ a32_case_94:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3822,6 +4102,7 @@ a32_case_94:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1e00002	/* mvn r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3833,6 +4114,7 @@ a32_case_94:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_94, .-a32_case_94
 
@@ -3843,6 +4125,7 @@ a32_case_95:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3860,6 +4143,7 @@ a32_case_95:
 	movw	r1, #0x0000
 	movt	r1, #0x8000
 	movw	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1e00002	/* mvn r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3871,6 +4155,7 @@ a32_case_95:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_95, .-a32_case_95
 
@@ -3881,6 +4166,7 @@ a32_case_96:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3898,6 +4184,7 @@ a32_case_96:
 	movw	r1, #0xffff
 	movw	r2, #0xbeef
 	movt	r2, #0xdead
+	mov	lr, #0
 	.word	0xe1e00002	/* mvn r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3909,6 +4196,7 @@ a32_case_96:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_96, .-a32_case_96
 
@@ -3919,6 +4207,7 @@ a32_case_97:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3935,6 +4224,7 @@ a32_case_97:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0110002	/* ands r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3946,6 +4236,7 @@ a32_case_97:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_97, .-a32_case_97
 
@@ -3956,6 +4247,7 @@ a32_case_98:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -3973,6 +4265,7 @@ a32_case_98:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0110002	/* ands r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -3984,6 +4277,7 @@ a32_case_98:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_98, .-a32_case_98
 
@@ -3994,6 +4288,7 @@ a32_case_99:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4012,6 +4307,7 @@ a32_case_99:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0110002	/* ands r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4023,6 +4319,7 @@ a32_case_99:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_99, .-a32_case_99
 
@@ -4033,6 +4330,7 @@ a32_case_100:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4049,6 +4347,7 @@ a32_case_100:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0310002	/* eors r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4060,6 +4359,7 @@ a32_case_100:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_100, .-a32_case_100
 
@@ -4070,6 +4370,7 @@ a32_case_101:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4087,6 +4388,7 @@ a32_case_101:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0310002	/* eors r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4098,6 +4400,7 @@ a32_case_101:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_101, .-a32_case_101
 
@@ -4108,6 +4411,7 @@ a32_case_102:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4126,6 +4430,7 @@ a32_case_102:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0310002	/* eors r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4137,6 +4442,7 @@ a32_case_102:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_102, .-a32_case_102
 
@@ -4147,6 +4453,7 @@ a32_case_103:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4163,6 +4470,7 @@ a32_case_103:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0510002	/* subs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4174,6 +4482,7 @@ a32_case_103:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_103, .-a32_case_103
 
@@ -4184,6 +4493,7 @@ a32_case_104:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4201,6 +4511,7 @@ a32_case_104:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0510002	/* subs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4212,6 +4523,7 @@ a32_case_104:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_104, .-a32_case_104
 
@@ -4222,6 +4534,7 @@ a32_case_105:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4240,6 +4553,7 @@ a32_case_105:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0510002	/* subs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4251,6 +4565,7 @@ a32_case_105:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_105, .-a32_case_105
 
@@ -4261,6 +4576,7 @@ a32_case_106:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4277,6 +4593,7 @@ a32_case_106:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0710002	/* rsbs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4288,6 +4605,7 @@ a32_case_106:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_106, .-a32_case_106
 
@@ -4298,6 +4616,7 @@ a32_case_107:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4315,6 +4634,7 @@ a32_case_107:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0710002	/* rsbs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4326,6 +4646,7 @@ a32_case_107:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_107, .-a32_case_107
 
@@ -4336,6 +4657,7 @@ a32_case_108:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4354,6 +4676,7 @@ a32_case_108:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0710002	/* rsbs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4365,6 +4688,7 @@ a32_case_108:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_108, .-a32_case_108
 
@@ -4375,6 +4699,7 @@ a32_case_109:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4391,6 +4716,7 @@ a32_case_109:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4402,6 +4728,7 @@ a32_case_109:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_109, .-a32_case_109
 
@@ -4412,6 +4739,7 @@ a32_case_110:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4429,6 +4757,7 @@ a32_case_110:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4440,6 +4769,7 @@ a32_case_110:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_110, .-a32_case_110
 
@@ -4450,6 +4780,7 @@ a32_case_111:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4468,6 +4799,7 @@ a32_case_111:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4479,6 +4811,7 @@ a32_case_111:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_111, .-a32_case_111
 
@@ -4489,6 +4822,7 @@ a32_case_112:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4505,6 +4839,7 @@ a32_case_112:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0b10002	/* adcs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4516,6 +4851,7 @@ a32_case_112:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_112, .-a32_case_112
 
@@ -4526,6 +4862,7 @@ a32_case_113:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4543,6 +4880,7 @@ a32_case_113:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0b10002	/* adcs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4554,6 +4892,7 @@ a32_case_113:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_113, .-a32_case_113
 
@@ -4564,6 +4903,7 @@ a32_case_114:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4582,6 +4922,7 @@ a32_case_114:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0b10002	/* adcs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4593,6 +4934,7 @@ a32_case_114:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_114, .-a32_case_114
 
@@ -4603,6 +4945,7 @@ a32_case_115:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4619,6 +4962,7 @@ a32_case_115:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0d10002	/* sbcs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4630,6 +4974,7 @@ a32_case_115:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_115, .-a32_case_115
 
@@ -4640,6 +4985,7 @@ a32_case_116:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4657,6 +5003,7 @@ a32_case_116:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0d10002	/* sbcs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4668,6 +5015,7 @@ a32_case_116:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_116, .-a32_case_116
 
@@ -4678,6 +5026,7 @@ a32_case_117:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4696,6 +5045,7 @@ a32_case_117:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0d10002	/* sbcs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4707,6 +5057,7 @@ a32_case_117:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_117, .-a32_case_117
 
@@ -4717,6 +5068,7 @@ a32_case_118:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4733,6 +5085,7 @@ a32_case_118:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0f10002	/* rscs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4744,6 +5097,7 @@ a32_case_118:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_118, .-a32_case_118
 
@@ -4754,6 +5108,7 @@ a32_case_119:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4771,6 +5126,7 @@ a32_case_119:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0f10002	/* rscs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4782,6 +5138,7 @@ a32_case_119:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_119, .-a32_case_119
 
@@ -4792,6 +5149,7 @@ a32_case_120:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4810,6 +5168,7 @@ a32_case_120:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0f10002	/* rscs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4821,6 +5180,7 @@ a32_case_120:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_120, .-a32_case_120
 
@@ -4831,6 +5191,7 @@ a32_case_121:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4847,6 +5208,7 @@ a32_case_121:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1910002	/* orrs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4858,6 +5220,7 @@ a32_case_121:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_121, .-a32_case_121
 
@@ -4868,6 +5231,7 @@ a32_case_122:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4885,6 +5249,7 @@ a32_case_122:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1910002	/* orrs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4896,6 +5261,7 @@ a32_case_122:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_122, .-a32_case_122
 
@@ -4906,6 +5272,7 @@ a32_case_123:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4924,6 +5291,7 @@ a32_case_123:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1910002	/* orrs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4935,6 +5303,7 @@ a32_case_123:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_123, .-a32_case_123
 
@@ -4945,6 +5314,7 @@ a32_case_124:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4961,6 +5331,7 @@ a32_case_124:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1b00002	/* movs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -4972,6 +5343,7 @@ a32_case_124:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_124, .-a32_case_124
 
@@ -4982,6 +5354,7 @@ a32_case_125:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -4999,6 +5372,7 @@ a32_case_125:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1b00002	/* movs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5010,6 +5384,7 @@ a32_case_125:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_125, .-a32_case_125
 
@@ -5020,6 +5395,7 @@ a32_case_126:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5038,6 +5414,7 @@ a32_case_126:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1b00002	/* movs r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5049,6 +5426,7 @@ a32_case_126:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_126, .-a32_case_126
 
@@ -5059,6 +5437,7 @@ a32_case_127:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5075,6 +5454,7 @@ a32_case_127:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1d10002	/* bics r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5086,6 +5466,7 @@ a32_case_127:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_127, .-a32_case_127
 
@@ -5096,6 +5477,7 @@ a32_case_128:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5113,6 +5495,7 @@ a32_case_128:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1d10002	/* bics r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5124,6 +5507,7 @@ a32_case_128:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_128, .-a32_case_128
 
@@ -5134,6 +5518,7 @@ a32_case_129:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5152,6 +5537,7 @@ a32_case_129:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1d10002	/* bics r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5163,6 +5549,7 @@ a32_case_129:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_129, .-a32_case_129
 
@@ -5173,6 +5560,7 @@ a32_case_130:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5189,6 +5577,7 @@ a32_case_130:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1f00002	/* mvns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5200,6 +5589,7 @@ a32_case_130:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_130, .-a32_case_130
 
@@ -5210,6 +5600,7 @@ a32_case_131:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5227,6 +5618,7 @@ a32_case_131:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe1f00002	/* mvns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5238,6 +5630,7 @@ a32_case_131:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_131, .-a32_case_131
 
@@ -5248,6 +5641,7 @@ a32_case_132:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5266,6 +5660,7 @@ a32_case_132:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe1f00002	/* mvns r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -5277,6 +5672,7 @@ a32_case_132:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_132, .-a32_case_132
 
@@ -5287,6 +5683,7 @@ a32_case_133:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5303,6 +5700,7 @@ a32_case_133:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2010000	/* and r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -5314,6 +5712,7 @@ a32_case_133:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_133, .-a32_case_133
 
@@ -5324,6 +5723,7 @@ a32_case_134:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5340,6 +5740,7 @@ a32_case_134:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2010001	/* and r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -5351,6 +5752,7 @@ a32_case_134:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_134, .-a32_case_134
 
@@ -5361,6 +5763,7 @@ a32_case_135:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5377,6 +5780,7 @@ a32_case_135:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe20100ff	/* and r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -5388,6 +5792,7 @@ a32_case_135:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_135, .-a32_case_135
 
@@ -5398,6 +5803,7 @@ a32_case_136:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5414,6 +5820,7 @@ a32_case_136:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2010c01	/* and r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -5425,6 +5832,7 @@ a32_case_136:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_136, .-a32_case_136
 
@@ -5435,6 +5843,7 @@ a32_case_137:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5451,6 +5860,7 @@ a32_case_137:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2010e3f	/* and r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -5462,6 +5872,7 @@ a32_case_137:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_137, .-a32_case_137
 
@@ -5472,6 +5883,7 @@ a32_case_138:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5488,6 +5900,7 @@ a32_case_138:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2010102	/* and r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -5499,6 +5912,7 @@ a32_case_138:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_138, .-a32_case_138
 
@@ -5509,6 +5923,7 @@ a32_case_139:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5525,6 +5940,7 @@ a32_case_139:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2210000	/* eor r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -5536,6 +5952,7 @@ a32_case_139:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_139, .-a32_case_139
 
@@ -5546,6 +5963,7 @@ a32_case_140:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5562,6 +5980,7 @@ a32_case_140:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2210001	/* eor r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -5573,6 +5992,7 @@ a32_case_140:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_140, .-a32_case_140
 
@@ -5583,6 +6003,7 @@ a32_case_141:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5599,6 +6020,7 @@ a32_case_141:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe22100ff	/* eor r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -5610,6 +6032,7 @@ a32_case_141:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_141, .-a32_case_141
 
@@ -5620,6 +6043,7 @@ a32_case_142:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5636,6 +6060,7 @@ a32_case_142:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2210c01	/* eor r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -5647,6 +6072,7 @@ a32_case_142:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_142, .-a32_case_142
 
@@ -5657,6 +6083,7 @@ a32_case_143:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5673,6 +6100,7 @@ a32_case_143:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2210e3f	/* eor r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -5684,6 +6112,7 @@ a32_case_143:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_143, .-a32_case_143
 
@@ -5694,6 +6123,7 @@ a32_case_144:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5710,6 +6140,7 @@ a32_case_144:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2210102	/* eor r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -5721,6 +6152,7 @@ a32_case_144:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_144, .-a32_case_144
 
@@ -5731,6 +6163,7 @@ a32_case_145:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5747,6 +6180,7 @@ a32_case_145:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2410000	/* sub r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -5758,6 +6192,7 @@ a32_case_145:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_145, .-a32_case_145
 
@@ -5768,6 +6203,7 @@ a32_case_146:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5784,6 +6220,7 @@ a32_case_146:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2410001	/* sub r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -5795,6 +6232,7 @@ a32_case_146:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_146, .-a32_case_146
 
@@ -5805,6 +6243,7 @@ a32_case_147:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5821,6 +6260,7 @@ a32_case_147:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe24100ff	/* sub r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -5832,6 +6272,7 @@ a32_case_147:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_147, .-a32_case_147
 
@@ -5842,6 +6283,7 @@ a32_case_148:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5858,6 +6300,7 @@ a32_case_148:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2410c01	/* sub r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -5869,6 +6312,7 @@ a32_case_148:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_148, .-a32_case_148
 
@@ -5879,6 +6323,7 @@ a32_case_149:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5895,6 +6340,7 @@ a32_case_149:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2410e3f	/* sub r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -5906,6 +6352,7 @@ a32_case_149:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_149, .-a32_case_149
 
@@ -5916,6 +6363,7 @@ a32_case_150:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5932,6 +6380,7 @@ a32_case_150:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2410102	/* sub r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -5943,6 +6392,7 @@ a32_case_150:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_150, .-a32_case_150
 
@@ -5953,6 +6403,7 @@ a32_case_151:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -5969,6 +6420,7 @@ a32_case_151:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2610000	/* rsb r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -5980,6 +6432,7 @@ a32_case_151:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_151, .-a32_case_151
 
@@ -5990,6 +6443,7 @@ a32_case_152:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6006,6 +6460,7 @@ a32_case_152:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2610001	/* rsb r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -6017,6 +6472,7 @@ a32_case_152:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_152, .-a32_case_152
 
@@ -6027,6 +6483,7 @@ a32_case_153:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6043,6 +6500,7 @@ a32_case_153:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe26100ff	/* rsb r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -6054,6 +6512,7 @@ a32_case_153:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_153, .-a32_case_153
 
@@ -6064,6 +6523,7 @@ a32_case_154:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6080,6 +6540,7 @@ a32_case_154:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2610c01	/* rsb r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -6091,6 +6552,7 @@ a32_case_154:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_154, .-a32_case_154
 
@@ -6101,6 +6563,7 @@ a32_case_155:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6117,6 +6580,7 @@ a32_case_155:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2610e3f	/* rsb r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -6128,6 +6592,7 @@ a32_case_155:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_155, .-a32_case_155
 
@@ -6138,6 +6603,7 @@ a32_case_156:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6154,6 +6620,7 @@ a32_case_156:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2610102	/* rsb r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -6165,6 +6632,7 @@ a32_case_156:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_156, .-a32_case_156
 
@@ -6175,6 +6643,7 @@ a32_case_157:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6191,6 +6660,7 @@ a32_case_157:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2810000	/* add r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -6202,6 +6672,7 @@ a32_case_157:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_157, .-a32_case_157
 
@@ -6212,6 +6683,7 @@ a32_case_158:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6228,6 +6700,7 @@ a32_case_158:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2810001	/* add r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -6239,6 +6712,7 @@ a32_case_158:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_158, .-a32_case_158
 
@@ -6249,6 +6723,7 @@ a32_case_159:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6265,6 +6740,7 @@ a32_case_159:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe28100ff	/* add r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -6276,6 +6752,7 @@ a32_case_159:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_159, .-a32_case_159
 
@@ -6286,6 +6763,7 @@ a32_case_160:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6302,6 +6780,7 @@ a32_case_160:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2810c01	/* add r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -6313,6 +6792,7 @@ a32_case_160:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_160, .-a32_case_160
 
@@ -6323,6 +6803,7 @@ a32_case_161:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6339,6 +6820,7 @@ a32_case_161:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2810e3f	/* add r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -6350,6 +6832,7 @@ a32_case_161:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_161, .-a32_case_161
 
@@ -6360,6 +6843,7 @@ a32_case_162:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6376,6 +6860,7 @@ a32_case_162:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2810102	/* add r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -6387,6 +6872,7 @@ a32_case_162:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_162, .-a32_case_162
 
@@ -6397,6 +6883,7 @@ a32_case_163:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6413,6 +6900,7 @@ a32_case_163:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2a10000	/* adc r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -6424,6 +6912,7 @@ a32_case_163:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_163, .-a32_case_163
 
@@ -6434,6 +6923,7 @@ a32_case_164:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6450,6 +6940,7 @@ a32_case_164:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2a10001	/* adc r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -6461,6 +6952,7 @@ a32_case_164:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_164, .-a32_case_164
 
@@ -6471,6 +6963,7 @@ a32_case_165:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6487,6 +6980,7 @@ a32_case_165:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2a100ff	/* adc r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -6498,6 +6992,7 @@ a32_case_165:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_165, .-a32_case_165
 
@@ -6508,6 +7003,7 @@ a32_case_166:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6524,6 +7020,7 @@ a32_case_166:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2a10c01	/* adc r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -6535,6 +7032,7 @@ a32_case_166:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_166, .-a32_case_166
 
@@ -6545,6 +7043,7 @@ a32_case_167:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6561,6 +7060,7 @@ a32_case_167:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2a10e3f	/* adc r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -6572,6 +7072,7 @@ a32_case_167:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_167, .-a32_case_167
 
@@ -6582,6 +7083,7 @@ a32_case_168:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6598,6 +7100,7 @@ a32_case_168:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2a10102	/* adc r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -6609,6 +7112,7 @@ a32_case_168:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_168, .-a32_case_168
 
@@ -6619,6 +7123,7 @@ a32_case_169:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6635,6 +7140,7 @@ a32_case_169:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2c10000	/* sbc r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -6646,6 +7152,7 @@ a32_case_169:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_169, .-a32_case_169
 
@@ -6656,6 +7163,7 @@ a32_case_170:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6672,6 +7180,7 @@ a32_case_170:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2c10001	/* sbc r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -6683,6 +7192,7 @@ a32_case_170:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_170, .-a32_case_170
 
@@ -6693,6 +7203,7 @@ a32_case_171:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6709,6 +7220,7 @@ a32_case_171:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2c100ff	/* sbc r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -6720,6 +7232,7 @@ a32_case_171:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_171, .-a32_case_171
 
@@ -6730,6 +7243,7 @@ a32_case_172:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6746,6 +7260,7 @@ a32_case_172:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2c10c01	/* sbc r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -6757,6 +7272,7 @@ a32_case_172:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_172, .-a32_case_172
 
@@ -6767,6 +7283,7 @@ a32_case_173:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6783,6 +7300,7 @@ a32_case_173:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2c10e3f	/* sbc r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -6794,6 +7312,7 @@ a32_case_173:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_173, .-a32_case_173
 
@@ -6804,6 +7323,7 @@ a32_case_174:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6820,6 +7340,7 @@ a32_case_174:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2c10102	/* sbc r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -6831,6 +7352,7 @@ a32_case_174:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_174, .-a32_case_174
 
@@ -6841,6 +7363,7 @@ a32_case_175:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6857,6 +7380,7 @@ a32_case_175:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2e10000	/* rsc r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -6868,6 +7392,7 @@ a32_case_175:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_175, .-a32_case_175
 
@@ -6878,6 +7403,7 @@ a32_case_176:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6894,6 +7420,7 @@ a32_case_176:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2e10001	/* rsc r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -6905,6 +7432,7 @@ a32_case_176:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_176, .-a32_case_176
 
@@ -6915,6 +7443,7 @@ a32_case_177:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6931,6 +7460,7 @@ a32_case_177:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2e100ff	/* rsc r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -6942,6 +7472,7 @@ a32_case_177:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_177, .-a32_case_177
 
@@ -6952,6 +7483,7 @@ a32_case_178:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -6968,6 +7500,7 @@ a32_case_178:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2e10c01	/* rsc r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -6979,6 +7512,7 @@ a32_case_178:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_178, .-a32_case_178
 
@@ -6989,6 +7523,7 @@ a32_case_179:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7005,6 +7540,7 @@ a32_case_179:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2e10e3f	/* rsc r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -7016,6 +7552,7 @@ a32_case_179:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_179, .-a32_case_179
 
@@ -7026,6 +7563,7 @@ a32_case_180:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7042,6 +7580,7 @@ a32_case_180:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe2e10102	/* rsc r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -7053,6 +7592,7 @@ a32_case_180:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_180, .-a32_case_180
 
@@ -7063,6 +7603,7 @@ a32_case_181:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7079,6 +7620,7 @@ a32_case_181:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3110000	/* tsts r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -7090,6 +7632,7 @@ a32_case_181:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_181, .-a32_case_181
 
@@ -7100,6 +7643,7 @@ a32_case_182:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7116,6 +7660,7 @@ a32_case_182:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3110001	/* tsts r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -7127,6 +7672,7 @@ a32_case_182:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_182, .-a32_case_182
 
@@ -7137,6 +7683,7 @@ a32_case_183:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7153,6 +7700,7 @@ a32_case_183:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe31100ff	/* tsts r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -7164,6 +7712,7 @@ a32_case_183:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_183, .-a32_case_183
 
@@ -7174,6 +7723,7 @@ a32_case_184:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7190,6 +7740,7 @@ a32_case_184:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3110c01	/* tsts r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -7201,6 +7752,7 @@ a32_case_184:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_184, .-a32_case_184
 
@@ -7211,6 +7763,7 @@ a32_case_185:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7227,6 +7780,7 @@ a32_case_185:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3110e3f	/* tsts r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -7238,6 +7792,7 @@ a32_case_185:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_185, .-a32_case_185
 
@@ -7248,6 +7803,7 @@ a32_case_186:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7264,6 +7820,7 @@ a32_case_186:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3110102	/* tsts r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -7275,6 +7832,7 @@ a32_case_186:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_186, .-a32_case_186
 
@@ -7285,6 +7843,7 @@ a32_case_187:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7301,6 +7860,7 @@ a32_case_187:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3310000	/* teqs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -7312,6 +7872,7 @@ a32_case_187:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_187, .-a32_case_187
 
@@ -7322,6 +7883,7 @@ a32_case_188:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7338,6 +7900,7 @@ a32_case_188:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3310001	/* teqs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -7349,6 +7912,7 @@ a32_case_188:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_188, .-a32_case_188
 
@@ -7359,6 +7923,7 @@ a32_case_189:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7375,6 +7940,7 @@ a32_case_189:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe33100ff	/* teqs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -7386,6 +7952,7 @@ a32_case_189:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_189, .-a32_case_189
 
@@ -7396,6 +7963,7 @@ a32_case_190:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7412,6 +7980,7 @@ a32_case_190:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3310c01	/* teqs r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -7423,6 +7992,7 @@ a32_case_190:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_190, .-a32_case_190
 
@@ -7433,6 +8003,7 @@ a32_case_191:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7449,6 +8020,7 @@ a32_case_191:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3310e3f	/* teqs r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -7460,6 +8032,7 @@ a32_case_191:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_191, .-a32_case_191
 
@@ -7470,6 +8043,7 @@ a32_case_192:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7486,6 +8060,7 @@ a32_case_192:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3310102	/* teqs r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -7497,6 +8072,7 @@ a32_case_192:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_192, .-a32_case_192
 
@@ -7507,6 +8083,7 @@ a32_case_193:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7523,6 +8100,7 @@ a32_case_193:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3510000	/* cmps r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -7534,6 +8112,7 @@ a32_case_193:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_193, .-a32_case_193
 
@@ -7544,6 +8123,7 @@ a32_case_194:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7560,6 +8140,7 @@ a32_case_194:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3510001	/* cmps r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -7571,6 +8152,7 @@ a32_case_194:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_194, .-a32_case_194
 
@@ -7581,6 +8163,7 @@ a32_case_195:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7597,6 +8180,7 @@ a32_case_195:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe35100ff	/* cmps r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -7608,6 +8192,7 @@ a32_case_195:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_195, .-a32_case_195
 
@@ -7618,6 +8203,7 @@ a32_case_196:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7634,6 +8220,7 @@ a32_case_196:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3510c01	/* cmps r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -7645,6 +8232,7 @@ a32_case_196:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_196, .-a32_case_196
 
@@ -7655,6 +8243,7 @@ a32_case_197:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7671,6 +8260,7 @@ a32_case_197:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3510e3f	/* cmps r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -7682,6 +8272,7 @@ a32_case_197:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_197, .-a32_case_197
 
@@ -7692,6 +8283,7 @@ a32_case_198:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7708,6 +8300,7 @@ a32_case_198:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3510102	/* cmps r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -7719,6 +8312,7 @@ a32_case_198:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_198, .-a32_case_198
 
@@ -7729,6 +8323,7 @@ a32_case_199:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7745,6 +8340,7 @@ a32_case_199:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3710000	/* cmns r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -7756,6 +8352,7 @@ a32_case_199:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_199, .-a32_case_199
 
@@ -7766,6 +8363,7 @@ a32_case_200:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7782,6 +8380,7 @@ a32_case_200:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3710001	/* cmns r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -7793,6 +8392,7 @@ a32_case_200:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_200, .-a32_case_200
 
@@ -7803,6 +8403,7 @@ a32_case_201:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7819,6 +8420,7 @@ a32_case_201:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe37100ff	/* cmns r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -7830,6 +8432,7 @@ a32_case_201:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_201, .-a32_case_201
 
@@ -7840,6 +8443,7 @@ a32_case_202:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7856,6 +8460,7 @@ a32_case_202:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3710c01	/* cmns r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -7867,6 +8472,7 @@ a32_case_202:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_202, .-a32_case_202
 
@@ -7877,6 +8483,7 @@ a32_case_203:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7893,6 +8500,7 @@ a32_case_203:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3710e3f	/* cmns r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -7904,6 +8512,7 @@ a32_case_203:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_203, .-a32_case_203
 
@@ -7914,6 +8523,7 @@ a32_case_204:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7930,6 +8540,7 @@ a32_case_204:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3710102	/* cmns r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -7941,6 +8552,7 @@ a32_case_204:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_204, .-a32_case_204
 
@@ -7951,6 +8563,7 @@ a32_case_205:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -7967,6 +8580,7 @@ a32_case_205:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3810000	/* orr r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -7978,6 +8592,7 @@ a32_case_205:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_205, .-a32_case_205
 
@@ -7988,6 +8603,7 @@ a32_case_206:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8004,6 +8620,7 @@ a32_case_206:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3810001	/* orr r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -8015,6 +8632,7 @@ a32_case_206:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_206, .-a32_case_206
 
@@ -8025,6 +8643,7 @@ a32_case_207:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8041,6 +8660,7 @@ a32_case_207:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe38100ff	/* orr r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -8052,6 +8672,7 @@ a32_case_207:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_207, .-a32_case_207
 
@@ -8062,6 +8683,7 @@ a32_case_208:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8078,6 +8700,7 @@ a32_case_208:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3810c01	/* orr r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -8089,6 +8712,7 @@ a32_case_208:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_208, .-a32_case_208
 
@@ -8099,6 +8723,7 @@ a32_case_209:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8115,6 +8740,7 @@ a32_case_209:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3810e3f	/* orr r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -8126,6 +8752,7 @@ a32_case_209:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_209, .-a32_case_209
 
@@ -8136,6 +8763,7 @@ a32_case_210:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8152,6 +8780,7 @@ a32_case_210:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3810102	/* orr r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -8163,6 +8792,7 @@ a32_case_210:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_210, .-a32_case_210
 
@@ -8173,6 +8803,7 @@ a32_case_211:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8189,6 +8820,7 @@ a32_case_211:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3a00000	/* mov r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -8200,6 +8832,7 @@ a32_case_211:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_211, .-a32_case_211
 
@@ -8210,6 +8843,7 @@ a32_case_212:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8226,6 +8860,7 @@ a32_case_212:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3a00001	/* mov r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -8237,6 +8872,7 @@ a32_case_212:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_212, .-a32_case_212
 
@@ -8247,6 +8883,7 @@ a32_case_213:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8263,6 +8900,7 @@ a32_case_213:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3a000ff	/* mov r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -8274,6 +8912,7 @@ a32_case_213:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_213, .-a32_case_213
 
@@ -8284,6 +8923,7 @@ a32_case_214:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8300,6 +8940,7 @@ a32_case_214:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3a00c01	/* mov r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -8311,6 +8952,7 @@ a32_case_214:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_214, .-a32_case_214
 
@@ -8321,6 +8963,7 @@ a32_case_215:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8337,6 +8980,7 @@ a32_case_215:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3a00e3f	/* mov r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -8348,6 +8992,7 @@ a32_case_215:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_215, .-a32_case_215
 
@@ -8358,6 +9003,7 @@ a32_case_216:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8374,6 +9020,7 @@ a32_case_216:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3a00102	/* mov r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -8385,6 +9032,7 @@ a32_case_216:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_216, .-a32_case_216
 
@@ -8395,6 +9043,7 @@ a32_case_217:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8411,6 +9060,7 @@ a32_case_217:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3c10000	/* bic r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -8422,6 +9072,7 @@ a32_case_217:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_217, .-a32_case_217
 
@@ -8432,6 +9083,7 @@ a32_case_218:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8448,6 +9100,7 @@ a32_case_218:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3c10001	/* bic r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -8459,6 +9112,7 @@ a32_case_218:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_218, .-a32_case_218
 
@@ -8469,6 +9123,7 @@ a32_case_219:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8485,6 +9140,7 @@ a32_case_219:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3c100ff	/* bic r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -8496,6 +9152,7 @@ a32_case_219:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_219, .-a32_case_219
 
@@ -8506,6 +9163,7 @@ a32_case_220:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8522,6 +9180,7 @@ a32_case_220:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3c10c01	/* bic r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -8533,6 +9192,7 @@ a32_case_220:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_220, .-a32_case_220
 
@@ -8543,6 +9203,7 @@ a32_case_221:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8559,6 +9220,7 @@ a32_case_221:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3c10e3f	/* bic r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -8570,6 +9232,7 @@ a32_case_221:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_221, .-a32_case_221
 
@@ -8580,6 +9243,7 @@ a32_case_222:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8596,6 +9260,7 @@ a32_case_222:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3c10102	/* bic r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -8607,6 +9272,7 @@ a32_case_222:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_222, .-a32_case_222
 
@@ -8617,6 +9283,7 @@ a32_case_223:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8633,6 +9300,7 @@ a32_case_223:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3e00000	/* mvn r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -8644,6 +9312,7 @@ a32_case_223:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_223, .-a32_case_223
 
@@ -8654,6 +9323,7 @@ a32_case_224:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8670,6 +9340,7 @@ a32_case_224:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3e00001	/* mvn r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -8681,6 +9352,7 @@ a32_case_224:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_224, .-a32_case_224
 
@@ -8691,6 +9363,7 @@ a32_case_225:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8707,6 +9380,7 @@ a32_case_225:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3e000ff	/* mvn r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -8718,6 +9392,7 @@ a32_case_225:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_225, .-a32_case_225
 
@@ -8728,6 +9403,7 @@ a32_case_226:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8744,6 +9420,7 @@ a32_case_226:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3e00c01	/* mvn r0, r1, #0x100 */
 	.arm
 	.p2align 2
@@ -8755,6 +9432,7 @@ a32_case_226:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_226, .-a32_case_226
 
@@ -8765,6 +9443,7 @@ a32_case_227:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8781,6 +9460,7 @@ a32_case_227:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3e00e3f	/* mvn r0, r1, #0x3f0 */
 	.arm
 	.p2align 2
@@ -8792,6 +9472,7 @@ a32_case_227:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_227, .-a32_case_227
 
@@ -8802,6 +9483,7 @@ a32_case_228:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8818,6 +9500,7 @@ a32_case_228:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe3e00102	/* mvn r0, r1, #0x80000000 */
 	.arm
 	.p2align 2
@@ -8829,6 +9512,7 @@ a32_case_228:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_228, .-a32_case_228
 
@@ -8839,6 +9523,7 @@ a32_case_229:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8855,6 +9540,7 @@ a32_case_229:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2110000	/* ands r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -8866,6 +9552,7 @@ a32_case_229:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_229, .-a32_case_229
 
@@ -8876,6 +9563,7 @@ a32_case_230:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8892,6 +9580,7 @@ a32_case_230:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2110001	/* ands r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -8903,6 +9592,7 @@ a32_case_230:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_230, .-a32_case_230
 
@@ -8913,6 +9603,7 @@ a32_case_231:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8929,6 +9620,7 @@ a32_case_231:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe21100ff	/* ands r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -8940,6 +9632,7 @@ a32_case_231:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_231, .-a32_case_231
 
@@ -8950,6 +9643,7 @@ a32_case_232:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -8966,6 +9660,7 @@ a32_case_232:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2310000	/* eors r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -8977,6 +9672,7 @@ a32_case_232:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_232, .-a32_case_232
 
@@ -8987,6 +9683,7 @@ a32_case_233:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9003,6 +9700,7 @@ a32_case_233:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2310001	/* eors r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9014,6 +9712,7 @@ a32_case_233:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_233, .-a32_case_233
 
@@ -9024,6 +9723,7 @@ a32_case_234:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9040,6 +9740,7 @@ a32_case_234:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe23100ff	/* eors r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9051,6 +9752,7 @@ a32_case_234:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_234, .-a32_case_234
 
@@ -9061,6 +9763,7 @@ a32_case_235:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9077,6 +9780,7 @@ a32_case_235:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2510000	/* subs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9088,6 +9792,7 @@ a32_case_235:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_235, .-a32_case_235
 
@@ -9098,6 +9803,7 @@ a32_case_236:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9114,6 +9820,7 @@ a32_case_236:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2510001	/* subs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9125,6 +9832,7 @@ a32_case_236:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_236, .-a32_case_236
 
@@ -9135,6 +9843,7 @@ a32_case_237:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9151,6 +9860,7 @@ a32_case_237:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe25100ff	/* subs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9162,6 +9872,7 @@ a32_case_237:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_237, .-a32_case_237
 
@@ -9172,6 +9883,7 @@ a32_case_238:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9188,6 +9900,7 @@ a32_case_238:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2710000	/* rsbs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9199,6 +9912,7 @@ a32_case_238:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_238, .-a32_case_238
 
@@ -9209,6 +9923,7 @@ a32_case_239:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9225,6 +9940,7 @@ a32_case_239:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2710001	/* rsbs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9236,6 +9952,7 @@ a32_case_239:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_239, .-a32_case_239
 
@@ -9246,6 +9963,7 @@ a32_case_240:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9262,6 +9980,7 @@ a32_case_240:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe27100ff	/* rsbs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9273,6 +9992,7 @@ a32_case_240:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_240, .-a32_case_240
 
@@ -9283,6 +10003,7 @@ a32_case_241:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9299,6 +10020,7 @@ a32_case_241:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2910000	/* adds r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9310,6 +10032,7 @@ a32_case_241:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_241, .-a32_case_241
 
@@ -9320,6 +10043,7 @@ a32_case_242:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9336,6 +10060,7 @@ a32_case_242:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2910001	/* adds r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9347,6 +10072,7 @@ a32_case_242:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_242, .-a32_case_242
 
@@ -9357,6 +10083,7 @@ a32_case_243:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9373,6 +10100,7 @@ a32_case_243:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe29100ff	/* adds r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9384,6 +10112,7 @@ a32_case_243:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_243, .-a32_case_243
 
@@ -9394,6 +10123,7 @@ a32_case_244:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9410,6 +10140,7 @@ a32_case_244:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2b10000	/* adcs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9421,6 +10152,7 @@ a32_case_244:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_244, .-a32_case_244
 
@@ -9431,6 +10163,7 @@ a32_case_245:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9447,6 +10180,7 @@ a32_case_245:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2b10001	/* adcs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9458,6 +10192,7 @@ a32_case_245:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_245, .-a32_case_245
 
@@ -9468,6 +10203,7 @@ a32_case_246:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9484,6 +10220,7 @@ a32_case_246:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2b100ff	/* adcs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9495,6 +10232,7 @@ a32_case_246:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_246, .-a32_case_246
 
@@ -9505,6 +10243,7 @@ a32_case_247:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9521,6 +10260,7 @@ a32_case_247:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2d10000	/* sbcs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9532,6 +10272,7 @@ a32_case_247:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_247, .-a32_case_247
 
@@ -9542,6 +10283,7 @@ a32_case_248:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9558,6 +10300,7 @@ a32_case_248:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2d10001	/* sbcs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9569,6 +10312,7 @@ a32_case_248:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_248, .-a32_case_248
 
@@ -9579,6 +10323,7 @@ a32_case_249:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9595,6 +10340,7 @@ a32_case_249:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2d100ff	/* sbcs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9606,6 +10352,7 @@ a32_case_249:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_249, .-a32_case_249
 
@@ -9616,6 +10363,7 @@ a32_case_250:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9632,6 +10380,7 @@ a32_case_250:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2f10000	/* rscs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9643,6 +10392,7 @@ a32_case_250:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_250, .-a32_case_250
 
@@ -9653,6 +10403,7 @@ a32_case_251:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9669,6 +10420,7 @@ a32_case_251:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2f10001	/* rscs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9680,6 +10432,7 @@ a32_case_251:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_251, .-a32_case_251
 
@@ -9690,6 +10443,7 @@ a32_case_252:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9706,6 +10460,7 @@ a32_case_252:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe2f100ff	/* rscs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9717,6 +10472,7 @@ a32_case_252:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_252, .-a32_case_252
 
@@ -9727,6 +10483,7 @@ a32_case_253:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9743,6 +10500,7 @@ a32_case_253:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3910000	/* orrs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9754,6 +10512,7 @@ a32_case_253:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_253, .-a32_case_253
 
@@ -9764,6 +10523,7 @@ a32_case_254:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9780,6 +10540,7 @@ a32_case_254:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3910001	/* orrs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9791,6 +10552,7 @@ a32_case_254:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_254, .-a32_case_254
 
@@ -9801,6 +10563,7 @@ a32_case_255:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9817,6 +10580,7 @@ a32_case_255:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe39100ff	/* orrs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9828,6 +10592,7 @@ a32_case_255:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_255, .-a32_case_255
 
@@ -9838,6 +10603,7 @@ a32_case_256:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9854,6 +10620,7 @@ a32_case_256:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3b00000	/* movs r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9865,6 +10632,7 @@ a32_case_256:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_256, .-a32_case_256
 
@@ -9875,6 +10643,7 @@ a32_case_257:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9891,6 +10660,7 @@ a32_case_257:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3b00001	/* movs r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -9902,6 +10672,7 @@ a32_case_257:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_257, .-a32_case_257
 
@@ -9912,6 +10683,7 @@ a32_case_258:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9928,6 +10700,7 @@ a32_case_258:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3b000ff	/* movs r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -9939,6 +10712,7 @@ a32_case_258:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_258, .-a32_case_258
 
@@ -9949,6 +10723,7 @@ a32_case_259:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -9965,6 +10740,7 @@ a32_case_259:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3d10000	/* bics r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -9976,6 +10752,7 @@ a32_case_259:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_259, .-a32_case_259
 
@@ -9986,6 +10763,7 @@ a32_case_260:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10002,6 +10780,7 @@ a32_case_260:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3d10001	/* bics r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -10013,6 +10792,7 @@ a32_case_260:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_260, .-a32_case_260
 
@@ -10023,6 +10803,7 @@ a32_case_261:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10039,6 +10820,7 @@ a32_case_261:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3d100ff	/* bics r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -10050,6 +10832,7 @@ a32_case_261:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_261, .-a32_case_261
 
@@ -10060,6 +10843,7 @@ a32_case_262:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10076,6 +10860,7 @@ a32_case_262:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3f00000	/* mvns r0, r1, #0x0 */
 	.arm
 	.p2align 2
@@ -10087,6 +10872,7 @@ a32_case_262:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_262, .-a32_case_262
 
@@ -10097,6 +10883,7 @@ a32_case_263:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10113,6 +10900,7 @@ a32_case_263:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3f00001	/* mvns r0, r1, #0x1 */
 	.arm
 	.p2align 2
@@ -10124,6 +10912,7 @@ a32_case_263:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_263, .-a32_case_263
 
@@ -10134,6 +10923,7 @@ a32_case_264:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10150,6 +10940,7 @@ a32_case_264:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
+	mov	lr, #0
 	.word	0xe3f000ff	/* mvns r0, r1, #0xff */
 	.arm
 	.p2align 2
@@ -10161,6 +10952,7 @@ a32_case_264:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_264, .-a32_case_264
 
@@ -10171,6 +10963,7 @@ a32_case_265:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10187,6 +10980,7 @@ a32_case_265:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00001	/* mov r0, r1, LSL #0 */
 	.arm
 	.p2align 2
@@ -10198,6 +10992,7 @@ a32_case_265:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_265, .-a32_case_265
 
@@ -10208,6 +11003,7 @@ a32_case_266:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10224,6 +11020,7 @@ a32_case_266:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00081	/* mov r0, r1, LSL #1 */
 	.arm
 	.p2align 2
@@ -10235,6 +11032,7 @@ a32_case_266:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_266, .-a32_case_266
 
@@ -10245,6 +11043,7 @@ a32_case_267:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10261,6 +11060,7 @@ a32_case_267:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00281	/* mov r0, r1, LSL #5 */
 	.arm
 	.p2align 2
@@ -10272,6 +11072,7 @@ a32_case_267:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_267, .-a32_case_267
 
@@ -10282,6 +11083,7 @@ a32_case_268:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10298,6 +11100,7 @@ a32_case_268:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00f81	/* mov r0, r1, LSL #31 */
 	.arm
 	.p2align 2
@@ -10309,6 +11112,7 @@ a32_case_268:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_268, .-a32_case_268
 
@@ -10319,6 +11123,7 @@ a32_case_269:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10335,6 +11140,7 @@ a32_case_269:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00021	/* mov r0, r1, LSR #0 */
 	.arm
 	.p2align 2
@@ -10346,6 +11152,7 @@ a32_case_269:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_269, .-a32_case_269
 
@@ -10356,6 +11163,7 @@ a32_case_270:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10372,6 +11180,7 @@ a32_case_270:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a000a1	/* mov r0, r1, LSR #1 */
 	.arm
 	.p2align 2
@@ -10383,6 +11192,7 @@ a32_case_270:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_270, .-a32_case_270
 
@@ -10393,6 +11203,7 @@ a32_case_271:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10409,6 +11220,7 @@ a32_case_271:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a002a1	/* mov r0, r1, LSR #5 */
 	.arm
 	.p2align 2
@@ -10420,6 +11232,7 @@ a32_case_271:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_271, .-a32_case_271
 
@@ -10430,6 +11243,7 @@ a32_case_272:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10446,6 +11260,7 @@ a32_case_272:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00fa1	/* mov r0, r1, LSR #31 */
 	.arm
 	.p2align 2
@@ -10457,6 +11272,7 @@ a32_case_272:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_272, .-a32_case_272
 
@@ -10467,6 +11283,7 @@ a32_case_273:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10483,6 +11300,7 @@ a32_case_273:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00041	/* mov r0, r1, ASR #0 */
 	.arm
 	.p2align 2
@@ -10494,6 +11312,7 @@ a32_case_273:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_273, .-a32_case_273
 
@@ -10504,6 +11323,7 @@ a32_case_274:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10520,6 +11340,7 @@ a32_case_274:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a000c1	/* mov r0, r1, ASR #1 */
 	.arm
 	.p2align 2
@@ -10531,6 +11352,7 @@ a32_case_274:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_274, .-a32_case_274
 
@@ -10541,6 +11363,7 @@ a32_case_275:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10557,6 +11380,7 @@ a32_case_275:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a002c1	/* mov r0, r1, ASR #5 */
 	.arm
 	.p2align 2
@@ -10568,6 +11392,7 @@ a32_case_275:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_275, .-a32_case_275
 
@@ -10578,6 +11403,7 @@ a32_case_276:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10594,6 +11420,7 @@ a32_case_276:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00fc1	/* mov r0, r1, ASR #31 */
 	.arm
 	.p2align 2
@@ -10605,6 +11432,7 @@ a32_case_276:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_276, .-a32_case_276
 
@@ -10615,6 +11443,7 @@ a32_case_277:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10631,6 +11460,7 @@ a32_case_277:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00061	/* mov r0, r1, ROR #0 */
 	.arm
 	.p2align 2
@@ -10642,6 +11472,7 @@ a32_case_277:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_277, .-a32_case_277
 
@@ -10652,6 +11483,7 @@ a32_case_278:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10668,6 +11500,7 @@ a32_case_278:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a000e1	/* mov r0, r1, ROR #1 */
 	.arm
 	.p2align 2
@@ -10679,6 +11512,7 @@ a32_case_278:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_278, .-a32_case_278
 
@@ -10689,6 +11523,7 @@ a32_case_279:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10705,6 +11540,7 @@ a32_case_279:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a002e1	/* mov r0, r1, ROR #5 */
 	.arm
 	.p2align 2
@@ -10716,6 +11552,7 @@ a32_case_279:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_279, .-a32_case_279
 
@@ -10726,6 +11563,7 @@ a32_case_280:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10742,6 +11580,7 @@ a32_case_280:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
+	mov	lr, #0
 	.word	0xe1a00fe1	/* mov r0, r1, ROR #31 */
 	.arm
 	.p2align 2
@@ -10753,6 +11592,7 @@ a32_case_280:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_280, .-a32_case_280
 
@@ -10763,6 +11603,7 @@ a32_case_281:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10780,6 +11621,7 @@ a32_case_281:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0000
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -10791,6 +11633,7 @@ a32_case_281:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_281, .-a32_case_281
 
@@ -10801,6 +11644,7 @@ a32_case_282:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10818,6 +11662,7 @@ a32_case_282:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -10829,6 +11674,7 @@ a32_case_282:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_282, .-a32_case_282
 
@@ -10839,6 +11685,7 @@ a32_case_283:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10856,6 +11703,7 @@ a32_case_283:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0004
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -10867,6 +11715,7 @@ a32_case_283:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_283, .-a32_case_283
 
@@ -10877,6 +11726,7 @@ a32_case_284:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10894,6 +11744,7 @@ a32_case_284:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0008
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -10905,6 +11756,7 @@ a32_case_284:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_284, .-a32_case_284
 
@@ -10915,6 +11767,7 @@ a32_case_285:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10932,6 +11785,7 @@ a32_case_285:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0010
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -10943,6 +11797,7 @@ a32_case_285:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_285, .-a32_case_285
 
@@ -10953,6 +11808,7 @@ a32_case_286:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -10970,6 +11826,7 @@ a32_case_286:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001e
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -10981,6 +11838,7 @@ a32_case_286:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_286, .-a32_case_286
 
@@ -10991,6 +11849,7 @@ a32_case_287:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11008,6 +11867,7 @@ a32_case_287:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001f
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -11019,6 +11879,7 @@ a32_case_287:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_287, .-a32_case_287
 
@@ -11029,6 +11890,7 @@ a32_case_288:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11046,6 +11908,7 @@ a32_case_288:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0020
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -11057,6 +11920,7 @@ a32_case_288:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_288, .-a32_case_288
 
@@ -11067,6 +11931,7 @@ a32_case_289:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11084,6 +11949,7 @@ a32_case_289:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0021
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -11095,6 +11961,7 @@ a32_case_289:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_289, .-a32_case_289
 
@@ -11105,6 +11972,7 @@ a32_case_290:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11122,6 +11990,7 @@ a32_case_290:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x003f
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -11133,6 +12002,7 @@ a32_case_290:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_290, .-a32_case_290
 
@@ -11143,6 +12013,7 @@ a32_case_291:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11160,6 +12031,7 @@ a32_case_291:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0040
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -11171,6 +12043,7 @@ a32_case_291:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_291, .-a32_case_291
 
@@ -11181,6 +12054,7 @@ a32_case_292:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11198,6 +12072,7 @@ a32_case_292:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x00ff
+	mov	lr, #0
 	.word	0xe1a00211	/* mov r0, r1, LSL r2 */
 	.arm
 	.p2align 2
@@ -11209,6 +12084,7 @@ a32_case_292:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_292, .-a32_case_292
 
@@ -11219,6 +12095,7 @@ a32_case_293:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11236,6 +12113,7 @@ a32_case_293:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0000
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11247,6 +12125,7 @@ a32_case_293:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_293, .-a32_case_293
 
@@ -11257,6 +12136,7 @@ a32_case_294:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11274,6 +12154,7 @@ a32_case_294:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11285,6 +12166,7 @@ a32_case_294:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_294, .-a32_case_294
 
@@ -11295,6 +12177,7 @@ a32_case_295:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11312,6 +12195,7 @@ a32_case_295:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0004
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11323,6 +12207,7 @@ a32_case_295:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_295, .-a32_case_295
 
@@ -11333,6 +12218,7 @@ a32_case_296:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11350,6 +12236,7 @@ a32_case_296:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0008
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11361,6 +12248,7 @@ a32_case_296:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_296, .-a32_case_296
 
@@ -11371,6 +12259,7 @@ a32_case_297:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11388,6 +12277,7 @@ a32_case_297:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0010
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11399,6 +12289,7 @@ a32_case_297:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_297, .-a32_case_297
 
@@ -11409,6 +12300,7 @@ a32_case_298:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11426,6 +12318,7 @@ a32_case_298:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001e
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11437,6 +12330,7 @@ a32_case_298:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_298, .-a32_case_298
 
@@ -11447,6 +12341,7 @@ a32_case_299:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11464,6 +12359,7 @@ a32_case_299:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001f
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11475,6 +12371,7 @@ a32_case_299:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_299, .-a32_case_299
 
@@ -11485,6 +12382,7 @@ a32_case_300:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11502,6 +12400,7 @@ a32_case_300:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0020
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11513,6 +12412,7 @@ a32_case_300:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_300, .-a32_case_300
 
@@ -11523,6 +12423,7 @@ a32_case_301:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11540,6 +12441,7 @@ a32_case_301:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0021
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11551,6 +12453,7 @@ a32_case_301:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_301, .-a32_case_301
 
@@ -11561,6 +12464,7 @@ a32_case_302:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11578,6 +12482,7 @@ a32_case_302:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x003f
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11589,6 +12494,7 @@ a32_case_302:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_302, .-a32_case_302
 
@@ -11599,6 +12505,7 @@ a32_case_303:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11616,6 +12523,7 @@ a32_case_303:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0040
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11627,6 +12535,7 @@ a32_case_303:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_303, .-a32_case_303
 
@@ -11637,6 +12546,7 @@ a32_case_304:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11654,6 +12564,7 @@ a32_case_304:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x00ff
+	mov	lr, #0
 	.word	0xe1a00231	/* mov r0, r1, LSR r2 */
 	.arm
 	.p2align 2
@@ -11665,6 +12576,7 @@ a32_case_304:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_304, .-a32_case_304
 
@@ -11675,6 +12587,7 @@ a32_case_305:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11692,6 +12605,7 @@ a32_case_305:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0000
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11703,6 +12617,7 @@ a32_case_305:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_305, .-a32_case_305
 
@@ -11713,6 +12628,7 @@ a32_case_306:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11730,6 +12646,7 @@ a32_case_306:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11741,6 +12658,7 @@ a32_case_306:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_306, .-a32_case_306
 
@@ -11751,6 +12669,7 @@ a32_case_307:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11768,6 +12687,7 @@ a32_case_307:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0004
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11779,6 +12699,7 @@ a32_case_307:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_307, .-a32_case_307
 
@@ -11789,6 +12710,7 @@ a32_case_308:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11806,6 +12728,7 @@ a32_case_308:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0008
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11817,6 +12740,7 @@ a32_case_308:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_308, .-a32_case_308
 
@@ -11827,6 +12751,7 @@ a32_case_309:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11844,6 +12769,7 @@ a32_case_309:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0010
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11855,6 +12781,7 @@ a32_case_309:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_309, .-a32_case_309
 
@@ -11865,6 +12792,7 @@ a32_case_310:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11882,6 +12810,7 @@ a32_case_310:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001e
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11893,6 +12822,7 @@ a32_case_310:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_310, .-a32_case_310
 
@@ -11903,6 +12833,7 @@ a32_case_311:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11920,6 +12851,7 @@ a32_case_311:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001f
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11931,6 +12863,7 @@ a32_case_311:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_311, .-a32_case_311
 
@@ -11941,6 +12874,7 @@ a32_case_312:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11958,6 +12892,7 @@ a32_case_312:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0020
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -11969,6 +12904,7 @@ a32_case_312:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_312, .-a32_case_312
 
@@ -11979,6 +12915,7 @@ a32_case_313:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -11996,6 +12933,7 @@ a32_case_313:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0021
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -12007,6 +12945,7 @@ a32_case_313:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_313, .-a32_case_313
 
@@ -12017,6 +12956,7 @@ a32_case_314:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12034,6 +12974,7 @@ a32_case_314:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x003f
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -12045,6 +12986,7 @@ a32_case_314:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_314, .-a32_case_314
 
@@ -12055,6 +12997,7 @@ a32_case_315:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12072,6 +13015,7 @@ a32_case_315:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0040
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -12083,6 +13027,7 @@ a32_case_315:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_315, .-a32_case_315
 
@@ -12093,6 +13038,7 @@ a32_case_316:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12110,6 +13056,7 @@ a32_case_316:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x00ff
+	mov	lr, #0
 	.word	0xe1a00251	/* mov r0, r1, ASR r2 */
 	.arm
 	.p2align 2
@@ -12121,6 +13068,7 @@ a32_case_316:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_316, .-a32_case_316
 
@@ -12131,6 +13079,7 @@ a32_case_317:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12148,6 +13097,7 @@ a32_case_317:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0000
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12159,6 +13109,7 @@ a32_case_317:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_317, .-a32_case_317
 
@@ -12169,6 +13120,7 @@ a32_case_318:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12186,6 +13138,7 @@ a32_case_318:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12197,6 +13150,7 @@ a32_case_318:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_318, .-a32_case_318
 
@@ -12207,6 +13161,7 @@ a32_case_319:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12224,6 +13179,7 @@ a32_case_319:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0004
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12235,6 +13191,7 @@ a32_case_319:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_319, .-a32_case_319
 
@@ -12245,6 +13202,7 @@ a32_case_320:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12262,6 +13220,7 @@ a32_case_320:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0008
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12273,6 +13232,7 @@ a32_case_320:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_320, .-a32_case_320
 
@@ -12283,6 +13243,7 @@ a32_case_321:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12300,6 +13261,7 @@ a32_case_321:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0010
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12311,6 +13273,7 @@ a32_case_321:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_321, .-a32_case_321
 
@@ -12321,6 +13284,7 @@ a32_case_322:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12338,6 +13302,7 @@ a32_case_322:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001e
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12349,6 +13314,7 @@ a32_case_322:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_322, .-a32_case_322
 
@@ -12359,6 +13325,7 @@ a32_case_323:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12376,6 +13343,7 @@ a32_case_323:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x001f
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12387,6 +13355,7 @@ a32_case_323:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_323, .-a32_case_323
 
@@ -12397,6 +13366,7 @@ a32_case_324:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12414,6 +13384,7 @@ a32_case_324:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0020
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12425,6 +13396,7 @@ a32_case_324:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_324, .-a32_case_324
 
@@ -12435,6 +13407,7 @@ a32_case_325:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12452,6 +13425,7 @@ a32_case_325:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0021
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12463,6 +13437,7 @@ a32_case_325:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_325, .-a32_case_325
 
@@ -12473,6 +13448,7 @@ a32_case_326:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12490,6 +13466,7 @@ a32_case_326:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x003f
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12501,6 +13478,7 @@ a32_case_326:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_326, .-a32_case_326
 
@@ -12511,6 +13489,7 @@ a32_case_327:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12528,6 +13507,7 @@ a32_case_327:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x0040
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12539,6 +13519,7 @@ a32_case_327:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_327, .-a32_case_327
 
@@ -12549,6 +13530,7 @@ a32_case_328:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12566,6 +13548,7 @@ a32_case_328:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r2, #0x00ff
+	mov	lr, #0
 	.word	0xe1a00271	/* mov r0, r1, ROR r2 */
 	.arm
 	.p2align 2
@@ -12577,6 +13560,7 @@ a32_case_328:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_328, .-a32_case_328
 
@@ -12587,6 +13571,7 @@ a32_case_329:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12604,6 +13589,7 @@ a32_case_329:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810002	/* add r0, r1, r2, LSL #0 */
 	.arm
 	.p2align 2
@@ -12615,6 +13601,7 @@ a32_case_329:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_329, .-a32_case_329
 
@@ -12625,6 +13612,7 @@ a32_case_330:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12642,6 +13630,7 @@ a32_case_330:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810182	/* add r0, r1, r2, LSL #3 */
 	.arm
 	.p2align 2
@@ -12653,6 +13642,7 @@ a32_case_330:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_330, .-a32_case_330
 
@@ -12663,6 +13653,7 @@ a32_case_331:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12680,6 +13671,7 @@ a32_case_331:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810402	/* add r0, r1, r2, LSL #8 */
 	.arm
 	.p2align 2
@@ -12691,6 +13683,7 @@ a32_case_331:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_331, .-a32_case_331
 
@@ -12701,6 +13694,7 @@ a32_case_332:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12718,6 +13712,7 @@ a32_case_332:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810802	/* add r0, r1, r2, LSL #16 */
 	.arm
 	.p2align 2
@@ -12729,6 +13724,7 @@ a32_case_332:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_332, .-a32_case_332
 
@@ -12739,6 +13735,7 @@ a32_case_333:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12756,6 +13753,7 @@ a32_case_333:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810022	/* add r0, r1, r2, LSR #0 */
 	.arm
 	.p2align 2
@@ -12767,6 +13765,7 @@ a32_case_333:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_333, .-a32_case_333
 
@@ -12777,6 +13776,7 @@ a32_case_334:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12794,6 +13794,7 @@ a32_case_334:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe08101a2	/* add r0, r1, r2, LSR #3 */
 	.arm
 	.p2align 2
@@ -12805,6 +13806,7 @@ a32_case_334:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_334, .-a32_case_334
 
@@ -12815,6 +13817,7 @@ a32_case_335:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12832,6 +13835,7 @@ a32_case_335:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810422	/* add r0, r1, r2, LSR #8 */
 	.arm
 	.p2align 2
@@ -12843,6 +13847,7 @@ a32_case_335:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_335, .-a32_case_335
 
@@ -12853,6 +13858,7 @@ a32_case_336:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12870,6 +13876,7 @@ a32_case_336:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810822	/* add r0, r1, r2, LSR #16 */
 	.arm
 	.p2align 2
@@ -12881,6 +13888,7 @@ a32_case_336:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_336, .-a32_case_336
 
@@ -12891,6 +13899,7 @@ a32_case_337:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12908,6 +13917,7 @@ a32_case_337:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810042	/* add r0, r1, r2, ASR #0 */
 	.arm
 	.p2align 2
@@ -12919,6 +13929,7 @@ a32_case_337:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_337, .-a32_case_337
 
@@ -12929,6 +13940,7 @@ a32_case_338:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12946,6 +13958,7 @@ a32_case_338:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe08101c2	/* add r0, r1, r2, ASR #3 */
 	.arm
 	.p2align 2
@@ -12957,6 +13970,7 @@ a32_case_338:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_338, .-a32_case_338
 
@@ -12967,6 +13981,7 @@ a32_case_339:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -12984,6 +13999,7 @@ a32_case_339:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810442	/* add r0, r1, r2, ASR #8 */
 	.arm
 	.p2align 2
@@ -12995,6 +14011,7 @@ a32_case_339:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_339, .-a32_case_339
 
@@ -13005,6 +14022,7 @@ a32_case_340:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13022,6 +14040,7 @@ a32_case_340:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810842	/* add r0, r1, r2, ASR #16 */
 	.arm
 	.p2align 2
@@ -13033,6 +14052,7 @@ a32_case_340:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_340, .-a32_case_340
 
@@ -13043,6 +14063,7 @@ a32_case_341:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13060,6 +14081,7 @@ a32_case_341:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810062	/* add r0, r1, r2, ROR #0 */
 	.arm
 	.p2align 2
@@ -13071,6 +14093,7 @@ a32_case_341:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_341, .-a32_case_341
 
@@ -13081,6 +14104,7 @@ a32_case_342:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13098,6 +14122,7 @@ a32_case_342:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe08101e2	/* add r0, r1, r2, ROR #3 */
 	.arm
 	.p2align 2
@@ -13109,6 +14134,7 @@ a32_case_342:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_342, .-a32_case_342
 
@@ -13119,6 +14145,7 @@ a32_case_343:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13136,6 +14163,7 @@ a32_case_343:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810462	/* add r0, r1, r2, ROR #8 */
 	.arm
 	.p2align 2
@@ -13147,6 +14175,7 @@ a32_case_343:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_343, .-a32_case_343
 
@@ -13157,6 +14186,7 @@ a32_case_344:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13174,6 +14204,7 @@ a32_case_344:
 	movw	r1, #0x0001
 	movw	r2, #0x5678
 	movt	r2, #0x1234
+	mov	lr, #0
 	.word	0xe0810862	/* add r0, r1, r2, ROR #16 */
 	.arm
 	.p2align 2
@@ -13185,6 +14216,7 @@ a32_case_344:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_344, .-a32_case_344
 
@@ -13195,6 +14227,7 @@ a32_case_345:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13213,6 +14246,7 @@ a32_case_345:
 	movt	r1, #0x8000
 	movw	r2, #0x0000
 	movt	r2, #0x4000
+	mov	lr, #0
 	.word	0xe1120082	/* tst r2, r2, LSL #1 */
 	.word	0xe1a00061	/* mov r0, r1, RRX */
 	.arm
@@ -13225,6 +14259,7 @@ a32_case_345:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_345, .-a32_case_345
 
@@ -13235,6 +14270,7 @@ a32_case_346:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13253,6 +14289,7 @@ a32_case_346:
 	movt	r1, #0x8000
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe1120082	/* tst r2, r2, LSL #1 */
 	.word	0xe1a00061	/* mov r0, r1, RRX */
 	.arm
@@ -13265,6 +14302,7 @@ a32_case_346:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_346, .-a32_case_346
 
@@ -13275,6 +14313,7 @@ a32_case_347:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13291,6 +14330,7 @@ a32_case_347:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0000291	/* mul r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -13302,6 +14342,7 @@ a32_case_347:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_347, .-a32_case_347
 
@@ -13312,6 +14353,7 @@ a32_case_348:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13329,6 +14371,7 @@ a32_case_348:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0000291	/* mul r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -13340,6 +14383,7 @@ a32_case_348:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_348, .-a32_case_348
 
@@ -13350,6 +14394,7 @@ a32_case_349:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13368,6 +14413,7 @@ a32_case_349:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0000291	/* mul r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -13379,6 +14425,7 @@ a32_case_349:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_349, .-a32_case_349
 
@@ -13389,6 +14436,7 @@ a32_case_350:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13407,6 +14455,7 @@ a32_case_350:
 	movt	r1, #0x7fff
 	movw	r2, #0x0000
 	movt	r2, #0x8000
+	mov	lr, #0
 	.word	0xe0000291	/* mul r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -13418,6 +14467,7 @@ a32_case_350:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_350, .-a32_case_350
 
@@ -13428,6 +14478,7 @@ a32_case_351:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13446,6 +14497,7 @@ a32_case_351:
 	movw	r2, #0x0001
 	movw	r3, #0x1111
 	movt	r3, #0x1111
+	mov	lr, #0
 	.word	0xe0203291	/* mla r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13457,6 +14509,7 @@ a32_case_351:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_351, .-a32_case_351
 
@@ -13467,6 +14520,7 @@ a32_case_352:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13486,6 +14540,7 @@ a32_case_352:
 	movt	r2, #0xffff
 	movw	r3, #0x1111
 	movt	r3, #0x1111
+	mov	lr, #0
 	.word	0xe0203291	/* mla r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13497,6 +14552,7 @@ a32_case_352:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_352, .-a32_case_352
 
@@ -13507,6 +14563,7 @@ a32_case_353:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13527,6 +14584,7 @@ a32_case_353:
 	movt	r2, #0x7fff
 	movw	r3, #0x1111
 	movt	r3, #0x1111
+	mov	lr, #0
 	.word	0xe0203291	/* mla r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13538,6 +14596,7 @@ a32_case_353:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_353, .-a32_case_353
 
@@ -13548,6 +14607,7 @@ a32_case_354:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13566,6 +14626,7 @@ a32_case_354:
 	movw	r2, #0x0001
 	movw	r3, #0x1111
 	movt	r3, #0x1111
+	mov	lr, #0
 	.word	0xe0603291	/* mls r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13577,6 +14638,7 @@ a32_case_354:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_354, .-a32_case_354
 
@@ -13587,6 +14649,7 @@ a32_case_355:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13606,6 +14669,7 @@ a32_case_355:
 	movt	r2, #0xffff
 	movw	r3, #0x1111
 	movt	r3, #0x1111
+	mov	lr, #0
 	.word	0xe0603291	/* mls r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13617,6 +14681,7 @@ a32_case_355:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_355, .-a32_case_355
 
@@ -13627,6 +14692,7 @@ a32_case_356:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13647,6 +14713,7 @@ a32_case_356:
 	movt	r2, #0x7fff
 	movw	r3, #0x1111
 	movt	r3, #0x1111
+	mov	lr, #0
 	.word	0xe0603291	/* mls r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13658,6 +14725,7 @@ a32_case_356:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_356, .-a32_case_356
 
@@ -13668,6 +14736,7 @@ a32_case_357:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13684,6 +14753,7 @@ a32_case_357:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0830291	/* umull r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13695,6 +14765,7 @@ a32_case_357:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_357, .-a32_case_357
 
@@ -13705,6 +14776,7 @@ a32_case_358:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13722,6 +14794,7 @@ a32_case_358:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0830291	/* umull r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13733,6 +14806,7 @@ a32_case_358:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_358, .-a32_case_358
 
@@ -13743,6 +14817,7 @@ a32_case_359:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13761,6 +14836,7 @@ a32_case_359:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0830291	/* umull r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13772,6 +14848,7 @@ a32_case_359:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_359, .-a32_case_359
 
@@ -13782,6 +14859,7 @@ a32_case_360:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13799,6 +14877,7 @@ a32_case_360:
 	movw	r1, #0x0000
 	movw	r2, #0x0001
 	movw	r3, #0x0001
+	mov	lr, #0
 	.word	0xe0a30291	/* umlal r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13810,6 +14889,7 @@ a32_case_360:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_360, .-a32_case_360
 
@@ -13820,6 +14900,7 @@ a32_case_361:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13838,6 +14919,7 @@ a32_case_361:
 	movw	r2, #0xffff
 	movt	r2, #0xffff
 	movw	r3, #0x0001
+	mov	lr, #0
 	.word	0xe0a30291	/* umlal r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13849,6 +14931,7 @@ a32_case_361:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_361, .-a32_case_361
 
@@ -13859,6 +14942,7 @@ a32_case_362:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13875,6 +14959,7 @@ a32_case_362:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0c30291	/* smull r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13886,6 +14971,7 @@ a32_case_362:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_362, .-a32_case_362
 
@@ -13896,6 +14982,7 @@ a32_case_363:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13913,6 +15000,7 @@ a32_case_363:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0c30291	/* smull r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13924,6 +15012,7 @@ a32_case_363:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_363, .-a32_case_363
 
@@ -13934,6 +15023,7 @@ a32_case_364:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13952,6 +15042,7 @@ a32_case_364:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
+	mov	lr, #0
 	.word	0xe0c30291	/* smull r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -13963,6 +15054,7 @@ a32_case_364:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_364, .-a32_case_364
 
@@ -13973,6 +15065,7 @@ a32_case_365:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -13990,6 +15083,7 @@ a32_case_365:
 	movw	r1, #0x0000
 	movw	r2, #0x0001
 	movw	r3, #0x0001
+	mov	lr, #0
 	.word	0xe0e30291	/* smlal r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -14001,6 +15095,7 @@ a32_case_365:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_365, .-a32_case_365
 
@@ -14011,6 +15106,7 @@ a32_case_366:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14029,6 +15125,7 @@ a32_case_366:
 	movw	r2, #0xffff
 	movt	r2, #0xffff
 	movw	r3, #0x0001
+	mov	lr, #0
 	.word	0xe0e30291	/* smlal r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -14040,6 +15137,7 @@ a32_case_366:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_366, .-a32_case_366
 
@@ -14050,6 +15148,7 @@ a32_case_367:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14066,6 +15165,7 @@ a32_case_367:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0100291	/* muls r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -14077,6 +15177,7 @@ a32_case_367:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_367, .-a32_case_367
 
@@ -14087,6 +15188,7 @@ a32_case_368:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14104,6 +15206,7 @@ a32_case_368:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0100291	/* muls r0, r1, r2 */
 	.arm
 	.p2align 2
@@ -14115,6 +15218,7 @@ a32_case_368:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_368, .-a32_case_368
 
@@ -14125,6 +15229,7 @@ a32_case_369:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14141,6 +15246,7 @@ a32_case_369:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
+	mov	lr, #0
 	.word	0xe0930291	/* umulls r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -14152,6 +15258,7 @@ a32_case_369:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_369, .-a32_case_369
 
@@ -14162,6 +15269,7 @@ a32_case_370:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14179,6 +15287,7 @@ a32_case_370:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
+	mov	lr, #0
 	.word	0xe0930291	/* umulls r0, r3, r1, r2 */
 	.arm
 	.p2align 2
@@ -14190,6 +15299,7 @@ a32_case_370:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_370, .-a32_case_370
 
@@ -14200,6 +15310,7 @@ a32_case_371:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14214,6 +15325,7 @@ a32_case_371:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe10f0000	/* mrs r0, cpsr */
 	.word	0xe1a00e20	/* lsr r0, r0, #28 */
 	.arm
@@ -14226,6 +15338,7 @@ a32_case_371:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_371, .-a32_case_371
 
@@ -14236,6 +15349,7 @@ a32_case_372:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14250,6 +15364,7 @@ a32_case_372:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe10f0000	/* mrs r0, cpsr */
 	.word	0xe1a00e20	/* lsr r0, r0, #28 */
 	.arm
@@ -14262,6 +15377,7 @@ a32_case_372:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_372, .-a32_case_372
 
@@ -14272,6 +15388,7 @@ a32_case_373:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14286,6 +15403,7 @@ a32_case_373:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe10f0000	/* mrs r0, cpsr */
 	.word	0xe1a00e20	/* lsr r0, r0, #28 */
 	.arm
@@ -14298,6 +15416,7 @@ a32_case_373:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_373, .-a32_case_373
 
@@ -14308,6 +15427,7 @@ a32_case_374:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14323,6 +15443,7 @@ a32_case_374:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3001000	/* movw r1, #0x0 */
 	.word	0xe34f1000	/* movt r1, #0xf000 */
 	.word	0xe128f001	/* msr cpsr_f, r1 */
@@ -14338,6 +15459,7 @@ a32_case_374:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_374, .-a32_case_374
 
@@ -14348,6 +15470,7 @@ a32_case_375:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14363,6 +15486,7 @@ a32_case_375:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3001000	/* movw r1, #0x0 */
 	.word	0xe128f001	/* msr cpsr_f, r1 */
 	.word	0xe10f0000	/* mrs r0, cpsr */
@@ -14377,6 +15501,7 @@ a32_case_375:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_375, .-a32_case_375
 
@@ -14387,6 +15512,7 @@ a32_case_376:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14402,6 +15528,7 @@ a32_case_376:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3001000	/* movw r1, #0x0 */
 	.word	0xe3421000	/* movt r1, #0x2000 */
 	.word	0xe128f001	/* msr cpsr_f, r1 */
@@ -14417,6 +15544,7 @@ a32_case_376:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_376, .-a32_case_376
 
@@ -14427,6 +15555,7 @@ a32_case_377:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14442,6 +15571,7 @@ a32_case_377:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3001000	/* movw r1, #0x0 */
 	.word	0xe34e1000	/* movt r1, #0xe000 */
 	.word	0xe128f001	/* msr cpsr_f, r1 */
@@ -14457,6 +15587,7 @@ a32_case_377:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_377, .-a32_case_377
 
@@ -14467,6 +15598,7 @@ a32_case_378:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14481,6 +15613,7 @@ a32_case_378:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe328f102	/* msr cpsr_f, #0x80000000 */
 	.word	0xe10f0000	/* mrs r0, cpsr */
 	.word	0xe1a00e20	/* lsr r0, r0, #28 */
@@ -14494,6 +15627,7 @@ a32_case_378:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_378, .-a32_case_378
 
@@ -14504,6 +15638,7 @@ a32_case_379:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14518,6 +15653,7 @@ a32_case_379:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe328f101	/* msr cpsr_f, #0x40000000 */
 	.word	0xe10f0000	/* mrs r0, cpsr */
 	.word	0xe1a00e20	/* lsr r0, r0, #28 */
@@ -14531,6 +15667,7 @@ a32_case_379:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_379, .-a32_case_379
 
@@ -14541,6 +15678,7 @@ a32_case_380:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14555,6 +15693,7 @@ a32_case_380:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe328f20f	/* msr cpsr_f, #0xf0000000 */
 	.word	0xe10f0000	/* mrs r0, cpsr */
 	.word	0xe1a00e20	/* lsr r0, r0, #28 */
@@ -14568,6 +15707,7 @@ a32_case_380:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_380, .-a32_case_380
 
@@ -14578,6 +15718,7 @@ a32_case_381:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14593,6 +15734,7 @@ a32_case_381:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe16f0f11	/* clz r0, r1 */
 	.arm
 	.p2align 2
@@ -14604,6 +15746,7 @@ a32_case_381:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_381, .-a32_case_381
 
@@ -14614,6 +15757,7 @@ a32_case_382:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14629,6 +15773,7 @@ a32_case_382:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0001
+	mov	lr, #0
 	.word	0xe16f0f11	/* clz r0, r1 */
 	.arm
 	.p2align 2
@@ -14640,6 +15785,7 @@ a32_case_382:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_382, .-a32_case_382
 
@@ -14650,6 +15796,7 @@ a32_case_383:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14666,6 +15813,7 @@ a32_case_383:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movt	r1, #0x0800
+	mov	lr, #0
 	.word	0xe16f0f11	/* clz r0, r1 */
 	.arm
 	.p2align 2
@@ -14677,6 +15825,7 @@ a32_case_383:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_383, .-a32_case_383
 
@@ -14687,6 +15836,7 @@ a32_case_384:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14703,6 +15853,7 @@ a32_case_384:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
+	mov	lr, #0
 	.word	0xe16f0f11	/* clz r0, r1 */
 	.arm
 	.p2align 2
@@ -14714,6 +15865,7 @@ a32_case_384:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_384, .-a32_case_384
 
@@ -14724,6 +15876,7 @@ a32_case_385:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14740,6 +15893,7 @@ a32_case_385:
 	mov	r11, #0
 	movw	r1, #0x3344
 	movt	r1, #0x1122
+	mov	lr, #0
 	.word	0xe5891000	/* str r1, [r9, #0] */
 	.word	0xe5990000	/* ldr r0, [r9, #0] */
 	.arm
@@ -14752,6 +15906,7 @@ a32_case_385:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_385, .-a32_case_385
 
@@ -14762,6 +15917,7 @@ a32_case_386:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14778,6 +15934,7 @@ a32_case_386:
 	mov	r11, #0
 	movw	r1, #0x3345
 	movt	r1, #0x1122
+	mov	lr, #0
 	.word	0xe5891004	/* str r1, [r9, #4] */
 	.word	0xe5990004	/* ldr r0, [r9, #4] */
 	.arm
@@ -14790,6 +15947,7 @@ a32_case_386:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_386, .-a32_case_386
 
@@ -14800,6 +15958,7 @@ a32_case_387:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14816,6 +15975,7 @@ a32_case_387:
 	mov	r11, #0
 	movw	r1, #0x3346
 	movt	r1, #0x1122
+	mov	lr, #0
 	.word	0xe5891008	/* str r1, [r9, #8] */
 	.word	0xe5990008	/* ldr r0, [r9, #8] */
 	.arm
@@ -14828,6 +15988,7 @@ a32_case_387:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_387, .-a32_case_387
 
@@ -14838,6 +15999,7 @@ a32_case_388:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14854,6 +16016,7 @@ a32_case_388:
 	mov	r11, #0
 	movw	r1, #0x3347
 	movt	r1, #0x1122
+	mov	lr, #0
 	.word	0xe5891010	/* str r1, [r9, #16] */
 	.word	0xe5990010	/* ldr r0, [r9, #16] */
 	.arm
@@ -14866,6 +16029,7 @@ a32_case_388:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_388, .-a32_case_388
 
@@ -14876,6 +16040,7 @@ a32_case_389:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14892,6 +16057,7 @@ a32_case_389:
 	mov	r11, #0
 	movw	r1, #0x3348
 	movt	r1, #0x1122
+	mov	lr, #0
 	.word	0xe5891020	/* str r1, [r9, #32] */
 	.word	0xe5990020	/* ldr r0, [r9, #32] */
 	.arm
@@ -14904,6 +16070,7 @@ a32_case_389:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_389, .-a32_case_389
 
@@ -14914,6 +16081,7 @@ a32_case_390:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14930,6 +16098,7 @@ a32_case_390:
 	mov	r11, #0
 	movw	r1, #0x3349
 	movt	r1, #0x1122
+	mov	lr, #0
 	.word	0xe5891040	/* str r1, [r9, #64] */
 	.word	0xe5990040	/* ldr r0, [r9, #64] */
 	.arm
@@ -14942,6 +16111,7 @@ a32_case_390:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_390, .-a32_case_390
 
@@ -14952,6 +16122,7 @@ a32_case_391:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -14967,6 +16138,7 @@ a32_case_391:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x00ab
+	mov	lr, #0
 	.word	0xe5c91000	/* strb r1, [r9, #0] */
 	.word	0xe5d90000	/* ldrb r0, [r9, #0] */
 	.arm
@@ -14979,6 +16151,7 @@ a32_case_391:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_391, .-a32_case_391
 
@@ -14989,6 +16162,7 @@ a32_case_392:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15004,6 +16178,7 @@ a32_case_392:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x00ac
+	mov	lr, #0
 	.word	0xe5c91003	/* strb r1, [r9, #3] */
 	.word	0xe5d90003	/* ldrb r0, [r9, #3] */
 	.arm
@@ -15016,6 +16191,7 @@ a32_case_392:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_392, .-a32_case_392
 
@@ -15026,6 +16202,7 @@ a32_case_393:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15041,6 +16218,7 @@ a32_case_393:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x00ad
+	mov	lr, #0
 	.word	0xe5c91007	/* strb r1, [r9, #7] */
 	.word	0xe5d90007	/* ldrb r0, [r9, #7] */
 	.arm
@@ -15053,6 +16231,7 @@ a32_case_393:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_393, .-a32_case_393
 
@@ -15063,6 +16242,7 @@ a32_case_394:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15078,6 +16258,7 @@ a32_case_394:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x00ae
+	mov	lr, #0
 	.word	0xe5c9100f	/* strb r1, [r9, #15] */
 	.word	0xe5d9000f	/* ldrb r0, [r9, #15] */
 	.arm
@@ -15090,6 +16271,7 @@ a32_case_394:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_394, .-a32_case_394
 
@@ -15100,6 +16282,7 @@ a32_case_395:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15115,6 +16298,7 @@ a32_case_395:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xbeef
+	mov	lr, #0
 	.word	0xe1c910b0	/* strh r1, [r9, #0] */
 	.word	0xe1d900b0	/* ldrh r0, [r9, #0] */
 	.arm
@@ -15127,6 +16311,7 @@ a32_case_395:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_395, .-a32_case_395
 
@@ -15137,6 +16322,7 @@ a32_case_396:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15152,6 +16338,7 @@ a32_case_396:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xbeef
+	mov	lr, #0
 	.word	0xe1c910b2	/* strh r1, [r9, #2] */
 	.word	0xe1d900b2	/* ldrh r0, [r9, #2] */
 	.arm
@@ -15164,6 +16351,7 @@ a32_case_396:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_396, .-a32_case_396
 
@@ -15174,6 +16362,7 @@ a32_case_397:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15189,6 +16378,7 @@ a32_case_397:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xbeef
+	mov	lr, #0
 	.word	0xe1c910b6	/* strh r1, [r9, #6] */
 	.word	0xe1d900b6	/* ldrh r0, [r9, #6] */
 	.arm
@@ -15201,6 +16391,7 @@ a32_case_397:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_397, .-a32_case_397
 
@@ -15211,6 +16402,7 @@ a32_case_398:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15226,6 +16418,7 @@ a32_case_398:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xbeef
+	mov	lr, #0
 	.word	0xe1c910ba	/* strh r1, [r9, #10] */
 	.word	0xe1d900ba	/* ldrh r0, [r9, #10] */
 	.arm
@@ -15238,6 +16431,7 @@ a32_case_398:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_398, .-a32_case_398
 
@@ -15248,6 +16442,7 @@ a32_case_399:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15262,6 +16457,7 @@ a32_case_399:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1d900d0	/* ldrsb r0, [r9, #0] */
 	.word	0xe1d910f0	/* ldrsh r1, [r9, #0] */
 	.arm
@@ -15274,6 +16470,7 @@ a32_case_399:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_399, .-a32_case_399
 
@@ -15284,6 +16481,7 @@ a32_case_400:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15298,6 +16496,7 @@ a32_case_400:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1d900d4	/* ldrsb r0, [r9, #4] */
 	.word	0xe1d910f4	/* ldrsh r1, [r9, #4] */
 	.arm
@@ -15310,6 +16509,7 @@ a32_case_400:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_400, .-a32_case_400
 
@@ -15320,6 +16520,7 @@ a32_case_401:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15334,6 +16535,7 @@ a32_case_401:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1d900d8	/* ldrsb r0, [r9, #8] */
 	.word	0xe1d910f8	/* ldrsh r1, [r9, #8] */
 	.arm
@@ -15346,6 +16548,7 @@ a32_case_401:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_401, .-a32_case_401
 
@@ -15356,6 +16559,7 @@ a32_case_402:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15370,6 +16574,7 @@ a32_case_402:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1d900dc	/* ldrsb r0, [r9, #12] */
 	.word	0xe1d910fc	/* ldrsh r1, [r9, #12] */
 	.arm
@@ -15382,6 +16587,7 @@ a32_case_402:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_402, .-a32_case_402
 
@@ -15392,6 +16598,7 @@ a32_case_403:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15406,6 +16613,7 @@ a32_case_403:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe0d900b4	/* ldrh r0, [r9], #4 */
 	.arm
 	.p2align 2
@@ -15417,6 +16625,7 @@ a32_case_403:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_403, .-a32_case_403
 
@@ -15427,6 +16636,7 @@ a32_case_404:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15441,6 +16651,7 @@ a32_case_404:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe0d900b8	/* ldrh r0, [r9], #8 */
 	.arm
 	.p2align 2
@@ -15452,6 +16663,7 @@ a32_case_404:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_404, .-a32_case_404
 
@@ -15462,6 +16674,7 @@ a32_case_405:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15476,6 +16689,7 @@ a32_case_405:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe0d901b4	/* ldrh r0, [r9], #20 */
 	.arm
 	.p2align 2
@@ -15487,6 +16701,7 @@ a32_case_405:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_405, .-a32_case_405
 
@@ -15497,6 +16712,7 @@ a32_case_406:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15511,6 +16727,7 @@ a32_case_406:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe0d902b8	/* ldrh r0, [r9], #40 */
 	.arm
 	.p2align 2
@@ -15522,6 +16739,7 @@ a32_case_406:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_406, .-a32_case_406
 
@@ -15532,6 +16750,7 @@ a32_case_407:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15549,6 +16768,7 @@ a32_case_407:
 	movw	r1, #0x7788
 	movt	r1, #0x5566
 	movw	r2, #0x0004
+	mov	lr, #0
 	.word	0xe7891002	/* str r1, [r9, r2] */
 	.word	0xe7990002	/* ldr r0, [r9, r2] */
 	.arm
@@ -15561,6 +16781,7 @@ a32_case_407:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_407, .-a32_case_407
 
@@ -15571,6 +16792,7 @@ a32_case_408:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15588,6 +16810,7 @@ a32_case_408:
 	movw	r1, #0x7788
 	movt	r1, #0x5566
 	movw	r2, #0x0008
+	mov	lr, #0
 	.word	0xe7891002	/* str r1, [r9, r2] */
 	.word	0xe7990002	/* ldr r0, [r9, r2] */
 	.arm
@@ -15600,6 +16823,7 @@ a32_case_408:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_408, .-a32_case_408
 
@@ -15610,6 +16834,7 @@ a32_case_409:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15627,6 +16852,7 @@ a32_case_409:
 	movw	r1, #0x7788
 	movt	r1, #0x5566
 	movw	r2, #0x000c
+	mov	lr, #0
 	.word	0xe7891002	/* str r1, [r9, r2] */
 	.word	0xe7990002	/* ldr r0, [r9, r2] */
 	.arm
@@ -15639,6 +16865,7 @@ a32_case_409:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_409, .-a32_case_409
 
@@ -15649,6 +16876,7 @@ a32_case_410:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15666,6 +16894,7 @@ a32_case_410:
 	movw	r1, #0x7788
 	movt	r1, #0x5566
 	movw	r2, #0x0010
+	mov	lr, #0
 	.word	0xe7891002	/* str r1, [r9, r2] */
 	.word	0xe7990002	/* ldr r0, [r9, r2] */
 	.arm
@@ -15678,6 +16907,7 @@ a32_case_410:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_410, .-a32_case_410
 
@@ -15688,6 +16918,7 @@ a32_case_411:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15703,6 +16934,7 @@ a32_case_411:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0004
+	mov	lr, #0
 	.word	0xe7990002	/* ldr r0, [r9, r2, LSL #0] */
 	.arm
 	.p2align 2
@@ -15714,6 +16946,7 @@ a32_case_411:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_411, .-a32_case_411
 
@@ -15724,6 +16957,7 @@ a32_case_412:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15739,6 +16973,7 @@ a32_case_412:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0004
+	mov	lr, #0
 	.word	0xe7990102	/* ldr r0, [r9, r2, LSL #2] */
 	.arm
 	.p2align 2
@@ -15750,6 +16985,7 @@ a32_case_412:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_412, .-a32_case_412
 
@@ -15760,6 +16996,7 @@ a32_case_413:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15776,6 +17013,7 @@ a32_case_413:
 	mov	r11, #0
 	movw	r1, #0xcafe
 	movw	r4, #0x0006
+	mov	lr, #0
 	.word	0xe18910b4	/* strh r1, [r9, r4] */
 	.word	0xe19900b4	/* ldrh r0, [r9, r4] */
 	.arm
@@ -15788,6 +17026,7 @@ a32_case_413:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_413, .-a32_case_413
 
@@ -15798,6 +17037,7 @@ a32_case_414:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15814,6 +17054,7 @@ a32_case_414:
 	mov	r11, #0
 	movw	r1, #0xcafe
 	movw	r8, #0x0006
+	mov	lr, #0
 	.word	0xe18910b8	/* strh r1, [r9, r8] */
 	.word	0xe19900b8	/* ldrh r0, [r9, r8] */
 	.arm
@@ -15826,6 +17067,7 @@ a32_case_414:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_414, .-a32_case_414
 
@@ -15836,6 +17078,7 @@ a32_case_415:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15852,6 +17095,7 @@ a32_case_415:
 	mov	r11, #0
 	movw	r1, #0xbbcc
 	movt	r1, #0x99aa
+	mov	lr, #0
 	.word	0xe5a91004	/* str r1, [r9, #4]! */
 	.word	0xe5b90004	/* ldr r0, [r9, #4]! */
 	.arm
@@ -15864,6 +17108,7 @@ a32_case_415:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_415, .-a32_case_415
 
@@ -15874,6 +17119,7 @@ a32_case_416:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15890,6 +17136,7 @@ a32_case_416:
 	mov	r11, #0
 	movw	r1, #0xbbcc
 	movt	r1, #0x99aa
+	mov	lr, #0
 	.word	0xe5a91008	/* str r1, [r9, #8]! */
 	.word	0xe5b90008	/* ldr r0, [r9, #8]! */
 	.arm
@@ -15902,6 +17149,7 @@ a32_case_416:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_416, .-a32_case_416
 
@@ -15912,6 +17160,7 @@ a32_case_417:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15928,6 +17177,7 @@ a32_case_417:
 	mov	r11, #0
 	movw	r1, #0xbbcc
 	movt	r1, #0x99aa
+	mov	lr, #0
 	.word	0xe5a9100c	/* str r1, [r9, #12]! */
 	.word	0xe5b9000c	/* ldr r0, [r9, #12]! */
 	.arm
@@ -15940,6 +17190,7 @@ a32_case_417:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_417, .-a32_case_417
 
@@ -15950,6 +17201,7 @@ a32_case_418:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -15966,6 +17218,7 @@ a32_case_418:
 	mov	r11, #0
 	movw	r1, #0x1234
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe4891004	/* str r1, [r9], #4 */
 	.word	0xe4990004	/* ldr r0, [r9], #4 */
 	.arm
@@ -15978,6 +17231,7 @@ a32_case_418:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_418, .-a32_case_418
 
@@ -15988,6 +17242,7 @@ a32_case_419:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16004,6 +17259,7 @@ a32_case_419:
 	mov	r11, #0
 	movw	r1, #0x1234
 	movt	r1, #0xdead
+	mov	lr, #0
 	.word	0xe4891008	/* str r1, [r9], #8 */
 	.word	0xe4990008	/* ldr r0, [r9], #8 */
 	.arm
@@ -16016,6 +17272,7 @@ a32_case_419:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_419, .-a32_case_419
 
@@ -16026,6 +17283,7 @@ a32_case_420:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16040,6 +17298,7 @@ a32_case_420:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1a01009	/* mov r1, r9 */
 	.word	0xe2811040	/* add r1, r1, #64 */
 	.word	0xe5110004	/* ldr r0, [r1, #-4] */
@@ -16054,6 +17313,7 @@ a32_case_420:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_420, .-a32_case_420
 
@@ -16064,6 +17324,7 @@ a32_case_421:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16078,6 +17339,7 @@ a32_case_421:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1a01009	/* mov r1, r9 */
 	.word	0xe2811040	/* add r1, r1, #64 */
 	.word	0xe5110008	/* ldr r0, [r1, #-8] */
@@ -16092,6 +17354,7 @@ a32_case_421:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_421, .-a32_case_421
 
@@ -16102,6 +17365,7 @@ a32_case_422:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16120,6 +17384,7 @@ a32_case_422:
 	movt	r2, #0xaaaa
 	movw	r3, #0xdddd
 	movt	r3, #0xcccc
+	mov	lr, #0
 	.word	0xe1c920f0	/* strd r2, [r9, #0] */
 	.word	0xe1c940d0	/* ldrd r4, [r9, #0] */
 	.arm
@@ -16132,6 +17397,7 @@ a32_case_422:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_422, .-a32_case_422
 
@@ -16142,6 +17408,7 @@ a32_case_423:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16160,6 +17427,7 @@ a32_case_423:
 	movt	r2, #0xaaaa
 	movw	r3, #0xdddd
 	movt	r3, #0xcccc
+	mov	lr, #0
 	.word	0xe1c920f4	/* strd r2, [r9, #4] */
 	.word	0xe1c940d4	/* ldrd r4, [r9, #4] */
 	.arm
@@ -16172,6 +17440,7 @@ a32_case_423:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_423, .-a32_case_423
 
@@ -16182,6 +17451,7 @@ a32_case_424:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16200,6 +17470,7 @@ a32_case_424:
 	movt	r2, #0xaaaa
 	movw	r3, #0xdddd
 	movt	r3, #0xcccc
+	mov	lr, #0
 	.word	0xe1c920f8	/* strd r2, [r9, #8] */
 	.word	0xe1c940d8	/* ldrd r4, [r9, #8] */
 	.arm
@@ -16212,6 +17483,7 @@ a32_case_424:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_424, .-a32_case_424
 
@@ -16222,6 +17494,7 @@ a32_case_425:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16240,6 +17513,7 @@ a32_case_425:
 	movt	r2, #0xaaaa
 	movw	r3, #0xdddd
 	movt	r3, #0xcccc
+	mov	lr, #0
 	.word	0xe1c921f0	/* strd r2, [r9, #16] */
 	.word	0xe1c941d0	/* ldrd r4, [r9, #16] */
 	.arm
@@ -16252,6 +17526,7 @@ a32_case_425:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_425, .-a32_case_425
 
@@ -16262,6 +17537,7 @@ a32_case_426:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16276,6 +17552,7 @@ a32_case_426:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1c920f0	/* strd r2, [r9, #0] */
 	.word	0xe1c940d0	/* ldrd r4, [r9, #0] */
 	.word	0xe1a02000	/* mov r2, #0 */
@@ -16290,6 +17567,7 @@ a32_case_426:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_426, .-a32_case_426
 
@@ -16300,6 +17578,7 @@ a32_case_427:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16314,6 +17593,7 @@ a32_case_427:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe1c920f8	/* strd r2, [r9, #8] */
 	.word	0xe1c940d8	/* ldrd r4, [r9, #8] */
 	.word	0xe1a02000	/* mov r2, #0 */
@@ -16328,6 +17608,7 @@ a32_case_427:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_427, .-a32_case_427
 
@@ -16338,6 +17619,7 @@ a32_case_428:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16356,6 +17638,7 @@ a32_case_428:
 	movt	r1, #0x0102
 	movw	r2, #0xface
 	movt	r2, #0xfeed
+	mov	lr, #0
 	.word	0xe5891008	/* str r1, [r9, #8] */
 	.word	0xe1090092	/* swp r0, r2, [r9] */
 	.arm
@@ -16368,6 +17651,7 @@ a32_case_428:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_428, .-a32_case_428
 
@@ -16378,6 +17662,7 @@ a32_case_429:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16396,6 +17681,7 @@ a32_case_429:
 	movt	r1, #0x0102
 	movw	r2, #0xface
 	movt	r2, #0xfeed
+	mov	lr, #0
 	.word	0xe5c91008	/* str r1, [r9, #8] */
 	.word	0xe1490092	/* swp r0, r2, [r9] */
 	.arm
@@ -16408,6 +17694,7 @@ a32_case_429:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_429, .-a32_case_429
 
@@ -16418,6 +17705,7 @@ a32_case_430:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16438,6 +17726,7 @@ a32_case_430:
 	movt	r3, #0x2222
 	movw	r4, #0x3333
 	movt	r4, #0x3333
+	mov	lr, #0
 	.word	0xe889001c	/* stmia r9, {r2-r4} */
 	.arm
 	.p2align 2
@@ -16449,6 +17738,7 @@ a32_case_430:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_430, .-a32_case_430
 
@@ -16459,6 +17749,7 @@ a32_case_431:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16473,6 +17764,7 @@ a32_case_431:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe8990007	/* ldmia r9, {r0-r2} */
 	.arm
 	.p2align 2
@@ -16484,6 +17776,7 @@ a32_case_431:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_431, .-a32_case_431
 
@@ -16494,6 +17787,7 @@ a32_case_432:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16514,6 +17808,7 @@ a32_case_432:
 	movt	r3, #0x2222
 	movw	r4, #0x3333
 	movt	r4, #0x3333
+	mov	lr, #0
 	.word	0xe989001c	/* stmib r9, {r2-r4} */
 	.arm
 	.p2align 2
@@ -16525,6 +17820,7 @@ a32_case_432:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_432, .-a32_case_432
 
@@ -16535,6 +17831,7 @@ a32_case_433:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16549,6 +17846,7 @@ a32_case_433:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe9990007	/* ldmib r9, {r0-r2} */
 	.arm
 	.p2align 2
@@ -16560,6 +17858,7 @@ a32_case_433:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_433, .-a32_case_433
 
@@ -16570,6 +17869,7 @@ a32_case_434:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16590,6 +17890,7 @@ a32_case_434:
 	movt	r3, #0x2222
 	movw	r4, #0x3333
 	movt	r4, #0x3333
+	mov	lr, #0
 	.word	0xe809001c	/* stmda r9, {r2-r4} */
 	.arm
 	.p2align 2
@@ -16601,6 +17902,7 @@ a32_case_434:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_434, .-a32_case_434
 
@@ -16611,6 +17913,7 @@ a32_case_435:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16625,6 +17928,7 @@ a32_case_435:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe8190007	/* ldmda r9, {r0-r2} */
 	.arm
 	.p2align 2
@@ -16636,6 +17940,7 @@ a32_case_435:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_435, .-a32_case_435
 
@@ -16646,6 +17951,7 @@ a32_case_436:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16666,6 +17972,7 @@ a32_case_436:
 	movt	r3, #0x2222
 	movw	r4, #0x3333
 	movt	r4, #0x3333
+	mov	lr, #0
 	.word	0xe909001c	/* stmdb r9, {r2-r4} */
 	.arm
 	.p2align 2
@@ -16677,6 +17984,7 @@ a32_case_436:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_436, .-a32_case_436
 
@@ -16687,6 +17995,7 @@ a32_case_437:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16701,6 +18010,7 @@ a32_case_437:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe9190007	/* ldmdb r9, {r0-r2} */
 	.arm
 	.p2align 2
@@ -16712,6 +18022,7 @@ a32_case_437:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_437, .-a32_case_437
 
@@ -16722,6 +18033,7 @@ a32_case_438:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16740,6 +18052,7 @@ a32_case_438:
 	movt	r2, #0xa1a2
 	movw	r3, #0xb3b4
 	movt	r3, #0xb1b2
+	mov	lr, #0
 	.word	0xe1a01009	/* mov r1, r9 */
 	.word	0xe8a9000c	/* stmia r9!, {r2, r3} */
 	.word	0xe0490001	/* sub r0, r9, r1 */
@@ -16754,6 +18067,7 @@ a32_case_438:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_438, .-a32_case_438
 
@@ -16764,6 +18078,7 @@ a32_case_439:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16782,6 +18097,7 @@ a32_case_439:
 	movt	r2, #0xa1a2
 	movw	r3, #0xb3b4
 	movt	r3, #0xb1b2
+	mov	lr, #0
 	.word	0xe1a01009	/* mov r1, r9 */
 	.word	0xe9a9000c	/* stmib r9!, {r2, r3} */
 	.word	0xe0490001	/* sub r0, r9, r1 */
@@ -16796,6 +18112,7 @@ a32_case_439:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_439, .-a32_case_439
 
@@ -16806,6 +18123,7 @@ a32_case_440:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16824,6 +18142,7 @@ a32_case_440:
 	movt	r2, #0xa1a2
 	movw	r3, #0xb3b4
 	movt	r3, #0xb1b2
+	mov	lr, #0
 	.word	0xe1a01009	/* mov r1, r9 */
 	.word	0xe829000c	/* stmda r9!, {r2, r3} */
 	.word	0xe0490001	/* sub r0, r9, r1 */
@@ -16838,6 +18157,7 @@ a32_case_440:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_440, .-a32_case_440
 
@@ -16848,6 +18168,7 @@ a32_case_441:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16866,6 +18187,7 @@ a32_case_441:
 	movt	r2, #0xa1a2
 	movw	r3, #0xb3b4
 	movt	r3, #0xb1b2
+	mov	lr, #0
 	.word	0xe1a01009	/* mov r1, r9 */
 	.word	0xe929000c	/* stmdb r9!, {r2, r3} */
 	.word	0xe0490001	/* sub r0, r9, r1 */
@@ -16880,6 +18202,7 @@ a32_case_441:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_441, .-a32_case_441
 
@@ -16890,6 +18213,7 @@ a32_case_442:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16904,6 +18228,7 @@ a32_case_442:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe8b9000c	/* ldmia r9!, {r2, r3} */
 	.arm
 	.p2align 2
@@ -16915,6 +18240,7 @@ a32_case_442:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_442, .-a32_case_442
 
@@ -16925,6 +18251,7 @@ a32_case_443:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16939,6 +18266,7 @@ a32_case_443:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe3a00000	/* mov r0, #0 */
 	.word	0xea000000	/* b skip */
 	.word	0xe3a0007f	/* mov r0, #0x7F */
@@ -16953,6 +18281,7 @@ a32_case_443:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_443, .-a32_case_443
 
@@ -16963,6 +18292,7 @@ a32_case_444:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -16977,6 +18307,7 @@ a32_case_444:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe3a00000	/* mov r0, #0 */
 	.word	0xe2800001	/* add r0, r0, #1 */
 	.word	0xe3500004	/* cmp r0, #4 */
@@ -16991,6 +18322,7 @@ a32_case_444:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_444, .-a32_case_444
 
@@ -17001,6 +18333,7 @@ a32_case_445:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17015,6 +18348,7 @@ a32_case_445:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe3a00000	/* mov r0, #0 */
 	.word	0xeb000001	/* bl sub1 */
 	.word	0xe3a03099	/* mov r3, #0x99 */
@@ -17031,6 +18365,7 @@ a32_case_445:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_445, .-a32_case_445
 
@@ -17041,6 +18376,7 @@ a32_case_446:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17055,6 +18391,7 @@ a32_case_446:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe28fe008	/* adr r14, here (add r14, pc, #8) */
 	.word	0xe12fff1e	/* bx lr */
 	.word	0xe3a050ab	/* mov r5, #0xAB */
@@ -17070,6 +18407,7 @@ a32_case_446:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_446, .-a32_case_446
 
@@ -17080,6 +18418,7 @@ a32_case_447:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17094,6 +18433,7 @@ a32_case_447:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe28f4000	/* adr r4, a (add r4, pc, #0) */
 	.word	0xe28f5008	/* adr r5, b (add r5, pc, #8) */
 	.word	0xe1a00000	/* nop */
@@ -17112,6 +18452,7 @@ a32_case_447:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_447, .-a32_case_447
 
@@ -17122,6 +18463,7 @@ a32_case_448:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17136,6 +18478,7 @@ a32_case_448:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe28f200c	/* adr r2, fn (add r2, pc, #12) */
 	.word	0xe12fff32	/* blx r2 */
 	.word	0xe3a03055	/* mov r3, #0x55 */
@@ -17153,6 +18496,7 @@ a32_case_448:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_448, .-a32_case_448
 
@@ -17163,6 +18507,7 @@ a32_case_449:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17178,6 +18523,7 @@ a32_case_449:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x0a000001	/* b.eq taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17193,6 +18539,7 @@ a32_case_449:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_449, .-a32_case_449
 
@@ -17203,6 +18550,7 @@ a32_case_450:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17218,6 +18566,7 @@ a32_case_450:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x1a000001	/* b.ne taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17233,6 +18582,7 @@ a32_case_450:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_450, .-a32_case_450
 
@@ -17243,6 +18593,7 @@ a32_case_451:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17258,6 +18609,7 @@ a32_case_451:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x2a000001	/* b.hs taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17273,6 +18625,7 @@ a32_case_451:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_451, .-a32_case_451
 
@@ -17283,6 +18636,7 @@ a32_case_452:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17298,6 +18652,7 @@ a32_case_452:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x3a000001	/* b.lo taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17313,6 +18668,7 @@ a32_case_452:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_452, .-a32_case_452
 
@@ -17323,6 +18679,7 @@ a32_case_453:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17338,6 +18695,7 @@ a32_case_453:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x4a000001	/* b.mi taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17353,6 +18711,7 @@ a32_case_453:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_453, .-a32_case_453
 
@@ -17363,6 +18722,7 @@ a32_case_454:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17378,6 +18738,7 @@ a32_case_454:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x5a000001	/* b.pl taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17393,6 +18754,7 @@ a32_case_454:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_454, .-a32_case_454
 
@@ -17403,6 +18765,7 @@ a32_case_455:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17418,6 +18781,7 @@ a32_case_455:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x6a000001	/* b.vs taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17433,6 +18797,7 @@ a32_case_455:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_455, .-a32_case_455
 
@@ -17443,6 +18808,7 @@ a32_case_456:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17458,6 +18824,7 @@ a32_case_456:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x7a000001	/* b.vc taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17473,6 +18840,7 @@ a32_case_456:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_456, .-a32_case_456
 
@@ -17483,6 +18851,7 @@ a32_case_457:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17498,6 +18867,7 @@ a32_case_457:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x8a000001	/* b.hi taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17513,6 +18883,7 @@ a32_case_457:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_457, .-a32_case_457
 
@@ -17523,6 +18894,7 @@ a32_case_458:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17538,6 +18910,7 @@ a32_case_458:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x9a000001	/* b.ls taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17553,6 +18926,7 @@ a32_case_458:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_458, .-a32_case_458
 
@@ -17563,6 +18937,7 @@ a32_case_459:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17578,6 +18953,7 @@ a32_case_459:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xaa000001	/* b.ge taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17593,6 +18969,7 @@ a32_case_459:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_459, .-a32_case_459
 
@@ -17603,6 +18980,7 @@ a32_case_460:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17618,6 +18996,7 @@ a32_case_460:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xba000001	/* b.lt taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17633,6 +19012,7 @@ a32_case_460:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_460, .-a32_case_460
 
@@ -17643,6 +19023,7 @@ a32_case_461:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17658,6 +19039,7 @@ a32_case_461:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xca000001	/* b.gt taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17673,6 +19055,7 @@ a32_case_461:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_461, .-a32_case_461
 
@@ -17683,6 +19066,7 @@ a32_case_462:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17698,6 +19082,7 @@ a32_case_462:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xda000001	/* b.le taken */
 	.word	0xe3a00022	/* mov r0, #0x22 */
@@ -17713,6 +19098,7 @@ a32_case_462:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_462, .-a32_case_462
 
@@ -17723,6 +19109,7 @@ a32_case_463:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17738,6 +19125,7 @@ a32_case_463:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x03a00011	/* moveq r0, #0x11 */
@@ -17752,6 +19140,7 @@ a32_case_463:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_463, .-a32_case_463
 
@@ -17762,6 +19151,7 @@ a32_case_464:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17777,6 +19167,7 @@ a32_case_464:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x13a00011	/* movne r0, #0x11 */
@@ -17791,6 +19182,7 @@ a32_case_464:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_464, .-a32_case_464
 
@@ -17801,6 +19193,7 @@ a32_case_465:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17816,6 +19209,7 @@ a32_case_465:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x23a00011	/* movcs r0, #0x11 */
@@ -17830,6 +19224,7 @@ a32_case_465:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_465, .-a32_case_465
 
@@ -17840,6 +19235,7 @@ a32_case_466:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17855,6 +19251,7 @@ a32_case_466:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x33a00011	/* movcc r0, #0x11 */
@@ -17869,6 +19266,7 @@ a32_case_466:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_466, .-a32_case_466
 
@@ -17879,6 +19277,7 @@ a32_case_467:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17894,6 +19293,7 @@ a32_case_467:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x43a00011	/* movmi r0, #0x11 */
@@ -17908,6 +19308,7 @@ a32_case_467:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_467, .-a32_case_467
 
@@ -17918,6 +19319,7 @@ a32_case_468:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17933,6 +19335,7 @@ a32_case_468:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x53a00011	/* movpl r0, #0x11 */
@@ -17947,6 +19350,7 @@ a32_case_468:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_468, .-a32_case_468
 
@@ -17957,6 +19361,7 @@ a32_case_469:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -17972,6 +19377,7 @@ a32_case_469:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x63a00011	/* movvs r0, #0x11 */
@@ -17986,6 +19392,7 @@ a32_case_469:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_469, .-a32_case_469
 
@@ -17996,6 +19403,7 @@ a32_case_470:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18011,6 +19419,7 @@ a32_case_470:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x73a00011	/* movvc r0, #0x11 */
@@ -18025,6 +19434,7 @@ a32_case_470:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_470, .-a32_case_470
 
@@ -18035,6 +19445,7 @@ a32_case_471:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18050,6 +19461,7 @@ a32_case_471:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x83a00011	/* movhi r0, #0x11 */
@@ -18064,6 +19476,7 @@ a32_case_471:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_471, .-a32_case_471
 
@@ -18074,6 +19487,7 @@ a32_case_472:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18089,6 +19503,7 @@ a32_case_472:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0x93a00011	/* movls r0, #0x11 */
@@ -18103,6 +19518,7 @@ a32_case_472:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_472, .-a32_case_472
 
@@ -18113,6 +19529,7 @@ a32_case_473:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18128,6 +19545,7 @@ a32_case_473:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xa3a00011	/* movge r0, #0x11 */
@@ -18142,6 +19560,7 @@ a32_case_473:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_473, .-a32_case_473
 
@@ -18152,6 +19571,7 @@ a32_case_474:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18167,6 +19587,7 @@ a32_case_474:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xb3a00011	/* movlt r0, #0x11 */
@@ -18181,6 +19602,7 @@ a32_case_474:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_474, .-a32_case_474
 
@@ -18191,6 +19613,7 @@ a32_case_475:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18206,6 +19629,7 @@ a32_case_475:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xc3a00011	/* movgt r0, #0x11 */
@@ -18220,6 +19644,7 @@ a32_case_475:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_475, .-a32_case_475
 
@@ -18230,6 +19655,7 @@ a32_case_476:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18245,6 +19671,7 @@ a32_case_476:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
+	mov	lr, #0
 	.word	0xe3a01000	/* mov r1, #0 */
 	.word	0xe3510000	/* cmp r1, #0 */
 	.word	0xd3a00011	/* movle r0, #0x11 */
@@ -18259,6 +19686,7 @@ a32_case_476:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_476, .-a32_case_476
 
@@ -18269,6 +19697,7 @@ a32_case_477:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18283,6 +19712,7 @@ a32_case_477:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe3a01001	/* mov r1, #1 */
 	.word	0xe0510001	/* subs r1, r1, r1 */
 	.word	0xe2510001	/* subs r1, r1, #1 */
@@ -18297,6 +19727,7 @@ a32_case_477:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_477, .-a32_case_477
 
@@ -18307,6 +19738,7 @@ a32_case_478:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18321,6 +19753,7 @@ a32_case_478:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe3a01001	/* mov r1, #1 */
 	.word	0xe0510001	/* subs r1, r1, r1 */
 	.word	0xe2910000	/* adds r1, r1, #0 */
@@ -18335,6 +19768,7 @@ a32_case_478:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_478, .-a32_case_478
 
@@ -18345,6 +19779,7 @@ a32_case_479:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18359,6 +19794,7 @@ a32_case_479:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe3a01001	/* mov r1, #1 */
 	.word	0xe0510001	/* subs r1, r1, r1 */
 	.word	0xe2510001	/* subs r1, r1, #1 */
@@ -18373,6 +19809,7 @@ a32_case_479:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_479, .-a32_case_479
 
@@ -18383,6 +19820,7 @@ a32_case_480:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18397,6 +19835,7 @@ a32_case_480:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe3a01001	/* mov r1, #1 */
 	.word	0xe0510001	/* subs r1, r1, r1 */
 	.word	0xe2910000	/* adds r1, r1, #0 */
@@ -18411,6 +19850,7 @@ a32_case_480:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_480, .-a32_case_480
 
@@ -18421,6 +19861,7 @@ a32_case_481:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18439,6 +19880,7 @@ a32_case_481:
 	movt	r1, #0xd62c
 	movw	r2, #0xffdf
 	movt	r2, #0x7ef0
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03080	/* mov r3, r0, LSL #1 */
 	.word	0xe5893000	/* str r3, [r9, #0] */
@@ -18454,6 +19896,7 @@ a32_case_481:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_481, .-a32_case_481
 
@@ -18464,6 +19907,7 @@ a32_case_482:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18482,6 +19926,7 @@ a32_case_482:
 	movt	r1, #0x6082
 	movw	r2, #0xabce
 	movt	r2, #0x1dcd
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03120	/* mov r3, r0, LSR #2 */
 	.word	0xe5893004	/* str r3, [r9, #4] */
@@ -18497,6 +19942,7 @@ a32_case_482:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_482, .-a32_case_482
 
@@ -18507,6 +19953,7 @@ a32_case_483:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18525,6 +19972,7 @@ a32_case_483:
 	movt	r1, #0xa80a
 	movw	r2, #0xa482
 	movt	r2, #0xa64f
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a031c0	/* mov r3, r0, ASR #3 */
 	.word	0xe5893008	/* str r3, [r9, #8] */
@@ -18540,6 +19988,7 @@ a32_case_483:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_483, .-a32_case_483
 
@@ -18550,6 +19999,7 @@ a32_case_484:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18568,6 +20018,7 @@ a32_case_484:
 	movt	r1, #0x6bdd
 	movw	r2, #0xb428
 	movt	r2, #0xc368
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03260	/* mov r3, r0, ROR #4 */
 	.word	0xe589300c	/* str r3, [r9, #12] */
@@ -18583,6 +20034,7 @@ a32_case_484:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_484, .-a32_case_484
 
@@ -18593,6 +20045,7 @@ a32_case_485:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18611,6 +20064,7 @@ a32_case_485:
 	movt	r1, #0x19bc
 	movw	r2, #0xb763
 	movt	r2, #0xfd6b
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03280	/* mov r3, r0, LSL #5 */
 	.word	0xe5893010	/* str r3, [r9, #16] */
@@ -18626,6 +20080,7 @@ a32_case_485:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_485, .-a32_case_485
 
@@ -18636,6 +20091,7 @@ a32_case_486:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18654,6 +20110,7 @@ a32_case_486:
 	movt	r1, #0x8340
 	movw	r2, #0x33e6
 	movt	r2, #0x5f1b
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03320	/* mov r3, r0, LSR #6 */
 	.word	0xe5893014	/* str r3, [r9, #20] */
@@ -18669,6 +20126,7 @@ a32_case_486:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_486, .-a32_case_486
 
@@ -18679,6 +20137,7 @@ a32_case_487:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18697,6 +20156,7 @@ a32_case_487:
 	movt	r1, #0x0eb9
 	movw	r2, #0x0afa
 	movt	r2, #0xca14
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a033c0	/* mov r3, r0, ASR #7 */
 	.word	0xe5893018	/* str r3, [r9, #24] */
@@ -18712,6 +20172,7 @@ a32_case_487:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_487, .-a32_case_487
 
@@ -18722,6 +20183,7 @@ a32_case_488:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18740,6 +20202,7 @@ a32_case_488:
 	movt	r1, #0x2a63
 	movw	r2, #0xd2d0
 	movt	r2, #0x1062
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a030e0	/* mov r3, r0, ROR #1 */
 	.word	0xe589301c	/* str r3, [r9, #28] */
@@ -18755,6 +20218,7 @@ a32_case_488:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_488, .-a32_case_488
 
@@ -18765,6 +20229,7 @@ a32_case_489:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18783,6 +20248,7 @@ a32_case_489:
 	movt	r1, #0x2455
 	movw	r2, #0x34aa
 	movt	r2, #0xeda1
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03100	/* mov r3, r0, LSL #2 */
 	.word	0xe5893000	/* str r3, [r9, #0] */
@@ -18798,6 +20264,7 @@ a32_case_489:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_489, .-a32_case_489
 
@@ -18808,6 +20275,7 @@ a32_case_490:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18826,6 +20294,7 @@ a32_case_490:
 	movt	r1, #0x1967
 	movw	r2, #0x54fa
 	movt	r2, #0xb5e6
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a031a0	/* mov r3, r0, LSR #3 */
 	.word	0xe5893004	/* str r3, [r9, #4] */
@@ -18841,6 +20310,7 @@ a32_case_490:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_490, .-a32_case_490
 
@@ -18851,6 +20321,7 @@ a32_case_491:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18869,6 +20340,7 @@ a32_case_491:
 	movt	r1, #0xbec4
 	movw	r2, #0x09ad
 	movt	r2, #0x3cfc
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03240	/* mov r3, r0, ASR #4 */
 	.word	0xe5893008	/* str r3, [r9, #8] */
@@ -18884,6 +20356,7 @@ a32_case_491:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_491, .-a32_case_491
 
@@ -18894,6 +20367,7 @@ a32_case_492:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18912,6 +20386,7 @@ a32_case_492:
 	movt	r1, #0x2686
 	movw	r2, #0xe14a
 	movt	r2, #0x01e0
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a032e0	/* mov r3, r0, ROR #5 */
 	.word	0xe589300c	/* str r3, [r9, #12] */
@@ -18927,6 +20402,7 @@ a32_case_492:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_492, .-a32_case_492
 
@@ -18937,6 +20413,7 @@ a32_case_493:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18955,6 +20432,7 @@ a32_case_493:
 	movt	r1, #0x3692
 	movw	r2, #0x69fe
 	movt	r2, #0xbcff
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03300	/* mov r3, r0, LSL #6 */
 	.word	0xe5893010	/* str r3, [r9, #16] */
@@ -18970,6 +20448,7 @@ a32_case_493:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_493, .-a32_case_493
 
@@ -18980,6 +20459,7 @@ a32_case_494:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -18998,6 +20478,7 @@ a32_case_494:
 	movt	r1, #0x25d8
 	movw	r2, #0x1a10
 	movt	r2, #0xb3eb
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a033a0	/* mov r3, r0, LSR #7 */
 	.word	0xe5893014	/* str r3, [r9, #20] */
@@ -19013,6 +20494,7 @@ a32_case_494:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_494, .-a32_case_494
 
@@ -19023,6 +20505,7 @@ a32_case_495:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19041,6 +20524,7 @@ a32_case_495:
 	movt	r1, #0xe0fa
 	movw	r2, #0xbb43
 	movt	r2, #0xf940
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a030c0	/* mov r3, r0, ASR #1 */
 	.word	0xe5893018	/* str r3, [r9, #24] */
@@ -19056,6 +20540,7 @@ a32_case_495:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_495, .-a32_case_495
 
@@ -19066,6 +20551,7 @@ a32_case_496:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19084,6 +20570,7 @@ a32_case_496:
 	movt	r1, #0xaf6e
 	movw	r2, #0x9717
 	movt	r2, #0xa6c7
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03160	/* mov r3, r0, ROR #2 */
 	.word	0xe589301c	/* str r3, [r9, #28] */
@@ -19099,6 +20586,7 @@ a32_case_496:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_496, .-a32_case_496
 
@@ -19109,6 +20597,7 @@ a32_case_497:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19127,6 +20616,7 @@ a32_case_497:
 	movt	r1, #0x7fbb
 	movw	r2, #0x3c82
 	movt	r2, #0x71ba
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03180	/* mov r3, r0, LSL #3 */
 	.word	0xe5893000	/* str r3, [r9, #0] */
@@ -19142,6 +20632,7 @@ a32_case_497:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_497, .-a32_case_497
 
@@ -19152,6 +20643,7 @@ a32_case_498:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19170,6 +20662,7 @@ a32_case_498:
 	movt	r1, #0xc5d5
 	movw	r2, #0xaf0e
 	movt	r2, #0x594a
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03220	/* mov r3, r0, LSR #4 */
 	.word	0xe5893004	/* str r3, [r9, #4] */
@@ -19185,6 +20678,7 @@ a32_case_498:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_498, .-a32_case_498
 
@@ -19195,6 +20689,7 @@ a32_case_499:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19213,6 +20708,7 @@ a32_case_499:
 	movt	r1, #0x9465
 	movw	r2, #0x2fc7
 	movt	r2, #0xc6f5
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a032c0	/* mov r3, r0, ASR #5 */
 	.word	0xe5893008	/* str r3, [r9, #8] */
@@ -19228,6 +20724,7 @@ a32_case_499:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_499, .-a32_case_499
 
@@ -19238,6 +20735,7 @@ a32_case_500:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19256,6 +20754,7 @@ a32_case_500:
 	movt	r1, #0xf847
 	movw	r2, #0x2e33
 	movt	r2, #0x048f
+	mov	lr, #0
 	.word	0xe0910002	/* adds r0, r1, r2 */
 	.word	0xe1a03360	/* mov r3, r0, ROR #6 */
 	.word	0xe589300c	/* str r3, [r9, #12] */
@@ -19271,6 +20770,7 @@ a32_case_500:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_500, .-a32_case_500
 
@@ -19281,6 +20781,7 @@ a32_case_501:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19297,16 +20798,20 @@ a32_case_501:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo501
+	.p2align 2
+.Lgo501:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x0008	/* lsl r0, r1, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19321,6 +20826,7 @@ a32_case_501:
 	.arm
 	.p2align 2
 .Larm501:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19333,6 +20839,7 @@ a32_case_502:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19349,16 +20856,20 @@ a32_case_502:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo502
+	.p2align 2
+.Lgo502:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x0048	/* lsl r0, r1, #1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19373,6 +20884,7 @@ a32_case_502:
 	.arm
 	.p2align 2
 .Larm502:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19385,6 +20897,7 @@ a32_case_503:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19401,16 +20914,20 @@ a32_case_503:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo503
+	.p2align 2
+.Lgo503:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x0148	/* lsl r0, r1, #5 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19425,6 +20942,7 @@ a32_case_503:
 	.arm
 	.p2align 2
 .Larm503:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19437,6 +20955,7 @@ a32_case_504:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19453,16 +20972,20 @@ a32_case_504:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo504
+	.p2align 2
+.Lgo504:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x07c8	/* lsl r0, r1, #31 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19477,6 +21000,7 @@ a32_case_504:
 	.arm
 	.p2align 2
 .Larm504:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19489,6 +21013,7 @@ a32_case_505:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19505,16 +21030,20 @@ a32_case_505:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo505
+	.p2align 2
+.Lgo505:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x0808	/* lsr r0, r1, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19529,6 +21058,7 @@ a32_case_505:
 	.arm
 	.p2align 2
 .Larm505:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19541,6 +21071,7 @@ a32_case_506:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19557,16 +21088,20 @@ a32_case_506:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo506
+	.p2align 2
+.Lgo506:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x0848	/* lsr r0, r1, #1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19581,6 +21116,7 @@ a32_case_506:
 	.arm
 	.p2align 2
 .Larm506:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19593,6 +21129,7 @@ a32_case_507:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19609,16 +21146,20 @@ a32_case_507:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo507
+	.p2align 2
+.Lgo507:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x0948	/* lsr r0, r1, #5 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19633,6 +21174,7 @@ a32_case_507:
 	.arm
 	.p2align 2
 .Larm507:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19645,6 +21187,7 @@ a32_case_508:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19661,16 +21204,20 @@ a32_case_508:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo508
+	.p2align 2
+.Lgo508:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x0fc8	/* lsr r0, r1, #31 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19685,6 +21232,7 @@ a32_case_508:
 	.arm
 	.p2align 2
 .Larm508:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19697,6 +21245,7 @@ a32_case_509:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19713,16 +21262,20 @@ a32_case_509:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo509
+	.p2align 2
+.Lgo509:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1008	/* asr r0, r1, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19737,6 +21290,7 @@ a32_case_509:
 	.arm
 	.p2align 2
 .Larm509:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19749,6 +21303,7 @@ a32_case_510:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19765,16 +21320,20 @@ a32_case_510:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo510
+	.p2align 2
+.Lgo510:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1048	/* asr r0, r1, #1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19789,6 +21348,7 @@ a32_case_510:
 	.arm
 	.p2align 2
 .Larm510:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19801,6 +21361,7 @@ a32_case_511:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19817,16 +21378,20 @@ a32_case_511:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo511
+	.p2align 2
+.Lgo511:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1148	/* asr r0, r1, #5 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19841,6 +21406,7 @@ a32_case_511:
 	.arm
 	.p2align 2
 .Larm511:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19853,6 +21419,7 @@ a32_case_512:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19869,16 +21436,20 @@ a32_case_512:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo512
+	.p2align 2
+.Lgo512:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x17c8	/* asr r0, r1, #31 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19893,6 +21464,7 @@ a32_case_512:
 	.arm
 	.p2align 2
 .Larm512:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19905,6 +21477,7 @@ a32_case_513:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19921,16 +21494,20 @@ a32_case_513:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo513
+	.p2align 2
+.Lgo513:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19945,6 +21522,7 @@ a32_case_513:
 	.arm
 	.p2align 2
 .Larm513:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -19957,6 +21535,7 @@ a32_case_514:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -19974,16 +21553,20 @@ a32_case_514:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo514
+	.p2align 2
+.Lgo514:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -19998,6 +21581,7 @@ a32_case_514:
 	.arm
 	.p2align 2
 .Larm514:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20010,6 +21594,7 @@ a32_case_515:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20028,16 +21613,20 @@ a32_case_515:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo515
+	.p2align 2
+.Lgo515:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20052,6 +21641,7 @@ a32_case_515:
 	.arm
 	.p2align 2
 .Larm515:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20064,6 +21654,7 @@ a32_case_516:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20082,16 +21673,20 @@ a32_case_516:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo516
+	.p2align 2
+.Lgo516:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4008	/* and r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20106,6 +21701,7 @@ a32_case_516:
 	.arm
 	.p2align 2
 .Larm516:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20118,6 +21714,7 @@ a32_case_517:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20134,16 +21731,20 @@ a32_case_517:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo517
+	.p2align 2
+.Lgo517:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20158,6 +21759,7 @@ a32_case_517:
 	.arm
 	.p2align 2
 .Larm517:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20170,6 +21772,7 @@ a32_case_518:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20187,16 +21790,20 @@ a32_case_518:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo518
+	.p2align 2
+.Lgo518:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20211,6 +21818,7 @@ a32_case_518:
 	.arm
 	.p2align 2
 .Larm518:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20223,6 +21831,7 @@ a32_case_519:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20241,16 +21850,20 @@ a32_case_519:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo519
+	.p2align 2
+.Lgo519:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20265,6 +21878,7 @@ a32_case_519:
 	.arm
 	.p2align 2
 .Larm519:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20277,6 +21891,7 @@ a32_case_520:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20295,16 +21910,20 @@ a32_case_520:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo520
+	.p2align 2
+.Lgo520:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4048	/* eor r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20319,6 +21938,7 @@ a32_case_520:
 	.arm
 	.p2align 2
 .Larm520:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20331,6 +21951,7 @@ a32_case_521:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20347,16 +21968,20 @@ a32_case_521:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo521
+	.p2align 2
+.Lgo521:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20371,6 +21996,7 @@ a32_case_521:
 	.arm
 	.p2align 2
 .Larm521:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20383,6 +22009,7 @@ a32_case_522:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20400,16 +22027,20 @@ a32_case_522:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo522
+	.p2align 2
+.Lgo522:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20424,6 +22055,7 @@ a32_case_522:
 	.arm
 	.p2align 2
 .Larm522:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20436,6 +22068,7 @@ a32_case_523:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20454,16 +22087,20 @@ a32_case_523:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo523
+	.p2align 2
+.Lgo523:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20478,6 +22115,7 @@ a32_case_523:
 	.arm
 	.p2align 2
 .Larm523:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20490,6 +22128,7 @@ a32_case_524:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20508,16 +22147,20 @@ a32_case_524:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo524
+	.p2align 2
+.Lgo524:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4088	/* lsl r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20532,6 +22175,7 @@ a32_case_524:
 	.arm
 	.p2align 2
 .Larm524:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20544,6 +22188,7 @@ a32_case_525:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20560,16 +22205,20 @@ a32_case_525:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo525
+	.p2align 2
+.Lgo525:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20584,6 +22233,7 @@ a32_case_525:
 	.arm
 	.p2align 2
 .Larm525:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20596,6 +22246,7 @@ a32_case_526:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20613,16 +22264,20 @@ a32_case_526:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo526
+	.p2align 2
+.Lgo526:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20637,6 +22292,7 @@ a32_case_526:
 	.arm
 	.p2align 2
 .Larm526:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20649,6 +22305,7 @@ a32_case_527:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20667,16 +22324,20 @@ a32_case_527:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo527
+	.p2align 2
+.Lgo527:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20691,6 +22352,7 @@ a32_case_527:
 	.arm
 	.p2align 2
 .Larm527:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20703,6 +22365,7 @@ a32_case_528:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20721,16 +22384,20 @@ a32_case_528:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo528
+	.p2align 2
+.Lgo528:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x40c8	/* lsr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20745,6 +22412,7 @@ a32_case_528:
 	.arm
 	.p2align 2
 .Larm528:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20757,6 +22425,7 @@ a32_case_529:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20773,16 +22442,20 @@ a32_case_529:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo529
+	.p2align 2
+.Lgo529:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20797,6 +22470,7 @@ a32_case_529:
 	.arm
 	.p2align 2
 .Larm529:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20809,6 +22483,7 @@ a32_case_530:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20826,16 +22501,20 @@ a32_case_530:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo530
+	.p2align 2
+.Lgo530:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20850,6 +22529,7 @@ a32_case_530:
 	.arm
 	.p2align 2
 .Larm530:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20862,6 +22542,7 @@ a32_case_531:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20880,16 +22561,20 @@ a32_case_531:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo531
+	.p2align 2
+.Lgo531:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20904,6 +22589,7 @@ a32_case_531:
 	.arm
 	.p2align 2
 .Larm531:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20916,6 +22602,7 @@ a32_case_532:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20934,16 +22621,20 @@ a32_case_532:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo532
+	.p2align 2
+.Lgo532:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4108	/* asr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -20958,6 +22649,7 @@ a32_case_532:
 	.arm
 	.p2align 2
 .Larm532:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -20970,6 +22662,7 @@ a32_case_533:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -20986,16 +22679,20 @@ a32_case_533:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo533
+	.p2align 2
+.Lgo533:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21010,6 +22707,7 @@ a32_case_533:
 	.arm
 	.p2align 2
 .Larm533:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21022,6 +22720,7 @@ a32_case_534:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21039,16 +22738,20 @@ a32_case_534:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo534
+	.p2align 2
+.Lgo534:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21063,6 +22766,7 @@ a32_case_534:
 	.arm
 	.p2align 2
 .Larm534:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21075,6 +22779,7 @@ a32_case_535:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21093,16 +22798,20 @@ a32_case_535:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo535
+	.p2align 2
+.Lgo535:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21117,6 +22826,7 @@ a32_case_535:
 	.arm
 	.p2align 2
 .Larm535:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21129,6 +22839,7 @@ a32_case_536:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21147,16 +22858,20 @@ a32_case_536:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo536
+	.p2align 2
+.Lgo536:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4148	/* adc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21171,6 +22886,7 @@ a32_case_536:
 	.arm
 	.p2align 2
 .Larm536:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21183,6 +22899,7 @@ a32_case_537:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21199,16 +22916,20 @@ a32_case_537:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo537
+	.p2align 2
+.Lgo537:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21223,6 +22944,7 @@ a32_case_537:
 	.arm
 	.p2align 2
 .Larm537:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21235,6 +22957,7 @@ a32_case_538:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21252,16 +22975,20 @@ a32_case_538:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo538
+	.p2align 2
+.Lgo538:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21276,6 +23003,7 @@ a32_case_538:
 	.arm
 	.p2align 2
 .Larm538:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21288,6 +23016,7 @@ a32_case_539:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21306,16 +23035,20 @@ a32_case_539:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo539
+	.p2align 2
+.Lgo539:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21330,6 +23063,7 @@ a32_case_539:
 	.arm
 	.p2align 2
 .Larm539:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21342,6 +23076,7 @@ a32_case_540:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21360,16 +23095,20 @@ a32_case_540:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo540
+	.p2align 2
+.Lgo540:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4188	/* sbc r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21384,6 +23123,7 @@ a32_case_540:
 	.arm
 	.p2align 2
 .Larm540:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21396,6 +23136,7 @@ a32_case_541:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21412,16 +23153,20 @@ a32_case_541:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo541
+	.p2align 2
+.Lgo541:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21436,6 +23181,7 @@ a32_case_541:
 	.arm
 	.p2align 2
 .Larm541:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21448,6 +23194,7 @@ a32_case_542:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21465,16 +23212,20 @@ a32_case_542:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo542
+	.p2align 2
+.Lgo542:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21489,6 +23240,7 @@ a32_case_542:
 	.arm
 	.p2align 2
 .Larm542:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21501,6 +23253,7 @@ a32_case_543:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21519,16 +23272,20 @@ a32_case_543:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo543
+	.p2align 2
+.Lgo543:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21543,6 +23300,7 @@ a32_case_543:
 	.arm
 	.p2align 2
 .Larm543:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21555,6 +23313,7 @@ a32_case_544:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21573,16 +23332,20 @@ a32_case_544:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo544
+	.p2align 2
+.Lgo544:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x41c8	/* ror r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21597,6 +23360,7 @@ a32_case_544:
 	.arm
 	.p2align 2
 .Larm544:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21609,6 +23373,7 @@ a32_case_545:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21625,16 +23390,20 @@ a32_case_545:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo545
+	.p2align 2
+.Lgo545:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21649,6 +23418,7 @@ a32_case_545:
 	.arm
 	.p2align 2
 .Larm545:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21661,6 +23431,7 @@ a32_case_546:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21678,16 +23449,20 @@ a32_case_546:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo546
+	.p2align 2
+.Lgo546:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21702,6 +23477,7 @@ a32_case_546:
 	.arm
 	.p2align 2
 .Larm546:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21714,6 +23490,7 @@ a32_case_547:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21732,16 +23509,20 @@ a32_case_547:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo547
+	.p2align 2
+.Lgo547:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21756,6 +23537,7 @@ a32_case_547:
 	.arm
 	.p2align 2
 .Larm547:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21768,6 +23550,7 @@ a32_case_548:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21786,16 +23569,20 @@ a32_case_548:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo548
+	.p2align 2
+.Lgo548:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4208	/* tst r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21810,6 +23597,7 @@ a32_case_548:
 	.arm
 	.p2align 2
 .Larm548:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21822,6 +23610,7 @@ a32_case_549:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21838,16 +23627,20 @@ a32_case_549:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo549
+	.p2align 2
+.Lgo549:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21862,6 +23655,7 @@ a32_case_549:
 	.arm
 	.p2align 2
 .Larm549:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21874,6 +23668,7 @@ a32_case_550:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21891,16 +23686,20 @@ a32_case_550:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo550
+	.p2align 2
+.Lgo550:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21915,6 +23714,7 @@ a32_case_550:
 	.arm
 	.p2align 2
 .Larm550:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21927,6 +23727,7 @@ a32_case_551:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21945,16 +23746,20 @@ a32_case_551:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo551
+	.p2align 2
+.Lgo551:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -21969,6 +23774,7 @@ a32_case_551:
 	.arm
 	.p2align 2
 .Larm551:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -21981,6 +23787,7 @@ a32_case_552:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -21999,16 +23806,20 @@ a32_case_552:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo552
+	.p2align 2
+.Lgo552:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4248	/* neg r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22023,6 +23834,7 @@ a32_case_552:
 	.arm
 	.p2align 2
 .Larm552:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22035,6 +23847,7 @@ a32_case_553:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22051,16 +23864,20 @@ a32_case_553:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo553
+	.p2align 2
+.Lgo553:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22075,6 +23892,7 @@ a32_case_553:
 	.arm
 	.p2align 2
 .Larm553:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22087,6 +23905,7 @@ a32_case_554:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22104,16 +23923,20 @@ a32_case_554:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo554
+	.p2align 2
+.Lgo554:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22128,6 +23951,7 @@ a32_case_554:
 	.arm
 	.p2align 2
 .Larm554:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22140,6 +23964,7 @@ a32_case_555:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22158,16 +23983,20 @@ a32_case_555:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo555
+	.p2align 2
+.Lgo555:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22182,6 +24011,7 @@ a32_case_555:
 	.arm
 	.p2align 2
 .Larm555:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22194,6 +24024,7 @@ a32_case_556:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22212,16 +24043,20 @@ a32_case_556:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo556
+	.p2align 2
+.Lgo556:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4288	/* cmp r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22236,6 +24071,7 @@ a32_case_556:
 	.arm
 	.p2align 2
 .Larm556:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22248,6 +24084,7 @@ a32_case_557:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22264,16 +24101,20 @@ a32_case_557:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo557
+	.p2align 2
+.Lgo557:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22288,6 +24129,7 @@ a32_case_557:
 	.arm
 	.p2align 2
 .Larm557:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22300,6 +24142,7 @@ a32_case_558:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22317,16 +24160,20 @@ a32_case_558:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo558
+	.p2align 2
+.Lgo558:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22341,6 +24188,7 @@ a32_case_558:
 	.arm
 	.p2align 2
 .Larm558:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22353,6 +24201,7 @@ a32_case_559:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22371,16 +24220,20 @@ a32_case_559:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo559
+	.p2align 2
+.Lgo559:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22395,6 +24248,7 @@ a32_case_559:
 	.arm
 	.p2align 2
 .Larm559:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22407,6 +24261,7 @@ a32_case_560:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22425,16 +24280,20 @@ a32_case_560:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo560
+	.p2align 2
+.Lgo560:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x42c8	/* cmn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22449,6 +24308,7 @@ a32_case_560:
 	.arm
 	.p2align 2
 .Larm560:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22461,6 +24321,7 @@ a32_case_561:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22477,16 +24338,20 @@ a32_case_561:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo561
+	.p2align 2
+.Lgo561:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22501,6 +24366,7 @@ a32_case_561:
 	.arm
 	.p2align 2
 .Larm561:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22513,6 +24379,7 @@ a32_case_562:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22530,16 +24397,20 @@ a32_case_562:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo562
+	.p2align 2
+.Lgo562:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22554,6 +24425,7 @@ a32_case_562:
 	.arm
 	.p2align 2
 .Larm562:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22566,6 +24438,7 @@ a32_case_563:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22584,16 +24457,20 @@ a32_case_563:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo563
+	.p2align 2
+.Lgo563:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22608,6 +24485,7 @@ a32_case_563:
 	.arm
 	.p2align 2
 .Larm563:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22620,6 +24498,7 @@ a32_case_564:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22638,16 +24517,20 @@ a32_case_564:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo564
+	.p2align 2
+.Lgo564:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4308	/* orr r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22662,6 +24545,7 @@ a32_case_564:
 	.arm
 	.p2align 2
 .Larm564:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22674,6 +24558,7 @@ a32_case_565:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22690,16 +24575,20 @@ a32_case_565:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo565
+	.p2align 2
+.Lgo565:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22714,6 +24603,7 @@ a32_case_565:
 	.arm
 	.p2align 2
 .Larm565:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22726,6 +24616,7 @@ a32_case_566:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22743,16 +24634,20 @@ a32_case_566:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo566
+	.p2align 2
+.Lgo566:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22767,6 +24662,7 @@ a32_case_566:
 	.arm
 	.p2align 2
 .Larm566:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22779,6 +24675,7 @@ a32_case_567:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22797,16 +24694,20 @@ a32_case_567:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo567
+	.p2align 2
+.Lgo567:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22821,6 +24722,7 @@ a32_case_567:
 	.arm
 	.p2align 2
 .Larm567:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22833,6 +24735,7 @@ a32_case_568:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22851,16 +24754,20 @@ a32_case_568:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo568
+	.p2align 2
+.Lgo568:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4348	/* mul r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22875,6 +24782,7 @@ a32_case_568:
 	.arm
 	.p2align 2
 .Larm568:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22887,6 +24795,7 @@ a32_case_569:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22903,16 +24812,20 @@ a32_case_569:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo569
+	.p2align 2
+.Lgo569:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22927,6 +24840,7 @@ a32_case_569:
 	.arm
 	.p2align 2
 .Larm569:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22939,6 +24853,7 @@ a32_case_570:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -22956,16 +24871,20 @@ a32_case_570:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo570
+	.p2align 2
+.Lgo570:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -22980,6 +24899,7 @@ a32_case_570:
 	.arm
 	.p2align 2
 .Larm570:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -22992,6 +24912,7 @@ a32_case_571:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23010,16 +24931,20 @@ a32_case_571:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo571
+	.p2align 2
+.Lgo571:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23034,6 +24959,7 @@ a32_case_571:
 	.arm
 	.p2align 2
 .Larm571:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23046,6 +24972,7 @@ a32_case_572:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23064,16 +24991,20 @@ a32_case_572:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo572
+	.p2align 2
+.Lgo572:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4388	/* bic r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23088,6 +25019,7 @@ a32_case_572:
 	.arm
 	.p2align 2
 .Larm572:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23100,6 +25032,7 @@ a32_case_573:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23116,16 +25049,20 @@ a32_case_573:
 	mov	r11, #0
 	movw	r0, #0x0000
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo573
+	.p2align 2
+.Lgo573:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23140,6 +25077,7 @@ a32_case_573:
 	.arm
 	.p2align 2
 .Larm573:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23152,6 +25090,7 @@ a32_case_574:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23169,16 +25108,20 @@ a32_case_574:
 	movw	r0, #0x0001
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo574
+	.p2align 2
+.Lgo574:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23193,6 +25136,7 @@ a32_case_574:
 	.arm
 	.p2align 2
 .Larm574:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23205,6 +25149,7 @@ a32_case_575:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23223,16 +25168,20 @@ a32_case_575:
 	movt	r0, #0xffff
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo575
+	.p2align 2
+.Lgo575:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23247,6 +25196,7 @@ a32_case_575:
 	.arm
 	.p2align 2
 .Larm575:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23259,6 +25209,7 @@ a32_case_576:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23277,16 +25228,20 @@ a32_case_576:
 	movt	r0, #0x7fff
 	movw	r1, #0x0000
 	movt	r1, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo576
+	.p2align 2
+.Lgo576:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x43c8	/* mvn r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23301,6 +25256,7 @@ a32_case_576:
 	.arm
 	.p2align 2
 .Larm576:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23313,6 +25269,7 @@ a32_case_577:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23329,16 +25286,20 @@ a32_case_577:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo577
+	.p2align 2
+.Lgo577:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x2000	/* movs r0, #0x0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23353,6 +25314,7 @@ a32_case_577:
 	.arm
 	.p2align 2
 .Larm577:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23365,6 +25327,7 @@ a32_case_578:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23381,16 +25344,20 @@ a32_case_578:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo578
+	.p2align 2
+.Lgo578:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x2001	/* movs r0, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23405,6 +25372,7 @@ a32_case_578:
 	.arm
 	.p2align 2
 .Larm578:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23417,6 +25385,7 @@ a32_case_579:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23433,16 +25402,20 @@ a32_case_579:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo579
+	.p2align 2
+.Lgo579:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x207f	/* movs r0, #0x7f */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23457,6 +25430,7 @@ a32_case_579:
 	.arm
 	.p2align 2
 .Larm579:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23469,6 +25443,7 @@ a32_case_580:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23485,16 +25460,20 @@ a32_case_580:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo580
+	.p2align 2
+.Lgo580:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x20ff	/* movs r0, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23509,6 +25488,7 @@ a32_case_580:
 	.arm
 	.p2align 2
 .Larm580:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23521,6 +25501,7 @@ a32_case_581:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23537,16 +25518,20 @@ a32_case_581:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo581
+	.p2align 2
+.Lgo581:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x2800	/* cmp r0, #0x0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23561,6 +25546,7 @@ a32_case_581:
 	.arm
 	.p2align 2
 .Larm581:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23573,6 +25559,7 @@ a32_case_582:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23589,16 +25576,20 @@ a32_case_582:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo582
+	.p2align 2
+.Lgo582:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x2801	/* cmp r0, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23613,6 +25604,7 @@ a32_case_582:
 	.arm
 	.p2align 2
 .Larm582:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23625,6 +25617,7 @@ a32_case_583:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23641,16 +25634,20 @@ a32_case_583:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo583
+	.p2align 2
+.Lgo583:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x287f	/* cmp r0, #0x7f */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23665,6 +25662,7 @@ a32_case_583:
 	.arm
 	.p2align 2
 .Larm583:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23677,6 +25675,7 @@ a32_case_584:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23693,16 +25692,20 @@ a32_case_584:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo584
+	.p2align 2
+.Lgo584:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x28ff	/* cmp r0, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23717,6 +25720,7 @@ a32_case_584:
 	.arm
 	.p2align 2
 .Larm584:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23729,6 +25733,7 @@ a32_case_585:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23745,16 +25750,20 @@ a32_case_585:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo585
+	.p2align 2
+.Lgo585:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x3000	/* adds r0, #0x0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23769,6 +25778,7 @@ a32_case_585:
 	.arm
 	.p2align 2
 .Larm585:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23781,6 +25791,7 @@ a32_case_586:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23797,16 +25808,20 @@ a32_case_586:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo586
+	.p2align 2
+.Lgo586:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x3001	/* adds r0, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23821,6 +25836,7 @@ a32_case_586:
 	.arm
 	.p2align 2
 .Larm586:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23833,6 +25849,7 @@ a32_case_587:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23849,16 +25866,20 @@ a32_case_587:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo587
+	.p2align 2
+.Lgo587:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x307f	/* adds r0, #0x7f */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23873,6 +25894,7 @@ a32_case_587:
 	.arm
 	.p2align 2
 .Larm587:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23885,6 +25907,7 @@ a32_case_588:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23901,16 +25924,20 @@ a32_case_588:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo588
+	.p2align 2
+.Lgo588:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x30ff	/* adds r0, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23925,6 +25952,7 @@ a32_case_588:
 	.arm
 	.p2align 2
 .Larm588:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23937,6 +25965,7 @@ a32_case_589:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -23953,16 +25982,20 @@ a32_case_589:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo589
+	.p2align 2
+.Lgo589:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x3800	/* subs r0, #0x0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -23977,6 +26010,7 @@ a32_case_589:
 	.arm
 	.p2align 2
 .Larm589:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -23989,6 +26023,7 @@ a32_case_590:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24005,16 +26040,20 @@ a32_case_590:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo590
+	.p2align 2
+.Lgo590:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x3801	/* subs r0, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24029,6 +26068,7 @@ a32_case_590:
 	.arm
 	.p2align 2
 .Larm590:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24041,6 +26081,7 @@ a32_case_591:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24057,16 +26098,20 @@ a32_case_591:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo591
+	.p2align 2
+.Lgo591:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x387f	/* subs r0, #0x7f */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24081,6 +26126,7 @@ a32_case_591:
 	.arm
 	.p2align 2
 .Larm591:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24093,6 +26139,7 @@ a32_case_592:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24109,16 +26156,20 @@ a32_case_592:
 	mov	r11, #0
 	movw	r0, #0xbeef
 	movt	r0, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo592
+	.p2align 2
+.Lgo592:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x38ff	/* subs r0, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24133,6 +26184,7 @@ a32_case_592:
 	.arm
 	.p2align 2
 .Larm592:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24145,6 +26197,7 @@ a32_case_593:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24161,16 +26214,20 @@ a32_case_593:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo593
+	.p2align 2
+.Lgo593:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1850	/* adds r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24185,6 +26242,7 @@ a32_case_593:
 	.arm
 	.p2align 2
 .Larm593:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24197,6 +26255,7 @@ a32_case_594:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24213,16 +26272,20 @@ a32_case_594:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo594
+	.p2align 2
+.Lgo594:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1a50	/* subs r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24237,6 +26300,7 @@ a32_case_594:
 	.arm
 	.p2align 2
 .Larm594:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24249,6 +26313,7 @@ a32_case_595:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24266,16 +26331,20 @@ a32_case_595:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo595
+	.p2align 2
+.Lgo595:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1850	/* adds r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24290,6 +26359,7 @@ a32_case_595:
 	.arm
 	.p2align 2
 .Larm595:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24302,6 +26372,7 @@ a32_case_596:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24319,16 +26390,20 @@ a32_case_596:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo596
+	.p2align 2
+.Lgo596:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1a50	/* subs r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24343,6 +26418,7 @@ a32_case_596:
 	.arm
 	.p2align 2
 .Larm596:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24355,6 +26431,7 @@ a32_case_597:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24373,16 +26450,20 @@ a32_case_597:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo597
+	.p2align 2
+.Lgo597:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1850	/* adds r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24397,6 +26478,7 @@ a32_case_597:
 	.arm
 	.p2align 2
 .Larm597:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24409,6 +26491,7 @@ a32_case_598:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24427,16 +26510,20 @@ a32_case_598:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo598
+	.p2align 2
+.Lgo598:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1a50	/* subs r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24451,6 +26538,7 @@ a32_case_598:
 	.arm
 	.p2align 2
 .Larm598:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24463,6 +26551,7 @@ a32_case_599:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24479,16 +26568,20 @@ a32_case_599:
 	mov	r11, #0
 	movw	r1, #0xfff0
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo599
+	.p2align 2
+.Lgo599:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1c08	/* adds r0, r1, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24503,6 +26596,7 @@ a32_case_599:
 	.arm
 	.p2align 2
 .Larm599:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24515,6 +26609,7 @@ a32_case_600:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24530,16 +26625,20 @@ a32_case_600:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0005
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo600
+	.p2align 2
+.Lgo600:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1e08	/* subs r0, r1, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24554,6 +26653,7 @@ a32_case_600:
 	.arm
 	.p2align 2
 .Larm600:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24566,6 +26666,7 @@ a32_case_601:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24582,16 +26683,20 @@ a32_case_601:
 	mov	r11, #0
 	movw	r1, #0xfff0
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo601
+	.p2align 2
+.Lgo601:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1c48	/* adds r0, r1, #1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24606,6 +26711,7 @@ a32_case_601:
 	.arm
 	.p2align 2
 .Larm601:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24618,6 +26724,7 @@ a32_case_602:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24633,16 +26740,20 @@ a32_case_602:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0005
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo602
+	.p2align 2
+.Lgo602:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1e48	/* subs r0, r1, #1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24657,6 +26768,7 @@ a32_case_602:
 	.arm
 	.p2align 2
 .Larm602:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24669,6 +26781,7 @@ a32_case_603:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24685,16 +26798,20 @@ a32_case_603:
 	mov	r11, #0
 	movw	r1, #0xfff0
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo603
+	.p2align 2
+.Lgo603:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1cc8	/* adds r0, r1, #3 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24709,6 +26826,7 @@ a32_case_603:
 	.arm
 	.p2align 2
 .Larm603:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24721,6 +26839,7 @@ a32_case_604:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24736,16 +26855,20 @@ a32_case_604:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0005
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo604
+	.p2align 2
+.Lgo604:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1ec8	/* subs r0, r1, #3 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24760,6 +26883,7 @@ a32_case_604:
 	.arm
 	.p2align 2
 .Larm604:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24772,6 +26896,7 @@ a32_case_605:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24788,16 +26913,20 @@ a32_case_605:
 	mov	r11, #0
 	movw	r1, #0xfff0
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo605
+	.p2align 2
+.Lgo605:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1dc8	/* adds r0, r1, #7 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24812,6 +26941,7 @@ a32_case_605:
 	.arm
 	.p2align 2
 .Larm605:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24824,6 +26954,7 @@ a32_case_606:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24839,16 +26970,20 @@ a32_case_606:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0005
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo606
+	.p2align 2
+.Lgo606:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x1fc8	/* subs r0, r1, #7 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24863,6 +26998,7 @@ a32_case_606:
 	.arm
 	.p2align 2
 .Larm606:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24875,6 +27011,7 @@ a32_case_607:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24890,16 +27027,20 @@ a32_case_607:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r8, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo607
+	.p2align 2
+.Lgo607:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4440	/* add r0, r8 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24914,6 +27055,7 @@ a32_case_607:
 	.arm
 	.p2align 2
 .Larm607:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24926,6 +27068,7 @@ a32_case_608:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24941,16 +27084,20 @@ a32_case_608:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo608
+	.p2align 2
+.Lgo608:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4693	/* mov r11, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -24965,6 +27112,7 @@ a32_case_608:
 	.arm
 	.p2align 2
 .Larm608:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -24977,6 +27125,7 @@ a32_case_609:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -24993,17 +27142,21 @@ a32_case_609:
 	mov	r11, #0
 	movw	r1, #0x0001
 	movw	r8, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo609
+	.p2align 2
+.Lgo609:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4588	/* cmp r8, r1 */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25018,6 +27171,7 @@ a32_case_609:
 	.arm
 	.p2align 2
 .Larm609:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25030,6 +27184,7 @@ a32_case_610:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25045,16 +27200,20 @@ a32_case_610:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r8, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo610
+	.p2align 2
+.Lgo610:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4440	/* add r0, r8 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25069,6 +27228,7 @@ a32_case_610:
 	.arm
 	.p2align 2
 .Larm610:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25081,6 +27241,7 @@ a32_case_611:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25096,16 +27257,20 @@ a32_case_611:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo611
+	.p2align 2
+.Lgo611:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4693	/* mov r11, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25120,6 +27285,7 @@ a32_case_611:
 	.arm
 	.p2align 2
 .Larm611:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25132,6 +27298,7 @@ a32_case_612:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25149,17 +27316,21 @@ a32_case_612:
 	movw	r1, #0xffff
 	movt	r1, #0xffff
 	movw	r8, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo612
+	.p2align 2
+.Lgo612:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4588	/* cmp r8, r1 */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25174,6 +27345,7 @@ a32_case_612:
 	.arm
 	.p2align 2
 .Larm612:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25186,6 +27358,7 @@ a32_case_613:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25202,16 +27375,20 @@ a32_case_613:
 	mov	r11, #0
 	movw	r8, #0xffff
 	movt	r8, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo613
+	.p2align 2
+.Lgo613:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4440	/* add r0, r8 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25226,6 +27403,7 @@ a32_case_613:
 	.arm
 	.p2align 2
 .Larm613:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25238,6 +27416,7 @@ a32_case_614:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25254,16 +27433,20 @@ a32_case_614:
 	mov	r11, #0
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo614
+	.p2align 2
+.Lgo614:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4693	/* mov r11, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25278,6 +27461,7 @@ a32_case_614:
 	.arm
 	.p2align 2
 .Larm614:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25290,6 +27474,7 @@ a32_case_615:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25308,17 +27493,21 @@ a32_case_615:
 	movt	r1, #0x7fff
 	movw	r8, #0xffff
 	movt	r8, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo615
+	.p2align 2
+.Lgo615:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4588	/* cmp r8, r1 */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25333,6 +27522,7 @@ a32_case_615:
 	.arm
 	.p2align 2
 .Larm615:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25345,6 +27535,7 @@ a32_case_616:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25359,10 +27550,11 @@ a32_case_616:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo616
+	.p2align 2
+.Lgo616:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25374,8 +27566,11 @@ a32_case_616:
 	.hword	0xe001	/* b done */
 	.hword	0x2266	/* movs r2, #0x66 */
 	.hword	0x4770	/* bx lr */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25390,6 +27585,7 @@ a32_case_616:
 	.arm
 	.p2align 2
 .Larm616:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25402,6 +27598,7 @@ a32_case_617:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25416,10 +27613,11 @@ a32_case_617:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo617
+	.p2align 2
+.Lgo617:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25431,8 +27629,11 @@ a32_case_617:
 	.hword	0xe001	/* b done */
 	.hword	0x2266	/* movs r2, #0x66 */
 	.hword	0x4770	/* bx lr */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25447,6 +27648,7 @@ a32_case_617:
 	.arm
 	.p2align 2
 .Larm617:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25459,6 +27661,7 @@ a32_case_618:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25476,10 +27679,11 @@ a32_case_618:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo618
+	.p2align 2
+.Lgo618:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25487,8 +27691,11 @@ a32_case_618:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x50b8	/* str r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25503,6 +27710,7 @@ a32_case_618:
 	.arm
 	.p2align 2
 .Larm618:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25515,6 +27723,7 @@ a32_case_619:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25532,10 +27741,11 @@ a32_case_619:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo619
+	.p2align 2
+.Lgo619:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25543,8 +27753,11 @@ a32_case_619:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5138	/* str r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25559,6 +27772,7 @@ a32_case_619:
 	.arm
 	.p2align 2
 .Larm619:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25571,6 +27785,7 @@ a32_case_620:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25588,10 +27803,11 @@ a32_case_620:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo620
+	.p2align 2
+.Lgo620:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25599,8 +27815,11 @@ a32_case_620:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x51b8	/* str r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25615,6 +27834,7 @@ a32_case_620:
 	.arm
 	.p2align 2
 .Larm620:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25627,6 +27847,7 @@ a32_case_621:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25644,10 +27865,11 @@ a32_case_621:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo621
+	.p2align 2
+.Lgo621:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25655,8 +27877,11 @@ a32_case_621:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x52b8	/* strh r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25671,6 +27896,7 @@ a32_case_621:
 	.arm
 	.p2align 2
 .Larm621:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25683,6 +27909,7 @@ a32_case_622:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25700,10 +27927,11 @@ a32_case_622:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo622
+	.p2align 2
+.Lgo622:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25711,8 +27939,11 @@ a32_case_622:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5338	/* strh r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25727,6 +27958,7 @@ a32_case_622:
 	.arm
 	.p2align 2
 .Larm622:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25739,6 +27971,7 @@ a32_case_623:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25756,10 +27989,11 @@ a32_case_623:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo623
+	.p2align 2
+.Lgo623:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25767,8 +28001,11 @@ a32_case_623:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x53b8	/* strh r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25783,6 +28020,7 @@ a32_case_623:
 	.arm
 	.p2align 2
 .Larm623:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25795,6 +28033,7 @@ a32_case_624:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25812,10 +28051,11 @@ a32_case_624:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo624
+	.p2align 2
+.Lgo624:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25823,8 +28063,11 @@ a32_case_624:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x54b8	/* strb r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25839,6 +28082,7 @@ a32_case_624:
 	.arm
 	.p2align 2
 .Larm624:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25851,6 +28095,7 @@ a32_case_625:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25868,10 +28113,11 @@ a32_case_625:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo625
+	.p2align 2
+.Lgo625:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25879,8 +28125,11 @@ a32_case_625:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5538	/* strb r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25895,6 +28144,7 @@ a32_case_625:
 	.arm
 	.p2align 2
 .Larm625:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25907,6 +28157,7 @@ a32_case_626:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25924,10 +28175,11 @@ a32_case_626:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo626
+	.p2align 2
+.Lgo626:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25935,8 +28187,11 @@ a32_case_626:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x55b8	/* strb r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -25951,6 +28206,7 @@ a32_case_626:
 	.arm
 	.p2align 2
 .Larm626:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -25963,6 +28219,7 @@ a32_case_627:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -25980,10 +28237,11 @@ a32_case_627:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo627
+	.p2align 2
+.Lgo627:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -25991,8 +28249,11 @@ a32_case_627:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x56b8	/* ldrsb r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26007,6 +28268,7 @@ a32_case_627:
 	.arm
 	.p2align 2
 .Larm627:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26019,6 +28281,7 @@ a32_case_628:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26036,10 +28299,11 @@ a32_case_628:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo628
+	.p2align 2
+.Lgo628:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26047,8 +28311,11 @@ a32_case_628:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5738	/* ldrsb r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26063,6 +28330,7 @@ a32_case_628:
 	.arm
 	.p2align 2
 .Larm628:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26075,6 +28343,7 @@ a32_case_629:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26092,10 +28361,11 @@ a32_case_629:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo629
+	.p2align 2
+.Lgo629:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26103,8 +28373,11 @@ a32_case_629:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x57b8	/* ldrsb r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26119,6 +28392,7 @@ a32_case_629:
 	.arm
 	.p2align 2
 .Larm629:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26131,6 +28405,7 @@ a32_case_630:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26148,10 +28423,11 @@ a32_case_630:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo630
+	.p2align 2
+.Lgo630:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26159,8 +28435,11 @@ a32_case_630:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x58b8	/* ldr r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26175,6 +28454,7 @@ a32_case_630:
 	.arm
 	.p2align 2
 .Larm630:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26187,6 +28467,7 @@ a32_case_631:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26204,10 +28485,11 @@ a32_case_631:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo631
+	.p2align 2
+.Lgo631:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26215,8 +28497,11 @@ a32_case_631:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5938	/* ldr r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26231,6 +28516,7 @@ a32_case_631:
 	.arm
 	.p2align 2
 .Larm631:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26243,6 +28529,7 @@ a32_case_632:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26260,10 +28547,11 @@ a32_case_632:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo632
+	.p2align 2
+.Lgo632:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26271,8 +28559,11 @@ a32_case_632:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x59b8	/* ldr r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26287,6 +28578,7 @@ a32_case_632:
 	.arm
 	.p2align 2
 .Larm632:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26299,6 +28591,7 @@ a32_case_633:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26316,10 +28609,11 @@ a32_case_633:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo633
+	.p2align 2
+.Lgo633:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26327,8 +28621,11 @@ a32_case_633:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5ab8	/* ldrh r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26343,6 +28640,7 @@ a32_case_633:
 	.arm
 	.p2align 2
 .Larm633:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26355,6 +28653,7 @@ a32_case_634:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26372,10 +28671,11 @@ a32_case_634:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo634
+	.p2align 2
+.Lgo634:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26383,8 +28683,11 @@ a32_case_634:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5b38	/* ldrh r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26399,6 +28702,7 @@ a32_case_634:
 	.arm
 	.p2align 2
 .Larm634:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26411,6 +28715,7 @@ a32_case_635:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26428,10 +28733,11 @@ a32_case_635:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo635
+	.p2align 2
+.Lgo635:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26439,8 +28745,11 @@ a32_case_635:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5bb8	/* ldrh r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26455,6 +28764,7 @@ a32_case_635:
 	.arm
 	.p2align 2
 .Larm635:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26467,6 +28777,7 @@ a32_case_636:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26484,10 +28795,11 @@ a32_case_636:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo636
+	.p2align 2
+.Lgo636:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26495,8 +28807,11 @@ a32_case_636:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5cb8	/* ldrb r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26511,6 +28826,7 @@ a32_case_636:
 	.arm
 	.p2align 2
 .Larm636:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26523,6 +28839,7 @@ a32_case_637:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26540,10 +28857,11 @@ a32_case_637:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo637
+	.p2align 2
+.Lgo637:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26551,8 +28869,11 @@ a32_case_637:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5d38	/* ldrb r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26567,6 +28888,7 @@ a32_case_637:
 	.arm
 	.p2align 2
 .Larm637:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26579,6 +28901,7 @@ a32_case_638:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26596,10 +28919,11 @@ a32_case_638:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo638
+	.p2align 2
+.Lgo638:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26607,8 +28931,11 @@ a32_case_638:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5db8	/* ldrb r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26623,6 +28950,7 @@ a32_case_638:
 	.arm
 	.p2align 2
 .Larm638:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26635,6 +28963,7 @@ a32_case_639:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26652,10 +28981,11 @@ a32_case_639:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r2, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo639
+	.p2align 2
+.Lgo639:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26663,8 +28993,11 @@ a32_case_639:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5eb8	/* ldrsh r0, [r7, r2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26679,6 +29012,7 @@ a32_case_639:
 	.arm
 	.p2align 2
 .Larm639:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26691,6 +29025,7 @@ a32_case_640:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26708,10 +29043,11 @@ a32_case_640:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r4, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo640
+	.p2align 2
+.Lgo640:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26719,8 +29055,11 @@ a32_case_640:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5f38	/* ldrsh r0, [r7, r4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26735,6 +29074,7 @@ a32_case_640:
 	.arm
 	.p2align 2
 .Larm640:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26747,6 +29087,7 @@ a32_case_641:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26764,10 +29105,11 @@ a32_case_641:
 	movw	r1, #0x1234
 	movt	r1, #0xc0de
 	movw	r6, #0x0010
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo641
+	.p2align 2
+.Lgo641:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26775,8 +29117,11 @@ a32_case_641:
 	.hword	0x6139	/* str r1, [r7, #16] */
 	.hword	0x5fb8	/* ldrsh r0, [r7, r6] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26791,6 +29136,7 @@ a32_case_641:
 	.arm
 	.p2align 2
 .Larm641:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26803,6 +29149,7 @@ a32_case_642:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26819,10 +29166,11 @@ a32_case_642:
 	mov	r11, #0
 	movw	r1, #0xabcd
 	movt	r1, #0x1234
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo642
+	.p2align 2
+.Lgo642:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26830,8 +29178,11 @@ a32_case_642:
 	.hword	0x6039	/* str r1, [r7, #0] */
 	.hword	0x6838	/* ldr r0, [r7, #0] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26846,6 +29197,7 @@ a32_case_642:
 	.arm
 	.p2align 2
 .Larm642:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26858,6 +29210,7 @@ a32_case_643:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26874,10 +29227,11 @@ a32_case_643:
 	mov	r11, #0
 	movw	r1, #0xabcd
 	movt	r1, #0x1234
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo643
+	.p2align 2
+.Lgo643:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26885,8 +29239,11 @@ a32_case_643:
 	.hword	0x6079	/* str r1, [r7, #4] */
 	.hword	0x6878	/* ldr r0, [r7, #4] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26901,6 +29258,7 @@ a32_case_643:
 	.arm
 	.p2align 2
 .Larm643:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26913,6 +29271,7 @@ a32_case_644:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26929,10 +29288,11 @@ a32_case_644:
 	mov	r11, #0
 	movw	r1, #0xabcd
 	movt	r1, #0x1234
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo644
+	.p2align 2
+.Lgo644:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26940,8 +29300,11 @@ a32_case_644:
 	.hword	0x6179	/* str r1, [r7, #20] */
 	.hword	0x6978	/* ldr r0, [r7, #20] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -26956,6 +29319,7 @@ a32_case_644:
 	.arm
 	.p2align 2
 .Larm644:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -26968,6 +29332,7 @@ a32_case_645:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -26984,10 +29349,11 @@ a32_case_645:
 	mov	r11, #0
 	movw	r1, #0xabcd
 	movt	r1, #0x1234
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo645
+	.p2align 2
+.Lgo645:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -26995,8 +29361,11 @@ a32_case_645:
 	.hword	0x63f9	/* str r1, [r7, #60] */
 	.hword	0x6bf8	/* ldr r0, [r7, #60] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27011,6 +29380,7 @@ a32_case_645:
 	.arm
 	.p2align 2
 .Larm645:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27023,6 +29393,7 @@ a32_case_646:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27038,10 +29409,11 @@ a32_case_646:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xbeef
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo646
+	.p2align 2
+.Lgo646:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27049,8 +29421,11 @@ a32_case_646:
 	.hword	0x8039	/* strh r1, [r7, #0] */
 	.hword	0x8838	/* ldrh r0, [r7, #0] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27065,6 +29440,7 @@ a32_case_646:
 	.arm
 	.p2align 2
 .Larm646:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27077,6 +29453,7 @@ a32_case_647:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27092,10 +29469,11 @@ a32_case_647:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xbeef
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo647
+	.p2align 2
+.Lgo647:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27103,8 +29481,11 @@ a32_case_647:
 	.hword	0x8079	/* strh r1, [r7, #2] */
 	.hword	0x8878	/* ldrh r0, [r7, #2] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27119,6 +29500,7 @@ a32_case_647:
 	.arm
 	.p2align 2
 .Larm647:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27131,6 +29513,7 @@ a32_case_648:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27146,10 +29529,11 @@ a32_case_648:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xbeef
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo648
+	.p2align 2
+.Lgo648:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27157,8 +29541,11 @@ a32_case_648:
 	.hword	0x83f9	/* strh r1, [r7, #30] */
 	.hword	0x8bf8	/* ldrh r0, [r7, #30] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27173,6 +29560,7 @@ a32_case_648:
 	.arm
 	.p2align 2
 .Larm648:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27185,6 +29573,7 @@ a32_case_649:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27200,10 +29589,11 @@ a32_case_649:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x005a
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo649
+	.p2align 2
+.Lgo649:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27211,8 +29601,11 @@ a32_case_649:
 	.hword	0x7039	/* strb r1, [r7, #0] */
 	.hword	0x7838	/* ldrb r0, [r7, #0] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27227,6 +29620,7 @@ a32_case_649:
 	.arm
 	.p2align 2
 .Larm649:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27239,6 +29633,7 @@ a32_case_650:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27254,10 +29649,11 @@ a32_case_650:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x005a
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo650
+	.p2align 2
+.Lgo650:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27265,8 +29661,11 @@ a32_case_650:
 	.hword	0x7079	/* strb r1, [r7, #1] */
 	.hword	0x7878	/* ldrb r0, [r7, #1] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27281,6 +29680,7 @@ a32_case_650:
 	.arm
 	.p2align 2
 .Larm650:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27293,6 +29693,7 @@ a32_case_651:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27308,10 +29709,11 @@ a32_case_651:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x005a
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo651
+	.p2align 2
+.Lgo651:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27319,8 +29721,11 @@ a32_case_651:
 	.hword	0x71f9	/* strb r1, [r7, #7] */
 	.hword	0x79f8	/* ldrb r0, [r7, #7] */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27335,6 +29740,7 @@ a32_case_651:
 	.arm
 	.p2align 2
 .Larm651:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27347,6 +29753,7 @@ a32_case_652:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27361,18 +29768,24 @@ a32_case_652:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo652
+	.p2align 2
+.Lgo652:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x4801	/* ldr r0, [pc, #4] */
 	.hword	0xbf00	/* nop */
+	b.w	2f	/* jump over this fragment's literal */
 	.word	0x12345678	/* literal read by this fragment */
+2:
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27387,6 +29800,7 @@ a32_case_652:
 	.arm
 	.p2align 2
 .Larm652:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27399,6 +29813,7 @@ a32_case_653:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27413,10 +29828,11 @@ a32_case_653:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo653
+	.p2align 2
+.Lgo653:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27424,9 +29840,14 @@ a32_case_653:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
+	b.w	2f	/* jump over this fragment's literal */
 	.word	0x12345679	/* literal read by this fragment */
+2:
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27441,6 +29862,7 @@ a32_case_653:
 	.arm
 	.p2align 2
 .Larm653:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27453,6 +29875,7 @@ a32_case_654:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27467,10 +29890,11 @@ a32_case_654:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo654
+	.p2align 2
+.Lgo654:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27480,9 +29904,14 @@ a32_case_654:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
+	b.w	2f	/* jump over this fragment's literal */
 	.word	0x1234567a	/* literal read by this fragment */
+2:
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27497,6 +29926,7 @@ a32_case_654:
 	.arm
 	.p2align 2
 .Larm654:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27509,6 +29939,7 @@ a32_case_655:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27525,10 +29956,11 @@ a32_case_655:
 	mov	r11, #0
 	movw	r1, #0xf00d
 	movt	r1, #0x0bad
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo655
+	.p2align 2
+.Lgo655:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27536,8 +29968,11 @@ a32_case_655:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x9100	/* str r1, [sp, #0] */
 	.hword	0x9800	/* ldr r0, [sp, #0] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27552,6 +29987,7 @@ a32_case_655:
 	.arm
 	.p2align 2
 .Larm655:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27564,6 +30000,7 @@ a32_case_656:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27580,10 +30017,11 @@ a32_case_656:
 	mov	r11, #0
 	movw	r1, #0xf00d
 	movt	r1, #0x0bad
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo656
+	.p2align 2
+.Lgo656:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27591,8 +30029,11 @@ a32_case_656:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x9101	/* str r1, [sp, #4] */
 	.hword	0x9801	/* ldr r0, [sp, #4] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27607,6 +30048,7 @@ a32_case_656:
 	.arm
 	.p2align 2
 .Larm656:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27619,6 +30061,7 @@ a32_case_657:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27635,10 +30078,11 @@ a32_case_657:
 	mov	r11, #0
 	movw	r1, #0xf00d
 	movt	r1, #0x0bad
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo657
+	.p2align 2
+.Lgo657:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27646,8 +30090,11 @@ a32_case_657:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x9104	/* str r1, [sp, #16] */
 	.hword	0x9804	/* ldr r0, [sp, #16] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27662,6 +30109,7 @@ a32_case_657:
 	.arm
 	.p2align 2
 .Larm657:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27674,6 +30122,7 @@ a32_case_658:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27690,10 +30139,11 @@ a32_case_658:
 	mov	r11, #0
 	movw	r1, #0xf00d
 	movt	r1, #0x0bad
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo658
+	.p2align 2
+.Lgo658:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27701,8 +30151,11 @@ a32_case_658:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0x910f	/* str r1, [sp, #60] */
 	.hword	0x980f	/* ldr r0, [sp, #60] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27717,6 +30170,7 @@ a32_case_658:
 	.arm
 	.p2align 2
 .Larm658:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27729,6 +30183,7 @@ a32_case_659:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27743,10 +30198,11 @@ a32_case_659:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo659
+	.p2align 2
+.Lgo659:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27754,8 +30210,11 @@ a32_case_659:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa902	/* add r1, sp, #8 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27770,6 +30229,7 @@ a32_case_659:
 	.arm
 	.p2align 2
 .Larm659:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27782,6 +30242,7 @@ a32_case_660:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27796,10 +30257,11 @@ a32_case_660:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo660
+	.p2align 2
+.Lgo660:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27807,8 +30269,11 @@ a32_case_660:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa903	/* add r1, sp, #12 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27823,6 +30288,7 @@ a32_case_660:
 	.arm
 	.p2align 2
 .Larm660:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27835,6 +30301,7 @@ a32_case_661:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27849,10 +30316,11 @@ a32_case_661:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo661
+	.p2align 2
+.Lgo661:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27860,8 +30328,11 @@ a32_case_661:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa906	/* add r1, sp, #24 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27876,6 +30347,7 @@ a32_case_661:
 	.arm
 	.p2align 2
 .Larm661:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27888,6 +30360,7 @@ a32_case_662:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27902,10 +30375,11 @@ a32_case_662:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo662
+	.p2align 2
+.Lgo662:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27913,8 +30387,11 @@ a32_case_662:
 	.hword	0xa800	/* add r0, sp, #0 */
 	.hword	0xa911	/* add r1, sp, #68 */
 	.hword	0x1a40	/* subs r0, r1, r0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27929,6 +30406,7 @@ a32_case_662:
 	.arm
 	.p2align 2
 .Larm662:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27941,6 +30419,7 @@ a32_case_663:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -27955,10 +30434,11 @@ a32_case_663:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo663
+	.p2align 2
+.Lgo663:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -27969,8 +30449,11 @@ a32_case_663:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -27985,6 +30468,7 @@ a32_case_663:
 	.arm
 	.p2align 2
 .Larm663:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -27997,6 +30481,7 @@ a32_case_664:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28011,10 +30496,11 @@ a32_case_664:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo664
+	.p2align 2
+.Lgo664:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28025,8 +30511,11 @@ a32_case_664:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28041,6 +30530,7 @@ a32_case_664:
 	.arm
 	.p2align 2
 .Larm664:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28053,6 +30543,7 @@ a32_case_665:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28073,10 +30564,11 @@ a32_case_665:
 	movt	r1, #0x2222
 	movw	r7, #0x7777
 	movt	r7, #0x7777
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo665
+	.p2align 2
+.Lgo665:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28084,8 +30576,11 @@ a32_case_665:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb403	/* push {list} */
 	.hword	0xbc03	/* pop {list} */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28100,6 +30595,7 @@ a32_case_665:
 	.arm
 	.p2align 2
 .Larm665:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28112,6 +30608,7 @@ a32_case_666:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28132,10 +30629,11 @@ a32_case_666:
 	movt	r1, #0x2222
 	movw	r7, #0x7777
 	movt	r7, #0x7777
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo666
+	.p2align 2
+.Lgo666:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28143,8 +30641,11 @@ a32_case_666:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb40f	/* push {list} */
 	.hword	0xbc0f	/* pop {list} */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28159,6 +30660,7 @@ a32_case_666:
 	.arm
 	.p2align 2
 .Larm666:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28171,6 +30673,7 @@ a32_case_667:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28191,10 +30694,11 @@ a32_case_667:
 	movt	r1, #0x2222
 	movw	r7, #0x7777
 	movt	r7, #0x7777
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo667
+	.p2align 2
+.Lgo667:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28202,8 +30706,11 @@ a32_case_667:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb481	/* push {list} */
 	.hword	0xbc81	/* pop {list} */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28218,6 +30725,7 @@ a32_case_667:
 	.arm
 	.p2align 2
 .Larm667:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28230,6 +30738,7 @@ a32_case_668:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28246,10 +30755,11 @@ a32_case_668:
 	mov	r11, #0
 	movw	r0, #0xbabe
 	movt	r0, #0xcafe
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo668
+	.p2align 2
+.Lgo668:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28257,8 +30767,11 @@ a32_case_668:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc02	/* pop {r1} */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28273,6 +30786,7 @@ a32_case_668:
 	.arm
 	.p2align 2
 .Larm668:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28285,6 +30799,7 @@ a32_case_669:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28301,10 +30816,11 @@ a32_case_669:
 	mov	r11, #0
 	movw	r0, #0xbabe
 	movt	r0, #0xcafe
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo669
+	.p2align 2
+.Lgo669:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28312,8 +30828,11 @@ a32_case_669:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc02	/* pop {r1} */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28328,6 +30847,7 @@ a32_case_669:
 	.arm
 	.p2align 2
 .Larm669:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28340,6 +30860,7 @@ a32_case_670:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28356,10 +30877,11 @@ a32_case_670:
 	mov	r11, #0
 	movw	r0, #0xface
 	movt	r0, #0xfeed
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo670
+	.p2align 2
+.Lgo670:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28367,8 +30889,11 @@ a32_case_670:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc03	/* pop {r0, r1} */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28383,6 +30908,7 @@ a32_case_670:
 	.arm
 	.p2align 2
 .Larm670:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28395,6 +30921,7 @@ a32_case_671:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28411,10 +30938,11 @@ a32_case_671:
 	mov	r11, #0
 	movw	r0, #0xface
 	movt	r0, #0xfeed
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo671
+	.p2align 2
+.Lgo671:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28422,8 +30950,11 @@ a32_case_671:
 	.hword	0xb010	/* add sp, #64 */
 	.hword	0xb501	/* push {r0, lr} */
 	.hword	0xbc03	/* pop {r0, r1} */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28438,6 +30969,7 @@ a32_case_671:
 	.arm
 	.p2align 2
 .Larm671:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28450,6 +30982,7 @@ a32_case_672:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28470,10 +31003,11 @@ a32_case_672:
 	movw	r3, #0x0004
 	movw	r4, #0x0005
 	movw	r5, #0x0006
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo672
+	.p2align 2
+.Lgo672:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28481,8 +31015,11 @@ a32_case_672:
 	.hword	0xc70c	/* stmia r7!, {list} */
 	.hword	0xcf0c	/* ldmia r7, {list} */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28497,6 +31034,7 @@ a32_case_672:
 	.arm
 	.p2align 2
 .Larm672:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28509,6 +31047,7 @@ a32_case_673:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28529,10 +31068,11 @@ a32_case_673:
 	movw	r3, #0x0004
 	movw	r4, #0x0005
 	movw	r5, #0x0006
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo673
+	.p2align 2
+.Lgo673:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28540,8 +31080,11 @@ a32_case_673:
 	.hword	0xc706	/* stmia r7!, {list} */
 	.hword	0xcf06	/* ldmia r7, {list} */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28556,6 +31099,7 @@ a32_case_673:
 	.arm
 	.p2align 2
 .Larm673:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28568,6 +31112,7 @@ a32_case_674:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28586,18 +31131,22 @@ a32_case_674:
 	movt	r2, #0xaaaa
 	movw	r3, #0x6666
 	movt	r3, #0xbbbb
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo674
+	.p2align 2
+.Lgo674:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x464f	/* mov r7, r9 */
 	.hword	0xc70c	/* stmia r7!, {r2,r3} */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28612,6 +31161,7 @@ a32_case_674:
 	.arm
 	.p2align 2
 .Larm674:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28624,6 +31174,7 @@ a32_case_675:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28642,18 +31193,22 @@ a32_case_675:
 	movt	r2, #0xaaaa
 	movw	r3, #0x6666
 	movt	r3, #0xbbbb
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo675
+	.p2align 2
+.Lgo675:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x464f	/* mov r7, r9 */
 	.hword	0xc70c	/* stmia r7!, {r2,r3} */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28668,6 +31223,7 @@ a32_case_675:
 	.arm
 	.p2align 2
 .Larm675:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28680,6 +31236,7 @@ a32_case_676:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28694,10 +31251,11 @@ a32_case_676:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo676
+	.p2align 2
+.Lgo676:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28705,8 +31263,11 @@ a32_case_676:
 	.hword	0xe000	/* b skip */
 	.hword	0x207f	/* movs r0, #0x7F */
 	.hword	0x212a	/* movs r1, #0x2A */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28721,6 +31282,7 @@ a32_case_676:
 	.arm
 	.p2align 2
 .Larm676:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28733,6 +31295,7 @@ a32_case_677:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28747,10 +31310,11 @@ a32_case_677:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo677
+	.p2align 2
+.Lgo677:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28758,8 +31322,11 @@ a32_case_677:
 	.hword	0x3001	/* adds r0, #1 */
 	.hword	0x2804	/* cmp r0, #4 */
 	.hword	0xdbfc	/* b.lt top */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28774,6 +31341,7 @@ a32_case_677:
 	.arm
 	.p2align 2
 .Larm677:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28786,6 +31354,7 @@ a32_case_678:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28801,10 +31370,11 @@ a32_case_678:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo678
+	.p2align 2
+.Lgo678:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28813,8 +31383,11 @@ a32_case_678:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28829,6 +31402,7 @@ a32_case_678:
 	.arm
 	.p2align 2
 .Larm678:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28841,6 +31415,7 @@ a32_case_679:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28856,10 +31431,11 @@ a32_case_679:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo679
+	.p2align 2
+.Lgo679:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28868,8 +31444,11 @@ a32_case_679:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28884,6 +31463,7 @@ a32_case_679:
 	.arm
 	.p2align 2
 .Larm679:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28896,6 +31476,7 @@ a32_case_680:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28911,10 +31492,11 @@ a32_case_680:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo680
+	.p2align 2
+.Lgo680:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28923,8 +31505,11 @@ a32_case_680:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28939,6 +31524,7 @@ a32_case_680:
 	.arm
 	.p2align 2
 .Larm680:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -28951,6 +31537,7 @@ a32_case_681:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -28966,10 +31553,11 @@ a32_case_681:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo681
+	.p2align 2
+.Lgo681:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -28978,8 +31566,11 @@ a32_case_681:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -28994,6 +31585,7 @@ a32_case_681:
 	.arm
 	.p2align 2
 .Larm681:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29006,6 +31598,7 @@ a32_case_682:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29021,10 +31614,11 @@ a32_case_682:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo682
+	.p2align 2
+.Lgo682:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29033,8 +31627,11 @@ a32_case_682:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29049,6 +31646,7 @@ a32_case_682:
 	.arm
 	.p2align 2
 .Larm682:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29061,6 +31659,7 @@ a32_case_683:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29076,10 +31675,11 @@ a32_case_683:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo683
+	.p2align 2
+.Lgo683:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29088,8 +31688,11 @@ a32_case_683:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29104,6 +31707,7 @@ a32_case_683:
 	.arm
 	.p2align 2
 .Larm683:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29116,6 +31720,7 @@ a32_case_684:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29131,10 +31736,11 @@ a32_case_684:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo684
+	.p2align 2
+.Lgo684:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29143,8 +31749,11 @@ a32_case_684:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29159,6 +31768,7 @@ a32_case_684:
 	.arm
 	.p2align 2
 .Larm684:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29171,6 +31781,7 @@ a32_case_685:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29186,10 +31797,11 @@ a32_case_685:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo685
+	.p2align 2
+.Lgo685:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29198,8 +31810,11 @@ a32_case_685:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29214,6 +31829,7 @@ a32_case_685:
 	.arm
 	.p2align 2
 .Larm685:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29226,6 +31842,7 @@ a32_case_686:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29241,10 +31858,11 @@ a32_case_686:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo686
+	.p2align 2
+.Lgo686:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29253,8 +31871,11 @@ a32_case_686:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29269,6 +31890,7 @@ a32_case_686:
 	.arm
 	.p2align 2
 .Larm686:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29281,6 +31903,7 @@ a32_case_687:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29296,10 +31919,11 @@ a32_case_687:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo687
+	.p2align 2
+.Lgo687:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29308,8 +31932,11 @@ a32_case_687:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29324,6 +31951,7 @@ a32_case_687:
 	.arm
 	.p2align 2
 .Larm687:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29336,6 +31964,7 @@ a32_case_688:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29351,10 +31980,11 @@ a32_case_688:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo688
+	.p2align 2
+.Lgo688:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29363,8 +31993,11 @@ a32_case_688:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29379,6 +32012,7 @@ a32_case_688:
 	.arm
 	.p2align 2
 .Larm688:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29391,6 +32025,7 @@ a32_case_689:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29406,10 +32041,11 @@ a32_case_689:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo689
+	.p2align 2
+.Lgo689:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29418,8 +32054,11 @@ a32_case_689:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29434,6 +32073,7 @@ a32_case_689:
 	.arm
 	.p2align 2
 .Larm689:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29446,6 +32086,7 @@ a32_case_690:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29461,10 +32102,11 @@ a32_case_690:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo690
+	.p2align 2
+.Lgo690:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29473,8 +32115,11 @@ a32_case_690:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29489,6 +32134,7 @@ a32_case_690:
 	.arm
 	.p2align 2
 .Larm690:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29501,6 +32147,7 @@ a32_case_691:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29516,10 +32163,11 @@ a32_case_691:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo691
+	.p2align 2
+.Lgo691:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29528,8 +32176,11 @@ a32_case_691:
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0xe000	/* b done */
 	.hword	0x2011	/* movs r0, #0x11 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29544,6 +32195,7 @@ a32_case_691:
 	.arm
 	.p2align 2
 .Larm691:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29556,6 +32208,7 @@ a32_case_692:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29571,10 +32224,11 @@ a32_case_692:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo692
+	.p2align 2
+.Lgo692:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29582,8 +32236,11 @@ a32_case_692:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29598,6 +32255,7 @@ a32_case_692:
 	.arm
 	.p2align 2
 .Larm692:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29610,6 +32268,7 @@ a32_case_693:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29625,10 +32284,11 @@ a32_case_693:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo693
+	.p2align 2
+.Lgo693:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29636,8 +32296,11 @@ a32_case_693:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29652,6 +32315,7 @@ a32_case_693:
 	.arm
 	.p2align 2
 .Larm693:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29664,6 +32328,7 @@ a32_case_694:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29679,10 +32344,11 @@ a32_case_694:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0100
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo694
+	.p2align 2
+.Lgo694:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29690,8 +32356,11 @@ a32_case_694:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29706,6 +32375,7 @@ a32_case_694:
 	.arm
 	.p2align 2
 .Larm694:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29718,6 +32388,7 @@ a32_case_695:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29734,10 +32405,11 @@ a32_case_695:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo695
+	.p2align 2
+.Lgo695:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29745,8 +32417,11 @@ a32_case_695:
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0xe000	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29761,6 +32436,7 @@ a32_case_695:
 	.arm
 	.p2align 2
 .Larm695:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29773,6 +32449,7 @@ a32_case_696:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29788,10 +32465,11 @@ a32_case_696:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo696
+	.p2align 2
+.Lgo696:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29799,8 +32477,11 @@ a32_case_696:
 	.hword	0x2033	/* movs r0, #0x33 */
 	.hword	0xe000	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29815,6 +32496,7 @@ a32_case_696:
 	.arm
 	.p2align 2
 .Larm696:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29827,6 +32509,7 @@ a32_case_697:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29842,10 +32525,11 @@ a32_case_697:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0005
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo697
+	.p2align 2
+.Lgo697:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29853,8 +32537,11 @@ a32_case_697:
 	.hword	0x2033	/* movs r0, #0x33 */
 	.hword	0xe000	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29869,6 +32556,7 @@ a32_case_697:
 	.arm
 	.p2align 2
 .Larm697:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29881,6 +32569,7 @@ a32_case_698:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29895,10 +32584,11 @@ a32_case_698:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo698
+	.p2align 2
+.Lgo698:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29908,8 +32598,11 @@ a32_case_698:
 	.hword	0xe001	/* b end */
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0x4770	/* bx lr */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29924,6 +32617,7 @@ a32_case_698:
 	.arm
 	.p2align 2
 .Larm698:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29936,6 +32630,7 @@ a32_case_699:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -29950,10 +32645,11 @@ a32_case_699:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo699
+	.p2align 2
+.Lgo699:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -29962,8 +32658,11 @@ a32_case_699:
 	.hword	0xbf08	/* it eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* movs r2, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -29978,6 +32677,7 @@ a32_case_699:
 	.arm
 	.p2align 2
 .Larm699:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -29990,6 +32690,7 @@ a32_case_700:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30004,10 +32705,11 @@ a32_case_700:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo700
+	.p2align 2
+.Lgo700:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30016,8 +32718,11 @@ a32_case_700:
 	.hword	0xbf08	/* it eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* movs r2, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30032,6 +32737,7 @@ a32_case_700:
 	.arm
 	.p2align 2
 .Larm700:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30044,6 +32750,7 @@ a32_case_701:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30058,10 +32765,11 @@ a32_case_701:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo701
+	.p2align 2
+.Lgo701:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30070,8 +32778,11 @@ a32_case_701:
 	.hword	0xbf0c	/* ite eq */
 	.hword	0x20aa	/* moveq r0, #0xAA */
 	.hword	0x20bb	/* movne r0, #0xBB */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30086,6 +32797,7 @@ a32_case_701:
 	.arm
 	.p2align 2
 .Larm701:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30098,6 +32810,7 @@ a32_case_702:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30112,10 +32825,11 @@ a32_case_702:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo702
+	.p2align 2
+.Lgo702:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30124,8 +32838,11 @@ a32_case_702:
 	.hword	0xbf0c	/* ite eq */
 	.hword	0x20aa	/* moveq r0, #0xAA */
 	.hword	0x20bb	/* movne r0, #0xBB */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30140,6 +32857,7 @@ a32_case_702:
 	.arm
 	.p2align 2
 .Larm702:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30152,6 +32870,7 @@ a32_case_703:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30166,10 +32885,11 @@ a32_case_703:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo703
+	.p2align 2
+.Lgo703:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30178,8 +32898,11 @@ a32_case_703:
 	.hword	0xbf04	/* itt eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* moveq r2, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30194,6 +32917,7 @@ a32_case_703:
 	.arm
 	.p2align 2
 .Larm703:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30206,6 +32930,7 @@ a32_case_704:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30220,10 +32945,11 @@ a32_case_704:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo704
+	.p2align 2
+.Lgo704:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30232,8 +32958,11 @@ a32_case_704:
 	.hword	0xbf04	/* itt eq */
 	.hword	0x2011	/* moveq r0, #0x11 */
 	.hword	0x2222	/* moveq r2, #0x22 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30248,6 +32977,7 @@ a32_case_704:
 	.arm
 	.p2align 2
 .Larm704:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30260,6 +32990,7 @@ a32_case_705:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30274,10 +33005,11 @@ a32_case_705:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo705
+	.p2align 2
+.Lgo705:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30288,8 +33020,11 @@ a32_case_705:
 	.hword	0x2202	/* moveq r2, #2 */
 	.hword	0x2303	/* moveq r3, #3 */
 	.hword	0x2404	/* moveq r4, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30304,6 +33039,7 @@ a32_case_705:
 	.arm
 	.p2align 2
 .Larm705:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30316,6 +33052,7 @@ a32_case_706:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30330,10 +33067,11 @@ a32_case_706:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo706
+	.p2align 2
+.Lgo706:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30344,8 +33082,11 @@ a32_case_706:
 	.hword	0x2202	/* moveq r2, #2 */
 	.hword	0x2303	/* moveq r3, #3 */
 	.hword	0x2404	/* moveq r4, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30360,6 +33101,7 @@ a32_case_706:
 	.arm
 	.p2align 2
 .Larm706:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30372,6 +33114,7 @@ a32_case_707:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30386,10 +33129,11 @@ a32_case_707:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo707
+	.p2align 2
+.Lgo707:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30398,8 +33142,11 @@ a32_case_707:
 	.hword	0xbf08	/* it eq */
 	.hword	0x2055	/* moveq r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30414,6 +33161,7 @@ a32_case_707:
 	.arm
 	.p2align 2
 .Larm707:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30426,6 +33174,7 @@ a32_case_708:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30440,10 +33189,11 @@ a32_case_708:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo708
+	.p2align 2
+.Lgo708:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30452,8 +33202,11 @@ a32_case_708:
 	.hword	0xbf18	/* it ne */
 	.hword	0x2055	/* movne r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30468,6 +33221,7 @@ a32_case_708:
 	.arm
 	.p2align 2
 .Larm708:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30480,6 +33234,7 @@ a32_case_709:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30494,10 +33249,11 @@ a32_case_709:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo709
+	.p2align 2
+.Lgo709:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30506,8 +33262,11 @@ a32_case_709:
 	.hword	0xbf38	/* it cc */
 	.hword	0x2055	/* movcc r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30522,6 +33281,7 @@ a32_case_709:
 	.arm
 	.p2align 2
 .Larm709:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30534,6 +33294,7 @@ a32_case_710:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30548,10 +33309,11 @@ a32_case_710:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo710
+	.p2align 2
+.Lgo710:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -30560,8 +33322,11 @@ a32_case_710:
 	.hword	0xbf28	/* it cs */
 	.hword	0x2055	/* movcs r0, #0x55 */
 	.hword	0x2266	/* movs r2, #0x66 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30576,6 +33341,7 @@ a32_case_710:
 	.arm
 	.p2align 2
 .Larm710:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30588,6 +33354,7 @@ a32_case_711:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30604,16 +33371,20 @@ a32_case_711:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo711
+	.p2align 2
+.Lgo711:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea01	/* and.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30628,6 +33399,7 @@ a32_case_711:
 	.arm
 	.p2align 2
 .Larm711:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30640,6 +33412,7 @@ a32_case_712:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30656,16 +33429,20 @@ a32_case_712:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo712
+	.p2align 2
+.Lgo712:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea01	/* and.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30680,6 +33457,7 @@ a32_case_712:
 	.arm
 	.p2align 2
 .Larm712:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30692,6 +33470,7 @@ a32_case_713:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30709,16 +33488,20 @@ a32_case_713:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo713
+	.p2align 2
+.Lgo713:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea01	/* and.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30733,6 +33516,7 @@ a32_case_713:
 	.arm
 	.p2align 2
 .Larm713:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30745,6 +33529,7 @@ a32_case_714:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30762,16 +33547,20 @@ a32_case_714:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo714
+	.p2align 2
+.Lgo714:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea01	/* and.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30786,6 +33575,7 @@ a32_case_714:
 	.arm
 	.p2align 2
 .Larm714:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30798,6 +33588,7 @@ a32_case_715:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30816,16 +33607,20 @@ a32_case_715:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo715
+	.p2align 2
+.Lgo715:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea01	/* and.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30840,6 +33635,7 @@ a32_case_715:
 	.arm
 	.p2align 2
 .Larm715:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30852,6 +33648,7 @@ a32_case_716:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30870,16 +33667,20 @@ a32_case_716:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo716
+	.p2align 2
+.Lgo716:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea01	/* and.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30894,6 +33695,7 @@ a32_case_716:
 	.arm
 	.p2align 2
 .Larm716:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30906,6 +33708,7 @@ a32_case_717:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30922,16 +33725,20 @@ a32_case_717:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo717
+	.p2align 2
+.Lgo717:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea21	/* bic.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30946,6 +33753,7 @@ a32_case_717:
 	.arm
 	.p2align 2
 .Larm717:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -30958,6 +33766,7 @@ a32_case_718:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -30974,16 +33783,20 @@ a32_case_718:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo718
+	.p2align 2
+.Lgo718:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea21	/* bic.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -30998,6 +33811,7 @@ a32_case_718:
 	.arm
 	.p2align 2
 .Larm718:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31010,6 +33824,7 @@ a32_case_719:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31027,16 +33842,20 @@ a32_case_719:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo719
+	.p2align 2
+.Lgo719:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea21	/* bic.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31051,6 +33870,7 @@ a32_case_719:
 	.arm
 	.p2align 2
 .Larm719:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31063,6 +33883,7 @@ a32_case_720:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31080,16 +33901,20 @@ a32_case_720:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo720
+	.p2align 2
+.Lgo720:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea21	/* bic.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31104,6 +33929,7 @@ a32_case_720:
 	.arm
 	.p2align 2
 .Larm720:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31116,6 +33942,7 @@ a32_case_721:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31134,16 +33961,20 @@ a32_case_721:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo721
+	.p2align 2
+.Lgo721:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea21	/* bic.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31158,6 +33989,7 @@ a32_case_721:
 	.arm
 	.p2align 2
 .Larm721:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31170,6 +34002,7 @@ a32_case_722:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31188,16 +34021,20 @@ a32_case_722:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo722
+	.p2align 2
+.Lgo722:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea21	/* bic.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31212,6 +34049,7 @@ a32_case_722:
 	.arm
 	.p2align 2
 .Larm722:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31224,6 +34062,7 @@ a32_case_723:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31240,16 +34079,20 @@ a32_case_723:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo723
+	.p2align 2
+.Lgo723:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea41	/* orr.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31264,6 +34107,7 @@ a32_case_723:
 	.arm
 	.p2align 2
 .Larm723:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31276,6 +34120,7 @@ a32_case_724:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31292,16 +34137,20 @@ a32_case_724:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo724
+	.p2align 2
+.Lgo724:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea41	/* orr.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31316,6 +34165,7 @@ a32_case_724:
 	.arm
 	.p2align 2
 .Larm724:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31328,6 +34178,7 @@ a32_case_725:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31345,16 +34196,20 @@ a32_case_725:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo725
+	.p2align 2
+.Lgo725:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea41	/* orr.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31369,6 +34224,7 @@ a32_case_725:
 	.arm
 	.p2align 2
 .Larm725:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31381,6 +34237,7 @@ a32_case_726:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31398,16 +34255,20 @@ a32_case_726:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo726
+	.p2align 2
+.Lgo726:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea41	/* orr.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31422,6 +34283,7 @@ a32_case_726:
 	.arm
 	.p2align 2
 .Larm726:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31434,6 +34296,7 @@ a32_case_727:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31452,16 +34315,20 @@ a32_case_727:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo727
+	.p2align 2
+.Lgo727:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea41	/* orr.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31476,6 +34343,7 @@ a32_case_727:
 	.arm
 	.p2align 2
 .Larm727:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31488,6 +34356,7 @@ a32_case_728:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31506,16 +34375,20 @@ a32_case_728:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo728
+	.p2align 2
+.Lgo728:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea41	/* orr.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31530,6 +34403,7 @@ a32_case_728:
 	.arm
 	.p2align 2
 .Larm728:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31542,6 +34416,7 @@ a32_case_729:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31558,16 +34433,20 @@ a32_case_729:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo729
+	.p2align 2
+.Lgo729:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea61	/* orn.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31582,6 +34461,7 @@ a32_case_729:
 	.arm
 	.p2align 2
 .Larm729:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31594,6 +34474,7 @@ a32_case_730:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31610,16 +34491,20 @@ a32_case_730:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo730
+	.p2align 2
+.Lgo730:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea61	/* orn.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31634,6 +34519,7 @@ a32_case_730:
 	.arm
 	.p2align 2
 .Larm730:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31646,6 +34532,7 @@ a32_case_731:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31663,16 +34550,20 @@ a32_case_731:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo731
+	.p2align 2
+.Lgo731:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea61	/* orn.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31687,6 +34578,7 @@ a32_case_731:
 	.arm
 	.p2align 2
 .Larm731:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31699,6 +34591,7 @@ a32_case_732:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31716,16 +34609,20 @@ a32_case_732:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo732
+	.p2align 2
+.Lgo732:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea61	/* orn.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31740,6 +34637,7 @@ a32_case_732:
 	.arm
 	.p2align 2
 .Larm732:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31752,6 +34650,7 @@ a32_case_733:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31770,16 +34669,20 @@ a32_case_733:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo733
+	.p2align 2
+.Lgo733:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea61	/* orn.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31794,6 +34697,7 @@ a32_case_733:
 	.arm
 	.p2align 2
 .Larm733:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31806,6 +34710,7 @@ a32_case_734:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31824,16 +34729,20 @@ a32_case_734:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo734
+	.p2align 2
+.Lgo734:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea61	/* orn.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31848,6 +34757,7 @@ a32_case_734:
 	.arm
 	.p2align 2
 .Larm734:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31860,6 +34770,7 @@ a32_case_735:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31876,16 +34787,20 @@ a32_case_735:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo735
+	.p2align 2
+.Lgo735:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea81	/* eor.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31900,6 +34815,7 @@ a32_case_735:
 	.arm
 	.p2align 2
 .Larm735:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31912,6 +34828,7 @@ a32_case_736:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31928,16 +34845,20 @@ a32_case_736:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo736
+	.p2align 2
+.Lgo736:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea81	/* eor.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -31952,6 +34873,7 @@ a32_case_736:
 	.arm
 	.p2align 2
 .Larm736:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -31964,6 +34886,7 @@ a32_case_737:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -31981,16 +34904,20 @@ a32_case_737:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo737
+	.p2align 2
+.Lgo737:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea81	/* eor.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32005,6 +34932,7 @@ a32_case_737:
 	.arm
 	.p2align 2
 .Larm737:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32017,6 +34945,7 @@ a32_case_738:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32034,16 +34963,20 @@ a32_case_738:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo738
+	.p2align 2
+.Lgo738:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea81	/* eor.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32058,6 +34991,7 @@ a32_case_738:
 	.arm
 	.p2align 2
 .Larm738:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32070,6 +35004,7 @@ a32_case_739:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32088,16 +35023,20 @@ a32_case_739:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo739
+	.p2align 2
+.Lgo739:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea81	/* eor.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32112,6 +35051,7 @@ a32_case_739:
 	.arm
 	.p2align 2
 .Larm739:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32124,6 +35064,7 @@ a32_case_740:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32142,16 +35083,20 @@ a32_case_740:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo740
+	.p2align 2
+.Lgo740:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ea81	/* eor.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32166,6 +35111,7 @@ a32_case_740:
 	.arm
 	.p2align 2
 .Larm740:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32178,6 +35124,7 @@ a32_case_741:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32194,16 +35141,20 @@ a32_case_741:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo741
+	.p2align 2
+.Lgo741:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb01	/* add.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32218,6 +35169,7 @@ a32_case_741:
 	.arm
 	.p2align 2
 .Larm741:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32230,6 +35182,7 @@ a32_case_742:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32246,16 +35199,20 @@ a32_case_742:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo742
+	.p2align 2
+.Lgo742:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb01	/* add.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32270,6 +35227,7 @@ a32_case_742:
 	.arm
 	.p2align 2
 .Larm742:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32282,6 +35240,7 @@ a32_case_743:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32299,16 +35258,20 @@ a32_case_743:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo743
+	.p2align 2
+.Lgo743:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb01	/* add.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32323,6 +35286,7 @@ a32_case_743:
 	.arm
 	.p2align 2
 .Larm743:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32335,6 +35299,7 @@ a32_case_744:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32352,16 +35317,20 @@ a32_case_744:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo744
+	.p2align 2
+.Lgo744:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb01	/* add.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32376,6 +35345,7 @@ a32_case_744:
 	.arm
 	.p2align 2
 .Larm744:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32388,6 +35358,7 @@ a32_case_745:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32406,16 +35377,20 @@ a32_case_745:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo745
+	.p2align 2
+.Lgo745:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb01	/* add.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32430,6 +35405,7 @@ a32_case_745:
 	.arm
 	.p2align 2
 .Larm745:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32442,6 +35418,7 @@ a32_case_746:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32460,16 +35437,20 @@ a32_case_746:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo746
+	.p2align 2
+.Lgo746:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb01	/* add.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32484,6 +35465,7 @@ a32_case_746:
 	.arm
 	.p2align 2
 .Larm746:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32496,6 +35478,7 @@ a32_case_747:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32512,16 +35495,20 @@ a32_case_747:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo747
+	.p2align 2
+.Lgo747:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb41	/* adc.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32536,6 +35523,7 @@ a32_case_747:
 	.arm
 	.p2align 2
 .Larm747:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32548,6 +35536,7 @@ a32_case_748:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32564,16 +35553,20 @@ a32_case_748:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo748
+	.p2align 2
+.Lgo748:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb41	/* adc.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32588,6 +35581,7 @@ a32_case_748:
 	.arm
 	.p2align 2
 .Larm748:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32600,6 +35594,7 @@ a32_case_749:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32617,16 +35612,20 @@ a32_case_749:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo749
+	.p2align 2
+.Lgo749:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb41	/* adc.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32641,6 +35640,7 @@ a32_case_749:
 	.arm
 	.p2align 2
 .Larm749:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32653,6 +35653,7 @@ a32_case_750:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32670,16 +35671,20 @@ a32_case_750:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo750
+	.p2align 2
+.Lgo750:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb41	/* adc.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32694,6 +35699,7 @@ a32_case_750:
 	.arm
 	.p2align 2
 .Larm750:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32706,6 +35712,7 @@ a32_case_751:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32724,16 +35731,20 @@ a32_case_751:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo751
+	.p2align 2
+.Lgo751:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb41	/* adc.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32748,6 +35759,7 @@ a32_case_751:
 	.arm
 	.p2align 2
 .Larm751:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32760,6 +35772,7 @@ a32_case_752:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32778,16 +35791,20 @@ a32_case_752:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo752
+	.p2align 2
+.Lgo752:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb41	/* adc.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32802,6 +35819,7 @@ a32_case_752:
 	.arm
 	.p2align 2
 .Larm752:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32814,6 +35832,7 @@ a32_case_753:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32830,16 +35849,20 @@ a32_case_753:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo753
+	.p2align 2
+.Lgo753:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb61	/* sbc.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32854,6 +35877,7 @@ a32_case_753:
 	.arm
 	.p2align 2
 .Larm753:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32866,6 +35890,7 @@ a32_case_754:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32882,16 +35907,20 @@ a32_case_754:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo754
+	.p2align 2
+.Lgo754:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb61	/* sbc.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32906,6 +35935,7 @@ a32_case_754:
 	.arm
 	.p2align 2
 .Larm754:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32918,6 +35948,7 @@ a32_case_755:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32935,16 +35966,20 @@ a32_case_755:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo755
+	.p2align 2
+.Lgo755:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb61	/* sbc.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -32959,6 +35994,7 @@ a32_case_755:
 	.arm
 	.p2align 2
 .Larm755:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -32971,6 +36007,7 @@ a32_case_756:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -32988,16 +36025,20 @@ a32_case_756:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo756
+	.p2align 2
+.Lgo756:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb61	/* sbc.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33012,6 +36053,7 @@ a32_case_756:
 	.arm
 	.p2align 2
 .Larm756:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33024,6 +36066,7 @@ a32_case_757:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33042,16 +36085,20 @@ a32_case_757:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo757
+	.p2align 2
+.Lgo757:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eb61	/* sbc.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33066,6 +36113,7 @@ a32_case_757:
 	.arm
 	.p2align 2
 .Larm757:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33078,6 +36126,7 @@ a32_case_758:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33096,16 +36145,20 @@ a32_case_758:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo758
+	.p2align 2
+.Lgo758:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eb61	/* sbc.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33120,6 +36173,7 @@ a32_case_758:
 	.arm
 	.p2align 2
 .Larm758:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33132,6 +36186,7 @@ a32_case_759:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33148,16 +36203,20 @@ a32_case_759:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo759
+	.p2align 2
+.Lgo759:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eba1	/* sub.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33172,6 +36231,7 @@ a32_case_759:
 	.arm
 	.p2align 2
 .Larm759:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33184,6 +36244,7 @@ a32_case_760:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33200,16 +36261,20 @@ a32_case_760:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo760
+	.p2align 2
+.Lgo760:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eba1	/* sub.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33224,6 +36289,7 @@ a32_case_760:
 	.arm
 	.p2align 2
 .Larm760:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33236,6 +36302,7 @@ a32_case_761:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33253,16 +36320,20 @@ a32_case_761:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo761
+	.p2align 2
+.Lgo761:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eba1	/* sub.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33277,6 +36348,7 @@ a32_case_761:
 	.arm
 	.p2align 2
 .Larm761:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33289,6 +36361,7 @@ a32_case_762:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33306,16 +36379,20 @@ a32_case_762:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo762
+	.p2align 2
+.Lgo762:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eba1	/* sub.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33330,6 +36407,7 @@ a32_case_762:
 	.arm
 	.p2align 2
 .Larm762:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33342,6 +36420,7 @@ a32_case_763:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33360,16 +36439,20 @@ a32_case_763:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo763
+	.p2align 2
+.Lgo763:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002eba1	/* sub.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33384,6 +36467,7 @@ a32_case_763:
 	.arm
 	.p2align 2
 .Larm763:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33396,6 +36480,7 @@ a32_case_764:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33414,16 +36499,20 @@ a32_case_764:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo764
+	.p2align 2
+.Lgo764:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082eba1	/* sub.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33438,6 +36527,7 @@ a32_case_764:
 	.arm
 	.p2align 2
 .Larm764:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33450,6 +36540,7 @@ a32_case_765:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33466,16 +36557,20 @@ a32_case_765:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo765
+	.p2align 2
+.Lgo765:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ebc1	/* rsb.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33490,6 +36585,7 @@ a32_case_765:
 	.arm
 	.p2align 2
 .Larm765:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33502,6 +36598,7 @@ a32_case_766:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33518,16 +36615,20 @@ a32_case_766:
 	mov	r11, #0
 	movw	r1, #0x0000
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo766
+	.p2align 2
+.Lgo766:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ebc1	/* rsb.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33542,6 +36643,7 @@ a32_case_766:
 	.arm
 	.p2align 2
 .Larm766:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33554,6 +36656,7 @@ a32_case_767:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33571,16 +36674,20 @@ a32_case_767:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo767
+	.p2align 2
+.Lgo767:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ebc1	/* rsb.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33595,6 +36702,7 @@ a32_case_767:
 	.arm
 	.p2align 2
 .Larm767:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33607,6 +36715,7 @@ a32_case_768:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33624,16 +36733,20 @@ a32_case_768:
 	movw	r1, #0x0001
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo768
+	.p2align 2
+.Lgo768:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ebc1	/* rsb.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33648,6 +36761,7 @@ a32_case_768:
 	.arm
 	.p2align 2
 .Larm768:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33660,6 +36774,7 @@ a32_case_769:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33678,16 +36793,20 @@ a32_case_769:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo769
+	.p2align 2
+.Lgo769:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ebc1	/* rsb.w r0, r1, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33702,6 +36821,7 @@ a32_case_769:
 	.arm
 	.p2align 2
 .Larm769:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33714,6 +36834,7 @@ a32_case_770:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33732,16 +36853,20 @@ a32_case_770:
 	movt	r1, #0xffff
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo770
+	.p2align 2
+.Lgo770:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0082ebc1	/* rsb.w r0, r1, r2 lsl #2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33756,6 +36881,7 @@ a32_case_770:
 	.arm
 	.p2align 2
 .Larm770:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33768,6 +36894,7 @@ a32_case_771:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33783,16 +36910,20 @@ a32_case_771:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo771
+	.p2align 2
+.Lgo771:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33807,6 +36938,7 @@ a32_case_771:
 	.arm
 	.p2align 2
 .Larm771:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33819,6 +36951,7 @@ a32_case_772:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33834,16 +36967,20 @@ a32_case_772:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo772
+	.p2align 2
+.Lgo772:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33858,6 +36995,7 @@ a32_case_772:
 	.arm
 	.p2align 2
 .Larm772:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33870,6 +37008,7 @@ a32_case_773:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33885,16 +37024,20 @@ a32_case_773:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo773
+	.p2align 2
+.Lgo773:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33909,6 +37052,7 @@ a32_case_773:
 	.arm
 	.p2align 2
 .Larm773:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33921,6 +37065,7 @@ a32_case_774:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33936,16 +37081,20 @@ a32_case_774:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo774
+	.p2align 2
+.Lgo774:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -33960,6 +37109,7 @@ a32_case_774:
 	.arm
 	.p2align 2
 .Larm774:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -33972,6 +37122,7 @@ a32_case_775:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -33988,16 +37139,20 @@ a32_case_775:
 	mov	r11, #0
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo775
+	.p2align 2
+.Lgo775:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34012,6 +37167,7 @@ a32_case_775:
 	.arm
 	.p2align 2
 .Larm775:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34024,6 +37180,7 @@ a32_case_776:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34040,16 +37197,20 @@ a32_case_776:
 	mov	r11, #0
 	movw	r2, #0xffff
 	movt	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo776
+	.p2align 2
+.Lgo776:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34064,6 +37225,7 @@ a32_case_776:
 	.arm
 	.p2align 2
 .Larm776:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34076,6 +37238,7 @@ a32_case_777:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34092,16 +37255,20 @@ a32_case_777:
 	mov	r11, #0
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo777
+	.p2align 2
+.Lgo777:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34116,6 +37283,7 @@ a32_case_777:
 	.arm
 	.p2align 2
 .Larm777:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34128,6 +37296,7 @@ a32_case_778:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34144,16 +37313,20 @@ a32_case_778:
 	mov	r11, #0
 	movw	r2, #0xffff
 	movt	r2, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo778
+	.p2align 2
+.Lgo778:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34168,6 +37341,7 @@ a32_case_778:
 	.arm
 	.p2align 2
 .Larm778:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34180,6 +37354,7 @@ a32_case_779:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34196,16 +37371,20 @@ a32_case_779:
 	mov	r11, #0
 	movw	r2, #0x0000
 	movt	r2, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo779
+	.p2align 2
+.Lgo779:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34220,6 +37399,7 @@ a32_case_779:
 	.arm
 	.p2align 2
 .Larm779:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34232,6 +37412,7 @@ a32_case_780:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34248,16 +37429,20 @@ a32_case_780:
 	mov	r11, #0
 	movw	r2, #0x0000
 	movt	r2, #0x8000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo780
+	.p2align 2
+.Lgo780:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34272,6 +37457,7 @@ a32_case_780:
 	.arm
 	.p2align 2
 .Larm780:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34284,6 +37470,7 @@ a32_case_781:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34299,16 +37486,20 @@ a32_case_781:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo781
+	.p2align 2
+.Lgo781:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea4f	/* mov.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34323,6 +37514,7 @@ a32_case_781:
 	.arm
 	.p2align 2
 .Larm781:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34335,6 +37527,7 @@ a32_case_782:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34350,16 +37543,20 @@ a32_case_782:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r2, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo782
+	.p2align 2
+.Lgo782:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002ea6f	/* mvn.w r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34374,6 +37571,7 @@ a32_case_782:
 	.arm
 	.p2align 2
 .Larm782:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34386,6 +37584,7 @@ a32_case_783:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34402,16 +37601,20 @@ a32_case_783:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo783
+	.p2align 2
+.Lgo783:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f001	/* and.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34426,6 +37629,7 @@ a32_case_783:
 	.arm
 	.p2align 2
 .Larm783:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34438,6 +37642,7 @@ a32_case_784:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34454,16 +37659,20 @@ a32_case_784:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo784
+	.p2align 2
+.Lgo784:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff001	/* and.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34478,6 +37687,7 @@ a32_case_784:
 	.arm
 	.p2align 2
 .Larm784:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34490,6 +37700,7 @@ a32_case_785:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34506,16 +37717,20 @@ a32_case_785:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo785
+	.p2align 2
+.Lgo785:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f401	/* and.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34530,6 +37745,7 @@ a32_case_785:
 	.arm
 	.p2align 2
 .Larm785:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34542,6 +37758,7 @@ a32_case_786:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34558,16 +37775,20 @@ a32_case_786:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo786
+	.p2align 2
+.Lgo786:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f001	/* and.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34582,6 +37803,7 @@ a32_case_786:
 	.arm
 	.p2align 2
 .Larm786:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34594,6 +37816,7 @@ a32_case_787:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34610,16 +37833,20 @@ a32_case_787:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo787
+	.p2align 2
+.Lgo787:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff401	/* and.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34634,6 +37861,7 @@ a32_case_787:
 	.arm
 	.p2align 2
 .Larm787:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34646,6 +37874,7 @@ a32_case_788:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34662,16 +37891,20 @@ a32_case_788:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo788
+	.p2align 2
+.Lgo788:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff001	/* and.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34686,6 +37919,7 @@ a32_case_788:
 	.arm
 	.p2align 2
 .Larm788:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34698,6 +37932,7 @@ a32_case_789:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34714,16 +37949,20 @@ a32_case_789:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo789
+	.p2align 2
+.Lgo789:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f021	/* bic.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34738,6 +37977,7 @@ a32_case_789:
 	.arm
 	.p2align 2
 .Larm789:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34750,6 +37990,7 @@ a32_case_790:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34766,16 +38007,20 @@ a32_case_790:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo790
+	.p2align 2
+.Lgo790:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff021	/* bic.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34790,6 +38035,7 @@ a32_case_790:
 	.arm
 	.p2align 2
 .Larm790:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34802,6 +38048,7 @@ a32_case_791:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34818,16 +38065,20 @@ a32_case_791:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo791
+	.p2align 2
+.Lgo791:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f421	/* bic.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34842,6 +38093,7 @@ a32_case_791:
 	.arm
 	.p2align 2
 .Larm791:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34854,6 +38106,7 @@ a32_case_792:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34870,16 +38123,20 @@ a32_case_792:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo792
+	.p2align 2
+.Lgo792:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f021	/* bic.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34894,6 +38151,7 @@ a32_case_792:
 	.arm
 	.p2align 2
 .Larm792:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34906,6 +38164,7 @@ a32_case_793:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34922,16 +38181,20 @@ a32_case_793:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo793
+	.p2align 2
+.Lgo793:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff421	/* bic.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34946,6 +38209,7 @@ a32_case_793:
 	.arm
 	.p2align 2
 .Larm793:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -34958,6 +38222,7 @@ a32_case_794:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -34974,16 +38239,20 @@ a32_case_794:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo794
+	.p2align 2
+.Lgo794:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff021	/* bic.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -34998,6 +38267,7 @@ a32_case_794:
 	.arm
 	.p2align 2
 .Larm794:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35010,6 +38280,7 @@ a32_case_795:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35026,16 +38297,20 @@ a32_case_795:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo795
+	.p2align 2
+.Lgo795:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f041	/* orr.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35050,6 +38325,7 @@ a32_case_795:
 	.arm
 	.p2align 2
 .Larm795:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35062,6 +38338,7 @@ a32_case_796:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35078,16 +38355,20 @@ a32_case_796:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo796
+	.p2align 2
+.Lgo796:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff041	/* orr.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35102,6 +38383,7 @@ a32_case_796:
 	.arm
 	.p2align 2
 .Larm796:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35114,6 +38396,7 @@ a32_case_797:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35130,16 +38413,20 @@ a32_case_797:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo797
+	.p2align 2
+.Lgo797:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f441	/* orr.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35154,6 +38441,7 @@ a32_case_797:
 	.arm
 	.p2align 2
 .Larm797:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35166,6 +38454,7 @@ a32_case_798:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35182,16 +38471,20 @@ a32_case_798:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo798
+	.p2align 2
+.Lgo798:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f041	/* orr.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35206,6 +38499,7 @@ a32_case_798:
 	.arm
 	.p2align 2
 .Larm798:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35218,6 +38512,7 @@ a32_case_799:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35234,16 +38529,20 @@ a32_case_799:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo799
+	.p2align 2
+.Lgo799:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff441	/* orr.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35258,6 +38557,7 @@ a32_case_799:
 	.arm
 	.p2align 2
 .Larm799:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35270,6 +38570,7 @@ a32_case_800:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35286,16 +38587,20 @@ a32_case_800:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo800
+	.p2align 2
+.Lgo800:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff041	/* orr.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35310,6 +38615,7 @@ a32_case_800:
 	.arm
 	.p2align 2
 .Larm800:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35322,6 +38628,7 @@ a32_case_801:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35338,16 +38645,20 @@ a32_case_801:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo801
+	.p2align 2
+.Lgo801:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f061	/* orn.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35362,6 +38673,7 @@ a32_case_801:
 	.arm
 	.p2align 2
 .Larm801:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35374,6 +38686,7 @@ a32_case_802:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35390,16 +38703,20 @@ a32_case_802:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo802
+	.p2align 2
+.Lgo802:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff061	/* orn.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35414,6 +38731,7 @@ a32_case_802:
 	.arm
 	.p2align 2
 .Larm802:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35426,6 +38744,7 @@ a32_case_803:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35442,16 +38761,20 @@ a32_case_803:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo803
+	.p2align 2
+.Lgo803:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f461	/* orn.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35466,6 +38789,7 @@ a32_case_803:
 	.arm
 	.p2align 2
 .Larm803:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35478,6 +38802,7 @@ a32_case_804:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35494,16 +38819,20 @@ a32_case_804:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo804
+	.p2align 2
+.Lgo804:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f061	/* orn.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35518,6 +38847,7 @@ a32_case_804:
 	.arm
 	.p2align 2
 .Larm804:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35530,6 +38860,7 @@ a32_case_805:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35546,16 +38877,20 @@ a32_case_805:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo805
+	.p2align 2
+.Lgo805:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff461	/* orn.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35570,6 +38905,7 @@ a32_case_805:
 	.arm
 	.p2align 2
 .Larm805:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35582,6 +38918,7 @@ a32_case_806:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35598,16 +38935,20 @@ a32_case_806:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo806
+	.p2align 2
+.Lgo806:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff061	/* orn.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35622,6 +38963,7 @@ a32_case_806:
 	.arm
 	.p2align 2
 .Larm806:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35634,6 +38976,7 @@ a32_case_807:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35650,16 +38993,20 @@ a32_case_807:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo807
+	.p2align 2
+.Lgo807:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f081	/* eor.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35674,6 +39021,7 @@ a32_case_807:
 	.arm
 	.p2align 2
 .Larm807:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35686,6 +39034,7 @@ a32_case_808:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35702,16 +39051,20 @@ a32_case_808:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo808
+	.p2align 2
+.Lgo808:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff081	/* eor.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35726,6 +39079,7 @@ a32_case_808:
 	.arm
 	.p2align 2
 .Larm808:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35738,6 +39092,7 @@ a32_case_809:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35754,16 +39109,20 @@ a32_case_809:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo809
+	.p2align 2
+.Lgo809:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f481	/* eor.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35778,6 +39137,7 @@ a32_case_809:
 	.arm
 	.p2align 2
 .Larm809:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35790,6 +39150,7 @@ a32_case_810:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35806,16 +39167,20 @@ a32_case_810:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo810
+	.p2align 2
+.Lgo810:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f081	/* eor.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35830,6 +39195,7 @@ a32_case_810:
 	.arm
 	.p2align 2
 .Larm810:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35842,6 +39208,7 @@ a32_case_811:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35858,16 +39225,20 @@ a32_case_811:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo811
+	.p2align 2
+.Lgo811:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff481	/* eor.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35882,6 +39253,7 @@ a32_case_811:
 	.arm
 	.p2align 2
 .Larm811:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35894,6 +39266,7 @@ a32_case_812:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35910,16 +39283,20 @@ a32_case_812:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo812
+	.p2align 2
+.Lgo812:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff081	/* eor.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35934,6 +39311,7 @@ a32_case_812:
 	.arm
 	.p2align 2
 .Larm812:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35946,6 +39324,7 @@ a32_case_813:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -35962,16 +39341,20 @@ a32_case_813:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo813
+	.p2align 2
+.Lgo813:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f101	/* add.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -35986,6 +39369,7 @@ a32_case_813:
 	.arm
 	.p2align 2
 .Larm813:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -35998,6 +39382,7 @@ a32_case_814:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36014,16 +39399,20 @@ a32_case_814:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo814
+	.p2align 2
+.Lgo814:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff101	/* add.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36038,6 +39427,7 @@ a32_case_814:
 	.arm
 	.p2align 2
 .Larm814:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36050,6 +39440,7 @@ a32_case_815:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36066,16 +39457,20 @@ a32_case_815:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo815
+	.p2align 2
+.Lgo815:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f501	/* add.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36090,6 +39485,7 @@ a32_case_815:
 	.arm
 	.p2align 2
 .Larm815:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36102,6 +39498,7 @@ a32_case_816:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36118,16 +39515,20 @@ a32_case_816:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo816
+	.p2align 2
+.Lgo816:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f101	/* add.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36142,6 +39543,7 @@ a32_case_816:
 	.arm
 	.p2align 2
 .Larm816:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36154,6 +39556,7 @@ a32_case_817:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36170,16 +39573,20 @@ a32_case_817:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo817
+	.p2align 2
+.Lgo817:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff501	/* add.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36194,6 +39601,7 @@ a32_case_817:
 	.arm
 	.p2align 2
 .Larm817:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36206,6 +39614,7 @@ a32_case_818:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36222,16 +39631,20 @@ a32_case_818:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo818
+	.p2align 2
+.Lgo818:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff101	/* add.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36246,6 +39659,7 @@ a32_case_818:
 	.arm
 	.p2align 2
 .Larm818:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36258,6 +39672,7 @@ a32_case_819:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36274,16 +39689,20 @@ a32_case_819:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo819
+	.p2align 2
+.Lgo819:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f141	/* adc.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36298,6 +39717,7 @@ a32_case_819:
 	.arm
 	.p2align 2
 .Larm819:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36310,6 +39730,7 @@ a32_case_820:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36326,16 +39747,20 @@ a32_case_820:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo820
+	.p2align 2
+.Lgo820:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff141	/* adc.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36350,6 +39775,7 @@ a32_case_820:
 	.arm
 	.p2align 2
 .Larm820:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36362,6 +39788,7 @@ a32_case_821:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36378,16 +39805,20 @@ a32_case_821:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo821
+	.p2align 2
+.Lgo821:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f541	/* adc.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36402,6 +39833,7 @@ a32_case_821:
 	.arm
 	.p2align 2
 .Larm821:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36414,6 +39846,7 @@ a32_case_822:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36430,16 +39863,20 @@ a32_case_822:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo822
+	.p2align 2
+.Lgo822:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f141	/* adc.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36454,6 +39891,7 @@ a32_case_822:
 	.arm
 	.p2align 2
 .Larm822:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36466,6 +39904,7 @@ a32_case_823:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36482,16 +39921,20 @@ a32_case_823:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo823
+	.p2align 2
+.Lgo823:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff541	/* adc.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36506,6 +39949,7 @@ a32_case_823:
 	.arm
 	.p2align 2
 .Larm823:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36518,6 +39962,7 @@ a32_case_824:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36534,16 +39979,20 @@ a32_case_824:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo824
+	.p2align 2
+.Lgo824:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff141	/* adc.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36558,6 +40007,7 @@ a32_case_824:
 	.arm
 	.p2align 2
 .Larm824:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36570,6 +40020,7 @@ a32_case_825:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36586,16 +40037,20 @@ a32_case_825:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo825
+	.p2align 2
+.Lgo825:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f161	/* sbc.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36610,6 +40065,7 @@ a32_case_825:
 	.arm
 	.p2align 2
 .Larm825:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36622,6 +40078,7 @@ a32_case_826:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36638,16 +40095,20 @@ a32_case_826:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo826
+	.p2align 2
+.Lgo826:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff161	/* sbc.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36662,6 +40123,7 @@ a32_case_826:
 	.arm
 	.p2align 2
 .Larm826:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36674,6 +40136,7 @@ a32_case_827:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36690,16 +40153,20 @@ a32_case_827:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo827
+	.p2align 2
+.Lgo827:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f561	/* sbc.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36714,6 +40181,7 @@ a32_case_827:
 	.arm
 	.p2align 2
 .Larm827:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36726,6 +40194,7 @@ a32_case_828:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36742,16 +40211,20 @@ a32_case_828:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo828
+	.p2align 2
+.Lgo828:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f161	/* sbc.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36766,6 +40239,7 @@ a32_case_828:
 	.arm
 	.p2align 2
 .Larm828:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36778,6 +40252,7 @@ a32_case_829:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36794,16 +40269,20 @@ a32_case_829:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo829
+	.p2align 2
+.Lgo829:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff561	/* sbc.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36818,6 +40297,7 @@ a32_case_829:
 	.arm
 	.p2align 2
 .Larm829:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36830,6 +40310,7 @@ a32_case_830:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36846,16 +40327,20 @@ a32_case_830:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo830
+	.p2align 2
+.Lgo830:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff161	/* sbc.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36870,6 +40355,7 @@ a32_case_830:
 	.arm
 	.p2align 2
 .Larm830:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36882,6 +40368,7 @@ a32_case_831:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36898,16 +40385,20 @@ a32_case_831:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo831
+	.p2align 2
+.Lgo831:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f1a1	/* sub.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36922,6 +40413,7 @@ a32_case_831:
 	.arm
 	.p2align 2
 .Larm831:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36934,6 +40426,7 @@ a32_case_832:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -36950,16 +40443,20 @@ a32_case_832:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo832
+	.p2align 2
+.Lgo832:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff1a1	/* sub.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -36974,6 +40471,7 @@ a32_case_832:
 	.arm
 	.p2align 2
 .Larm832:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -36986,6 +40484,7 @@ a32_case_833:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37002,16 +40501,20 @@ a32_case_833:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo833
+	.p2align 2
+.Lgo833:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f5a1	/* sub.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37026,6 +40529,7 @@ a32_case_833:
 	.arm
 	.p2align 2
 .Larm833:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37038,6 +40542,7 @@ a32_case_834:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37054,16 +40559,20 @@ a32_case_834:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo834
+	.p2align 2
+.Lgo834:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f1a1	/* sub.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37078,6 +40587,7 @@ a32_case_834:
 	.arm
 	.p2align 2
 .Larm834:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37090,6 +40600,7 @@ a32_case_835:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37106,16 +40617,20 @@ a32_case_835:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo835
+	.p2align 2
+.Lgo835:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff5a1	/* sub.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37130,6 +40645,7 @@ a32_case_835:
 	.arm
 	.p2align 2
 .Larm835:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37142,6 +40658,7 @@ a32_case_836:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37158,16 +40675,20 @@ a32_case_836:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo836
+	.p2align 2
+.Lgo836:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff1a1	/* sub.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37182,6 +40703,7 @@ a32_case_836:
 	.arm
 	.p2align 2
 .Larm836:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37194,6 +40716,7 @@ a32_case_837:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37210,16 +40733,20 @@ a32_case_837:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo837
+	.p2align 2
+.Lgo837:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0001f1c1	/* rsb.w r0, r1, #0x1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37234,6 +40761,7 @@ a32_case_837:
 	.arm
 	.p2align 2
 .Larm837:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37246,6 +40774,7 @@ a32_case_838:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37262,16 +40791,20 @@ a32_case_838:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo838
+	.p2align 2
+.Lgo838:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x00fff1c1	/* rsb.w r0, r1, #0xff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37286,6 +40819,7 @@ a32_case_838:
 	.arm
 	.p2align 2
 .Larm838:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37298,6 +40832,7 @@ a32_case_839:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37314,16 +40849,20 @@ a32_case_839:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo839
+	.p2align 2
+.Lgo839:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x7080f5c1	/* rsb.w r0, r1, #0x100 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37338,6 +40877,7 @@ a32_case_839:
 	.arm
 	.p2align 2
 .Larm839:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37350,6 +40890,7 @@ a32_case_840:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37366,16 +40907,20 @@ a32_case_840:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo840
+	.p2align 2
+.Lgo840:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x4000f1c1	/* rsb.w r0, r1, #0x80000000 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37390,6 +40935,7 @@ a32_case_840:
 	.arm
 	.p2align 2
 .Larm840:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37402,6 +40948,7 @@ a32_case_841:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37418,16 +40965,20 @@ a32_case_841:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo841
+	.p2align 2
+.Lgo841:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x407ff5c1	/* rsb.w r0, r1, #0xff00 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37442,6 +40993,7 @@ a32_case_841:
 	.arm
 	.p2align 2
 .Larm841:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37454,6 +41006,7 @@ a32_case_842:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37470,16 +41023,20 @@ a32_case_842:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo842
+	.p2align 2
+.Lgo842:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff1c1	/* rsb.w r0, r1, #0xf */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37494,6 +41051,7 @@ a32_case_842:
 	.arm
 	.p2align 2
 .Larm842:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37506,6 +41064,7 @@ a32_case_843:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37520,16 +41079,20 @@ a32_case_843:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo843
+	.p2align 2
+.Lgo843:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x2034f241	/* movw r0, #0x1234 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37544,6 +41107,7 @@ a32_case_843:
 	.arm
 	.p2align 2
 .Larm843:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37556,6 +41120,7 @@ a32_case_844:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37570,17 +41135,21 @@ a32_case_844:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo844
+	.p2align 2
+.Lgo844:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x2034f2c1	/* movt r0, #0x1234 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37595,6 +41164,7 @@ a32_case_844:
 	.arm
 	.p2align 2
 .Larm844:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37607,6 +41177,7 @@ a32_case_845:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37621,16 +41192,20 @@ a32_case_845:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo845
+	.p2align 2
+.Lgo845:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x60eff64b	/* movw r0, #0xbeef */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37645,6 +41220,7 @@ a32_case_845:
 	.arm
 	.p2align 2
 .Larm845:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37657,6 +41233,7 @@ a32_case_846:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37671,17 +41248,21 @@ a32_case_846:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo846
+	.p2align 2
+.Lgo846:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x60eff6cb	/* movt r0, #0xbeef */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37696,6 +41277,7 @@ a32_case_846:
 	.arm
 	.p2align 2
 .Larm846:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37708,6 +41290,7 @@ a32_case_847:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37722,16 +41305,20 @@ a32_case_847:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo847
+	.p2align 2
+.Lgo847:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0000f240	/* movw r0, #0x0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37746,6 +41333,7 @@ a32_case_847:
 	.arm
 	.p2align 2
 .Larm847:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37758,6 +41346,7 @@ a32_case_848:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37772,17 +41361,21 @@ a32_case_848:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo848
+	.p2align 2
+.Lgo848:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x0000f2c0	/* movt r0, #0x0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37797,6 +41390,7 @@ a32_case_848:
 	.arm
 	.p2align 2
 .Larm848:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37809,6 +41403,7 @@ a32_case_849:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37823,16 +41418,20 @@ a32_case_849:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo849
+	.p2align 2
+.Lgo849:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x70fff64f	/* movw r0, #0xffff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37847,6 +41446,7 @@ a32_case_849:
 	.arm
 	.p2align 2
 .Larm849:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37859,6 +41459,7 @@ a32_case_850:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37873,17 +41474,21 @@ a32_case_850:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo850
+	.p2align 2
+.Lgo850:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.hword	0x20aa	/* movs r0, #0xAA */
 	.word	0x70fff6cf	/* movt r0, #0xffff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37898,6 +41503,7 @@ a32_case_850:
 	.arm
 	.p2align 2
 .Larm850:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37910,6 +41516,7 @@ a32_case_851:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37925,16 +41532,20 @@ a32_case_851:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo851
+	.p2align 2
+.Lgo851:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1023f201	/* addw r0, r1, #0x123 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -37949,6 +41560,7 @@ a32_case_851:
 	.arm
 	.p2align 2
 .Larm851:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -37961,6 +41573,7 @@ a32_case_852:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -37976,16 +41589,20 @@ a32_case_852:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo852
+	.p2align 2
+.Lgo852:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1023f2a1	/* subw r0, r1, #0x123 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38000,6 +41617,7 @@ a32_case_852:
 	.arm
 	.p2align 2
 .Larm852:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38012,6 +41630,7 @@ a32_case_853:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38027,16 +41646,20 @@ a32_case_853:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo853
+	.p2align 2
+.Lgo853:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x70fff601	/* addw r0, r1, #0xfff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38051,6 +41674,7 @@ a32_case_853:
 	.arm
 	.p2align 2
 .Larm853:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38063,6 +41687,7 @@ a32_case_854:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38078,16 +41703,20 @@ a32_case_854:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo854
+	.p2align 2
+.Lgo854:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x70fff6a1	/* subw r0, r1, #0xfff */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38102,6 +41731,7 @@ a32_case_854:
 	.arm
 	.p2align 2
 .Larm854:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38114,6 +41744,7 @@ a32_case_855:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38129,16 +41760,20 @@ a32_case_855:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo855
+	.p2align 2
+.Lgo855:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0010f201	/* addw r0, r1, #0x10 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38153,6 +41788,7 @@ a32_case_855:
 	.arm
 	.p2align 2
 .Larm855:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38165,6 +41801,7 @@ a32_case_856:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38180,16 +41817,20 @@ a32_case_856:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo856
+	.p2align 2
+.Lgo856:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0010f2a1	/* subw r0, r1, #0x10 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38204,6 +41845,7 @@ a32_case_856:
 	.arm
 	.p2align 2
 .Larm856:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38216,6 +41858,7 @@ a32_case_857:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38232,17 +41875,21 @@ a32_case_857:
 	mov	r11, #0
 	movw	r0, #0x2468
 	movt	r0, #0x1357
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo857
+	.p2align 2
+.Lgo857:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0000f8c9	/* str.w r0, [r9, #0] */
 	.word	0x1000f8d9	/* ldr.w r1, [r9, #0] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38257,6 +41904,7 @@ a32_case_857:
 	.arm
 	.p2align 2
 .Larm857:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38269,6 +41917,7 @@ a32_case_858:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38285,17 +41934,21 @@ a32_case_858:
 	mov	r11, #0
 	movw	r0, #0x2468
 	movt	r0, #0x1357
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo858
+	.p2align 2
+.Lgo858:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0004f8c9	/* str.w r0, [r9, #4] */
 	.word	0x1004f8d9	/* ldr.w r1, [r9, #4] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38310,6 +41963,7 @@ a32_case_858:
 	.arm
 	.p2align 2
 .Larm858:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38322,6 +41976,7 @@ a32_case_859:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38338,17 +41993,21 @@ a32_case_859:
 	mov	r11, #0
 	movw	r0, #0x2468
 	movt	r0, #0x1357
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo859
+	.p2align 2
+.Lgo859:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0040f8c9	/* str.w r0, [r9, #64] */
 	.word	0x1040f8d9	/* ldr.w r1, [r9, #64] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38363,6 +42022,7 @@ a32_case_859:
 	.arm
 	.p2align 2
 .Larm859:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38375,6 +42035,7 @@ a32_case_860:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38391,17 +42052,21 @@ a32_case_860:
 	mov	r11, #0
 	movw	r0, #0x2468
 	movt	r0, #0x1357
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo860
+	.p2align 2
+.Lgo860:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0100f8c9	/* str.w r0, [r9, #256] */
 	.word	0x1100f8d9	/* ldr.w r1, [r9, #256] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38416,6 +42081,7 @@ a32_case_860:
 	.arm
 	.p2align 2
 .Larm860:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38428,6 +42094,7 @@ a32_case_861:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38442,10 +42109,11 @@ a32_case_861:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo861
+	.p2align 2
+.Lgo861:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -38453,8 +42121,11 @@ a32_case_861:
 	.word	0x1c04f859	/* ldr.w r1, [r9, #-4] */
 	.hword	0x46cd	/* mov sp, r9 */
 	.hword	0xb010	/* add sp, #64 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38469,6 +42140,7 @@ a32_case_861:
 	.arm
 	.p2align 2
 .Larm861:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38481,6 +42153,7 @@ a32_case_862:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38495,10 +42168,11 @@ a32_case_862:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo862
+	.p2align 2
+.Lgo862:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -38506,8 +42180,11 @@ a32_case_862:
 	.word	0x1c40f859	/* ldr.w r1, [r9, #-64] */
 	.hword	0x46cd	/* mov sp, r9 */
 	.hword	0xb010	/* add sp, #64 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38522,6 +42199,7 @@ a32_case_862:
 	.arm
 	.p2align 2
 .Larm862:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38534,6 +42212,7 @@ a32_case_863:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38551,17 +42230,21 @@ a32_case_863:
 	movw	r0, #0xace0
 	movt	r0, #0x2468
 	movw	r2, #0x0008
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo863
+	.p2align 2
+.Lgo863:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002f849	/* str.w r0, [r9, r2] */
 	.word	0x1002f859	/* ldr.w r1, [r9, r2] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38576,6 +42259,7 @@ a32_case_863:
 	.arm
 	.p2align 2
 .Larm863:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38588,6 +42272,7 @@ a32_case_864:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38605,17 +42290,21 @@ a32_case_864:
 	movw	r0, #0xace0
 	movt	r0, #0x2468
 	movw	r3, #0x0008
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo864
+	.p2align 2
+.Lgo864:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0003f849	/* str.w r0, [r9, r3] */
 	.word	0x1003f859	/* ldr.w r1, [r9, r3] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38630,6 +42319,7 @@ a32_case_864:
 	.arm
 	.p2align 2
 .Larm864:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38642,6 +42332,7 @@ a32_case_865:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38657,17 +42348,21 @@ a32_case_865:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r0, #0x009a
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo865
+	.p2align 2
+.Lgo865:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0000f889	/* strb.w r0, [r9, #0] */
 	.word	0x1000f899	/* ldrb.w r1, [r9, #0] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38682,6 +42377,7 @@ a32_case_865:
 	.arm
 	.p2align 2
 .Larm865:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38694,6 +42390,7 @@ a32_case_866:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38709,17 +42406,21 @@ a32_case_866:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r0, #0x009a
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo866
+	.p2align 2
+.Lgo866:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0004f889	/* strb.w r0, [r9, #4] */
 	.word	0x1004f899	/* ldrb.w r1, [r9, #4] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38734,6 +42435,7 @@ a32_case_866:
 	.arm
 	.p2align 2
 .Larm866:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38746,6 +42448,7 @@ a32_case_867:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38761,17 +42464,21 @@ a32_case_867:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r0, #0x009a
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo867
+	.p2align 2
+.Lgo867:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0014f889	/* strb.w r0, [r9, #20] */
 	.word	0x1014f899	/* ldrb.w r1, [r9, #20] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38786,6 +42493,7 @@ a32_case_867:
 	.arm
 	.p2align 2
 .Larm867:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38798,6 +42506,7 @@ a32_case_868:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38814,17 +42523,21 @@ a32_case_868:
 	mov	r11, #0
 	movw	r0, #0xbabe
 	movt	r0, #0xcafe
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo868
+	.p2align 2
+.Lgo868:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0000f8a9	/* strh.w r0, [r9, #0] */
 	.word	0x1000f8b9	/* ldrh.w r1, [r9, #0] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38839,6 +42552,7 @@ a32_case_868:
 	.arm
 	.p2align 2
 .Larm868:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38851,6 +42565,7 @@ a32_case_869:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38867,17 +42582,21 @@ a32_case_869:
 	mov	r11, #0
 	movw	r0, #0xbabe
 	movt	r0, #0xcafe
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo869
+	.p2align 2
+.Lgo869:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002f8a9	/* strh.w r0, [r9, #2] */
 	.word	0x1002f8b9	/* ldrh.w r1, [r9, #2] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38892,6 +42611,7 @@ a32_case_869:
 	.arm
 	.p2align 2
 .Larm869:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38904,6 +42624,7 @@ a32_case_870:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38920,17 +42641,21 @@ a32_case_870:
 	mov	r11, #0
 	movw	r0, #0xbabe
 	movt	r0, #0xcafe
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo870
+	.p2align 2
+.Lgo870:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000af8a9	/* strh.w r0, [r9, #10] */
 	.word	0x100af8b9	/* ldrh.w r1, [r9, #10] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38945,6 +42670,7 @@ a32_case_870:
 	.arm
 	.p2align 2
 .Larm870:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -38957,6 +42683,7 @@ a32_case_871:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -38972,17 +42699,21 @@ a32_case_871:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r0, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo871
+	.p2align 2
+.Lgo871:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0000f8a9	/* strh.w r0, [r9, #0] */
 	.word	0x1000f999	/* ldrsb.w r1, [r9, #0] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -38997,6 +42728,7 @@ a32_case_871:
 	.arm
 	.p2align 2
 .Larm871:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39009,6 +42741,7 @@ a32_case_872:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39024,17 +42757,21 @@ a32_case_872:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r0, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo872
+	.p2align 2
+.Lgo872:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0002f8a9	/* strh.w r0, [r9, #2] */
 	.word	0x1002f999	/* ldrsb.w r1, [r9, #2] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39049,6 +42786,7 @@ a32_case_872:
 	.arm
 	.p2align 2
 .Larm872:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39061,6 +42799,7 @@ a32_case_873:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39076,17 +42815,21 @@ a32_case_873:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r0, #0x8002
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo873
+	.p2align 2
+.Lgo873:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0000f8a9	/* strh.w r0, [r9, #0] */
 	.word	0x1000f9b9	/* ldrsh.w r1, [r9, #0] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39101,6 +42844,7 @@ a32_case_873:
 	.arm
 	.p2align 2
 .Larm873:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39113,6 +42857,7 @@ a32_case_874:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39128,17 +42873,21 @@ a32_case_874:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r0, #0x8002
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo874
+	.p2align 2
+.Lgo874:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0004f8a9	/* strh.w r0, [r9, #4] */
 	.word	0x1004f9b9	/* ldrsh.w r1, [r9, #4] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39153,6 +42902,7 @@ a32_case_874:
 	.arm
 	.p2align 2
 .Larm874:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39165,6 +42915,7 @@ a32_case_875:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39183,17 +42934,21 @@ a32_case_875:
 	movt	r0, #0xa1a2
 	movw	r1, #0xb3b4
 	movt	r1, #0xb1b2
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo875
+	.p2align 2
+.Lgo875:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9, #0] */
 	.word	0x2300e9d9	/* ldrd r2, r3, [r9, #0] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39208,6 +42963,7 @@ a32_case_875:
 	.arm
 	.p2align 2
 .Larm875:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39220,6 +42976,7 @@ a32_case_876:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39238,17 +42995,21 @@ a32_case_876:
 	movt	r0, #0xa1a2
 	movw	r1, #0xb3b4
 	movt	r1, #0xb1b2
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo876
+	.p2align 2
+.Lgo876:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0101e9c9	/* strd r0, r1, [r9, #4] */
 	.word	0x2301e9d9	/* ldrd r2, r3, [r9, #4] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39263,6 +43024,7 @@ a32_case_876:
 	.arm
 	.p2align 2
 .Larm876:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39275,6 +43037,7 @@ a32_case_877:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39293,17 +43056,21 @@ a32_case_877:
 	movt	r0, #0xa1a2
 	movw	r1, #0xb3b4
 	movt	r1, #0xb1b2
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo877
+	.p2align 2
+.Lgo877:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0102e9c9	/* strd r0, r1, [r9, #8] */
 	.word	0x2302e9d9	/* ldrd r2, r3, [r9, #8] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39318,6 +43085,7 @@ a32_case_877:
 	.arm
 	.p2align 2
 .Larm877:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39330,6 +43098,7 @@ a32_case_878:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39348,17 +43117,21 @@ a32_case_878:
 	movt	r0, #0x1111
 	movw	r1, #0x4444
 	movt	r1, #0x3333
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo878
+	.p2align 2
+.Lgo878:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9] */
 	.word	0x2301e9f9	/* ldrd r2, r3, [r9, #4]! */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39373,6 +43146,7 @@ a32_case_878:
 	.arm
 	.p2align 2
 .Larm878:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39385,6 +43159,7 @@ a32_case_879:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39403,17 +43178,21 @@ a32_case_879:
 	movt	r0, #0x5555
 	movw	r1, #0x8888
 	movt	r1, #0x7777
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo879
+	.p2align 2
+.Lgo879:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9] */
 	.word	0x2300e959	/* ldrd r2, r3, [r9, #-2] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39428,6 +43207,7 @@ a32_case_879:
 	.arm
 	.p2align 2
 .Larm879:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39440,6 +43220,7 @@ a32_case_880:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39458,17 +43239,21 @@ a32_case_880:
 	movt	r0, #0x5555
 	movw	r1, #0x8888
 	movt	r1, #0x7777
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo880
+	.p2align 2
+.Lgo880:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0100e9c9	/* strd r0, r1, [r9] */
 	.word	0x2301e959	/* ldrd r2, r3, [r9, #-4] */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39483,6 +43268,7 @@ a32_case_880:
 	.arm
 	.p2align 2
 .Larm880:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39495,6 +43281,7 @@ a32_case_881:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39510,10 +43297,11 @@ a32_case_881:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r3, #0x0002
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo881
+	.p2align 2
+.Lgo881:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -39525,8 +43313,11 @@ a32_case_881:
 	.hword	0xe001	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39541,6 +43332,7 @@ a32_case_881:
 	.arm
 	.p2align 2
 .Larm881:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39553,6 +43345,7 @@ a32_case_882:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39568,10 +43361,11 @@ a32_case_882:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r3, #0x0002
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo882
+	.p2align 2
+.Lgo882:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -39583,8 +43377,11 @@ a32_case_882:
 	.hword	0xe001	/* b done */
 	.hword	0x2022	/* movs r0, #0x22 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39599,6 +43396,7 @@ a32_case_882:
 	.arm
 	.p2align 2
 .Larm882:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39611,6 +43409,7 @@ a32_case_883:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39626,10 +43425,11 @@ a32_case_883:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r3, #0x0002
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo883
+	.p2align 2
+.Lgo883:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -39641,8 +43441,11 @@ a32_case_883:
 	.hword	0xe001	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39657,6 +43460,7 @@ a32_case_883:
 	.arm
 	.p2align 2
 .Larm883:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39669,6 +43473,7 @@ a32_case_884:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39684,10 +43489,11 @@ a32_case_884:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r3, #0x0002
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo884
+	.p2align 2
+.Lgo884:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -39699,8 +43505,11 @@ a32_case_884:
 	.hword	0xe001	/* b done */
 	.hword	0x2044	/* movs r0, #0x44 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39715,6 +43524,7 @@ a32_case_884:
 	.arm
 	.p2align 2
 .Larm884:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39727,6 +43537,7 @@ a32_case_885:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39742,16 +43553,20 @@ a32_case_885:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0080
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo885
+	.p2align 2
+.Lgo885:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39766,6 +43581,7 @@ a32_case_885:
 	.arm
 	.p2align 2
 .Larm885:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39778,6 +43594,7 @@ a32_case_886:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39793,16 +43610,20 @@ a32_case_886:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo886
+	.p2align 2
+.Lgo886:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39817,6 +43638,7 @@ a32_case_886:
 	.arm
 	.p2align 2
 .Larm886:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39829,6 +43651,7 @@ a32_case_887:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39845,16 +43668,20 @@ a32_case_887:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo887
+	.p2align 2
+.Lgo887:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39869,6 +43696,7 @@ a32_case_887:
 	.arm
 	.p2align 2
 .Larm887:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39881,6 +43709,7 @@ a32_case_888:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39896,16 +43725,20 @@ a32_case_888:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x007f
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo888
+	.p2align 2
+.Lgo888:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa4f	/* sxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39920,6 +43753,7 @@ a32_case_888:
 	.arm
 	.p2align 2
 .Larm888:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39932,6 +43766,7 @@ a32_case_889:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39947,16 +43782,20 @@ a32_case_889:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0080
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo889
+	.p2align 2
+.Lgo889:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -39971,6 +43810,7 @@ a32_case_889:
 	.arm
 	.p2align 2
 .Larm889:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -39983,6 +43823,7 @@ a32_case_890:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -39998,16 +43839,20 @@ a32_case_890:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo890
+	.p2align 2
+.Lgo890:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40022,6 +43867,7 @@ a32_case_890:
 	.arm
 	.p2align 2
 .Larm890:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40034,6 +43880,7 @@ a32_case_891:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40050,16 +43897,20 @@ a32_case_891:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo891
+	.p2align 2
+.Lgo891:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40074,6 +43925,7 @@ a32_case_891:
 	.arm
 	.p2align 2
 .Larm891:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40086,6 +43938,7 @@ a32_case_892:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40101,16 +43954,20 @@ a32_case_892:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x007f
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo892
+	.p2align 2
+.Lgo892:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa0f	/* sxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40125,6 +43982,7 @@ a32_case_892:
 	.arm
 	.p2align 2
 .Larm892:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40137,6 +43995,7 @@ a32_case_893:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40152,16 +44011,20 @@ a32_case_893:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0080
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo893
+	.p2align 2
+.Lgo893:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40176,6 +44039,7 @@ a32_case_893:
 	.arm
 	.p2align 2
 .Larm893:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40188,6 +44052,7 @@ a32_case_894:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40203,16 +44068,20 @@ a32_case_894:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo894
+	.p2align 2
+.Lgo894:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40227,6 +44096,7 @@ a32_case_894:
 	.arm
 	.p2align 2
 .Larm894:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40239,6 +44109,7 @@ a32_case_895:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40255,16 +44126,20 @@ a32_case_895:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo895
+	.p2align 2
+.Lgo895:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40279,6 +44154,7 @@ a32_case_895:
 	.arm
 	.p2align 2
 .Larm895:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40291,6 +44167,7 @@ a32_case_896:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40306,16 +44183,20 @@ a32_case_896:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x007f
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo896
+	.p2align 2
+.Lgo896:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa5f	/* uxtb r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40330,6 +44211,7 @@ a32_case_896:
 	.arm
 	.p2align 2
 .Larm896:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40342,6 +44224,7 @@ a32_case_897:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40357,16 +44240,20 @@ a32_case_897:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0080
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo897
+	.p2align 2
+.Lgo897:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40381,6 +44268,7 @@ a32_case_897:
 	.arm
 	.p2align 2
 .Larm897:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40393,6 +44281,7 @@ a32_case_898:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40408,16 +44297,20 @@ a32_case_898:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo898
+	.p2align 2
+.Lgo898:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40432,6 +44325,7 @@ a32_case_898:
 	.arm
 	.p2align 2
 .Larm898:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40444,6 +44338,7 @@ a32_case_899:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40460,16 +44355,20 @@ a32_case_899:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo899
+	.p2align 2
+.Lgo899:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40484,6 +44383,7 @@ a32_case_899:
 	.arm
 	.p2align 2
 .Larm899:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40496,6 +44396,7 @@ a32_case_900:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40511,16 +44412,20 @@ a32_case_900:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x007f
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo900
+	.p2align 2
+.Lgo900:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa1f	/* uxth r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40535,6 +44440,7 @@ a32_case_900:
 	.arm
 	.p2align 2
 .Larm900:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40547,6 +44453,7 @@ a32_case_901:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40563,16 +44470,20 @@ a32_case_901:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo901
+	.p2align 2
+.Lgo901:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa91	/* rev r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40587,6 +44498,7 @@ a32_case_901:
 	.arm
 	.p2align 2
 .Larm901:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40599,6 +44511,7 @@ a32_case_902:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40614,16 +44527,20 @@ a32_case_902:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xff00
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo902
+	.p2align 2
+.Lgo902:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa91	/* rev r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40638,6 +44555,7 @@ a32_case_902:
 	.arm
 	.p2align 2
 .Larm902:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40650,6 +44568,7 @@ a32_case_903:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40665,16 +44584,20 @@ a32_case_903:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo903
+	.p2align 2
+.Lgo903:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fa91	/* rev r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40689,6 +44612,7 @@ a32_case_903:
 	.arm
 	.p2align 2
 .Larm903:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40701,6 +44625,7 @@ a32_case_904:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40717,16 +44642,20 @@ a32_case_904:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo904
+	.p2align 2
+.Lgo904:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf091fa91	/* rev16 r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40741,6 +44670,7 @@ a32_case_904:
 	.arm
 	.p2align 2
 .Larm904:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40753,6 +44683,7 @@ a32_case_905:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40768,16 +44699,20 @@ a32_case_905:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xff00
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo905
+	.p2align 2
+.Lgo905:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf091fa91	/* rev16 r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40792,6 +44727,7 @@ a32_case_905:
 	.arm
 	.p2align 2
 .Larm905:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40804,6 +44740,7 @@ a32_case_906:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40819,16 +44756,20 @@ a32_case_906:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo906
+	.p2align 2
+.Lgo906:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf091fa91	/* rev16 r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40843,6 +44784,7 @@ a32_case_906:
 	.arm
 	.p2align 2
 .Larm906:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40855,6 +44797,7 @@ a32_case_907:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40871,16 +44814,20 @@ a32_case_907:
 	mov	r11, #0
 	movw	r1, #0x5678
 	movt	r1, #0x1234
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo907
+	.p2align 2
+.Lgo907:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf0b1fa91	/* revsh r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40895,6 +44842,7 @@ a32_case_907:
 	.arm
 	.p2align 2
 .Larm907:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40907,6 +44855,7 @@ a32_case_908:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40922,16 +44871,20 @@ a32_case_908:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0xff00
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo908
+	.p2align 2
+.Lgo908:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf0b1fa91	/* revsh r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40946,6 +44899,7 @@ a32_case_908:
 	.arm
 	.p2align 2
 .Larm908:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -40958,6 +44912,7 @@ a32_case_909:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -40973,16 +44928,20 @@ a32_case_909:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x8001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo909
+	.p2align 2
+.Lgo909:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf0b1fa91	/* revsh r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -40997,6 +44956,7 @@ a32_case_909:
 	.arm
 	.p2align 2
 .Larm909:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41009,6 +44969,7 @@ a32_case_910:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41024,16 +44985,20 @@ a32_case_910:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0000
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo910
+	.p2align 2
+.Lgo910:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41048,6 +45013,7 @@ a32_case_910:
 	.arm
 	.p2align 2
 .Larm910:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41060,6 +45026,7 @@ a32_case_911:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41075,16 +45042,20 @@ a32_case_911:
 	mov	r10, #0
 	mov	r11, #0
 	movw	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo911
+	.p2align 2
+.Lgo911:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41099,6 +45070,7 @@ a32_case_911:
 	.arm
 	.p2align 2
 .Larm911:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41111,6 +45083,7 @@ a32_case_912:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41127,16 +45100,20 @@ a32_case_912:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0x7fff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo912
+	.p2align 2
+.Lgo912:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41151,6 +45128,7 @@ a32_case_912:
 	.arm
 	.p2align 2
 .Larm912:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41163,6 +45141,7 @@ a32_case_913:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41179,16 +45158,20 @@ a32_case_913:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo913
+	.p2align 2
+.Lgo913:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0xf081fab1	/* clz r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41203,6 +45186,7 @@ a32_case_913:
 	.arm
 	.p2align 2
 .Larm913:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41215,6 +45199,7 @@ a32_case_914:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41231,16 +45216,20 @@ a32_case_914:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo914
+	.p2align 2
+.Lgo914:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0003f3c1	/* ubfx r0, r1, #0, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41255,6 +45244,7 @@ a32_case_914:
 	.arm
 	.p2align 2
 .Larm914:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41267,6 +45257,7 @@ a32_case_915:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41283,16 +45274,20 @@ a32_case_915:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo915
+	.p2align 2
+.Lgo915:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0003f341	/* sbfx r0, r1, #0, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41307,6 +45302,7 @@ a32_case_915:
 	.arm
 	.p2align 2
 .Larm915:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41319,6 +45315,7 @@ a32_case_916:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41335,16 +45332,20 @@ a32_case_916:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo916
+	.p2align 2
+.Lgo916:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1003f3c1	/* ubfx r0, r1, #4, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41359,6 +45360,7 @@ a32_case_916:
 	.arm
 	.p2align 2
 .Larm916:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41371,6 +45373,7 @@ a32_case_917:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41387,16 +45390,20 @@ a32_case_917:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo917
+	.p2align 2
+.Lgo917:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1003f341	/* sbfx r0, r1, #4, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41411,6 +45418,7 @@ a32_case_917:
 	.arm
 	.p2align 2
 .Larm917:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41423,6 +45431,7 @@ a32_case_918:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41439,16 +45448,20 @@ a32_case_918:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo918
+	.p2align 2
+.Lgo918:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x2007f3c1	/* ubfx r0, r1, #8, #8 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41463,6 +45476,7 @@ a32_case_918:
 	.arm
 	.p2align 2
 .Larm918:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41475,6 +45489,7 @@ a32_case_919:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41491,16 +45506,20 @@ a32_case_919:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo919
+	.p2align 2
+.Lgo919:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x2007f341	/* sbfx r0, r1, #8, #8 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41515,6 +45534,7 @@ a32_case_919:
 	.arm
 	.p2align 2
 .Larm919:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41527,6 +45547,7 @@ a32_case_920:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41543,16 +45564,20 @@ a32_case_920:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo920
+	.p2align 2
+.Lgo920:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff3c1	/* ubfx r0, r1, #0, #16 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41567,6 +45592,7 @@ a32_case_920:
 	.arm
 	.p2align 2
 .Larm920:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41579,6 +45605,7 @@ a32_case_921:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41595,16 +45622,20 @@ a32_case_921:
 	mov	r11, #0
 	movw	r1, #0xbeef
 	movt	r1, #0xdead
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo921
+	.p2align 2
+.Lgo921:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff341	/* sbfx r0, r1, #0, #16 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41619,6 +45650,7 @@ a32_case_921:
 	.arm
 	.p2align 2
 .Larm921:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41631,6 +45663,7 @@ a32_case_922:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41648,16 +45681,20 @@ a32_case_922:
 	movw	r0, #0xaaaa
 	movt	r0, #0xaaaa
 	movw	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo922
+	.p2align 2
+.Lgo922:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0003f361	/* bfi r0, r1, #0, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41672,6 +45709,7 @@ a32_case_922:
 	.arm
 	.p2align 2
 .Larm922:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41684,6 +45722,7 @@ a32_case_923:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41700,16 +45739,20 @@ a32_case_923:
 	mov	r11, #0
 	movw	r0, #0xaaaa
 	movt	r0, #0xaaaa
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo923
+	.p2align 2
+.Lgo923:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0003f36f	/* bfc r0, #0, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41724,6 +45767,7 @@ a32_case_923:
 	.arm
 	.p2align 2
 .Larm923:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41736,6 +45780,7 @@ a32_case_924:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41753,16 +45798,20 @@ a32_case_924:
 	movw	r0, #0xaaaa
 	movt	r0, #0xaaaa
 	movw	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo924
+	.p2align 2
+.Lgo924:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1007f361	/* bfi r0, r1, #4, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41777,6 +45826,7 @@ a32_case_924:
 	.arm
 	.p2align 2
 .Larm924:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41789,6 +45839,7 @@ a32_case_925:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41805,16 +45856,20 @@ a32_case_925:
 	mov	r11, #0
 	movw	r0, #0xaaaa
 	movt	r0, #0xaaaa
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo925
+	.p2align 2
+.Lgo925:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1007f36f	/* bfc r0, #4, #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41829,6 +45884,7 @@ a32_case_925:
 	.arm
 	.p2align 2
 .Larm925:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41841,6 +45897,7 @@ a32_case_926:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41858,16 +45915,20 @@ a32_case_926:
 	movw	r0, #0xaaaa
 	movt	r0, #0xaaaa
 	movw	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo926
+	.p2align 2
+.Lgo926:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x200ff361	/* bfi r0, r1, #8, #8 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41882,6 +45943,7 @@ a32_case_926:
 	.arm
 	.p2align 2
 .Larm926:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41894,6 +45956,7 @@ a32_case_927:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41910,16 +45973,20 @@ a32_case_927:
 	mov	r11, #0
 	movw	r0, #0xaaaa
 	movt	r0, #0xaaaa
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo927
+	.p2align 2
+.Lgo927:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x200ff36f	/* bfc r0, #8, #8 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41934,6 +46001,7 @@ a32_case_927:
 	.arm
 	.p2align 2
 .Larm927:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41946,6 +46014,7 @@ a32_case_928:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -41962,16 +46031,20 @@ a32_case_928:
 	mov	r11, #0
 	movw	r1, #0x0002
 	movt	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo928
+	.p2align 2
+.Lgo928:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0007f301	/* ssat r0, #8, r1, lsl #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -41986,6 +46059,7 @@ a32_case_928:
 	.arm
 	.p2align 2
 .Larm928:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -41998,6 +46072,7 @@ a32_case_929:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42014,16 +46089,20 @@ a32_case_929:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo929
+	.p2align 2
+.Lgo929:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0008f381	/* usat r0, #8, r1, lsl #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42038,6 +46117,7 @@ a32_case_929:
 	.arm
 	.p2align 2
 .Larm929:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42050,6 +46130,7 @@ a32_case_930:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42066,16 +46147,20 @@ a32_case_930:
 	mov	r11, #0
 	movw	r1, #0x0002
 	movt	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo930
+	.p2align 2
+.Lgo930:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1007f301	/* ssat r0, #8, r1, lsl #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42090,6 +46175,7 @@ a32_case_930:
 	.arm
 	.p2align 2
 .Larm930:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42102,6 +46188,7 @@ a32_case_931:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42118,16 +46205,20 @@ a32_case_931:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo931
+	.p2align 2
+.Lgo931:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x1008f381	/* usat r0, #8, r1, lsl #4 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42142,6 +46233,7 @@ a32_case_931:
 	.arm
 	.p2align 2
 .Larm931:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42154,6 +46246,7 @@ a32_case_932:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42170,16 +46263,20 @@ a32_case_932:
 	mov	r11, #0
 	movw	r1, #0x0002
 	movt	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo932
+	.p2align 2
+.Lgo932:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x000ff301	/* ssat r0, #16, r1, lsl #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42194,6 +46291,7 @@ a32_case_932:
 	.arm
 	.p2align 2
 .Larm932:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42206,6 +46304,7 @@ a32_case_933:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42222,16 +46321,20 @@ a32_case_933:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo933
+	.p2align 2
+.Lgo933:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0010f381	/* usat r0, #16, r1, lsl #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42246,6 +46349,7 @@ a32_case_933:
 	.arm
 	.p2align 2
 .Larm933:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42258,6 +46362,7 @@ a32_case_934:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42274,16 +46379,20 @@ a32_case_934:
 	mov	r11, #0
 	movw	r1, #0x0002
 	movt	r1, #0x0001
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo934
+	.p2align 2
+.Lgo934:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0003f301	/* ssat r0, #4, r1, lsl #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42298,6 +46407,7 @@ a32_case_934:
 	.arm
 	.p2align 2
 .Larm934:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42310,6 +46420,7 @@ a32_case_935:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42326,16 +46437,20 @@ a32_case_935:
 	mov	r11, #0
 	movw	r1, #0xffff
 	movt	r1, #0xffff
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo935
+	.p2align 2
+.Lgo935:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x0004f381	/* usat r0, #4, r1, lsl #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42350,6 +46465,7 @@ a32_case_935:
 	.arm
 	.p2align 2
 .Larm935:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42362,6 +46478,7 @@ a32_case_936:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42376,18 +46493,22 @@ a32_case_936:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo936
+	.p2align 2
+.Lgo936:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x211c	/* movs r1, #28 */
 	.hword	0x40c8	/* lsrs r0, r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42402,6 +46523,7 @@ a32_case_936:
 	.arm
 	.p2align 2
 .Larm936:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42414,6 +46536,7 @@ a32_case_937:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42428,18 +46551,22 @@ a32_case_937:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo937
+	.p2align 2
+.Lgo937:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x211c	/* movs r1, #28 */
 	.hword	0x40c8	/* lsrs r0, r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42454,6 +46581,7 @@ a32_case_937:
 	.arm
 	.p2align 2
 .Larm937:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42466,6 +46594,7 @@ a32_case_938:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42480,18 +46609,22 @@ a32_case_938:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo938
+	.p2align 2
+.Lgo938:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x211c	/* movs r1, #28 */
 	.hword	0x40c8	/* lsrs r0, r0, r1 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42506,6 +46639,7 @@ a32_case_938:
 	.arm
 	.p2align 2
 .Larm938:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42518,6 +46652,7 @@ a32_case_939:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42532,10 +46667,11 @@ a32_case_939:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo939
+	.p2align 2
+.Lgo939:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42545,8 +46681,11 @@ a32_case_939:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x221c	/* movs r2, #28 */
 	.hword	0x40d0	/* lsrs r0, r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42561,6 +46700,7 @@ a32_case_939:
 	.arm
 	.p2align 2
 .Larm939:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42573,6 +46713,7 @@ a32_case_940:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42587,10 +46728,11 @@ a32_case_940:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo940
+	.p2align 2
+.Lgo940:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42599,8 +46741,11 @@ a32_case_940:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x221c	/* movs r2, #28 */
 	.hword	0x40d0	/* lsrs r0, r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42615,6 +46760,7 @@ a32_case_940:
 	.arm
 	.p2align 2
 .Larm940:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42627,6 +46773,7 @@ a32_case_941:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42641,10 +46788,11 @@ a32_case_941:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo941
+	.p2align 2
+.Lgo941:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42654,8 +46802,11 @@ a32_case_941:
 	.word	0x8000f3ef	/* mrs r0, cpsr */
 	.hword	0x221c	/* movs r2, #28 */
 	.hword	0x40d0	/* lsrs r0, r0, r2 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42670,6 +46821,7 @@ a32_case_941:
 	.arm
 	.p2align 2
 .Larm941:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42682,6 +46834,7 @@ a32_case_942:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42696,10 +46849,11 @@ a32_case_942:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo942
+	.p2align 2
+.Lgo942:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42709,8 +46863,11 @@ a32_case_942:
 	.hword	0xe001	/* b end */
 	.hword	0x2011	/* movs r0, #0x11 */
 	.hword	0x4770	/* bx lr */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42725,6 +46882,7 @@ a32_case_942:
 	.arm
 	.p2align 2
 .Larm942:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42737,6 +46895,7 @@ a32_case_943:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42755,10 +46914,11 @@ a32_case_943:
 	movt	r1, #0xefbd
 	movw	r2, #0x5609
 	movt	r2, #0x2b82
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo943
+	.p2align 2
+.Lgo943:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42769,8 +46929,11 @@ a32_case_943:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42785,6 +46948,7 @@ a32_case_943:
 	.arm
 	.p2align 2
 .Larm943:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42797,6 +46961,7 @@ a32_case_944:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42815,10 +46980,11 @@ a32_case_944:
 	movt	r1, #0x0aba
 	movw	r2, #0xaec1
 	movt	r2, #0x3b9b
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo944
+	.p2align 2
+.Lgo944:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42829,8 +46995,11 @@ a32_case_944:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42845,6 +47014,7 @@ a32_case_944:
 	.arm
 	.p2align 2
 .Larm944:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42857,6 +47027,7 @@ a32_case_945:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42875,10 +47046,11 @@ a32_case_945:
 	movt	r1, #0x21ce
 	movw	r2, #0x6191
 	movt	r2, #0x6820
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo945
+	.p2align 2
+.Lgo945:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42889,8 +47061,11 @@ a32_case_945:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42905,6 +47080,7 @@ a32_case_945:
 	.arm
 	.p2align 2
 .Larm945:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42917,6 +47093,7 @@ a32_case_946:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42935,10 +47112,11 @@ a32_case_946:
 	movt	r1, #0x4b3c
 	movw	r2, #0x9d31
 	movt	r2, #0x1d8e
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo946
+	.p2align 2
+.Lgo946:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -42949,8 +47127,11 @@ a32_case_946:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -42965,6 +47146,7 @@ a32_case_946:
 	.arm
 	.p2align 2
 .Larm946:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -42977,6 +47159,7 @@ a32_case_947:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -42995,10 +47178,11 @@ a32_case_947:
 	movt	r1, #0x69ab
 	movw	r2, #0xb6d8
 	movt	r2, #0x94a0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo947
+	.p2align 2
+.Lgo947:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43009,8 +47193,11 @@ a32_case_947:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43025,6 +47212,7 @@ a32_case_947:
 	.arm
 	.p2align 2
 .Larm947:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43037,6 +47225,7 @@ a32_case_948:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43055,10 +47244,11 @@ a32_case_948:
 	movt	r1, #0x2fb3
 	movw	r2, #0x92a6
 	movt	r2, #0xb385
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo948
+	.p2align 2
+.Lgo948:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43069,8 +47259,11 @@ a32_case_948:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43085,6 +47278,7 @@ a32_case_948:
 	.arm
 	.p2align 2
 .Larm948:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43097,6 +47291,7 @@ a32_case_949:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43115,10 +47310,11 @@ a32_case_949:
 	movt	r1, #0x1147
 	movw	r2, #0x4327
 	movt	r2, #0x328f
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo949
+	.p2align 2
+.Lgo949:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43129,8 +47325,11 @@ a32_case_949:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43145,6 +47344,7 @@ a32_case_949:
 	.arm
 	.p2align 2
 .Larm949:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43157,6 +47357,7 @@ a32_case_950:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43175,10 +47376,11 @@ a32_case_950:
 	movt	r1, #0x9082
 	movw	r2, #0xdac6
 	movt	r2, #0x979f
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo950
+	.p2align 2
+.Lgo950:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43189,8 +47391,11 @@ a32_case_950:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43205,6 +47410,7 @@ a32_case_950:
 	.arm
 	.p2align 2
 .Larm950:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43217,6 +47423,7 @@ a32_case_951:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43235,10 +47442,11 @@ a32_case_951:
 	movt	r1, #0xed55
 	movw	r2, #0xc2c4
 	movt	r2, #0xbc44
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo951
+	.p2align 2
+.Lgo951:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43249,8 +47457,11 @@ a32_case_951:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43265,6 +47476,7 @@ a32_case_951:
 	.arm
 	.p2align 2
 .Larm951:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43277,6 +47489,7 @@ a32_case_952:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43295,10 +47508,11 @@ a32_case_952:
 	movt	r1, #0x1970
 	movw	r2, #0x0633
 	movt	r2, #0x244a
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo952
+	.p2align 2
+.Lgo952:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43309,8 +47523,11 @@ a32_case_952:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43325,6 +47542,7 @@ a32_case_952:
 	.arm
 	.p2align 2
 .Larm952:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43337,6 +47555,7 @@ a32_case_953:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43355,10 +47574,11 @@ a32_case_953:
 	movt	r1, #0xa134
 	movw	r2, #0xb221
 	movt	r2, #0x6724
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo953
+	.p2align 2
+.Lgo953:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43369,8 +47589,11 @@ a32_case_953:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43385,6 +47608,7 @@ a32_case_953:
 	.arm
 	.p2align 2
 .Larm953:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43397,6 +47621,7 @@ a32_case_954:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43415,10 +47640,11 @@ a32_case_954:
 	movt	r1, #0xa608
 	movw	r2, #0x662f
 	movt	r2, #0x1a64
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo954
+	.p2align 2
+.Lgo954:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43429,8 +47655,11 @@ a32_case_954:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43445,6 +47674,7 @@ a32_case_954:
 	.arm
 	.p2align 2
 .Larm954:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43457,6 +47687,7 @@ a32_case_955:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43475,10 +47706,11 @@ a32_case_955:
 	movt	r1, #0x605e
 	movw	r2, #0x4961
 	movt	r2, #0x5f0c
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo955
+	.p2align 2
+.Lgo955:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43489,8 +47721,11 @@ a32_case_955:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43505,6 +47740,7 @@ a32_case_955:
 	.arm
 	.p2align 2
 .Larm955:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43517,6 +47753,7 @@ a32_case_956:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43535,10 +47772,11 @@ a32_case_956:
 	movt	r1, #0x7e8d
 	movw	r2, #0x637e
 	movt	r2, #0x5213
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo956
+	.p2align 2
+.Lgo956:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43549,8 +47787,11 @@ a32_case_956:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43565,6 +47806,7 @@ a32_case_956:
 	.arm
 	.p2align 2
 .Larm956:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43577,6 +47819,7 @@ a32_case_957:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43595,10 +47838,11 @@ a32_case_957:
 	movt	r1, #0xd27e
 	movw	r2, #0xce7d
 	movt	r2, #0xd31f
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo957
+	.p2align 2
+.Lgo957:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43609,8 +47853,11 @@ a32_case_957:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43625,6 +47872,7 @@ a32_case_957:
 	.arm
 	.p2align 2
 .Larm957:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43637,6 +47885,7 @@ a32_case_958:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43655,10 +47904,11 @@ a32_case_958:
 	movt	r1, #0x6a12
 	movw	r2, #0xe507
 	movt	r2, #0xac4b
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo958
+	.p2align 2
+.Lgo958:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43669,8 +47919,11 @@ a32_case_958:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43685,6 +47938,7 @@ a32_case_958:
 	.arm
 	.p2align 2
 .Larm958:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43697,6 +47951,7 @@ a32_case_959:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43715,10 +47970,11 @@ a32_case_959:
 	movt	r1, #0x7f82
 	movw	r2, #0x477d
 	movt	r2, #0xbaa5
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo959
+	.p2align 2
+.Lgo959:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43729,8 +47985,11 @@ a32_case_959:
 	.hword	0x683c	/* ldr r4, [r7, #0] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43745,6 +48004,7 @@ a32_case_959:
 	.arm
 	.p2align 2
 .Larm959:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43757,6 +48017,7 @@ a32_case_960:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43775,10 +48036,11 @@ a32_case_960:
 	movt	r1, #0xbaaa
 	movw	r2, #0x4e90
 	movt	r2, #0x7004
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo960
+	.p2align 2
+.Lgo960:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43789,8 +48051,11 @@ a32_case_960:
 	.hword	0x687c	/* ldr r4, [r7, #4] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43805,6 +48070,7 @@ a32_case_960:
 	.arm
 	.p2align 2
 .Larm960:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43817,6 +48083,7 @@ a32_case_961:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43835,10 +48102,11 @@ a32_case_961:
 	movt	r1, #0xbb3e
 	movw	r2, #0xe38a
 	movt	r2, #0x30ec
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo961
+	.p2align 2
+.Lgo961:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43849,8 +48117,11 @@ a32_case_961:
 	.hword	0x68bc	/* ldr r4, [r7, #8] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43865,6 +48136,7 @@ a32_case_961:
 	.arm
 	.p2align 2
 .Larm961:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43877,6 +48149,7 @@ a32_case_962:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43895,10 +48168,11 @@ a32_case_962:
 	movt	r1, #0x1a0d
 	movw	r2, #0x1f21
 	movt	r2, #0xbc55
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo962
+	.p2align 2
+.Lgo962:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43909,8 +48183,11 @@ a32_case_962:
 	.hword	0x68fc	/* ldr r4, [r7, #12] */
 	.hword	0x4065	/* eors r5, r4 */
 	.hword	0x2700	/* movs r7, #0 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43925,6 +48202,7 @@ a32_case_962:
 	.arm
 	.p2align 2
 .Larm962:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -43937,6 +48215,7 @@ a32_case_963:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -43951,10 +48230,11 @@ a32_case_963:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo963
+	.p2align 2
+.Lgo963:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -43973,8 +48253,11 @@ a32_case_963:
 	.thumb
 	.p2align 1
 	.hword	0x2233	/* movs r2, #0x33 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -43989,6 +48272,7 @@ a32_case_963:
 	.arm
 	.p2align 2
 .Larm963:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -44001,6 +48285,7 @@ a32_case_964:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -44015,10 +48300,11 @@ a32_case_964:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo964
+	.p2align 2
+.Lgo964:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -44037,8 +48323,11 @@ a32_case_964:
 	.thumb
 	.p2align 1
 	.hword	0x2233	/* movs r2, #0x33 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -44053,6 +48342,7 @@ a32_case_964:
 	.arm
 	.p2align 2
 .Larm964:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -44065,6 +48355,7 @@ a32_case_965:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -44079,10 +48370,11 @@ a32_case_965:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo965
+	.p2align 2
+.Lgo965:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -44101,8 +48393,11 @@ a32_case_965:
 	.thumb
 	.p2align 1
 	.hword	0x2233	/* movs r2, #0x33 */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -44117,6 +48412,7 @@ a32_case_965:
 	.arm
 	.p2align 2
 .Larm965:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -44129,6 +48425,7 @@ a32_case_966:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -44143,6 +48440,7 @@ a32_case_966:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe28f3010	/* adr r3, thumb (add r3, pc, #16) */
 	.word	0xe2833001	/* add r3, r3, #1 */
 	.word	0xe12fff33	/* blx r3 */
@@ -44163,6 +48461,7 @@ a32_case_966:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_966, .-a32_case_966
 
@@ -44173,6 +48472,7 @@ a32_case_967:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -44187,6 +48487,7 @@ a32_case_967:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe28f3010	/* adr r3, thumb (add r3, pc, #16) */
 	.word	0xe2833001	/* add r3, r3, #1 */
 	.word	0xe12fff33	/* blx r3 */
@@ -44207,6 +48508,7 @@ a32_case_967:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_967, .-a32_case_967
 
@@ -44217,6 +48519,7 @@ a32_case_968:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -44231,6 +48534,7 @@ a32_case_968:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
+	mov	lr, #0
 	.word	0xe28f3010	/* adr r3, thumb (add r3, pc, #16) */
 	.word	0xe2833001	/* add r3, r3, #1 */
 	.word	0xe12fff33	/* blx r3 */
@@ -44251,6 +48555,7 @@ a32_case_968:
 	str	r0, [r12, #52]
 	str	r0, [r12, #56]
 	str	r0, [r12, #60]
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.size	a32_case_968, .-a32_case_968
 
@@ -44261,6 +48566,7 @@ a32_case_969:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -44275,10 +48581,11 @@ a32_case_969:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo969
+	.p2align 2
+.Lgo969:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -44291,8 +48598,11 @@ a32_case_969:
 	.p2align 2
 	.word	0xe3a02088	/* mov r2, #0x88 */
 	.word	0xe12fff1e	/* bx lr */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -44307,6 +48617,7 @@ a32_case_969:
 	.arm
 	.p2align 2
 .Larm969:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:
@@ -44319,6 +48630,7 @@ a32_case_970:
 	push	{r4-r11, lr}
 	mov	r12, r0
 	add	r12, r12, #260
+	str	sp, [r12, #88]
 	mov	r9, r1
 	mov	r0, #0
 	cmp	r0, #0
@@ -44333,10 +48645,11 @@ a32_case_970:
 	mov	r8, #0
 	mov	r10, #0
 	mov	r11, #0
-	adr	r3, 1f
-	orr	r3, r3, #1
-	blx	r3
-	b	9f	/* not reached in ARM state */
+	mov	lr, #0
+	ldr	pc, .Lgo970
+	.p2align 2
+.Lgo970:
+	.word	1f + 1
 	.thumb
 	.p2align 1
 1:
@@ -44349,8 +48662,11 @@ a32_case_970:
 	.p2align 2
 	.word	0xe3a02088	/* mov r2, #0x88 */
 	.word	0xe12fff1e	/* bx lr */
+	.thumb
+	.p2align 1
 	stmia	r12, {r0-r11}
 	mrs	r0, cpsr
+	orr.w	r0, r0, #0x20
 	str	r0, [r12, #64]
 	movs	r0, #0
 	str	r0, [r12, #48]
@@ -44365,6 +48681,7 @@ a32_case_970:
 	.arm
 	.p2align 2
 .Larm970:
+	ldr	sp, [r12, #88]
 	pop	{r4-r11, pc}
 	.arm
 9:

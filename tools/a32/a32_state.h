@@ -84,6 +84,12 @@
 #define A32_OFF_MHASH   336u     /* uint32_t mem_hash             */
 #define A32_OFF_MDIFF   340u     /* uint32_t mem_first_diff       */
 #define A32_OFF_STOP    344u     /* uint32_t stop_reason          */
+#define A32_OFF_PAD     348u     /* uint32_t pad                   */
+/* `pad` exists to round sizeof to 352. The generated wrapper ALSO uses it as a
+ * private 4-byte slot: it stashes the harness's own stack pointer there, because
+ * a PUSH/POP case deliberately parks sp inside the scratch window and the
+ * wrapper's return `pop` must not read its frame off that sp. Nothing else
+ * writes it and it is never compared or serialised, so it stays invisible. */
 
 /* cpsr bits AArch32 user mode defines and both sides must agree on: NZCV + Q,
  * plus the T (Thumb state) bit -- a state-transition bug must not pass, so the

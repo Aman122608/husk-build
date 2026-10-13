@@ -31,16 +31,21 @@ The wrapper a32_case_<id> is an ARM-state function. For an ARM-entry case the
 fragment is emitted inline (as before). For a Thumb-entry case the wrapper:
   * saves r4-r11/lr, points r12 at &out->regs[0], r9 at the scratch window,
     forces a known incoming flag state (`mov r0,#0 ; cmp r0,#0`), zeroes the
-    comparable GPRs and loads the case's init (movw/movt only);
-  * switches the CPU to Thumb the way the architecture does -- `adr r3, 1f ;
-    orr r3, r3, #1 ; blx r3` -- where `1:` is the `.thumb`-assembled fragment,
-    so the assembler's `.thumb` directive and the runtime branch agree;
-  * the fragment runs; the generator then emits a Thumb capture epilogue (which
+    comparable GPRs, loads the case's init (movw/movt only) and clears lr;
+  * switches the CPU to Thumb with NO register side effect at all -- `ldr pc,
+    .LgoN` where `.LgoN` is an inline word holding `1f + 1` -- so the fragment
+    is handed exactly its declared state. (It used to be `adr r3, 1f ; orr r3,
+    r3, #1 ; blx r3`, which left r3 = the fragment's address; r3 is a compared
+    register and t32_tbb/t32_tbh read their table byte from it, so the oracle
+    branched wild on those cases.)
+  * runs the fragment; the generator then emits a Thumb capture epilogue (which
     the interpreter does NOT execute -- it stops at the fragment's byte end):
     it stores r0-r11 through r12, records cpsr, zeroes r12-r15, then switches
-    back to ARM (`ldr r3, .LretN ; bx r3`) so the ARM epilogue can `pop
-    {r4-r11, pc}`. Capture is done in Thumb *before* any register the return
-    gadget clobbers, so the compared state is never disturbed.
+    back to ARM (`ldr r3, .LretN ; bx r3`) so the ARM epilogue can reload the
+    harness's own sp (stashed in out->pad, because a PUSH/POP case deliberately
+    parks sp inside the scratch window) and `pop {r4-r11, pc}`. Capture is done
+    in Thumb *before* any register the return gadget clobbers, so the compared
+    state is never disturbed.
 An ARM-entry interworking case switches state itself (BX/BLX) inside the
 fragment, exactly as the architecture says, and returns to ARM before the ARM
 capture.
@@ -1548,6 +1553,12 @@ def emit_s():
               "\tpush\t{r4-r11, lr}",
               "\tmov\tr12, r0",
               "\tadd\tr12, r12, #260",          # A32_OFF_REGS
+              # Stash the harness's own stack pointer (the value `pop` must use)
+              # in out->pad, which nothing else writes, is never compared and
+              # never reaches the goldens. A PUSH/POP case parks sp inside the
+              # scratch window on purpose, so the body's sp cannot be trusted
+              # for the return frame; the return gadget reloads it from here.
+              "\tstr\tsp, [r12, #88]",          # A32_OFF_PAD
               "\tmov\tr9, r1",
               "\tmov\tr0, #0",
               "\tcmp\tr0, #0"]                   # deterministic incoming flags: N=0 Z=1 C=1 V=0
@@ -1557,9 +1568,17 @@ def emit_s():
             if c["init"][reg] is None:
                 continue
             o += _movw_movt_lines(reg, c["init"][reg])
+        # lr is cleared before the fragment runs: the interpreter presents lr = 0
+        # and a case may read it (t_pushpop_lr pops it into a compared register).
+        # The wrapper's own return address is already safe on the stack (the
+        # prologue's push saved it, and the epilogue's pop loads pc from there),
+        # so clearing lr cannot disturb the return.
+        o += ["\tmov\tlr, #0"]
 
         if c["mode"] == "arm":
             emit_body_items(c["items"], o, "arm")
+            # An ARM-entry case runs in ARM at the capture (an interworking arm
+            # case returns to ARM inside its own fragment), so force `.arm`.
             o += ["\t.arm",
                   "\t.p2align 2",
                   "\tstm\tr12, {r0-r11}",
@@ -1570,28 +1589,57 @@ def emit_s():
                   "\tstr\tr0, [r12, #52]",
                   "\tstr\tr0, [r12, #56]",
                   "\tstr\tr0, [r12, #60]",
+                  "\tldr\tsp, [r12, #88]",        # A32_OFF_PAD: the harness frame
                   "\tpop\t{r4-r11, pc}",
                   "\t.size\t%s, .-%s" % (fn, fn), ""]
         else:
-            # Thumb entry: switch to Thumb the way the architecture does.
-            o += ["\tadr\tr3, 1f",
-                  "\torr\tr3, r3, #1",
-                  "\tblx\tr3",
-                  "\tb\t9f\t/* not reached in ARM state */"]
-            o += ["\t.thumb", "\t.p2align 1", "1:"]
+            # Entry switch. It MUST NOT clobber a compared register. The old
+            # `adr r3, 1f ; orr r3, r3, #1 ; blx r3` left r3 = the fragment's own
+            # address, but r3 is comparable and cases use it as data (t32_tbb and
+            # t32_tbh take their branch-table byte from r3), so the oracle ran
+            # those with a garbage table entry and branched wild. A PC-relative
+            # load of an inline word switches ARM -> Thumb with no register side
+            # effect at all (the same idiom the capture block already uses for
+            # .LretN), so the fragment is handed exactly its declared state.
+            o += ["\tldr\tpc, .Lgo%d" % cid,
+                  "\t.p2align 2",
+                  ".Lgo%d:" % cid,
+                  "\t.word\t1f + 1",
+                  "\t.thumb", "\t.p2align 1", "1:"]
             emit_body_items(c["items"], o, "thumb")
+            if c["post"]:
+                # A 4-byte branch over the literal. Without it the oracle FALLS
+                # INTO the data and executes it -- t_ldr_lit's word is `str r0,
+                # [r7, r6]`, a store to address 0, i.e. SIGSEGV. Four bytes also
+                # puts the literal at the address the fragment's own PC-relative
+                # load computes (fragment end + 4), so the case actually reads the
+                # literal the generator placed for it.
+                o.append("\tb.w\t2f\t/* jump over this fragment's literal */")
             for w in c["post"]:
                 o.append("\t.word\t0x%08x\t/* literal read by this fragment */" % (w & 0xFFFFFFFF))
-            # Thumb capture (not executed by the interpreter: it stops at the
+            if c["post"]:
+                o.append("2:")
+            # The Thumb capture (not executed by the interpreter: it stops at the
             # fragment's byte end). Capture BEFORE the return gadget clobbers r3.
-            # NO .w width suffixes: an interworking case may already have
-            # returned to ARM inside its fragment, and GNU as rejects width
-            # suffixes in ARM mode ("width suffixes are invalid in ARM mode") --
-            # which is what broke this job while clang's assembler accepted it.
-            # The plain mnemonics assemble in EITHER state, and the width does
-            # not matter here: this block only saves registers for the readout.
-            o += ["\tstmia\tr12, {r0-r11}",
+            #
+            # FORCE `.thumb` FIRST, and do not inherit emit_body_items' last
+            # directive. An interworking case can emit ARM helpers as its final
+            # items (t_iw_blximm's `armfn` is emitted last), which leaves the
+            # assembler in ARM mode -- but that fragment is back in Thumb when it
+            # ends, so the ARM-encoded capture bytes would be decoded as Thumb
+            # and run away. A Thumb-entry fragment MUST end in Thumb (the
+            # generator's contract, checked by interp_selftest.py), so the
+            # capture is Thumb and the CPU is Thumb.
+            o += ["\t.thumb",
+                  "\t.p2align 1",
+                  "\tstmia\tr12, {r0-r11}",
                   "\tmrs\tr0, cpsr",
+                  # A Thumb `mrs r0, cpsr` assembles to the APSR form, which does
+                  # not have to report the T bit -- yet T is part of the compared
+                  # nzcvq mask (a state-transition bug must not pass). The capture
+                  # runs in Thumb by contract (a Thumb-entry fragment ends in
+                  # Thumb; interp_selftest.py checks it), so set T explicitly.
+                  "\torr.w\tr0, r0, #0x20",
                   "\tstr\tr0, [r12, #64]",
                   "\tmovs\tr0, #0",
                   "\tstr\tr0, [r12, #48]",
@@ -1606,6 +1654,7 @@ def emit_s():
                   "\t.arm",
                   "\t.p2align 2",
                   ".Larm%d:" % cid,
+                  "\tldr\tsp, [r12, #88]",        # A32_OFF_PAD: the harness frame
                   "\tpop\t{r4-r11, pc}"]
             o += ["\t.arm", "9:", "\t.size\t%s, .-%s" % (fn, fn), ""]
     return "\n".join(o) + "\n"

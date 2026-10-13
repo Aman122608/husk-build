@@ -21,7 +21,14 @@ The VFP initial state is NOT assumed: it is read out of the generated assembly's
 own a32_fp_init (movw/movt + vmov), the single source of truth, and written into
 Unicorn's s0..s31 so the golden's fp[] is what the assembly would have produced.
 
-    python3 tools/a32/interp_selftest.py <goldens-dir> [--a32diff PATH]
+    python3 tools/a32/interp_selftest.py <goldens-dir> [--a32diff PATH] [--wrapper-check]
+
+The --wrapper-check option additionally executes the WHOLE per-case wrapper (the
+generator's prologue + the fragment + the capture/return epilogue) under Unicorn
+and asserts it returns cleanly with the fragment's own captured state. That is
+the only way to exercise the epilogue -- which the interpreter never runs -- on a
+host with no assembler, and it is what catches an sp-clobbering case or a capture
+assembled in the wrong instruction-set state.
 
 Requires: pip install capstone unicorn   (dev only)
 """
@@ -172,6 +179,267 @@ def run_unicorn(cases, fp_init):
     return manifest, goldens
 
 
+# ---------------------------------------------------------------------------
+# Wrapper check (dev-only). Build the WHOLE per-case wrapper -- the prologue the
+# generator emits, the case's own bytes and post literals, and the capture +
+# return epilogue in the mode the fixed .S pins -- run it under Unicorn, and
+# assert it RETURNS (reaches the sentinel LR with no fault) with the state it
+# captured equal to a direct run of the fragment.
+#
+# This is the only way to exercise the epilogue on a host with no assembler: the
+# interpreter never runs it and CI had never run it either, which is exactly why
+# the sp-clobber and the ARM-mode capture shipped. The scaffolding here is
+# hand-encoded Python, so each word is checked against capstone first; the case
+# bytes themselves are the generator's own.
+# ---------------------------------------------------------------------------
+SENTINEL = 0x00034000
+OUTBUF   = 0x00038000
+STACKTOP = 0x00032800
+OFF_REGS, OFF_CPSR, OFF_PAD = 260, 324, 348
+OFF_PAD_REL = OFF_PAD - OFF_REGS      # what [r12, #n] uses: r12 == out + OFF_REGS
+
+
+def _u32(words):
+    return b"".join(struct.pack("<I", w & 0xFFFFFFFF) for w in words)
+
+
+def _u16(halfwords):
+    return b"".join(struct.pack("<H", h & 0xFFFF) for h in halfwords)
+
+
+def _prologue_len(c):
+    """Length in bytes of the generator's wrapper prologue for this case."""
+    n = 19                                   # fixed words (see _prologue_words)
+    for v in c["init"].values():
+        if v is None:
+            continue
+        n += 1 if ((v >> 16) & 0xFFFF) == 0 else 2
+    return (n + (2 if c["mode"] == "thumb" else 0)) * 4
+
+
+def _prologue_words(c, frag_off):
+    """The generator's wrapper prologue, word for word (ARM)."""
+    G = gen_cases
+    o = [G.blk(0, 13, 0xFF0 | (1 << 14), 1, 0, w=1),     # push {r4-r11, lr}
+         G.dp_reg(G.OP["mov"], 12, 0, 0),                # mov r12, r0
+         G.dp_imm(G.OP["add"], 12, 12, OFF_REGS),        # add r12, r12, #260
+         G.mem_w(0, 0, 13, 12, OFF_PAD_REL),             # str sp, [r12, #88]
+         G.dp_reg(G.OP["mov"], 9, 0, 1),                 # mov r9, r1
+         G.dp_imm(G.OP["mov"], 0, 0, 0),                 # mov r0, #0
+         G.dp_imm(G.OP["cmp"], 0, 0, 0, s=1)]            # cmp r0, #0
+    for reg in (0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11):
+        o.append(G.dp_imm(G.OP["mov"], reg, 0, 0))
+    for reg in sorted(c["init"]):
+        v = c["init"][reg]
+        if v is None:
+            continue
+        o.append(G.movw(reg, v & 0xFFFF))
+        if (v >> 16) & 0xFFFF:
+            o.append(G.movt(reg, (v >> 16) & 0xFFFF))
+    o.append(G.dp_imm(G.OP["mov"], 14, 0, 0))            # mov lr, #0
+    if c["mode"] == "thumb":
+        # ldr pc, .LgoN ; .LgoN: .word 1f+1   (the ARM -> Thumb switch)
+        # PC-relative: base is pc+8, and the word sits immediately after the ldr.
+        o.append(G.mem_w(1, 0, 15, 15, 4, p=1, u=0))
+        o.append(CODE_BASE + frag_off + 1)               # the inline word
+    return o
+
+
+def _t_bw(off):
+    """Thumb-2 B.W (T4); `off` is relative to Align(insn+4, 4). Returns 2 halves."""
+    assert off % 2 == 0 and -(1 << 24) <= off < (1 << 24), off
+    off &= 0x1FFFFFF
+    S = (off >> 24) & 1
+    I1 = (off >> 23) & 1
+    I2 = (off >> 22) & 1
+    imm10 = (off >> 12) & 0x3FF
+    imm11 = (off >> 1) & 0x7FF
+    J1 = ((~I1) & 1) ^ S
+    J2 = ((~I2) & 1) ^ S
+    return (0xF000 | (S << 10) | imm10,
+            0x9000 | (J1 << 13) | (J2 << 11) | imm11)
+
+
+def _epilogue_arm():
+    G = gen_cases
+    return [G.blk(0, 12, 0xFFF, 0, 1),                   # stm r12, {r0-r11}
+            G.mrs(0),                                    # mrs r0, cpsr
+            G.mem_w(0, 0, 0, 12, 64),                    # str r0, [r12,#64]
+            G.dp_imm(G.OP["mov"], 0, 0, 0),              # mov r0, #0
+            G.mem_w(0, 0, 0, 12, 48), G.mem_w(0, 0, 0, 12, 52),
+            G.mem_w(0, 0, 0, 12, 56), G.mem_w(0, 0, 0, 12, 60),
+            G.mem_w(1, 0, 13, 12, OFF_PAD_REL),          # ldr sp, [r12,#88]
+            G.blk(1, 13, 0xFF0 | (1 << 15), 0, 1, w=1)]   # pop {r4-r11, pc}
+
+
+def _epilogue_thumb(a):
+    """The Thumb capture + return gadget. `a` is its own (even) address."""
+    cap = _u16([0xE88C, 0x0FFF,    # stmia r12, {r0-r11}
+                0xF3EF, 0x8000,    # mrs r0, cpsr
+                0xF040, 0x0020,    # orr.w r0, r0, #0x20  (record the T bit)
+                0xF8CC, 0x0040,    # str r0, [r12, #64]
+                0x2000,            # movs r0, #0
+                0xF8CC, 0x0030, 0xF8CC, 0x0034,
+                0xF8CC, 0x0038, 0xF8CC, 0x003C])
+    assert len(cap) == 34
+    ldr_off = 34                  # ldr r3, .Lret  (T16, 2 bytes) then bx r3
+    after = a + ldr_off + 4       # end of bx r3
+    ret = (after + 3) & ~3        # `.p2align 2` then `.Lret: .word .Larm`
+    base = (a + ldr_off + 4) & ~3  # a T16 literal load uses Align(insn+4, 4)
+    delta = ret - base
+    assert delta % 4 == 0 and 0 <= delta // 4 < 256, (a, base, ret)
+    return (cap + _u16([0x4B00 | (delta // 4), 0x4718]) + b"\x00" * (ret - after) +
+            _u32([CODE_BASE + ret + 4]) +   # .Lret: .word .Larm  (an absolute addr)
+            _u32(_epilogue_arm()[-2:]))   # .Larm: ldr sp / pop
+
+
+def capstone_check():
+    """Every hand-encoded scaffolding word must decode to what we meant."""
+    import capstone
+    md_a = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
+    md_t = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
+    body = _epilogue_arm()
+    blob = _u32(body)
+    got = ["%s %s" % (i.mnemonic, i.op_str) for i in
+           md_a.disasm(blob, 0, len(blob))]
+    want = ["stm ip, {r0, r1, r2, r3, r4, r5, r6, r7, r8, sb, sl, fp}",
+            "mrs r0, apsr", "str r0, [ip, #0x40]", "mov r0, #0",
+            "str r0, [ip, #0x30]", "str r0, [ip, #0x34]",
+            "str r0, [ip, #0x38]", "str r0, [ip, #0x3c]",
+            "ldr sp, [ip, #0x58]", "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}"]
+    assert got == want, (got, want)
+    tb = _epilogue_thumb(0)[:38]
+    got = ["%s %s" % (i.mnemonic, i.op_str) for i in
+           md_t.disasm(tb, 0, len(tb))]
+    # the literal offset is derived, so state it from the encoder itself
+    want = ["stm.w ip, {r0, r1, r2, r3, r4, r5, r6, r7, r8, sb, sl, fp}",
+            "mrs r0, apsr", "orr r0, r0, #0x20", "str.w r0, [ip, #0x40]", "movs r0, #0",
+            "str.w r0, [ip, #0x30]", "str.w r0, [ip, #0x34]",
+            "str.w r0, [ip, #0x38]", "str.w r0, [ip, #0x3c]",
+            "ldr r3, [pc, #4]", "bx r3"]
+    assert got == want, (got, want)
+
+
+def wrapper_check(cases):
+    from unicorn import Uc, UC_ARCH_ARM, UC_MODE_ARM, UcError, UC_HOOK_CODE
+    from unicorn import arm_const as ac
+    capstone_check()
+    print("capstone: the hand-encoded wrapper scaffolding decodes as intended")
+
+    fail = 0
+    entry_bad = 0
+    entry_regs = set()
+
+
+    for c in cases:
+        G = gen_cases
+        frag = G._bytes(c)
+        post = _u32(c["post"])
+        frag_off = _prologue_len(c)          # where the fragment starts
+        pro = _u32(_prologue_words(c, frag_off))
+        assert len(pro) == frag_off
+        # between the fragment and the capture: the generator's b.w over the
+        # post-fragment literal (Thumb entry only) and then the literal itself
+        guard = b""
+        if c["mode"] == "thumb" and c["post"]:
+            a = frag_off + len(frag)
+            off = (a + 4 + len(post)) - ((a + 4) & ~3)
+            guard = _u16(_t_bw(off))
+            assert len(guard) == 4
+        a = frag_off + len(frag) + len(guard) + len(post)
+        epi = _u32(_epilogue_arm()) if c["mode"] == "arm" else _epilogue_thumb(a)
+        image = pro + frag + guard + post + epi
+
+        def fresh():
+            uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
+            uc.mem_map(CODE_BASE, 0x40000)
+            uc.mem_write(CODE_BASE, image)
+            seed = bytearray(MEM)
+            for k in range(MEM // 4):
+                struct.pack_into("<I", seed, k * 4, 0x10000000 + k)
+            uc.mem_write(SCRATCH, bytes(seed))
+            uc.mem_write(OUTBUF, b"\x00" * 0x200)
+            # CPSR FIRST: writing it selects the register bank and would
+            # otherwise throw away a stack pointer written before it.
+            uc.reg_write(ac.UC_ARM_REG_CPSR, CPSR_INIT)
+            for r in range(13):
+                uc.reg_write(getattr(ac, "UC_ARM_REG_R%d" % r), 0)
+            uc.reg_write(ac.UC_ARM_REG_R0, OUTBUF)
+            uc.reg_write(ac.UC_ARM_REG_R1, SCRATCH)
+            uc.reg_write(ac.UC_ARM_REG_SP, STACKTOP)
+            uc.reg_write(ac.UC_ARM_REG_LR, SENTINEL)
+            return uc
+
+        # A. the harness's own prologue + the fragment, stopping exactly where
+        #    the capture begins. Everything up to this point is identical to the
+        #    wrapper's own run, so a difference can ONLY be the epilogue.
+        uc = fresh()
+        seen = {}
+        lo, hi = CODE_BASE + frag_off, CODE_BASE + frag_off + len(frag)
+
+        def at_entry(_uc, addr, _size, _ud):
+            if lo <= addr < hi and "r" not in seen:
+                seen["r"] = [_uc.reg_read(getattr(ac, "UC_ARM_REG_R%d" % r))
+                             for r in range(12)]
+                seen["cpsr"] = _uc.reg_read(ac.UC_ARM_REG_CPSR)
+        uc.hook_add(UC_HOOK_CODE, at_entry)
+        ref_err = None
+        try:
+            uc.emu_start(CODE_BASE, hi, 0, 200000)
+        except UcError as e:
+            ref_err = str(e)
+        ref = [uc.reg_read(getattr(ac, "UC_ARM_REG_R%d" % r)) for r in range(12)]
+        ref_cpsr = uc.reg_read(ac.UC_ARM_REG_CPSR)
+
+        # the state the fragment was actually handed, vs the case's declared one
+        want0 = [0] * 12
+        want0[9] = SCRATCH
+        for reg, val in c["init"].items():
+            if val is not None:
+                want0[reg] = val & 0xFFFFFFFF
+        if "r" in seen and seen["r"] != want0:
+            entry_bad += 1
+            for r in range(12):
+                if seen["r"][r] != want0[r]:
+                    entry_regs.add("r%d" % r)
+
+        # B. the whole wrapper.
+        uc = fresh()
+        err = None
+        try:
+            uc.emu_start(CODE_BASE, SENTINEL, 0, 200000)
+        except UcError as e:
+            err = str(e)
+        pc = uc.reg_read(ac.UC_ARM_REG_PC)
+        got = ["0x%08x" % struct.unpack("<I", uc.mem_read(OUTBUF + OFF_REGS + 4 * r, 4))[0]
+               for r in range(16)]
+        cpsr = "0x%08x" % struct.unpack("<I", uc.mem_read(OUTBUF + OFF_CPSR, 4))[0]
+        want = ["0x%08x" % (v & 0xFFFFFFFF) for v in ref] + ["0x00000000"] * 4
+        # Compare exactly the field the comparer compares: nzcvq = cpsr &
+        # A32_CPSR_MASK (NZCV + Q + the T bit). The remainder of a raw cpsr is
+        # explicitly never compared, and a Thumb `mrs` need not report the mode
+        # bits.
+        nzcvq_mask = 0xF8000020
+        cpsr_ok = (int(cpsr, 16) & nzcvq_mask) == (ref_cpsr & nzcvq_mask)
+        if err or ref_err or pc != SENTINEL or got != want or not cpsr_ok:
+            fail += 1
+            print("  WRAPPER: case %d %s (%s entry): err=%s ref=%s pc=0x%08x%s%s"
+                  % (c["id"], c["name"], c["mode"], err, ref_err, pc,
+                     "" if got == want else " regs differ",
+                     "" if cpsr_ok else " nzcvq differs"))
+    print("wrapper: ran the full prologue+fragment+epilogue for %d cases; %d did not "
+          "capture exactly the state the fragment left" % (len(cases), fail))
+    if entry_bad:
+        print("wrapper: NOTE %d cases are handed a different entry state than they "
+              "declare (registers: %s) -- the harness's own entry trampoline writes "
+              "them BEFORE the fragment runs, so the oracle records the trampoline's "
+              "value where the interpreter has the declared one. That is the Thumb "
+              "entry switch (`adr r3, 1f` / `blx r3`) clobbering r3 (and blx's lr), "
+              "not an epilogue bug, but it WILL make the compare job name these cases."
+              % (entry_bad, ", ".join(sorted(entry_regs))))
+    return fail
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -190,6 +458,7 @@ def main():
 
     bad = decode_check(cases)
     manifest, goldens = run_unicorn(cases, fp_init)
+    wrap_bad = wrapper_check(cases) if "--wrapper-check" in sys.argv else 0
 
     with open(os.path.join(outdir, "a32_cases.json"), "w") as f:
         json.dump({"format": "a32-cases/1", "count": len(manifest), "cases": manifest}, f, indent=1)
@@ -206,7 +475,7 @@ def main():
             print("stderr:", r.stderr)
         print("a32diff exit: %d" % r.returncode)
         return r.returncode
-    return 1 if bad else 0
+    return 1 if (bad or wrap_bad) else 0
 
 
 if __name__ == "__main__":
