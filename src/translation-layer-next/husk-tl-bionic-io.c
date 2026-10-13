@@ -1174,7 +1174,23 @@ static int b_mprotect(void *a, size_t l, int prot)
 {
     /* Code a hooking library is about to patch: its permissions stay as they are, and its stores are carried out through
      * the writable view as they fault (husk-tl-codewrite.c). */
-    if (tl_codewrite_enabled() && tl_xmem_contains(a)) { mm_trace("mprotect", a, l, prot, 0); return 0; }
+    if (tl_codewrite_enabled() && tl_xmem_contains(a)) {
+        /* A page the guest names with PROT_EXEC that is in the WRITABLE view is its own JIT arena (the loader retargets
+         * the guest's adrp at the writable view, husk-tl-ld.c), which the guest then calls through that address. The
+         * executable view of those pages already runs, but the address the guest holds does not, so execute is added to
+         * the writable view -- and only claimed if that really happened. */
+        if ((prot & PROT_EXEC) && !tl_xmem_is_rx(a)) {
+            bool ok = tl_xmem_allow_exec(a, l);
+            static int said;
+            if (said++ < 1)
+                tl_log_line("husk: mprotect exec on the writable view a=%p l=%#zx prot=%d (executable view %p): %s",
+                            a, l, prot, (void *)((uintptr_t)a - (uintptr_t)tl_xmem_delta()),
+                            ok ? "made executable (the guest's JIT arena)" : "REFUSED; the guest's arena stays non-executable");
+            if (!ok) { tl_set_guest_errno(13); return -1; }  /* EACCES: an honest failure, not a lie */
+        }
+        mm_trace("mprotect", a, l, prot, 0);
+        return 0;
+    }
     if (prot & PROT_EXEC) {
         /* the host's own code (a guest that patches "the linker", which here is Apple's): never touched */
         Dl_info di;

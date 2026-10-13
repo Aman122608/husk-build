@@ -19,6 +19,11 @@ void  tl_log_line(const char *fmt, ...);
 void *tl_bionic_find(const char *name);
 bool  tl_bionic_is_system_lib(const char *soname);
 
+/* The HLE's "this library's JNI_OnLoad has run" list (husk-tl-jni-hle.c), whose entries are
+ * tl_lib*. A session boundary frees those nodes, so the list must be emptied then. Declared
+ * weak so this file compiles and links whether or not the tree provides the hook. */
+extern void tl_jni_hle_reset_onload(void) __attribute__((weak));
+
 /* ------------------------------------------------------------------ ELF */
 
 typedef struct { uint8_t e_ident[16]; uint16_t e_type, e_machine; uint32_t e_version;
@@ -88,6 +93,7 @@ struct tl_lib {
     size_t n_x18, n_x18_failed;    /* sites rewritten for the reserved register, and sites that could not be */
     int state;                     /* 0 mapped, 1 relocating, 2 relocated, 3 initialising, 4 initialised */
     uint32_t n_unresolved;
+    int session;                   /* the G.session that mapped this library: a later session's lookups skip it (see the session scope below) */
 };
 
 static struct {
@@ -97,6 +103,7 @@ static struct {
     tl_zip apks[TL_LD_MAX_APKS];
     int napks;
     int verbosity;
+    int session;                   /* one app's run; 0 until tl_ld_begin_session is first called, so a process that never uses sessions behaves exactly as before */
     size_t unresolved;
     uint8_t *tcb_rx, *tcb_rw;      /* the fake thread block every `mrs tpidr_el0` reads */
     char **argv, **envp;
@@ -131,7 +138,12 @@ const char *tl_ld_queued_split(int i) { return i >= 0 && i < g_nsplits ? g_split
 static bool add_one(const char *path)
 {
     for (int i = 0; i < G.napks; i++) if (!strcmp(g_apk_paths[i], path)) return true;     /* already there */
-    if (G.napks >= TL_LD_MAX_APKS) return false;
+    /* A silent refusal here is what makes the ceiling invisible: the 16th APK would simply not be
+     * there for asset access, with no line in the log to say so. */
+    if (G.napks >= TL_LD_MAX_APKS) {
+        tl_log_line("ld: %d APKs are already open (the limit is %d): %s not added", G.napks, TL_LD_MAX_APKS, path);
+        return false;
+    }
     char err[160];
     if (!tl_zip_open(&G.apks[G.napks], path, err, sizeof(err))) {
         tl_log_line("ld: cannot open %s: %s", path, err);
@@ -327,11 +339,35 @@ static uint32_t dynsym_bound(const tl_lib *L, uint32_t hashed)
 const char *tl_path_resolve(const char *path, char *buf, size_t n);
 static const char *base_name(const char *path) { const char *b = strrchr(path, '/'); return b ? b + 1 : path; }
 
+/*
+ * ------------------------------------------------------------- session scope
+ *
+ * The registry (G.libs) is process-wide and only ever grows: a game's libraries are mapped
+ * into Husk's own process and there is no unload. So without a scope a second app's shared
+ * sonames -- libc++_shared.so, libmain.so, libunity.so -- would resolve through find_loaded
+ * here, and its addresses through tl_ld_lib_of below, to the FIRST app's mappings: it would
+ * be the first app's code that ran. Every node carries the session that mapped it, and every
+ * walk of the registry skips nodes from another session. The mappings themselves are never
+ * touched (see tl_ld_end_session). A session of 0 -- before tl_ld_begin_session is first
+ * called -- matches every node, so a process that never uses sessions is unaffected.
+ */
+static inline bool lib_in_session(const tl_lib *L) { return L && L->session == G.session; }
+
+/* Whether `lib` is a node the current session's registry holds. A handle a guest kept (a Java
+ * static, Geode's cache, g_onload_done) may point at a node an earlier session's end freed:
+ * compare the pointer first, so a stale handle is refused rather than dereferenced. */
+static bool lib_live(const tl_lib *lib)
+{
+    for (int i = 0; i < G.nlibs; i++) if (G.libs[i] == lib) return lib->session == G.session;
+    return false;
+}
+
 /* By the name it was asked for, its soname, or -- for one loaded from a path (a mod's library) -- its file name. */
 static tl_lib *find_loaded(const char *name)
 {
     const char *b = base_name(name);
     for (int i = 0; i < G.nlibs; i++) {
+        if (!lib_in_session(G.libs[i])) continue;      /* a previous app's library is not this app's, however the name matches */
         if (!strcmp(G.libs[i]->name, name) || !strcmp(G.libs[i]->soname, name)) return G.libs[i];
         if (!strcmp(base_name(G.libs[i]->name), b) || !strcmp(G.libs[i]->soname, b)) return G.libs[i];
     }
@@ -430,10 +466,15 @@ static void *lookup_for(tl_lib *L, const char *name, bool *weak_hit)
 void *tl_ld_sym(tl_lib *lib, const char *name)
 {
     if (lib) {
+        /* An explicit handle must be one this session loaded. A handle from an earlier session --
+         * kept in a Java static, a driver's cache, g_onload_done -- would otherwise resolve to that
+         * app's code; refusing it also turns a freed node into NULL instead of a use-after-free. */
+        if (!lib_live(lib)) return NULL;
         const elf_sym *s = lib_find(lib, name);
         return s ? sym_value(lib, s) : NULL;
     }
     for (int i = 0; i < G.nlibs; i++) {
+        if (!lib_in_session(G.libs[i])) continue;      /* the global namespace is this session's, not the process's */
         const elf_sym *s = lib_find(G.libs[i], name);
         if (s) return sym_value(G.libs[i], s);
     }
@@ -444,7 +485,7 @@ void *tl_ld_sym(tl_lib *lib, const char *name)
  * Signal loads libringrtc, whose JNI_OnLoad is in the libringrtc_rffi it needs) */
 void *tl_ld_sym_deep(tl_lib *lib, const char *name, tl_lib **found_in)
 {
-    if (!lib) return NULL;
+    if (!lib || !lib_live(lib)) return NULL;      /* a handle from an earlier session is not walked */
     const elf_sym *s = lib_find(lib, name);
     if (s) { if (found_in) *found_in = lib; return sym_value(lib, s); }
     build_scope(lib);
@@ -463,6 +504,7 @@ tl_lib *tl_ld_lib_of(const void *addr)
     const uint8_t *a = addr;
     for (int i = 0; i < G.nlibs; i++) {
         tl_lib *L = G.libs[i];
+        if (!lib_in_session(L)) continue;              /* an address in a previous app's image is not this session's library */
         size_t span = L->npages * PAGE;
         if ((a >= L->rx && a < L->rx + span) || (a >= L->rw && a < L->rw + span)) return L;
     }
@@ -500,6 +542,7 @@ size_t tl_ld_maps(char *buf, size_t n, const char *libdir)
     pthread_mutex_lock(&G.lock);
     for (int i = 0; i < G.nlibs && k + 200 < n; i++) {
         tl_lib *L = G.libs[i];
+        if (!lib_in_session(L)) continue;
         if (L->state < 2) continue;
         uintptr_t lo = (uintptr_t)L->rx, hi = lo + L->npages * PAGE;
         k += (size_t)snprintf(buf + k, n - k, "%lx-%lx r-xp 00000000 fd:00 %d %s/%s\n", (unsigned long)lo, (unsigned long)hi, 4000 + i,
@@ -514,6 +557,7 @@ int tl_ld_iterate(tl_ld_phdr_cb cb, void *user)
     int r = 0;
     for (int i = 0; i < G.nlibs && !r; i++) {
         tl_lib *L = G.libs[i];
+        if (!lib_in_session(L)) continue;
         if (L->state < 2) continue;
         r = cb((uintptr_t)(L->rx - L->base_vaddr), L->name, L->phdr, L->phnum, user);
     }
@@ -1180,7 +1224,10 @@ static int g_ntls;
 static pthread_key_t g_tls_key;
 static pthread_once_t g_tls_once = PTHREAD_ONCE_INIT;
 
-typedef struct { void *blk[MAX_TLS_MODULES + 1]; } tls_thread;
+/* A thread's blocks for the modules, each tagged with the session it was filled from: a module
+ * number is reused every session, so a block left over from an earlier app must not be handed
+ * out again (see tls_block). */
+typedef struct { void *blk[MAX_TLS_MODULES + 1]; int gen[MAX_TLS_MODULES + 1]; } tls_thread;
 static void tls_thread_free(void *p) { tls_thread *t = p; for (int i = 0; i <= MAX_TLS_MODULES; i++) free(t->blk[i]); free(t); }
 static void tls_key_init(void) { pthread_key_create(&g_tls_key, tls_thread_free); }
 
@@ -1190,6 +1237,18 @@ static void *tls_block(unsigned module)
     if (module == 0 || module > (unsigned)g_ntls) return NULL;
     tls_thread *t = pthread_getspecific(g_tls_key);
     if (!t) { t = calloc(1, sizeof(*t)); pthread_setspecific(g_tls_key, t); }
+    /* Module numbers are per session (g_ntls is reset at tl_ld_begin_session). A thread that
+     * survived the last app still carries blocks under those numbers, filled from that app's
+     * template; asking for the number now must give THIS session's copy, so a block from another
+     * session is dropped and rebuilt. This is safe only because a thread of a finished app never
+     * runs guest code again -- the launch thread is pause()-parked and guest threads are left
+     * quarantined -- so nothing reads the block that is dropped. If that ever stops holding, the
+     * numbers must not be reused (raise MAX_TLS_MODULES and never reset g_ntls). */
+    if (t->gen[module] != G.session) {
+        free(t->blk[module]);
+        t->blk[module] = NULL;
+        t->gen[module] = G.session;
+    }
     if (!t->blk[module]) {
         uint64_t al = g_tlsmod[module].align < 16 ? 16 : g_tlsmod[module].align;
         void *b = NULL;
@@ -1814,6 +1873,7 @@ static tl_lib *map_library(const char *name, uint8_t *file, size_t flen)
 
     tl_lib *L = calloc(1, sizeof(*L));
     snprintf(L->name, sizeof(L->name), "%s", name);
+    L->session = G.session;        /* the session that mapped it: later sessions' lookups skip it */
     L->rx = rx; L->rw = rw; L->base_vaddr = base_vaddr; L->npages = npages; L->pflags = flags;
     L->phdr = phs; L->phnum = eh->e_phnum;
     load_unwind_ranges(L, file, flen, phs, eh->e_phnum);
@@ -1995,5 +2055,113 @@ bool tl_ld_init(tl_lib *lib)
     pthread_mutex_lock(&g_big);
     bool ok = init_locked(lib);
     pthread_mutex_unlock(&g_big);
+    return ok;
+}
+
+/* ---------------------------------------------------- the session, as a pair */
+
+/*
+ * One session is one app's run. What it buys: a second app in the same process cannot resolve a
+ * library, a symbol or an address through the first app's mappings -- which are still there,
+ * because the executable region is a one-shot bump allocator and nothing is ever unmapped. The
+ * tag makes them unreachable; the mapping stays put.
+ *
+ * The node frees only the layer's own allocations. Everything that points into the region --
+ * rx/rw, the stub pools, isl_*, the pages the FDE tables describe -- is left alone: unmapping a
+ * slice would break the fixed rw<->rx delta every retargeted adrp, image_addr and the code-write
+ * emulator rely on, and a thread the app left running may still be standing on those pages.
+ */
+static void free_registry_node(tl_lib *L)
+{
+    free(L->pflags);
+    free(L->phdr);
+    free(L->fde_start);
+    free(L->fde_end);
+    free(L->symcache);                 /* NULL once relocation is done, freed defensively */
+    free(L);
+}
+
+/* Drop every node that is not part of the current session, keeping the survivors in load order
+ * (tl_ld_sym(NULL, ...) and tl_ld_iterate are documented as load order). Called with g_big held. */
+static int drop_other_sessions(void)
+{
+    int w = 0, dropped = 0;
+    pthread_mutex_lock(&G.lock);
+    for (int i = 0; i < G.nlibs; i++) {
+        tl_lib *L = G.libs[i];
+        if (!lib_in_session(L)) { free_registry_node(L); dropped++; continue; }
+        G.libs[w++] = L;
+    }
+    G.nlibs = w;
+    pthread_mutex_unlock(&G.lock);
+    return dropped;
+}
+
+/* A new app's libraries: later lookups ignore anything an earlier session loaded. */
+void tl_ld_begin_session(void)
+{
+    pthread_mutex_lock(&g_big);
+    G.session++;
+    int hidden = drop_other_sessions();     /* 0 in the usual begin-after-end order */
+    /* Module numbers belong to the session, not the process: a library registering one is this
+     * session's, and any thread's block under a reused number is tagged with its session (tls_block). */
+    g_ntls = 0;
+    if (tl_jni_hle_reset_onload) tl_jni_hle_reset_onload();
+    tl_log_line("husk: session begin %d (%d registry entries from earlier sessions dropped, %zu KiB of the region used)",
+                G.session, hidden, tl_xmem_used() >> 10);
+    pthread_mutex_unlock(&g_big);
+}
+
+/* The app is over: drop every earlier session's registry node. Mappings stay (see above). */
+void tl_ld_end_session(void)
+{
+    pthread_mutex_lock(&g_big);
+    G.session++;                           /* the run that just ended is now an earlier session */
+    int dropped = drop_other_sessions();
+    int kept = G.nlibs;
+
+    /* Our own file bookkeeping, which is append-only and would otherwise run out. Each APK handle
+     * holds a whole-file mapping and a descriptor and TL_LD_MAX_APKS is 16, so a handful of launches
+     * exhaust the cap; the search dirs are strdup'd; the queued splits are the ended app's. All of
+     * it is the layer's own -- none of it is guest memory, and none of it is the mappings. */
+    int napks = 0, ndirs = g_nsearch, nsplits = g_nsplits;
+    pthread_mutex_lock(&G.lock);
+    for (int i = 0; i < G.napks; i++) { tl_zip_close(&G.apks[i]); napks++; }
+    G.napks = 0;
+    memset(g_apk_paths, 0, sizeof(g_apk_paths));
+    pthread_mutex_unlock(&G.lock);
+    for (int i = 0; i < g_nsearch; i++) { free(g_search[i]); g_search[i] = NULL; }
+    g_nsearch = 0;
+    g_nsplits = 0;
+    /* Module numbers are reset here too, not only at begin: the state machine may wire only one of the
+     * pair (tl_ld_end_session is already called from husk_tl_session_close), and the 16-module cap must
+     * not accumulate across apps either way. The session id has already advanced, so a thread that
+     * survived the run rebuilds its blocks under the reused numbers (tls_block). */
+    g_ntls = 0;
+    if (tl_jni_hle_reset_onload) tl_jni_hle_reset_onload();
+
+    tl_log_line("husk: session end %d: dropped %d registry entries, kept %d, closed %d APKs, freed %d search dirs, cleared %d queued splits",
+                G.session, dropped, kept, napks, ndirs, nsplits);
+    pthread_mutex_unlock(&g_big);
+}
+
+int tl_ld_session(void) { return G.session; }
+
+/* How many libraries from an earlier session the registry still holds; 0 after tl_ld_end_session(). */
+int tl_ld_stale_count(void)
+{
+    pthread_mutex_lock(&G.lock);
+    int n = 0;
+    for (int i = 0; i < G.nlibs; i++) if (!lib_in_session(G.libs[i])) n++;
+    pthread_mutex_unlock(&G.lock);
+    return n;
+}
+
+/* Whether `lib` is a node the current session's registry holds (for a dlsym handle check). */
+bool tl_ld_handle_live(const tl_lib *lib)
+{
+    pthread_mutex_lock(&G.lock);
+    bool ok = lib_live(lib);
+    pthread_mutex_unlock(&G.lock);
     return ok;
 }

@@ -88,7 +88,7 @@ struct AppDetailView: View {
     private var live: AndroidHost.Package {
         host.packages.first { $0.name == app.name } ?? app
     }
-    private var canOpen: Bool { host.isReady && host.busy == nil }
+    private var canOpen: Bool { host.isReady && host.busy == nil && !NativeSession.isOpen }
 
     var body: some View {
         List {
@@ -99,7 +99,7 @@ struct AppDetailView: View {
                 } label: {
                     HStack {
                         Spacer()
-                        Label(canOpen ? "Launch" : "Starting Android…",
+                        Label(canOpen ? "Launch" : (host.isReady ? "A game is still loaded" : "Starting Android…"),
                               systemImage: canOpen ? "play.fill" : "hourglass")
                             .font(.headline)
                         Spacer()
@@ -111,6 +111,7 @@ struct AppDetailView: View {
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             } footer: {
                 if !host.isReady { Text("It opens as soon as Android answers.") }
+                else if NativeSession.isOpen { Text("A game is still loaded in this run of Husk. Leave it — Close on its screen — and its session closes so this app can start; if it will not close, reopen Husk.") }
             }
 
             Section {

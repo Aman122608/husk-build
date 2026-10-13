@@ -7,6 +7,10 @@
  *   - unpacks Python's standard library and modules (lib/<abi>/libpybundle.so, a gzipped tar despite the name) there too;
  *   - sets the environment p4a's start.c reads: ANDROID_ARGUMENT, ANDROID_ENTRYPOINT, PYTHONHOME, PYTHONPATH and friends.
  * This does the same, so the SDL driver can run the game as it runs any other SDL2 game.
+ *
+ * A Ren'Py game is the other shape, and wants a different environment: its launcher and engine are the app's own
+ * (librenpython.so, assets/private.mp3), and its Python reads the APK itself rather than the NDK asset API. It is told
+ * Ren'Py's Android environment instead (see tl_renpy_prepare), never the python-for-android one below.
  */
 #define _DARWIN_C_SOURCE
 #include <errno.h>
@@ -111,9 +115,55 @@ bool tl_python_is_app(const char *apk)
     return yes;
 }
 
+/* A Ren'Py game is not a python-for-android app: the launcher and engine are the app's own (librenpython.so), and the
+   Python side -- main.py, renpy/, the standard library -- is assets/private.mp3, a gzipped tar where p4a ships
+   assets/private.tar. Its Python then reads the APK itself (zipfile.ZipFile(os.environ["ANDROID_APK"])) instead of the
+   NDK asset API, and it looks for its common modules only when renpy.android is true, so it needs the environment below. */
+static bool tl_renpy_is_app(const char *apk)
+{
+    tl_zip z; char err[160];
+    if (!tl_zip_open(&z, apk, err, sizeof(err))) return false;
+    bool yes = tl_zip_find(&z, "assets/private.mp3") && tl_zip_find(&z, "lib/arm64-v8a/librenpython.so");
+    tl_zip_close(&z);
+    return yes;
+}
+
+/* Give Ren'Py the Android environment its loader requires, before the interpreter starts.
+   renpy.android is "ANDROID_PRIVATE" in os.environ -- false unless it is set, and false means loader.py never runs its
+   "if renpy.android:" block, so `apks` stays empty, no common module is found, and the first load_module("_errorhandling")
+   raises "Module _errorhandling could not be loaded." ANDROID_PRIVATE must be the folder private.mp3 was extracted into
+   (Ren'Py's own native preparePython put it in the app's files dir). ANDROID_APK is the archive whose android/apk.py
+   opens it with zipfile -- the layer's real APK path, the one the "Opening APK" line prints. ANDROID_PUBLIC and
+   ANDROID_OLD_PUBLIC are dereferenced (joined with "saves" and "game") unconditionally under "if renpy.android" in
+   Ren'Py's launcher main.py, so a missing one is a KeyError, not a fallback; the app's shared-storage folder is what
+   they name. RENPY_PLATFORM picks sitecustomize's android branch, which has already run by the time we get here
+   ("Logging start."). Real paths, not the layer's short Android spellings: Ren'Py hands ANDROID_APK straight to SDL's
+   own file I/O, which the layer opens as a host path. */
+static bool tl_renpy_prepare(const char *apk, const char *data_dir)
+{
+    char files[1024], pub[1024];
+    snprintf(files, sizeof(files), "%s/files", data_dir);   /* where preparePython extracted private.mp3 */
+    mkdirs(files);
+    snprintf(pub, sizeof(pub), "%s/sdcard", data_dir);       /* the app's shared storage, as the layer names it */
+    mkdirs(pub);
+    setenv("ANDROID_PRIVATE", files, 1);
+    setenv("ANDROID_APK", apk, 1);
+    setenv("ANDROID_PUBLIC", pub, 1);
+    setenv("ANDROID_OLD_PUBLIC", pub, 1);
+    setenv("RENPY_PLATFORM", "android-arm64", 1);
+    tl_log_line("husk: renpy env ANDROID_PRIVATE=%s", files);
+    tl_log_line("husk: renpy env ANDROID_APK=%s", apk);
+    tl_log_line("husk: renpy env ANDROID_PUBLIC=%s", pub);
+    tl_log_line("husk: renpy env ANDROID_OLD_PUBLIC=%s", pub);
+    tl_log_line("husk: renpy env RENPY_PLATFORM=android-arm64");
+    return true;
+}
+
 /* Unpack the app and Python once per APK (a stamp of its size and time), and set the environment. */
 bool tl_python_prepare(const char *apk, const char *data_dir)
 {
+    /* Ren'Py gets its own Android environment; it shares nothing with the python-for-android branch below. */
+    if (tl_renpy_is_app(apk)) return tl_renpy_prepare(apk, data_dir);
     if (!tl_python_is_app(apk)) return false;
     char files[1024], app[1100], stamp_path[1200], stamp[64];
     snprintf(files, sizeof(files), "%s/files", data_dir);

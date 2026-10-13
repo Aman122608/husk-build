@@ -16,6 +16,8 @@ public final class InputMethods {
     private static EditorInfo sInfo;
     private static boolean sShown;
     private InputMethods() {}
+    /** Forget the focused view and its input connection from the previous app. */
+    static void resetForNewApp() { sFocused = null; sConn = null; sInfo = null; sShown = false; }
     public static View focused() { return sFocused; }
     public static boolean shown() { return sShown; }
     public static void focusChanged(View old, View now) {

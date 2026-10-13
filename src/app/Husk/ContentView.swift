@@ -34,6 +34,7 @@ struct ContentView: View {
     @ObservedObject private var crash = CrashReport.shared
     @ObservedObject private var massTest = MassTest.shared
     @ObservedObject private var updates = AppUpdates.shared
+    @ObservedObject private var statuses = GameStatusStore.shared
     @State private var showWhatsNew = false
     @AppStorage(Holiday.key) private var holiday = true
 
@@ -99,10 +100,28 @@ struct ContentView: View {
                 }
             }
 
+            // A swap verdict with something to say (a leak, or a session that would not close): shown the same way, so
+            // what the layer did is visible without hunting for it on the game's own page.
+            if let notice = statuses.notice {
+                VStack {
+                    Spacer()
+                    ToastView(toast: notice) { statuses.notice = nil }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .task(id: notice.id) {
+                    try? await Task.sleep(nanoseconds: 6_500_000_000)
+                    withAnimation(.snappy) {
+                        if statuses.notice?.id == notice.id { statuses.notice = nil }
+                    }
+                }
+            }
+
             if started && runner.isRunning {
                 GuestScreenView(showLogs: $showLogs,
                                 chromeHidden: false,
-                                onBack: { showGuestScreen = false })
+                                onBack: { leaveGameSurfaces() })
                     .opacity(showGuestScreen ? 1 : 0)
                     .allowsHitTesting(showGuestScreen)
             }
@@ -126,6 +145,7 @@ struct ContentView: View {
         .onChange(of: appearance) { Theme.apply($0) }
         .animation(.snappy(duration: 0.22), value: showGuestScreen)
         .animation(.snappy(duration: 0.25), value: host.toast)
+        .animation(.snappy(duration: 0.25), value: statuses.notice)
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 showOnboarding = false
@@ -221,6 +241,15 @@ struct ContentView: View {
             // foreground is the moment worth re-checking, not first launch.
             if phase == .active { evaluate() }
         }
+    }
+
+    /// Leaving a game's surface. The native layer is asked to close its session here, so a second app can start without
+    /// relaunching Husk, and the swap verdict is written down for whichever app the layer was holding. There is normally
+    /// no native session while the guest is on screen — the guest and the native runtime are separate — so this is usually
+    /// a no-op; but the one place a game is left should not be the one place its session is forgotten.
+    private func leaveGameSurfaces() {
+        if let message = NativeSession.closeLoaded()?.message { statuses.notice = message }
+        showGuestScreen = false
     }
 
     /// Every package Husk holds, from both sides: what the picture index is read for.

@@ -29,6 +29,10 @@ public final class KeyStoreProvider extends Provider {
     }
 
     private static boolean sInstalled;
+
+    /** The keys belong to the previous app's data dir: drop the cache. sInstalled is cleared with them; the next app's
+     *  install() then runs addProvider again, which is a no-op (returns -1) for a provider already in the list. */
+    static void resetForNewApp() { sInstalled = false; sKeys = null; }
     /** At start: the provider in the list, where KeyStore.getInstance("AndroidKeyStore") finds it. */
     public static synchronized void install() {
         if (sInstalled) return;

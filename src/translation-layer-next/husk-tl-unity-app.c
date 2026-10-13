@@ -45,6 +45,17 @@ static char g_geode_zip[1024], g_geode_launcher[1024];
 void tl_hle_set_ca_bundle(const char *path);
 extern int tl_log_sink_fd;
 
+/*
+ * The session-reset contract is being added in parallel to these headers (plan §3/§4). Declared
+ * here so this file is correct by construction until those land; a later, identical declaration in
+ * the header is a harmless redeclaration in C. Do NOT implement these here -- they belong to the
+ * engines that own them (husk-tl-dvm.c, husk-tl-dvm-android.c, husk-tl-ld.c).
+ */
+extern int  tl_javaapp_reset(void);     /* husk-tl-dvm-javaapp.h: stop the Java app's threads and drain its per-app state */
+extern bool tl_dvm_end_app(void);       /* husk-tl-dvm.h: drop the app's dexes and detach the classes they defined */
+extern void tl_ld_end_session(void);    /* husk-tl-ld.h: new linker session generation; stale mappings unreachable by name */
+extern int  tl_ld_stale_count(void);    /* husk-tl-ld.h: libraries from an earlier session still reachable by name */
+
 enum { ENGINE_UNITY = 0, ENGINE_COCOS = 1, ENGINE_GAMEACTIVITY = 2, ENGINE_SDL = 3, ENGINE_UE4 = 4, ENGINE_GTA = 5, ENGINE_GODOT = 6, ENGINE_FLUTTER = 7, ENGINE_GAMEMAKER = 8, ENGINE_JAVA = 9 };
 
 /* Where the Java runtime is: the ART, i18n, tzdata and conscrypt APEX folders and husk-framework.dex (scripts/build_java_runtime.sh). */
@@ -183,7 +194,10 @@ static void *heartbeat_thread(void *arg)
                           nm, (unsigned long long)seen, (unsigned long long)tl_va_clobber.x21, (unsigned long long)tl_va_clobber.mask);
           } }
         if ((A.engine == ENGINE_COCOS && tl_cocos_ended()) || (A.engine == ENGINE_GODOT && tl_godot_ended()) || (A.engine == ENGINE_GAMEMAKER && tl_gm_ended()) || (A.engine == ENGINE_JAVA && tl_javaapp_ended())) atomic_store(&A.state, HUSK_UNITY_ENDED);
-        if (atomic_load(&A.state) == HUSK_UNITY_ENDED || atomic_load(&A.state) == HUSK_UNITY_FAILED) return NULL;
+        /* Stop for any state that means this run is over, including the session close (STOPPING) and the
+         * closed gate (IDLE): the heartbeat has nothing left to say and must not log into a torn-down run. */
+        int st = atomic_load(&A.state);
+        if (st == HUSK_UNITY_ENDED || st == HUSK_UNITY_FAILED || st == HUSK_UNITY_STOPPING || st == HUSK_UNITY_IDLE) return NULL;
     }
 }
 
@@ -604,6 +618,249 @@ bool husk_native_wants_controller(void)
 }
 
 const char *husk_native_loaded_apk(void) { return atomic_load(&A.state) == HUSK_UNITY_IDLE ? NULL : A.apk; }
+
+/* ---------------------------------------------------------------- session swap */
+
+/*
+ * The session boundary: one app at a time, and between two apps the old run is closed, its
+ * bookkeeping reset and the gate opened again -- in that order (F-hazards-and-teardown.md §3).
+ * Nothing here touches memory, a guest thread or the allocator: reset the BOOKKEEPING, never the
+ * memory. The verdict of the last close/verification is kept for the UI.
+ */
+static char g_swap_status[160] = "no session";
+static int  g_swap_verdict = -1;
+
+static const char *engine_name(int e)
+{
+    switch (e) {
+    case ENGINE_UNITY: return "unity";
+    case ENGINE_COCOS: return "cocos";
+    case ENGINE_GAMEACTIVITY: return "gameactivity";
+    case ENGINE_SDL: return "sdl";
+    case ENGINE_UE4: return "ue4";
+    case ENGINE_GTA: return "gta";
+    case ENGINE_GODOT: return "godot";
+    case ENGINE_FLUTTER: return "flutter";
+    case ENGINE_GAMEMAKER: return "gamemaker";
+    case ENGINE_JAVA: return "java";
+    default: return "none";
+    }
+}
+
+static const char *state_name(int s)
+{
+    switch (s) {
+    case HUSK_UNITY_IDLE: return "idle";
+    case HUSK_UNITY_STARTING: return "starting";
+    case HUSK_UNITY_RUNNING: return "running";
+    case HUSK_UNITY_FAILED: return "failed";
+    case HUSK_UNITY_ENDED: return "ended";
+    case HUSK_UNITY_STOPPING: return "stopping";
+    default: return "?";
+    }
+}
+
+/*
+ * Can this engine go on to a different app in this process? Static, per engine; the evidence is the
+ * reconnaissance under .hermes/plans/engine-reset/ and the plan's §2/§2b tables:
+ *   SWAP_OK            -- B-java-dvm.md §4: both long-lived Java threads have a cooperative stop
+ *                         (quit the main Looper; set A.ended so the GL loop returns).
+ *   SWAP_PARTIAL       -- the driver unwinds, but a guest engine singleton survives, so only a
+ *                         DIFFERENT engine is safe next:
+ *                           cocos2d-x  D-other-engines.md §1 (U.stop + tl_cocos_stop; libcocos2dcpp.so survives)
+ *                           Godot      D-other-engines.md §4 (U.stop + tl_godot_stop; libgodot_android.so survives)
+ *                           GameMaker  D-other-engines.md §5 (G.stop exists but is not exported; libyoyo.so survives)
+ *                           Unity      C-native-engines.md §6 (tl_unity_stop exists but is unwired; IL2CPP re-init unproven)
+ *   SWAP_NEEDS_RESTART -- no in-process unwind at all:
+ *                           GameActivity D §2 (ui_main for(;;), owns a bionic ALooper TLS)
+ *                           SDL3         D §3 (ui_main for(;;), the same looper-TLS hazard)
+ *                           UE4          C §2.2 (ui_main for(;;); libUE4.so patched in place)
+ *                           GTA          C §2.3 (game_main for(;;) with no stop flag)
+ *                           Flutter      D §6 (--leak-vm=true; tl_codewrite is one-way)
+ */
+int husk_tl_swap_capability(int engine)
+{
+    switch (engine) {
+    case ENGINE_JAVA:      return SWAP_OK;
+    case ENGINE_COCOS:
+    case ENGINE_GODOT:
+    case ENGINE_GAMEMAKER:
+    case ENGINE_UNITY:     return SWAP_PARTIAL;
+    case ENGINE_GAMEACTIVITY:
+    case ENGINE_SDL:
+    case ENGINE_UE4:
+    case ENGINE_GTA:
+    case ENGINE_FLUTTER:   return SWAP_NEEDS_RESTART;
+    default:               return SWAP_NEEDS_RESTART;   /* an engine we do not know: never claim it is swappable */
+    }
+}
+
+int husk_tl_swap_verdict(void) { return g_swap_verdict; }
+const char *husk_tl_swap_status(void) { return g_swap_status; }
+
+int husk_tl_session_close(void)
+{
+    int state = atomic_load(&A.state);
+
+    /* Already closed: idempotent, a second call does nothing (F §4). */
+    if (state == HUSK_UNITY_IDLE) {
+        g_swap_verdict = SWAP_OK;
+        snprintf(g_swap_status, sizeof(g_swap_status), "no session");
+        return SWAP_OK;
+    }
+
+    /* A launch is still starting: wait, bounded, for the launch thread to settle (plan §3 step 1). */
+    if (state == HUSK_UNITY_STARTING) {
+        int i;
+        for (i = 0; i < 40 && (state = atomic_load(&A.state)) == HUSK_UNITY_STARTING; i++) {
+            struct timespec ts = { 0, 50 * 1000 * 1000 };       /* 40 * 50 ms = 2 s */
+            nanosleep(&ts, NULL);
+        }
+        if (state == HUSK_UNITY_STARTING) {
+            tl_log_line("husk: session close refused (still starting after 2000 ms; the launch thread has not settled)");
+            g_swap_verdict = SWAP_NEEDS_RESTART;
+            snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
+            return SWAP_NEEDS_RESTART;
+        }
+        if (state == HUSK_UNITY_IDLE) {
+            g_swap_verdict = SWAP_OK;
+            snprintf(g_swap_status, sizeof(g_swap_status), "no session");
+            return SWAP_OK;
+        }
+    }
+
+    /* Take the run out of its state so a launch cannot race the reset. STOPPING is not IDLE, so the
+     * launch CAS (husk-tl-unity-app.c:426) is refused while we work. */
+    int from = state, taken = 0;
+    for (int i = 0; i < 64; i++) {
+        if (from == HUSK_UNITY_IDLE) { g_swap_verdict = SWAP_OK; snprintf(g_swap_status, sizeof(g_swap_status), "no session"); return SWAP_OK; }
+        if (from == HUSK_UNITY_STOPPING) {
+            tl_log_line("husk: session close refused (already stopping)");
+            return g_swap_verdict >= 0 ? g_swap_verdict : SWAP_NEEDS_RESTART;
+        }
+        if (atomic_compare_exchange_strong(&A.state, &from, HUSK_UNITY_STOPPING)) { taken = 1; break; }
+    }
+    if (!taken) {
+        tl_log_line("husk: session close refused (the state kept changing: %s)", state_name(atomic_load(&A.state)));
+        g_swap_verdict = SWAP_NEEDS_RESTART;
+        snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
+        return SWAP_NEEDS_RESTART;
+    }
+
+    int engine = A.engine;
+    const char *reason = from == HUSK_UNITY_FAILED ? "failed" : from == HUSK_UNITY_ENDED ? "ended"
+                       : from == HUSK_UNITY_RUNNING ? "forced" : "starting";
+    tl_log_line("husk: session close (%s, %s)", engine_name(engine), reason);
+
+    /* Re-arm the producers: no input reaches the old engine from here on. */
+    tl_pad_set_sink(NULL);
+
+    int verdict;
+    switch (engine) {
+    case ENGINE_JAVA:
+        /* Plan §4 Phase 2: unwind the Java app's own threads first, then trim the DVM. Both calls come
+         * from the parallel session-reset contract -- this file only drives them and reads the result.
+         * A DVM that would not trim leaves app A's dexes/classes in place, so a swap would run app B
+         * over app A's bytecode: that is a refusal, not a partial. A thread that would not stop was
+         * quarantined (logged, left parked), which is a partial, reported as such. */
+        {
+            int  app_ok = tl_javaapp_reset();
+            bool dvm_ok = tl_dvm_end_app();
+            tl_log_line("husk: session close step java: tl_javaapp_reset=%d, tl_dvm_end_app=%d", app_ok, dvm_ok ? 1 : 0);
+            verdict = !dvm_ok ? SWAP_NEEDS_RESTART : !app_ok ? SWAP_PARTIAL : SWAP_OK;
+        }
+        break;
+    default:
+        /* No reset implementation for this engine yet. Do not pretend success: this run's registry is
+         * still there, so a second app would load on top of it -- the exact fault this gate exists to
+         * stop. Refuse, leave the session as it was, and report the capability. */
+        tl_log_line("husk: session close: %s has no in-process reset yet (capability %d); refusing",
+                    engine_name(engine), husk_tl_swap_capability(engine));
+        verdict = SWAP_NEEDS_RESTART;
+        break;
+    }
+
+    if (verdict == SWAP_NEEDS_RESTART) {
+        /* Put the run back the way we found it, so the user keeps a working game (plan §2b). */
+        atomic_store(&A.state, from);
+        g_swap_verdict = verdict;
+        snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
+        tl_log_line("husk: session close refused (%s); the gate stays closed, relaunch needed", engine_name(engine));
+        return verdict;
+    }
+
+    /* The linker's session generation: stale mappings stay mapped but stop being reachable by name. */
+    tl_ld_end_session();
+
+    /* Reset our own bookkeeping ONLY -- never the memory, and field-by-field (a blanket clear would
+     * also wipe the engine id this function just used for the log). */
+    A.engine = ENGINE_UNITY;
+    A.apk[0] = 0; A.data[0] = 0; A.package[0] = 0; A.angle[0] = 0; A.ca[0] = 0; A.vulkan[0] = 0;
+    A.nextra = 0;
+    A.layer = NULL; A.width = 0; A.height = 0;
+
+    /* Open the gate LAST, by CAS: this is the only writer of HUSK_UNITY_IDLE (plan §2/§4, F §3.9). */
+    int expect_idle = HUSK_UNITY_STOPPING;
+    int opened = atomic_compare_exchange_strong(&A.state, &expect_idle, HUSK_UNITY_IDLE);
+    g_swap_verdict = verdict;
+    snprintf(g_swap_status, sizeof(g_swap_status), verdict == SWAP_OK ? "swapped cleanly" : "swapped, leaked (detail in the log)");
+    if (opened) tl_log_line("husk: session closed (%s), ready for the next app", engine_name(engine));
+    else tl_log_line("husk: session close: the gate was not opened (state %s)", state_name(atomic_load(&A.state)));
+    return verdict;
+}
+
+/*
+ * A swap is done when this passes, not when it was asked for (plan §2b). Called once the new app has
+ * been launched and loaded; it checks the swap against the world, not against what we intended.
+ */
+int husk_tl_verify_swap(const char *apk, const char *package)
+{
+    int ok = 1;
+
+    /* (a) Identity: the APK the caller asked for is the one now loaded, not the previous app's. */
+    const char *loaded = husk_native_loaded_apk();
+    if (!apk || !loaded || strcmp(loaded, apk) != 0) {
+        tl_log_line("husk: swap verified FAILED (identity: loaded '%s', wanted '%s')", loaded ? loaded : "(none)", apk ? apk : "(null)");
+        ok = 0;
+    } else {
+        tl_log_line("husk: swap verified: identity ok ('%s', package '%s')", apk, package ? package : "(unknown)");
+    }
+
+    /* (b) Scope: no library from an earlier session is reachable by name (the tl_ld session filter). */
+    int stale = tl_ld_stale_count();
+    if (stale != 0) {
+        tl_log_line("husk: swap verified FAILED (scope: %d libraries from an earlier session are still reachable by name)", stale);
+        ok = 0;
+    } else {
+        tl_log_line("husk: swap verified: scope ok (no library from an earlier session is reachable)");
+    }
+
+    /* (c) Liveness: the new engine has produced frames (the existing per-engine tl_*_frames() counters). */
+    unsigned long frames = engine_frames();
+    if (frames == 0) {
+        tl_log_line("husk: swap verified FAILED (liveness: the new engine has produced no frames yet)");
+        ok = 0;
+    } else {
+        tl_log_line("husk: swap verified: liveness ok (%lu frames)", frames);
+    }
+
+    /* (d) Accounting: what leaked or was quarantined is a number, not a feeling. */
+    tl_log_line("husk: swap accounting: %d stale libraries, %lu frames, loaded '%s'", stale, frames, loaded ? loaded : "(none)");
+
+    if (!ok) {
+        g_swap_verdict = SWAP_NEEDS_RESTART;
+        snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
+        tl_log_line("husk: swap verified FAILED ('%s', '%s')", apk ? apk : "(null)", package ? package : "(unknown)");
+        return 0;
+    }
+    /* A pass does not upgrade a partial close: a leak found at close is still a leak. */
+    if (g_swap_verdict != SWAP_PARTIAL) {
+        g_swap_verdict = SWAP_OK;
+        snprintf(g_swap_status, sizeof(g_swap_status), "swapped cleanly");
+    }
+    tl_log_line("husk: swap verified OK ('%s', '%s')", apk, package ? package : "(unknown)");
+    return 1;
+}
 
 int husk_unity_state(void)
 {

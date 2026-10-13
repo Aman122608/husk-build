@@ -15,6 +15,9 @@ import java.util.zip.ZipFile;
 public final class ApkSigner {
     private static byte[][] sCerts;
 
+    /** The certs are the installed APK's: the next app reads its own. */
+    static void resetForNewApp() { sCerts = null; }
+
     public static synchronized byte[][] certificates() {
         if (sCerts != null) return sCerts;
         byte[][] c = null;

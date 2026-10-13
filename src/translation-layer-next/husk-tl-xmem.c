@@ -320,5 +320,49 @@ void tl_xmem_flush(const void *rx, size_t bytes)
 #endif
 }
 
+/*
+ * Make the writable view's pages executable where the guest named them with PROT_EXEC.
+ *
+ * A JIT -- here the game's own And64InlineHook -- writes a trampoline into memory it mapped
+ * rw and calls it by the address that view gave it (the loader retargets its adrp at the
+ * writable view because the page has no TL_PAGE_X, husk-tl-ld.c). The executable view of the
+ * same pages already runs, but the address the guest holds is the writable one, so execute has
+ * to be added to that view -- and then flushed, so the bytes just written are what the CPU
+ * fetches. The region is two kernels mappings of the same pages (one rx, one rw, husk-tl-xmem.c
+ * open_platform/grant_self); adding execute to the rw alias is legal only where the device
+ * permits RWX on it (a JIT-entitled/debugged process, MAP_JIT). Returns false -- and says so,
+ * once -- when the kernel refuses, so the caller does not pretend the page is executable.
+ *
+ * TL_NO_XMEM_RW_EXEC=1 never adds execute here, to force the store-emulation fallback.
+ */
+bool tl_xmem_allow_exec(void *p, size_t n)
+{
+    static int no_rw_exec = -1;
+    if (no_rw_exec < 0) no_rw_exec = getenv("TL_NO_XMEM_RW_EXEC") ? 1 : 0;
+    if (no_rw_exec || !g_x.open || !p) return false;
+    uintptr_t a = (uintptr_t)p, base = (uintptr_t)g_x.rw, end = base + g_x.size;
+    if (a < base || a >= end) return false;
+    uintptr_t page = a & ~(uintptr_t)(TL_XMEM_PAGE - 1);
+    uintptr_t last = (a + n + TL_XMEM_PAGE - 1) & ~(uintptr_t)(TL_XMEM_PAGE - 1);
+    if (last > end) last = end;
+    size_t len = last > page ? last - page : TL_XMEM_PAGE;
+    bool ok;
+#if defined(__APPLE__)
+    kern_return_t kr = vm_protect(mach_task_self(), (vm_address_t)page, len, FALSE,
+                                  VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
+    ok = kr == KERN_SUCCESS;
+#else
+    ok = mprotect((void *)page, len, PROT_READ | PROT_WRITE | PROT_EXEC) == 0;
+#endif
+    if (!ok) {
+        static int said;
+        if (said++ < 1)
+            tl_log_line("husk: xmem exec refused on the writable view at %p (%#zx bytes): this kernel will not add execute to a writable page (W^X), so the guest's JIT arena stays non-executable", p, n);
+        return false;
+    }
+    tl_xmem_flush(p, n);
+    return true;
+}
+
 size_t tl_xmem_used(void) { return g_x.used; }
 size_t tl_xmem_size(void)  { return g_x.size; }

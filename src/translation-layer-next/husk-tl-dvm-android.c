@@ -39,6 +39,9 @@ static struct {
     int gl_version;
     pthread_t gl_thread;
     bool gl_started;
+    pthread_t app_thread;                       /* the app main thread: a close waits on it (its pthread_t was once a local) */
+    bool gl_thread_live, app_thread_live;       /* the two threads were created, so a close has something to unwind */
+    atomic_bool app_done, gl_done;              /* each thread's own "I have returned" flag, for a bounded close */
     jobj *content;
     char fwres[1024];
     tl_zip fwres_zip; bool fwres_tried, fwres_ok;
@@ -876,7 +879,7 @@ static void *gl_main(void *arg)
     unsigned (*makeCurrent)(EGLDisplay, EGLSurface, EGLSurface, EGLContext) = tl_egl_resolve("eglMakeCurrent");
     unsigned (*swapBuffers)(EGLDisplay, EGLSurface) = tl_egl_resolve("eglSwapBuffers");
     unsigned (*swapInterval)(EGLDisplay, EGLint) = tl_egl_resolve("eglSwapInterval");
-    if (!getDisplay || !createWindowSurface || !swapBuffers) { tl_log_line("javaapp: EGL is not available"); return NULL; }
+    if (!getDisplay || !createWindowSurface || !swapBuffers) { tl_log_line("javaapp: EGL is not available"); atomic_store(&A.gl_done, true); return NULL; }
     EGLDisplay dpy = getDisplay(NULL);
     EGLint major = 0, minor = 0;
     initialize(dpy, &major, &minor);
@@ -885,11 +888,11 @@ static void *gl_main(void *arg)
     const EGLint want3[] = { 0x3040, 0x40, 0x3033, 0x5, 0x3024, 8, 0x3023, 8, 0x3022, 8, 0x3021, 8, 0x3025, 24, 0x3026, 8, EGL_NONE };
     const EGLint want2[] = { 0x3040, 0x4, 0x3033, 0x5, 0x3024, 8, 0x3023, 8, 0x3022, 8, 0x3021, 8, 0x3025, 24, 0x3026, 8, EGL_NONE };
     bool es3 = chooseConfig(dpy, want3, &cfg, 1, &ncfg) && ncfg >= 1;
-    if (!es3 && (!chooseConfig(dpy, want2, &cfg, 1, &ncfg) || ncfg < 1)) { tl_log_line("javaapp: no EGL config"); return NULL; }
+    if (!es3 && (!chooseConfig(dpy, want2, &cfg, 1, &ncfg) || ncfg < 1)) { tl_log_line("javaapp: no EGL config"); atomic_store(&A.gl_done, true); return NULL; }
     const EGLint ui_attr[] = { 0x3098, 2, EGL_NONE };
     EGLContext ui = createContext(dpy, cfg, NULL, ui_attr), app = NULL;
     EGLSurface surf = createWindowSurface(dpy, cfg, tl_nwindow_get(), NULL);
-    if (!ui || !surf || !makeCurrent(dpy, surf, surf, ui)) { tl_log_line("javaapp: no GL context"); return NULL; }
+    if (!ui || !surf || !makeCurrent(dpy, surf, surf, ui)) { tl_log_line("javaapp: no GL context"); atomic_store(&A.gl_done, true); return NULL; }
     if (swapInterval) swapInterval(dpy, 1);
     overlay ov = { 0 }, appov = { 0 }, appup = { 0 };
     ov_init(&ov);
@@ -975,6 +978,7 @@ static void *gl_main(void *arg)
         if (late > 100000000ll) next = now_ns();
         else if (late < 0) { struct timespec ts = { 0, (long)(-late) }; nanosleep(&ts, NULL); }
     }
+    atomic_store(&A.gl_done, true);         /* the close waits on this instead of joining (a join-collect would run TLS dtors) */
     return NULL;
 }
 
@@ -1093,6 +1097,7 @@ static void *app_main(void *arg)
         log_pending_stack();
         atomic_store(&A.ended, true);
     }
+    atomic_store(&A.app_done, true);        /* the close waits on this instead of joining (a join-collect would run TLS dtors) */
     return NULL;
 }
 
@@ -1111,6 +1116,15 @@ bool tl_javaapp_start(const tl_javaapp_config *cfg)
     /* stores into a library's executable view (data sharing a page with its code, as Unity's does) go through the writable one */
     { void tl_codewrite_enable(void); tl_codewrite_enable(); }
     A.cfg = *cfg;
+    /* A fresh session: clear the previous app's lifecycle flags (field by field -- A holds live mutexes, so never memset it) */
+    A.gl_started = false; A.gl_thread_live = false; A.app_thread_live = false;
+    A.gl_view = NULL; A.gl_renderer = NULL; A.content = NULL; A.gl_version = 0;
+    atomic_store(&A.ended, false);
+    atomic_store(&A.paused, false);
+    atomic_store(&A.frames, 0);
+    atomic_store(&A.app_done, false);
+    atomic_store(&A.gl_done, false);
+    pthread_mutex_lock(&A.q_lock); A.qn = 0; pthread_mutex_unlock(&A.q_lock);
     snprintf(A.apk, sizeof(A.apk), "%s", cfg->apk_path);
     /* an app whose manifest needs OpenGL ES 3.1 or 3.2 is told the driver has it (ANGLE over Metal stops at 3.0; the shim writes
        its 310/320 es shaders down), as it would otherwise refuse to start */
@@ -1135,11 +1149,15 @@ bool tl_javaapp_start(const tl_javaapp_config *cfg)
     setenv("EXTERNAL_STORAGE", "/sdcard", 0); setenv("ANDROID_ASSETS", "/system/app", 0); setenv("BOOTCLASSPATH", "", 0);
     if (!tl_ld_add_apk(cfg->apk_path)) return false;
     if (!tl_dvm_add_apk(cfg->apk_path)) return false;
+    /* a class a previous app detached (its dex was dropped on close) comes back against this app's dexes */
+    tl_dvm_reattach_declared();
     { char lib[1100]; snprintf(lib, sizeof(lib), "%s/lib", A.data); mkdir(lib, 0755); tl_ld_apk_libs(stub_lib, lib); }
-    { pthread_attr_t rt; pthread_attr_init(&rt); pthread_attr_setstacksize(&rt, 64u << 20); pthread_create(&A.gl_thread, &rt, gl_main, NULL); }
+    { pthread_attr_t rt; pthread_attr_init(&rt); pthread_attr_setstacksize(&rt, 64u << 20);
+      A.gl_thread_live = pthread_create(&A.gl_thread, &rt, gl_main, NULL) == 0; }
     pthread_attr_t at; pthread_attr_init(&at); pthread_attr_setstacksize(&at, 256u << 20);
-    pthread_t t;
-    return pthread_create(&t, &at, app_main, NULL) == 0;
+    if (pthread_create(&A.app_thread, &at, app_main, NULL) != 0) return false;   /* the handle a close waits on, not a local */
+    A.app_thread_live = true;
+    return true;
 }
 
 void tl_javaapp_touch(int phase, int id, float x, float y)
@@ -1157,3 +1175,96 @@ void tl_javaapp_set_paused(bool p)
 }
 unsigned long tl_javaapp_frames(void) { return atomic_load(&A.frames); }
 bool tl_javaapp_ended(void) { return atomic_load(&A.ended); }
+
+/* ================================================================== closing the app's session */
+
+#define JAVA_RESET_POLL_MS 20
+#define JAVA_RESET_BUDGET_MS 5000
+
+/* Wait (bounded: Darwin has no pthread_timedjoin_np) for a thread's own done flag, as the old tree polled after a finished run.
+ * Never pthread_join: collecting a thread that ran app code is the class of act that took Husk down before. */
+static bool java_reset_wait(atomic_bool *done, int *ms_waited)
+{
+    int ms = 0;
+    while (ms < JAVA_RESET_BUDGET_MS) {
+        if (atomic_load(done)) break;
+        struct timespec ts = { 0, JAVA_RESET_POLL_MS * 1000000L };
+        nanosleep(&ts, NULL);
+        ms += JAVA_RESET_POLL_MS;
+    }
+    if (ms_waited) *ms_waited = ms;
+    return atomic_load(done);
+}
+
+int tl_javaapp_reset(void)
+{
+    if (!A.app_thread_live && !A.gl_thread_live) { tl_log_line("husk: java reset skipped (no app was started)"); return 0; }
+
+    /* 1. Ask the app's main thread to unwind: Looper.loop() returns when its queue is told to quit, so AppRunner.run returns and
+          app_main returns. Never cancel/kill: a guest thread's cancellation runs its TLS and pthread-key destructors. */
+    bool asked = false;
+    if (A.app_thread_live) {
+        jvalue looper;
+        if (tl_dvm_call_static("android/os/Looper", "getMainLooper", "()Landroid/os/Looper;", NULL, &looper) && looper.l) {
+            tl_jni_call(looper.l, "quit", "()V", NULL);
+            asked = true;
+            if (tl_jni_pending()) { char b[300]; tl_log_line("husk: java reset looper quit threw %s", tl_dvm_describe_pending(b, sizeof(b)) ? b : "?"); tl_jni_clear(); }
+            tl_log_line("husk: java reset looper quit requested");
+        } else {
+            if (tl_jni_pending()) tl_jni_clear();
+            tl_log_line("husk: java reset no main looper to quit");
+        }
+    }
+
+    /* 2. End the GL loop. It owns the ANGLE UI context and the window surface, so it leaves at its own check (never abruptly). */
+    if (A.gl_thread_live) { atomic_store(&A.ended, true); tl_log_line("husk: java reset GL loop end requested"); }
+
+    /* 3. Bounded wait for each thread to return; a thread that will not is left parked and named. */
+    int status = 0;
+    if (A.gl_thread_live) {
+        int ms = 0;
+        if (java_reset_wait(&A.gl_done, &ms)) { tl_log_line("husk: java reset GL thread returned (%d ms)", ms); pthread_detach(A.gl_thread); }
+        else { tl_log_line("husk: java reset GL thread still running after %d ms; left parked", ms); status = 1; }
+    }
+    if (A.app_thread_live) {
+        int ms = 0;
+        if (java_reset_wait(&A.app_done, &ms)) { tl_log_line("husk: java reset app main thread returned (%d ms)", ms); pthread_detach(A.app_thread); }
+        else {
+            tl_log_line("husk: java reset app main thread still running after %d ms; left parked", ms);
+            status = asked ? 1 : 2;          /* would not stop (quarantined) vs nothing could ask it to stop (irreversible) */
+        }
+    }
+    A.gl_thread_live = false;
+    A.app_thread_live = false;
+
+    /* 4. Drain the app's input and text queues; the locks stay (never memset A: a parked thread could still be waiting on one). */
+    pthread_mutex_lock(&A.q_lock);
+    int drained_input = A.qn;
+    A.qn = 0;
+    pthread_mutex_unlock(&A.q_lock);
+    pthread_mutex_lock(&A.t_lock);
+    int drained_text = A.ntext;
+    for (int i = 0; i < A.ntext; i++) { free(A.text[i]); A.text[i] = NULL; }
+    A.ntext = 0;
+    pthread_mutex_unlock(&A.t_lock);
+    tl_log_line("husk: java reset drained %d input events, %d text entries", drained_input, drained_text);
+
+    /* 5. The app's GL objects and counters, one field at a time. */
+    A.gl_view = NULL; A.gl_renderer = NULL; A.content = NULL;
+    A.gl_started = false; A.gl_version = 0;
+    atomic_store(&A.frames, 0);
+    atomic_store(&A.paused, false);
+    A.fwres_tried = false; A.fwres_ok = false;
+
+    /* 6. The app's EGL frame to show is dropped; the display and contexts were the GL thread's (left to it, never destroyed
+          from here). A new gl_main re-inits them. */
+    pthread_mutex_lock(&E2.lk);
+    E2.on = false; E2.ready = false; E2.tex = 0; E2.px = NULL; E2.pw = E2.ph = 0; E2.w = E2.h = 0; E2.seq++;
+    pthread_cond_broadcast(&E2.cv);
+    pthread_mutex_unlock(&E2.lk);
+
+    /* 7. The window binding and the EGL texture surfaces belong to husk-tl-bionic-ndk.c / husk-tl-egl.c (not this file); the next
+          app configures its own window through tl_nwindow_configure, so nothing is released here. */
+    tl_log_line("husk: java reset done (status %d)", status);
+    return status;
+}

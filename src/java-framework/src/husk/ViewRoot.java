@@ -22,6 +22,21 @@ public final class ViewRoot implements ViewParent {
     private static int sImeBottom;
     private static ViewRoot sTouchTarget;
 
+    /** Drop the previous app's windows, its screen bitmap, cached handler, view-id counter, insets and touch target. */
+    static void resetForNewApp() {
+        sRoots.clear();
+        sScreen = null;
+        sCanvas = null;
+        sScheduled = false;
+        sPresentedAny = false;
+        sMain = null;
+        sNextViewId = 0x00100000;
+        sInsets = new int[] { 0, 0, 0, 0 };
+        sImeBottom = 0;
+        sTouchTarget = null;
+        sDump = null;
+    }
+
     final View mView;
     WindowManager.LayoutParams mLp;
     private int mX, mY, mW, mH;

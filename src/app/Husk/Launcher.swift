@@ -669,6 +669,21 @@ struct LauncherTile: View {
         return statuses.status(g.id)?.result
     }
 
+    /// The swap caveat for this game, if it has one: a run that left something behind or would not close, and otherwise
+    /// an engine that cannot be swapped at all. Nothing is drawn for a clean swap — the result badge already says the game
+    /// plays — so a mark here always means there is something to know before the tap.
+    private var swapMark: (symbol: String, color: Color, label: String)? {
+        guard case .game(let g)? = item else { return nil }
+        if let v = statuses.swapVerdict(g.id), v != .clean {
+            return (v.symbol, v.color, v.label)
+        }
+        switch NativeSession.capability(g.screenEngine) {
+        case .ok: return nil
+        case .partial: return ("arrow.triangle.2.circlepath.circle", .orange, "Can be swapped, but leaves something behind")
+        case .needsRestart: return ("power.circle", .red, "Needs Husk relaunched for another game")
+        }
+    }
+
     var body: some View {
         VStack(spacing: 7) {
             Group {
@@ -680,6 +695,11 @@ struct LauncherTile: View {
             }
             .overlay(alignment: .topTrailing) {
                 if let result { GameStatusBadge(result: result).offset(x: 5, y: -5) }
+            }
+            .overlay(alignment: .bottomLeading) {
+                if let mark = swapMark {
+                    SwapBadge(symbol: mark.symbol, color: mark.color, label: mark.label).offset(x: -5, y: 5)
+                }
             }
             VStack(spacing: 1) {
                 Text(title)

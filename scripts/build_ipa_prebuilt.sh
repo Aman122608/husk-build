@@ -123,6 +123,20 @@ JR_APP="$JR_WORK/x/Payload/Husk.app"
     || { echo "donor $JAVA_DONOR_TAG has no android-system to stage" >&2; exit 1; }
 rm -rf "$HUSK_ROOT/build/java-runtime" "$HUSK_ROOT/build/android-system"
 rsync -a "$JR_APP/java-runtime/" "$HUSK_ROOT/build/java-runtime/"
+# Husk's own Java framework, if CI built it from this tree (the "Build Husk's Java framework" step in
+# build-ipa-prebuilt.yml): ours wins over the donor's, because a framework change made here is
+# otherwise dead code -- the donor's dex is frozen at its release. Everything else in java-runtime
+# (the ART jars, ICU, conscrypt, framework-res) still comes from the donor, which is the point of this
+# path. When it is absent the donor's dex ships and the log says so, so a stale framework is never
+# silently assumed to be current.
+if [ -s "$HUSK_ROOT/build/husk-framework.dex" ]; then
+    install -m 644 "$HUSK_ROOT/build/husk-framework.dex" "$HUSK_ROOT/build/java-runtime/husk-framework.dex"
+    step_note="husk-framework.dex: built from this repo ($(git -C "$HUSK_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown))"
+else
+    step_note="husk-framework.dex: donor $JAVA_DONOR_TAG (repo build absent -- framework changes are NOT in this IPA)"
+fi
+echo "$step_note" | tee -a "$HUSK_ROOT/build/logs/framework-dex.txt" 2>/dev/null || true
+step "$step_note"
 rsync -a "$JR_APP/android-system/" "$HUSK_ROOT/build/android-system/"
 [ -s "$HUSK_ROOT/build/java-runtime/com.android.art/javalib/core-oj.jar" ] \
     || { echo "the staged java-runtime has no core-oj.jar; a Java app still cannot start" >&2; exit 1; }

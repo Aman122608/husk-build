@@ -77,6 +77,35 @@ public final class AppRunner {
         Looper.loop();
     }
     public static Application application() { return sApp; }
+
+    /**
+     * Clear this app's per-app state so a different app can run in the same process. Called from the layer when the session
+     * closes (husk-tl-dvm.c: tl_dvm_end_app), before the app's dexes are dropped: every framework class keeps its statics in a
+     * boot class that survives a second launch, so each must be told, or app B would read app A's activity stack, loader,
+     * manifest or theme. The process-wide state (resource ids in S, the Google packages, the phone's layout inflater) is
+     * deliberately left alone. Never throws: a missed clear is a bug for the caller's log, not a reason to abort the close.
+     */
+    public static void resetForNewApp() {
+        sStack.clear();
+        sApp = null;
+        sHandler = null;
+        sLoader = null;
+        down = 0;
+        downTime = 0;
+        sPausedByHost = false;
+        for (int i = 0; i < ids.length; i++) { ids[i] = 0; xs[i] = 0; ys[i] = 0; }
+        Manifest.resetForNewApp();
+        ContextImpl.resetForNewApp();
+        ViewRoot.resetForNewApp();
+        InputMethods.resetForNewApp();
+        DecorView.resetForNewApp();
+        Web.resetForNewApp();
+        Services.resetForNewApp();
+        Broadcasts.resetForNewApp();
+        KeyStoreProvider.resetForNewApp();
+        ApkSigner.resetForNewApp();
+    }
+
     static final class UncaughtLogger implements Thread.UncaughtExceptionHandler {
         public void uncaughtException(Thread t, Throwable e) {
             android.util.Log.e("AndroidRuntime", "FATAL EXCEPTION: " + t.getName(), e);

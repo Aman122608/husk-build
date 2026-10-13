@@ -16,7 +16,59 @@
 extern "C" {
 #endif
 
-enum { HUSK_UNITY_IDLE = 0, HUSK_UNITY_STARTING = 1, HUSK_UNITY_RUNNING = 2, HUSK_UNITY_FAILED = 3, HUSK_UNITY_ENDED = 4 };
+/*
+ * The state of the one run this process can have at a time.
+ * IDLE -> STARTING -> RUNNING | FAILED -> ENDED, and STOPPING -> IDLE on the way back:
+ * husk_tl_session_close() is the ONLY writer of HUSK_UNITY_IDLE (nothing else may restore the gate).
+ */
+enum { HUSK_UNITY_IDLE = 0, HUSK_UNITY_STARTING = 1, HUSK_UNITY_RUNNING = 2, HUSK_UNITY_FAILED = 3, HUSK_UNITY_ENDED = 4, HUSK_UNITY_STOPPING = 5 };
+
+/*
+ * The engines husk_tl_swap_capability() classifies. The numbers mirror the internal
+ * ENGINE_* enum in husk-tl-unity-app.c (the order of the launch calls), so a caller that
+ * has an ENGINE_* id can pass it straight through.
+ */
+enum {
+    HUSK_TL_ENGINE_UNITY = 0, HUSK_TL_ENGINE_COCOS = 1, HUSK_TL_ENGINE_GAMEACTIVITY = 2,
+    HUSK_TL_ENGINE_SDL = 3, HUSK_TL_ENGINE_UE4 = 4, HUSK_TL_ENGINE_GTA = 5,
+    HUSK_TL_ENGINE_GODOT = 6, HUSK_TL_ENGINE_FLUTTER = 7, HUSK_TL_ENGINE_GAMEMAKER = 8,
+    HUSK_TL_ENGINE_JAVA = 9
+};
+
+/*
+ * What a second, different app in this process can be for an engine. Static, from the
+ * reconnaissance in .hermes/plans/engine-reset/ (C-native-engines.md, D-other-engines.md,
+ * B-java-dvm.md) and the plan's §2/§2b tables. Never chosen at run time as a substitute --
+ * an unswappable engine says so and the user relaunches deliberately.
+ */
+enum { SWAP_OK = 0, SWAP_PARTIAL = 1, SWAP_NEEDS_RESTART = 2 };
+
+/* Whether `engine` can go on to a different app in this process, and how cleanly (SWAP_* above). */
+int husk_tl_swap_capability(int engine);
+
+/* The verdict of the last husk_tl_session_close(): a SWAP_* value, or -1 if none has run. */
+int husk_tl_swap_verdict(void);
+
+/*
+ * Close the running app's session so a different app can start later in this process:
+ * reset the engine's per-app BOOKKEEPING (never the memory, never a guest thread), then open
+ * the gate to HUSK_UNITY_IDLE LAST. Idempotent; safe after a FAILED, half-initialised start.
+ * Returns the verdict SWAP_OK / SWAP_PARTIAL / SWAP_NEEDS_RESTART. On SWAP_NEEDS_RESTART it
+ * refuses: the gate stays closed (as it was) and the reason is logged -- the user keeps a
+ * working game and relaunches deliberately. This is the only writer of HUSK_UNITY_IDLE.
+ */
+int husk_tl_session_close(void);
+
+/* A short, stable string for the UI: "swapped cleanly", "swapped, leaked (...)", "swap failed, relaunch needed", "no session". */
+const char *husk_tl_swap_status(void);
+
+/*
+ * After a swap, check it really happened -- a swap is done when this passes, not when it was asked
+ * for (plan §2b). Runs the four checks: the loaded APK is the one requested, no library from an
+ * earlier session is reachable by name, the new engine has produced frames, and the accounting is
+ * logged. Returns 1 only if all pass. `package` is used only in the log.
+ */
+int husk_tl_verify_swap(const char *apk, const char *package);
 
 /*
  * Start the game in `apk`. `metal_layer` is the CAMetalLayer it draws into, `width`/`height` its

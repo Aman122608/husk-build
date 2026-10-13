@@ -25,6 +25,8 @@ public final class DecorView extends FrameLayout {
     private int mInsetTop, mInsetBottom, mInsetLeft, mInsetRight;
     private final Paint mBarPaint = new Paint();
     private static WindowInsetsController sFallback;
+    /** Drop the cached fallback insets controller (it can point at the previous app's window). */
+    static void resetForNewApp() { sFallback = null; }
     private TypedValue mMinWidthMajor, mMinWidthMinor;
     private static TypedValue copy(TypedValue v) { if (v == null) return null; TypedValue c = new TypedValue(); c.type = v.type; c.data = v.data; return c; }
 

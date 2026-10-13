@@ -2322,3 +2322,104 @@ bool tl_dvm_call_static(const char *cls, const char *name, const char *sig, cons
     jvalue r; if (!ret) ret = &r;
     return dvm_call(m, NULL, args, ret);
 }
+
+/* ================================================================== closing the app's session */
+
+/* A dex the app added: g_dex[g_nboot_dex .. g_ndex). The boot class path's dexes (and whatever the process put before it) are
+ * not the app's. This is deliberately wider than from_app(): a DexFile the app opened at run time (its PathClassLoader) is
+ * appended above the boundary too, so its bytes must be forgotten just the same. */
+static bool dex_dropped(const dvm_dex *d)
+{
+    if (!d || g_nboot_dex < 0) return false;
+    for (int i = 0; i < g_nboot_dex; i++) if (g_dex[i] == d) return false;
+    for (int i = g_nboot_dex; i < g_ndex; i++) if (g_dex[i] == d) return true;
+    return false;
+}
+
+bool tl_dvm_class_is_app(tl_jclass *jc)
+{
+    dvm_class *c = jc ? (dvm_class *)jc->dvm : NULL;
+    return c && dex_dropped(c->dex);
+}
+
+int tl_dvm_app_dex_count(void) { return g_nboot_dex < 0 ? 0 : (g_ndex > g_nboot_dex ? g_ndex - g_nboot_dex : 0); }
+
+static int g_reset_detached;
+
+/* One class that pointed into a dex we are dropping: forget its bytecode (the next app re-attaches it, from its own dexes).
+ * The dvm_class is left allocated -- a leak is safe, a dangling pointer is not -- and the statics are zeroed, not freed. */
+static void detach_app_class(tl_jclass *jc)
+{
+    dvm_class *c = (dvm_class *)jc->dvm;
+    if (!c || !dex_dropped(c->dex)) return;
+    jc->dvm = NULL;
+    jc->nmeths = 0;                       /* the reattach() reset: lookups made belong to the old dex */
+    jc->nfields = 0;
+    if (jc->statics && jc->nstatics) memset(jc->statics, 0, (size_t)jc->nstatics * sizeof(jvalue));
+    /* no stale class-loader on the mirror: dvm_mirror_loader() would otherwise hand app A's loader to a class of app B */
+    if (jc->mirror && jc->mirror->fields) {
+        dvm_field *f = class_loader_field();
+        if (f && f->slot < jc->mirror->nfields) jc->mirror->fields[f->slot].l = NULL;
+    }
+    g_reset_detached++;
+}
+
+/* The framework's own per-app statics are Java's to clear (husk.AppRunner.resetForNewApp), so it stays type-correct: called
+ * here, before any dex is dropped, while the interpreter can still run the method. */
+static void reset_framework_statics(void)
+{
+    jvalue r;
+    if (!tl_dvm_call_static("husk/AppRunner", "resetForNewApp", "()V", NULL, &r)) {
+        char b[400];
+        tl_log_line("husk: java reset husk.AppRunner.resetForNewApp threw %s", tl_dvm_describe_pending(b, sizeof(b)) ? b : "?");
+        tl_jni_clear();
+    } else {
+        tl_log_line("husk: java reset husk.AppRunner.resetForNewApp done");
+    }
+}
+
+bool tl_dvm_end_app(void)
+{
+    if (!g_running || g_nboot_dex < 0) { tl_log_line("husk: java reset dvm skipped (the runtime is not up)"); return false; }
+    int dropped = g_ndex - g_nboot_dex;
+    if (dropped <= 0) { tl_log_line("husk: java reset dvm: no app dexes to drop"); return false; }
+
+    /* Call only with no guest thread running (tl_javaapp_reset has unwound them): the close is single-threaded, so the class
+     * registry and the class index can be walked without a lock of their own. */
+    reset_framework_statics();
+
+    /* Every declared class that pointed into a dropped dex forgets its bytecode. */
+    g_reset_detached = 0;
+    tl_jni_each_declared(detach_app_class);
+    tl_log_line("husk: java reset dvm class registry: %d classes detached", g_reset_detached);
+
+    /* The class index: unlink every cdef that names a dropped dex (the namespaced "name@ns" aliases a run-time loader made
+     * included). The nodes and their names are left allocated -- drain, never free. */
+    int nremoved = 0;
+    for (int b = 0; b < CBUCKETS; b++) {
+        cdef **pp = &g_cdefs[b];
+        while (*pp) {
+            cdef *c = *pp;
+            if (dex_dropped(c->dex)) { *pp = c->next; nremoved++; }
+            else pp = &c->next;
+        }
+    }
+
+    /* The run-time DexFile cookies and the loaders' namespaces, so the next app's PathClassLoader opens its own dexes under
+     * fresh namespaces instead of being told a file is already open. */
+    pthread_mutex_lock(&g_open_lock);
+    int nopened = g_nopened;
+    for (int i = 0; i < g_nopened; i++) { free(g_opened[i].path); g_opened[i].path = NULL; g_opened[i].first = 0; g_opened[i].count = 0; }
+    g_nopened = 0;
+    g_next_ns = 0;
+    pthread_mutex_unlock(&g_open_lock);
+
+    g_app_loader = NULL;                  /* app B's PathClassLoader sets its own (dvm_set_app_loader) */
+    g_ndex = g_nboot_dex;                 /* the dvm_dex objects and their bytes stay resident: drain, never free */
+    tl_log_line("husk: java reset dvm: %d app dexes dropped, %d class entries unlinked, %d dex cookies cleared; g_ndex=%d",
+                dropped, nremoved, nopened, g_ndex);
+    return true;
+}
+
+void tl_dvm_reattach_declared(void) { if (g_running) tl_jni_each_declared(reattach); }
+

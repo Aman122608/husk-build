@@ -193,9 +193,20 @@ struct GamePage: View {
 
             Section("About") {
                 LabeledContent("Runs With", value: app.report?.runnerName ?? "Unknown")
+                // Whether a second game can take over from this one in the same run of Husk — the layer's answer, read
+                // before the tap, so a relaunch is known about in advance rather than discovered by refusal.
+                if app.report?.runsOnNativeRuntime == true {
+                    SwapCapabilityRow(engine: app.screenEngine)
+                }
                 if let st = GameStatusStore.shared.status(app.id) {
                     LabeledContent("Last Result") {
                         Label(st.result.label, systemImage: st.result.symbol).foregroundStyle(st.result.color)
+                    }
+                }
+                // How the swap actually went the last time this game was left, with the layer's own words when it leaked.
+                if let v = GameStatusStore.shared.swapVerdict(app.id) {
+                    LabeledContent("Last Swap") {
+                        SwapVerdictRow(verdict: v, detail: GameStatusStore.shared.swapDetail(app.id))
                     }
                 }
                 LabeledContent("Last Played", value: app.lastPlayed.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "Never")
@@ -373,7 +384,7 @@ struct AndroidAppPage: View {
     @State private var confirmUninstall = false
 
     private var live: AndroidHost.Package { host.packages.first { $0.name == app.name } ?? app }
-    private var canOpen: Bool { host.isReady && host.busy == nil }
+    private var canOpen: Bool { host.isReady && host.busy == nil && !NativeSession.isOpen }
     private var item: LibraryItem { .app(live) }
 
     var body: some View {

@@ -411,6 +411,21 @@ static void Process_myTid(tl_jcall *c) { uint64_t t = 0; pthread_threadid_np(NUL
 static tl_lib *g_onload_done[96];
 static int g_nonload;
 static pthread_mutex_t g_onload_mu = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * Forget which libraries have had JNI_OnLoad run. The linker frees a finished app's registry nodes at
+ * session end, so this bookkeeping has to be cleared at the same boundary: left alone it holds
+ * pointers to nodes that no longer exist and spends its 96 slots on apps that are gone, which is how a
+ * third app ends up unable to record that its own libraries were onloaded. Called through the weak hook
+ * declared in husk-tl-ld.c, so a tree without this file still links.
+ */
+void tl_jni_hle_reset_onload(void)
+{
+    pthread_mutex_lock(&g_onload_mu);
+    g_nonload = 0;
+    pthread_mutex_unlock(&g_onload_mu);
+}
+
 static bool load_native_library(const char *base);
 bool tl_jni_load_library(const char *base) { return load_native_library(base); }
 static bool load_native_library(const char *base)

@@ -98,7 +98,31 @@ struct AppDiagnosis: Identifiable, Equatable {
                                 detail: "It stopped with \(signal). The report has the full log of the run.", evidence: head)
         }
 
-        // The app ended itself from native code: protection that found it is not on a certified phone, most of the time
+        // The app's own runtime reported a problem and then ended the process: read what it said, rather
+        // than guessing. Blaming anti-tamper for every non-zero exit told the user their app refused to run
+        // "off a certified phone" when the real answer was already in the log (a Ren'Py game whose Python
+        // module would not load). A deliberate device check exits *without* printing an error of its own;
+        // that silence is the shape protection has, and it is the branch below this one.
+        let isErrorLine: (String) -> Bool = { l in
+            let t = l.lowercased()
+            return t.contains("traceback (most recent call last)") || t.contains("exception:")
+                || t.contains("fatal exception") || l.contains("E/AndroidRuntime") || t.contains("abort message: ")
+        }
+        // The first traceback is the root cause; anything after it is the app describing the fallout (in one
+        // real case the last line was a Python OSError caused by the error *reporter* itself).
+        let appError = lines.last(where: { $0.lowercased().contains("traceback (most recent call last)") })
+                    ?? lines.last(where: isErrorLine)
+        if let err = appError, let l = lines.last(where: { $0.contains("bionic: exit(") && $0.contains("called from") }),
+           let code = l.range(of: "exit\\((\\d+)\\)", options: .regularExpression).map({ String(l[$0]) }), code != "exit(0)" {
+            let said = err.replacingOccurrences(of: "Traceback (most recent call last):", with: "")
+                           .trimmingCharacters(in: .whitespaces)
+            return AppDiagnosis(kind: .closedItself, title: "The app stopped after an error",
+                                detail: "Its own code hit a problem and then closed the app (\(code)). The last thing it reported: "
+                                    + "\(said.prefix(200)) That is an error inside the app's own runtime, not a device check.",
+                                evidence: err)
+        }
+
+        // The app ended itself from native code, saying nothing: protection that found it is not on a certified phone, most of the time
         if let l = lines.last(where: { $0.contains("bionic: exit(") && $0.contains("called from") }),
            let code = l.range(of: "exit\\((\\d+)\\)", options: .regularExpression).map({ String(l[$0]) }), code != "exit(0)" {
             let lib = l.components(separatedBy: "called from ").last?.split(separator: " ").first.map(String.init) ?? "its code"

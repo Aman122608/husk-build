@@ -29,6 +29,25 @@ bool tl_dvm_start(const char *const *boot, int nboot);
 /* Add an app's DEX files (every classesN.dex in the APK), after the boot class path. */
 bool tl_dvm_add_apk(const char *apk);
 bool tl_dvm_running(void);
+
+/* Close the current app's session, so a different app can define its own classes in this process: truncate the app's dexes
+ * (back to the boot class path's boundary), unlink their entries from the class index, and detach every tl_jclass that pointed
+ * into one of them (dvm=NULL, the method/field caches emptied, statics zeroed) -- and clear the app's class loader and the
+ * run-time DexFile cookies. Boot classes, the boot dexes and the interpreter itself stay up. Nothing is unmapped or freed
+ * (the dex bytes stay resident): drain, never free. Call it only with no guest thread running. Returns false when the
+ * runtime is not up or there was nothing to drop. */
+bool tl_dvm_end_app(void);
+
+/* How many dexes the app owns right now (0 when none): the verification step after tl_dvm_end_app(). */
+int tl_dvm_app_dex_count(void);
+
+/* True when this class's bytecode came from a dex the app added (so a second app must not run it). */
+bool tl_dvm_class_is_app(tl_jclass *jc);
+
+/* Re-attach the declared classes a newly added APK now defines (call after tl_dvm_add_apk for a new app): a class that was
+ * detached by tl_dvm_end_app() comes back against the new APK's dexes, and one no APK defines stays detached. */
+void tl_dvm_reattach_declared(void);
+
 /* libcore's own native libraries (libjavacore.so, libopenjdk.so and what they need), from this folder (the ART APEX's lib64). */
 bool tl_dvm_load_natives(const char *libdir);
 

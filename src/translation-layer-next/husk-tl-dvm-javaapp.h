@@ -52,4 +52,13 @@ void tl_javaapp_set_insets(int left, int top, int right, int bottom, int ime_bot
 unsigned long tl_javaapp_frames(void);
 bool tl_javaapp_ended(void);
 
+/* Close the app's session, so a different app can run in this process: ask the app's main Looper to quit (so Looper.loop()
+ * returns, AppRunner.run returns and the app's main thread returns) and set the end flag the GL thread's loop checks -- then
+ * wait (bounded: Darwin has no pthread_timedjoin_np) for both threads to return. Never ends, cancels or joins a thread that
+ * ran app code (its exit runs the guest's TLS destructors); a thread that will not stop is left parked and named in the log.
+ * Then drains the input and text queues and the app's EGL frame state. The mutexes stay: no struct is memset.
+ * Returns 0 = done, 1 = a thread is still live (quarantined), 2 = irreversible (no cooperative stop was available and a
+ * thread is still live). Safe to call when nothing was started (returns 0). */
+int tl_javaapp_reset(void);
+
 #endif

@@ -68,6 +68,33 @@ bool tl_ld_init(tl_lib *lib);
 /* A library already loaded, by file name or soname. */
 tl_lib *tl_ld_find_lib(const char *name);
 
+/*
+ * --- per-app session scope ---------------------------------------------------
+ *
+ * The registry is process-wide and only grows: an app's libraries are mapped into
+ * Husk's own process and never unloaded, so a second app's shared sonames
+ * (libc++_shared.so, libmain.so, ...) would otherwise resolve to the first app's
+ * mappings and run the wrong code. A session tag on every registry node, and a filter
+ * at every lookup, makes those mappings unreachable.
+ *
+ * Open a session before the app's first library loads; close it when the app is over.
+ * tl_ld_end_session() frees the registry NODES of earlier sessions and resets their
+ * bookkeeping (APKs, search dirs, queued splits). It never unmaps and never frees guest
+ * memory: the executable region is a one-shot bump allocator, and the guest's code
+ * stays mapped. Until tl_ld_begin_session is first called the session is 0 and every
+ * lookup behaves exactly as before.
+ */
+void tl_ld_begin_session(void);
+void tl_ld_end_session(void);
+int  tl_ld_session(void);
+
+/* How many libraries from an earlier session the registry still holds; 0 after tl_ld_end_session(). */
+int  tl_ld_stale_count(void);
+
+/* Whether `lib` is a node the current session's registry holds (an explicit dlsym handle from an
+ * earlier session, or a freed one, must be refused rather than dereferenced). */
+bool tl_ld_handle_live(const tl_lib *lib);
+
 /* A symbol exported by `lib`, or (lib == NULL) by any loaded library, in load order. */
 void *tl_ld_sym(tl_lib *lib, const char *name);
 void *tl_ld_sym_deep(tl_lib *lib, const char *name, tl_lib **found_in);   /* the library, then its dependencies, as bionic's dlsym(handle) */

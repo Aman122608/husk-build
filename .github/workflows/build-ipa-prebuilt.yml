@@ -40,6 +40,31 @@ jobs:
           rustup target add aarch64-apple-ios
           qemu-img --version
 
+      # Husk's Java framework (android.* for apps on the Dalvik runtime) is pure Java, so unlike
+      # ANGLE/QEMU/MoltenVK it needs no Mac toolchain: javac + d8 build it anywhere. It is built here,
+      # FROM THIS REPO, because taking husk-framework.dex from the donor IPA froze it at the donor's
+      # version -- which means no change to src/java-framework could ever reach a build. Non-fatal on
+      # purpose for now: if it fails, scripts/build_ipa_prebuilt.sh falls back to the donor's dex and
+      # says so loudly in the log, rather than failing a build that used to work.
+      - name: Build Husk's Java framework (from this repo)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          JAVA_HOME="$(/usr/libexec/java_home -v 17 2>/dev/null || /usr/libexec/java_home)"
+          echo "JDK: $JAVA_HOME"
+          # R8 8.5+: the d8 in build-tools 34 crashes on these classes (see src/java-framework/build.sh).
+          for V in 8.9.35 8.7.18 8.5.35; do
+            if curl -fsSL -o "$RUNNER_TEMP/r8.jar" "https://maven.google.com/com/android/tools/r8/$V/r8-$V.jar"; then
+              echo "d8 from r8 $V"; break
+            fi
+          done
+          test -s "$RUNNER_TEMP/r8.jar"
+          # Output path matters: scripts/build_ipa_prebuilt.sh removes build/java-runtime before
+          # staging the donor's, so the repo-built dex has to live somewhere that survives that.
+          HUSK_JDK="$JAVA_HOME" HUSK_D8="$RUNNER_TEMP/r8.jar" \
+            bash src/java-framework/build.sh build/husk-framework.dex
+          ls -l build/husk-framework.dex
+
       - name: Build IPA from upstream binaries
         env:
           HUSK_UPSTREAM_TAG: ${{ inputs.upstream_tag }}

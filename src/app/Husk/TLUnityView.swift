@@ -612,6 +612,8 @@ final class TLUnityModel: ObservableObject {
     @Published var logText = ""
     private var timer: Timer?
     private var ticks = 0
+    /// The swap into this app has been checked (once a launch, once it has actually loaded).
+    private var checkedSwap = false
 
     func start() {
         timer?.invalidate()
@@ -626,6 +628,13 @@ final class TLUnityModel: ObservableObject {
         ticks += 1
         state = husk_unity_state()
         frames = husk_unity_frames()
+        // The swap into this app, once it has actually loaded: ask the layer whether the swap really happened and write the
+        // verdict down against this app. Once per launch, and only after the engine has drawn a frame — asking before that
+        // would read as a failure the layer never reported.
+        if !checkedSwap, state == Int32(HUSK_UNITY_RUNNING), frames > 0 {
+            checkedSwap = true
+            if let message = NativeSession.verifyLoaded()?.message { GameStatusStore.shared.notice = message }
+        }
         if ticks % 4 == 0, let c = husk_tl_attempt_log() {
             let text = String(cString: c)
             free(c)
@@ -716,6 +725,15 @@ struct TLCocosAttemptView: View {
     private func toggleInterface() {
         withAnimation(.easeInOut(duration: 0.15)) { uiHidden.toggle() }
         if uiHidden { showHint() }
+    }
+
+    /// Leaving the game: the layer closes the session, Husk verifies the swap and writes the verdict down for this app,
+    /// so the next game can start without relaunching. When it cannot be closed, the toast says so plainly — a refusal the
+    /// user can act on, never a silent one and never a swap reported as clean when it was not.
+    private func leave() {
+        let outcome = NativeSession.close(appID: app.id, apk: app.apks.first, package: app.packageName, engine: engine)
+        if let message = outcome?.message { GameStatusStore.shared.notice = message }
+        dismiss()
     }
 
     private func showHint() {
@@ -811,8 +829,8 @@ struct TLCocosAttemptView: View {
             UIApplication.shared.isIdleTimerDisabled = false
             HuskOrientation.set(HuskOrientation.standard)
         }
-        .onReceive(NotificationCenter.default.publisher(for: TLUnityUIView.appClosedItself)) { _ in dismiss() }
-        .overlay { if let d = stoppedWhy { AppStoppedOverlay(app: app, diagnosis: d) { dismiss() } } }
+        .onReceive(NotificationCenter.default.publisher(for: TLUnityUIView.appClosedItself)) { _ in leave() }
+        .overlay { if let d = stoppedWhy { AppStoppedOverlay(app: app, diagnosis: d) { leave() } } }
     }
 
     /// While the pad is being edited: what to do with the control picked, in a small panel in the middle of the screen.
@@ -851,7 +869,7 @@ struct TLCocosAttemptView: View {
 
     private var bar: some View {
         HStack(spacing: 12) {
-            Button { dismiss() } label: {
+            Button { leave() } label: {
                 Label("Close", systemImage: "xmark").font(.system(size: 13, weight: .semibold))
             }
             .tint(.white)

@@ -52,6 +52,16 @@ bool tl_xmem_contains(const void *p);
 /* Whether an address is in the executable view specifically. */
 bool tl_xmem_is_rx(const void *p);
 
+/*
+ * Make the pages at the WRITABLE-view address `p` executable in that same view (the mirror of
+ * tl_xmem_is_rx): the executable view of those pages already runs, but a guest that keeps a
+ * code pointer in memory it wrote -- a JIT's trampoline arena, which the loader's adrp rewrite
+ * hands it in writable-view form -- holds an address in the writable view and calls it. Adds
+ * execute to that view and flushes the instruction cache. Returns false, and says so once, when
+ * the kernel refuses (W^X on the alias); the caller must not report success then.
+ */
+bool tl_xmem_allow_exec(void *p, size_t n);
+
 /* Make bytes written through the RW view visible to instruction fetch. */
 void tl_xmem_flush(const void *rx, size_t bytes);
 
