@@ -749,6 +749,78 @@ static int w_vkCreateImage(void *device, const void *ci, const void *alloc, void
     return r2;
 }
 
+/* --------------------------------------------------------------- memory --- */
+
+/*
+ * The second Android-only idea MoltenVK has no answer for, found the same way as the first: Unreal's
+ * render thread allocated its scene render targets, MoltenVK refused the allocation, and
+ * VerifyVulkanResult made it fatal again.
+ *
+ *   [mvk-error] VK_ERROR_INITIALIZATION_FAILED: vkAllocateMemory(): Only external memory handle types
+ *   VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT, ...MTLTEXTURE..., ...MTLHEAP... are supported.
+ *
+ * External memory is how Android shares a buffer with the system (a hardware buffer for the camera or
+ * the compositor, an opaque fd for another process). Metal has one kind of memory and no such handles,
+ * so there is nothing to translate *to*: the answer is to allocate the device memory without the
+ * export/import request attached.
+ *
+ * Same shape as vkCreateImage, and for the same reason: the call goes through exactly as asked first,
+ * and only a refusal gets a second attempt. Unreal asks for this on allocations that do not need to be
+ * shared at all -- it sets the flag conservatively -- so dropping the request loses nothing.
+ *
+ * The failure path also logs the chain it was given. If the deny-list below is ever wrong, that log
+ * names the structure that needs adding instead of leaving the next attempt to guess again.
+ */
+
+typedef struct { uint32_t sType; const void *pNext; } vk_chain_;
+
+/* Vulkan numbers the external-memory family in one band. None of it exists on Metal: the MTL* handle
+ * types MoltenVK does support never need this retry, because they succeed on the first call. */
+static bool vk_external_memory_struct(uint32_t st)
+{
+    return st == 1000070000u    /* VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO */
+        || st == 1000071000u    /* VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR */
+        || st == 1000129000u    /* VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID */
+        || st == 1000178000u;   /* VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT */
+}
+
+typedef int (*pfn_allocate_memory)(void *, const void *, const void *, void **);
+
+static int w_vkAllocateMemory(void *device, const void *ai, const void *alloc, void **memory)
+{
+    static pfn_allocate_memory real;
+    if (!real) real = V.lib ? (pfn_allocate_memory)dlsym(V.lib, "vkAllocateMemory") : NULL;
+    if (!real) return VK_ERROR_FEATURE_NOT_PRESENT;
+
+    int r = real(device, ai, alloc, memory);
+    if (r == VK_SUCCESS || !ai) return r;
+
+    vk_chain_ *head = (vk_chain_ *)ai;              /* VkMemoryAllocateInfo: sType, pNext, size, typeIndex */
+    if (!head->pNext) return r;
+
+    for (const vk_chain_ *b = (const vk_chain_ *)head->pNext; b; b = (const vk_chain_ *)b->pNext)
+        tl_log_line("vulkan: vkAllocateMemory -> %d with pNext sType %u", r, b->sType);
+
+    /* Cut the external-memory structs out of the caller's chain, ask again, put it back -- the same
+     * relink-and-restore the device-creation path uses. */
+    struct { vk_chain_ *prev; const void *was; } cut[8];
+    int ncut = 0;
+    vk_chain_ *prev = head;
+    for (vk_chain_ *b = (vk_chain_ *)head->pNext; b && ncut < 8; ) {
+        vk_chain_ *next = (vk_chain_ *)b->pNext;
+        if (vk_external_memory_struct(b->sType)) { cut[ncut].prev = prev; cut[ncut].was = next; ncut++; prev->pNext = next; }
+        else prev = b;
+        b = next;
+    }
+    if (!ncut) return r;
+
+    int r2 = real(device, ai, alloc, memory);
+    for (int i = ncut - 1; i >= 0; i--) cut[i].prev->pNext = cut[i].was;
+    tl_log_line("vulkan: vkAllocateMemory: MoltenVK has no external memory; dropped %d struct(s) and asked again -> %d",
+                ncut, r2);
+    return r2;
+}
+
 static void resolve_feature_hooks(void *instance)
 {
     if (!g_real_gpdf) g_real_gpdf = (pfn_get_features)V.gipa(instance, "vkGetPhysicalDeviceFeatures");
@@ -787,6 +859,7 @@ static const struct { const char *name; void *fn; } k_over[] = {
     /* One entry covers every way a game can fetch it: this table is consulted by vkGetInstanceProcAddr,
      * vkGetDeviceProcAddr and the direct resolver alike. */
     { "vkCreateImage", w_vkCreateImage },
+    { "vkAllocateMemory", w_vkAllocateMemory },
 };
 
 static void *overridden(const char *name)
