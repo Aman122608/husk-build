@@ -152,50 +152,63 @@ targets:
         link: false
     preBuildScripts:
       - name: Stage guest image
-        # The Phase 0 guest is far too large for git, so it is fetched rather than
-        # vendored, and copied into the bundle at build time.
+        # The guest's boot payload -- UEFI firmware, pc-bios ROMs, the two qcow2
+        # seeds -- is copied only when this build bundles the guest
+        # (HUSK_BUNDLE_GUEST=1; default is 0, see scripts/build_ipa_prebuilt.sh).
+        # The Phase 0 Alpine kernel/initramfs are gone for good: no shipped path
+        # starts Phase 0 (QemuRunner.profile is always phase1Android), so they
+        # were 19.6 MB of compressed IPA that nothing ever read. The Android
+        # system disk has always been fetched on demand (GuestImage/GuestManifest),
+        # never bundled.
+        #
+        # android-system and java-runtime below are NOT QEMU: they are what the
+        # native translation layer and Husk's own Java runtime read, and they ship
+        # either way. See .hermes/plans/engine-reset/guest-unbundled.md.
         script: |
           set -e
-          GUEST="$SRCROOT/../../guests/phase0"
-          if [ ! -f "$GUEST/vmlinuz-virt" ]; then
-            echo "error: guest missing. Run ./scripts/fetch_phase0_guest.sh" >&2
-            exit 1
-          fi
-          mkdir -p "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
-          cp "$GUEST/vmlinuz-virt" "$GUEST/initramfs-virt" \
-             "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/"
+          RES="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          mkdir -p "$RES"
 
-          # QEMU loads option ROMs by name from its data directory (-L). The full
-          # pc-bios tree is 24 MB and almost entirely firmware for architectures
-          # we will never boot (sparc64, riscv, loongarch, x86, ppc), so ship only
-          # the network boot ROMs -- 1.6 MB, and the only ones -M virt asks for.
-          BIOS="$SRCROOT/../../third_party/build/qemu-10.0.12-utm/pc-bios"
-          DEST="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/pc-bios"
-          mkdir -p "$DEST"
-          cp "$BIOS"/efi-*.rom "$BIOS"/pxe-*.rom "$DEST/" 2>/dev/null || true
+          if [ "${HUSK_BUNDLE_GUEST:-0}" = "1" ]; then
+            # QEMU loads option ROMs by name from its data directory (-L). The full
+            # pc-bios tree is 24 MB and almost entirely firmware for architectures
+            # we will never boot (sparc64, riscv, loongarch, x86, ppc), so ship only
+            # the network boot ROMs -- 1.6 MB, and the only ones -M virt asks for.
+            BIOS="$SRCROOT/../../third_party/build/qemu-10.0.12-utm/pc-bios"
+            DEST="$RES/pc-bios"
+            mkdir -p "$DEST"
+            cp "$BIOS"/efi-*.rom "$BIOS"/pxe-*.rom "$DEST/" 2>/dev/null || true
 
-          # UEFI firmware for the Phase 1 guest: Debian's cloud image boots through
-          # GRUB under UEFI, so this is required. It is 64 MiB but almost all zeros,
-          # so the IPA's own zip squeezes it to about a megabyte -- cheaper than
-          # carrying a decompressor to unpack it at runtime.
-          FW="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/edk2-aarch64-code.fd"
-          if [ ! -f "$FW" ]; then
-            bunzip2 -c "$BIOS/edk2-aarch64-code.fd.bz2" > "$FW"
-          fi
+            # UEFI firmware for the Phase 1 guest: it boots through UEFI, so this is
+            # required. It is 64 MiB but almost all zeros, so the IPA's own zip
+            # squeezes it to about a megabyte -- cheaper than carrying a
+            # decompressor to unpack it at runtime.
+            FW="$RES/edk2-aarch64-code.fd"
+            if [ ! -f "$FW" ]; then
+              bunzip2 -c "$BIOS/edk2-aarch64-code.fd.bz2" > "$FW"
+            fi
 
-          # These two qcow2 files are tiny sparse seeds (64 MiB and 16 GiB
-          # virtual). The app copies them into Documents on first launch; the
-          # pre-booted snapshot later replaces the userdata seed in place.
-          QEMU_IMG="$(command -v qemu-img || true)"
-          if [ -z "$QEMU_IMG" ]; then
-            echo "error: qemu-img is required to generate the firmware and userdata seeds" >&2
-            exit 1
+            # These two qcow2 files are tiny sparse seeds (64 MiB and 16 GiB
+            # virtual). The app copies them into Documents on first launch; the
+            # pre-booted snapshot later replaces the userdata seed in place.
+            QEMU_IMG="$(command -v qemu-img || true)"
+            if [ -z "$QEMU_IMG" ]; then
+              echo "error: qemu-img is required to generate the firmware and userdata seeds" >&2
+              exit 1
+            fi
+            VARS_SEED="$RES/lineage-efi-vars-seed.fd"
+            VDB_SEED="$RES/lineage-vdb-seed.qcow2"
+            rm -f "$VARS_SEED" "$VDB_SEED"
+            "$QEMU_IMG" create -f qcow2 "$VARS_SEED" 64M
+            "$QEMU_IMG" create -f qcow2 "$VDB_SEED" 16G
+          else
+            # Say what is missing by name, here, so a guest that will not start in
+            # this build is read as this line rather than as QEMU failing to open
+            # a file it was never given.
+            echo "note: Android guest payload not bundled (HUSK_BUNDLE_GUEST=0):"
+            echo "      no edk2-aarch64-code.fd, no pc-bios ROMs, no qcow2 seeds."
+            echo "      The QEMU-under-Android VM cannot boot in this IPA."
           fi
-          VARS_SEED="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/lineage-efi-vars-seed.fd"
-          VDB_SEED="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/lineage-vdb-seed.qcow2"
-          rm -f "$VARS_SEED" "$VDB_SEED"
-          "$QEMU_IMG" create -f qcow2 "$VARS_SEED" 64M
-          "$QEMU_IMG" create -f qcow2 "$VDB_SEED" 16G
 
           # The parts of Android's /system that apps on the translation layer read directly: CA certificates and the system
           # fonts (scripts/build_android_system.sh makes them from the Lineage image). Flutter apps need both.
@@ -217,12 +230,10 @@ targets:
         # Every build: the Java runtime it copies changes without Xcode knowing (it has outputs and no inputs, so dependency
         # analysis skipped it once they existed, and IPAs shipped a day-old runtime).
         basedOnDependencyAnalysis: false
-        outputFiles:
-          - "$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/vmlinuz-virt"
-          - "$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/initramfs-virt"
-          - "$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/edk2-aarch64-code.fd"
-          - "$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/lineage-efi-vars-seed.fd"
-          - "$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/lineage-vdb-seed.qcow2"
+        # No outputFiles: what this phase stages now depends on HUSK_BUNDLE_GUEST
+        # (the guest payload is present in a bundling build and absent otherwise),
+        # and analysis is off anyway. Listing the guest files as outputs would
+        # declare files this phase does not always produce.
 
     postBuildScripts:
       - name: Embed StikJIT

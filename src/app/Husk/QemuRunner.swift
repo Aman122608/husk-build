@@ -14,35 +14,31 @@ final class QemuRunner: ObservableObject {
     private var thread: Thread?
     private(set) var isRunning = false
 
+    /// Set when a guest was asked for and this build cannot provide one (the
+    /// QEMU guest payload is unbundled). Read by the UI to explain itself rather
+    /// than leaving a Start button that silently does nothing. See GuestRuntime.
+    @Published var guestUnavailable: String?
+
     /// Last line the guest printed about its own setup. The first-boot service in
     /// the guest writes HUSK-SETUP markers to the serial console, which is already
     /// being tailed -- so Android's one-time download reports progress to the UI
     /// without needing any channel of its own.
     @Published var setupMessage: String?
 
-    /// How much QEMU tells us. `in_asm`/`exec` produce gigabytes in seconds, so
-    /// they are never on by default — but they are here because when a guest dies
-    /// three instructions into its first translated block, nothing else will do.
-    enum Verbosity: String, CaseIterable {
-        case normal    = "guest_errors,unimp"
-        case detailed  = "guest_errors,unimp,cpu_reset,page,mmu"
-        case firehose  = "guest_errors,unimp,cpu_reset,page,mmu,int,exec,in_asm"
-    }
+    // The Verbosity enum and the `verbosity` setting are gone with the Phase 0
+    // guest: only its command line ever read them (`-d verbosity.rawValue`). The
+    // Android command line hardcodes a quiet `-d guest_errors,unimp`.
 
-    var verbosity: Verbosity = .detailed
-
-    /// Which guest to boot.
+    /// The guest this runs is always Android (LineageOS) under UEFI.
     ///
-    /// Phase 0's Alpine guest is kept because it is the fastest way to tell a
-    /// broken substrate from a broken Android setup: it boots in seconds from the
-    /// app bundle with no download, no UEFI and no disk, so if it draws and Phase 1
-    /// does not, the problem is above the JIT/display layer.
-    enum Profile: String, CaseIterable {
-        case phase0Alpine   = "Alpine (substrate check)"
-        case phase1Android = "Android (LineageOS guest)"
-    }
-
-    var profile: Profile = .phase1Android
+    /// There used to be a Phase 0 Alpine profile here -- a kernel+initramfs that
+    /// booted from the app bundle with no download, no UEFI and no disk, as a
+    /// "is the substrate broken or is Android broken" check. Nothing ever set it:
+    /// `profile` was declared and left at its `.phase1Android` default, so
+    /// `phase0Arguments()` was never called and `vmlinuz-virt` / `initramfs-virt`
+    /// -- 19.6 MB of the compressed IPA -- were never read on any shipped path.
+    /// Both the profile and its kernel are gone; see
+    /// .hermes/plans/engine-reset/guest-unbundled.md.
 
     /// True once the GL display is live. The UI needs this: HuskGLView must
     /// exist before QEMU starts, because it is what publishes the layer, but if
@@ -213,72 +209,10 @@ final class QemuRunner: ObservableObject {
     }
     var guestSerialLogPath: String { "\(documentsDir)/guest-serial.log" }
 
-    /// Phase 0 guest: Alpine 3.24.1 aarch64, booted directly from kernel+initramfs.
-    ///
-    /// This exact command line was validated on the host under TCG before ever
-    /// being run on device: the kernel reaches userspace, virtio-gpu registers
-    /// fb0, and the virtio tablet and keyboard both enumerate.
-    private func phase0Arguments() -> [String] {
-        let bundle = Bundle.main.bundlePath
-
-        return [
-            "qemu-system-aarch64",
-            "-M", "virt",
-            "-cpu", "cortex-a72",
-            "-smp", "4",
-            "-m", "1024",
-
-            // tb-size is the whole JIT budget for the session. StikDebug detaches
-            // after startup and a second allocation is impossible, so this has to
-            // be right up front. It also costs attach time: StikDebug touches every
-            // 16 KiB page through the debugger, so 256 MiB is 16384 round trips.
-            // split-wx=on is NOT optional here. It defaults to 0 (see
-            // tcg_accel_instance_init), and with it off TCG never calls the
-            // splitwx allocator at all -- it goes straight to an RWX mmap, which
-            // iOS refuses with EPERM and which no amount of JIT setup can fix.
-            // Forcing it on (rather than "auto") also disables the RWX fallback,
-            // so a genuine failure surfaces as itself instead of as a confusing
-            // "Operation not permitted".
-            "-accel", "tcg,tb-size=256,thread=multi,split-wx=on",
-
-            "-kernel", "\(bundle)/vmlinuz-virt",
-            "-initrd", "\(bundle)/initramfs-virt",
-            "-append", "console=tty0 console=ttyAMA0 loglevel=8",
-
-            // -M virt adds a default virtio-net-pci unless told otherwise, and that
-            // device wants its PXE option ROM at startup -- which is why the first
-            // device run died on 'failed to find romfile "efi-virtio.rom"'. Phase 0
-            // needs no network at all, so the device simply should not exist. The
-            // ROMs are bundled anyway, because Android will need networking and the
-            // next occurrence of this would be just as opaque.
-            "-nic", "none",
-            "-L", "\(bundle)/pc-bios",
-
-            "-device", "virtio-gpu-pci",
-            "-device", "virtio-tablet-pci",
-            "-device", "virtio-keyboard-pci",
-
-            // The guest's own kernel console. By far the most informative single
-            // signal available: if the guest is executing translated code at all,
-            // it says so here. A file chardev rather than stdio, because stdio
-            // would have QEMU reach for a stdin that does not exist on iOS and
-            // fail during init -- a bad way to lose a first device run. A tailer
-            // folds this back into the unified log a moment later.
-            "-chardev", "file,id=ser0,path=\(guestSerialLogPath)",
-            "-serial", "chardev:ser0",
-
-            // Our own DisplayChangeListener is the display; QEMU needs no backend.
-            "-display", "none",
-            "-monitor", "none",
-            "-no-reboot",
-
-            // No -D: let QEMU's own diagnostics go to stderr, which HuskLog has
-            // already redirected. One file, one chronology, so "JIT region
-            // allocated" and "first translated block" appear in the order they
-            // actually happened.
-            "-d", verbosity.rawValue,
-        ]
-    }
+    // phase0Arguments() removed: the Alpine Phase 0 guest it built the command
+    // line for was never started (nothing set `profile`), and its kernel and
+    // initramfs were never bundled again. The Android guest below is the only
+    // one. See .hermes/plans/engine-reset/guest-unbundled.md.
 
     /// How much RAM to give the guest, in MiB.
     ///
@@ -1344,9 +1278,24 @@ final class QemuRunner: ObservableObject {
     }
 
     private func run() {
+        // Before anything else: is the guest even in this build? A build with
+        // HUSK_BUNDLE_GUEST=0 has no UEFI firmware and no pc-bios, and the honest
+        // failure is to say that by name here, not to let qemu_init() fail to open
+        // a file it was never given. See GuestRuntime.
+        GuestRuntime.logAvailability()
+        guard GuestRuntime.bundled else {
+            let why = GuestRuntime.unbundledMessage
+            HuskLog.log("qemu", "guest not runnable in this build: \(why)")
+            DispatchQueue.main.async {
+                QemuRunner.shared.guestUnavailable = why
+                QemuRunner.shared.isRunning = false
+            }
+            return
+        }
+
         probeGL()
-        let args = (profile == .phase0Alpine) ? phase0Arguments() : phase1Arguments()
-        HuskLog.log("qemu", "profile: \(profile.rawValue)")
+        let args = phase1Arguments()
+        HuskLog.log("qemu", "profile: Android (LineageOS guest)")
         HuskLog.log("qemu", "DISPLAY MODE: "
                           + (QemuRunner.glProven ? "GPU (virtio-gpu-gl)"
                                                  : "software (CPU framebuffer)"))
@@ -1366,22 +1315,17 @@ final class QemuRunner: ObservableObject {
         for (i, a) in args.enumerated() {
             HuskLog.log("qemu", String(format: "  argv[%2d] = %@", i, a))
         }
-        // Only phase 0 takes its -d from this setting; phase 1 hardcodes a quiet
-        // one. Printing the setting regardless made it look as though Android
-        // was running with page and mmu logging on, which would be ruinous.
-        HuskLog.log("qemu", profile == .phase0Alpine
-            ? "---- verbosity: \(verbosity) (-d \(verbosity.rawValue)) ----"
-            : "---- verbosity: fixed for Android (-d guest_errors,unimp) ----")
+        // The Android command line hardcodes a quiet -d; the setting above stays
+        // because Phase 0 (an Alpine substrate check) once read it. That guest is
+        // gone, so nothing takes its verbosity from here now.
+        HuskLog.log("qemu", "---- verbosity: fixed for Android (-d guest_errors,unimp) ----")
 
         // Confirm the guest images are actually in the bundle before QEMU tries to
         // open them; "could not load kernel" is a far less obvious error message.
-        let required: [String] = (profile == .phase0Alpine)
-            ? ["\(Bundle.main.bundlePath)/vmlinuz-virt",
-               "\(Bundle.main.bundlePath)/initramfs-virt"]
-            : [GuestImage.shared.diskPath,
-               GuestImage.shared.userdataPath,
-               GuestImage.shared.firmwarePath,
-               GuestImage.shared.varsPath]
+        let required: [String] = [GuestImage.shared.diskPath,
+                                  GuestImage.shared.userdataPath,
+                                  GuestImage.shared.firmwarePath,
+                                  GuestImage.shared.varsPath]
         for path in required {
             let attrs = try? FileManager.default.attributesOfItem(atPath: path)
             let size = (attrs?[.size] as? NSNumber)?.intValue ?? -1

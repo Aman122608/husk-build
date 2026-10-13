@@ -222,6 +222,16 @@ struct ContentView: View {
         } message: {
             Text(guest.update.detail)
         }
+        // A build without the QEMU guest payload cannot start Android. Say so in
+        // the same breath as the button was pressed, rather than leaving a Start
+        // that silently does nothing. See GuestRuntime.
+        .alert("Android is not in this build", isPresented: Binding(
+                get: { runner.guestUnavailable != nil },
+                set: { if !$0 { runner.guestUnavailable = nil } })) {
+            Button("OK", role: .cancel) { runner.guestUnavailable = nil }
+        } message: {
+            Text(runner.guestUnavailable ?? "")
+        }
         .sheet(isPresented: $massTest.shareResults) { ShareSheet(items: [MassTest.resultsURL]) }
         .onAppear {
             crash.checkPreviousRun()
@@ -312,6 +322,15 @@ struct ContentView: View {
     private func start() {
         guard !started else { return }
         guard JITBootstrap.ready else { return }
+        // Refuse up front when this build has no guest to start. The alternative
+        // is claiming a JIT region, calling qemu_init(), and failing on a file the
+        // build never staged -- which reads as a broken guest, not an absent one.
+        guard GuestRuntime.bundled else {
+            GuestRuntime.logAvailability()
+            HuskLog.log("ui", "not starting Android: this build ships without the guest payload")
+            runner.guestUnavailable = GuestRuntime.unbundledMessage
+            return
+        }
         HuskLog.log("ui", "JIT is available; starting QEMU")
         // Take the JIT region at the last moment before QEMU, as well as before
         // the download. Whichever comes first wins; the second call is a no-op.

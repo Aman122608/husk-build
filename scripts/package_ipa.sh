@@ -142,9 +142,11 @@ for lib in libqemu-aarch64-softmmu.dylib libANGLE-shared.dylib; do
     fi
 done
 
-# Guest images, firmware, and blank disk seeds required by first launch.
-for f in vmlinuz-virt initramfs-virt husk-jit.js \
-         edk2-aarch64-code.fd lineage-efi-vars-seed.fd lineage-vdb-seed.qcow2; do
+# Guest images, firmware, and blank disk seeds required by first launch -- only
+# when this build bundles the guest (HUSK_BUNDLE_GUEST=1). When it does not, their
+# absence is expected and must NOT fail packaging: the build ships without the VM
+# on purpose (see .hermes/plans/engine-reset/guest-unbundled.md).
+for f in husk-jit.js; do
     if [ ! -f "$APP/$f" ]; then
         echo "  MISSING  $f" >&2
         rc=1
@@ -152,6 +154,19 @@ for f in vmlinuz-virt initramfs-virt husk-jit.js \
         printf "  ok       %-28s %s\n" "$f" "$(du -h "$APP/$f" | cut -f1)"
     fi
 done
+if [ "${HUSK_BUNDLE_GUEST:-0}" = "1" ]; then
+    for f in vmlinuz-virt initramfs-virt \
+             edk2-aarch64-code.fd lineage-efi-vars-seed.fd lineage-vdb-seed.qcow2; do
+        if [ ! -f "$APP/$f" ]; then
+            echo "  MISSING  $f" >&2
+            rc=1
+        else
+            printf "  ok       %-28s %s\n" "$f" "$(du -h "$APP/$f" | cut -f1)"
+        fi
+    done
+else
+    echo "  n/a      Android guest payload not bundled (HUSK_BUNDLE_GUEST=0)"
+fi
 
 # Built-in StikJIT's helper (without it the app still installs and runs with
 # StikDebug, but its JIT setup would offer a method that can only fail), and the

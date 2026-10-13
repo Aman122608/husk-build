@@ -23,6 +23,26 @@ IPA="$WORK/Husk.ipa"
 SYSROOT_LIB="$HUSK_ROOT/build/ios-arm64/sysroot/lib"
 APP_LIB="$HUSK_ROOT/build/ios-arm64/lib"
 
+# Whether the QEMU-under-Android guest is IN this IPA.
+#
+#   HUSK_BUNDLE_GUEST=0 (default)  no guest payload: no UEFI firmware, no pc-bios
+#                                  ROMs, no Alpine Phase 0 kernel/initramfs, no
+#                                  qcow2 seeds. The VM cannot boot in this build;
+#                                  the app says so by name instead of failing
+#                                  somewhere inside QEMU.
+#   HUSK_BUNDLE_GUEST=1            the full guest, as every build had it.
+#
+# What this switch does NOT remove, and why: libqemu-aarch64-softmmu.dylib. Its
+# name says "QEMU", but the same library also exports husk_ios_jit_prewarm /
+# husk_ios_jit_get_mapping (scripts/integrate_husk.sh, system/qemu.symbols) --
+# the JIT region the app claims and the native translation layer looks up by
+# name with dlsym (src/translation-layer/husk-tl-load.c:522,529). Dropping the
+# dylib therefore disables JIT for the guest AND the native runtime at once; it
+# is a library split, not a payload deletion. See
+# .hermes/plans/engine-reset/guest-unbundled.md.
+HUSK_BUNDLE_GUEST="${HUSK_BUNDLE_GUEST:-0}"
+export HUSK_BUNDLE_GUEST
+
 cd "$HUSK_ROOT"
 step() { printf '\n\033[1;34m##### %s\033[0m\n' "$*"; }
 
@@ -84,15 +104,27 @@ step "stage QEMU's pc-bios data"
 # firmware the donor's QEMU uses. The firmware is 64 MiB of mostly zeros and the
 # phase bunzip2s it, so repack the .fd the donor already ships rather than
 # re-downloading QEMU's sources for one file.
+#
+# Only for a guest-bundling build. This is the payload that makes the VM boot, so
+# nothing is staged when the guest is excluded -- and project.yml's build phase
+# reads the same HUSK_BUNDLE_GUEST and ships neither.
 DONOR_APP="$WORK/x/Payload/Husk.app"
 BIOS="$HUSK_ROOT/third_party/build/qemu-10.0.12-utm/pc-bios"
-mkdir -p "$BIOS"
-cp "$DONOR_APP/pc-bios/"*.rom "$BIOS/" 2>/dev/null || true
-if [ -f "$DONOR_APP/edk2-aarch64-code.fd" ]; then
-    bzip2 -9 -c "$DONOR_APP/edk2-aarch64-code.fd" > "$BIOS/edk2-aarch64-code.fd.bz2"
+if [ "$HUSK_BUNDLE_GUEST" = "1" ]; then
+    mkdir -p "$BIOS"
+    cp "$DONOR_APP/pc-bios/"*.rom "$BIOS/" 2>/dev/null || true
+    if [ -f "$DONOR_APP/edk2-aarch64-code.fd" ]; then
+        bzip2 -9 -c "$DONOR_APP/edk2-aarch64-code.fd" > "$BIOS/edk2-aarch64-code.fd.bz2"
+    fi
+    [ -s "$BIOS/edk2-aarch64-code.fd.bz2" ] \
+        || { echo "donor IPA has no edk2-aarch64-code.fd to stage" >&2; exit 1; }
+    echo "guest payload: bundling UEFI firmware + pc-bios ROMs"
+else
+    step "guest payload: NOT bundled (HUSK_BUNDLE_GUEST=0)"
+    echo "  excluded: edk2-aarch64-code.fd, pc-bios/*.rom, vmlinuz-virt, initramfs-virt, qcow2 seeds"
+    echo "  the Android VM cannot boot in this IPA; the app names the missing piece at launch"
+    echo "  set HUSK_BUNDLE_GUEST=1 to ship the guest again"
 fi
-[ -s "$BIOS/edk2-aarch64-code.fd.bz2" ] \
-    || { echo "donor IPA has no edk2-aarch64-code.fd to stage" >&2; exit 1; }
 
 step "java runtime + Android system (from the 2.0 release IPA)"
 # Two more binaries this path reuses from a released IPA, and the reason a build from this script
@@ -142,8 +174,19 @@ rsync -a "$JR_APP/android-system/" "$HUSK_ROOT/build/android-system/"
     || { echo "the staged java-runtime has no core-oj.jar; a Java app still cannot start" >&2; exit 1; }
 du -sh "$HUSK_ROOT/build/java-runtime" "$HUSK_ROOT/build/android-system"
 
-step "guest kernel + firmware"
-./scripts/fetch_phase0_guest.sh
+if [ "$HUSK_BUNDLE_GUEST" = "1" ]; then
+    # The only thing this still buys is edk2: the script unpacks the firmware
+    # into guests/phase0, but the staged copy the build phase reads comes from
+    # the pc-bios step above. Its Alpine kernel/initramfs are no longer staged at
+    # all -- no shipped path starts Phase 0 (see QemuRunner.run()).
+    step "guest firmware (edk2)"
+    ./scripts/fetch_phase0_guest.sh
+else
+    # Nothing to fetch. The Phase 0 Alpine kernel/initramfs (19.6 MB compressed)
+    # were the guest's diagnostic boot, never started on any shipped path, and
+    # the edk2 firmware is the VM's; both go when the guest goes.
+    step "guest kernel + firmware: skipped (HUSK_BUNDLE_GUEST=0)"
+fi
 
 step "on-device pairing (Rust)"
 ./scripts/build_rppairing_ios.sh
@@ -178,6 +221,12 @@ for f in "$SYSROOT_LIB/libANGLE-shared.dylib" "$APP_LIB/libqemu-aarch64-softmmu.
 done
 printf '%s  %s\n' "$(shasum -a 256 "$HUSK_ROOT/build/java-runtime/husk-framework.dex" | cut -d' ' -f1)" "java-runtime/husk-framework.dex"
 printf '%s  %s\n' "$(find "$HUSK_ROOT/build/java-runtime" "$HUSK_ROOT/build/android-system" -type f | wc -l | tr -d ' ')" "java-runtime + android-system files"
-echo "graphics/QEMU stack: upstream Husk $TAG (unchanged)"
+echo "graphics stack (ANGLE, MoltenVK): upstream Husk $TAG (unchanged)"
+echo "qemu library (libqemu-aarch64-softmmu.dylib): upstream Husk $TAG (unchanged; also hosts the JIT)"
+if [ "$HUSK_BUNDLE_GUEST" = "1" ]; then
+    echo "Android guest payload: BUNDLED (HUSK_BUNDLE_GUEST=1)"
+else
+    echo "Android guest payload: NOT bundled (HUSK_BUNDLE_GUEST=0) -- the Android VM cannot boot in this IPA"
+fi
 echo "java runtime + Android system: upstream Husk $JAVA_DONOR_TAG (unchanged)"
 echo "app binary: built from this tree at $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"

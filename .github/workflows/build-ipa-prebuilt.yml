@@ -10,6 +10,12 @@ on:
       upstream_tag:
         description: Upstream release whose graphics/QEMU binaries to reuse
         default: "1.1.0"
+      bundle_guest:
+        description: >-
+          Bundle the QEMU-under-Android guest payload (UEFI firmware, pc-bios
+          ROMs, qcow2 seeds)? 0 (default) ships without it -- the VM cannot boot
+          in that IPA but it is ~22 MB smaller. 1 restores the old behaviour.
+        default: "0"
 
 jobs:
   ipa:
@@ -68,6 +74,7 @@ jobs:
       - name: Build IPA from upstream binaries
         env:
           HUSK_UPSTREAM_TAG: ${{ inputs.upstream_tag }}
+          HUSK_BUNDLE_GUEST: ${{ inputs.bundle_guest }}
         run: bash ./scripts/build_ipa_prebuilt.sh build/Husk.ipa
 
       - name: Upload logs (also on failure)

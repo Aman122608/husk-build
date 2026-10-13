@@ -43,3 +43,8 @@ __pycache__/
 
 # Local CI scratch (downloaded IPA artifacts, logs)
 .ci/
+
+# large game payloads and build artifacts: never part of a commit
+Games/
+Games32/
+HuskBuilds/
