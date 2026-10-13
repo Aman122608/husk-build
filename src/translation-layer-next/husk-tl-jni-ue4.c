@@ -69,12 +69,20 @@ const char *tl_ue4_meta(const char *key)
     return NULL;
 }
 #define meta tl_ue4_meta
-static void GA_hasMeta(tl_jcall *c) { c->ret = vz(meta(S(c->args[0].l)) != NULL); }
-static void GA_metaString(tl_jcall *c) { const char *v = meta(S(c->args[0].l)); c->ret = vl(v ? tl_jni_new_string(v) : NULL); }
-static void GA_metaBool(tl_jcall *c) { const char *v = meta(S(c->args[0].l)); c->ret = vz(v && !strcmp(v, "true")); }
-static void GA_metaInt(tl_jcall *c) { const char *v = meta(S(c->args[0].l)); c->ret = vi(v ? atoi(v) : 0); }
-static void GA_metaLong(tl_jcall *c) { const char *v = meta(S(c->args[0].l)); c->ret = vj(v ? atoll(v) : 0); }
-static void GA_metaFloat(tl_jcall *c) { const char *v = meta(S(c->args[0].l)); c->ret = vf(v ? (float)atof(v) : 0); }
+/* Every meta-data key the engine reads, and what it was told: a game that branches on its manifest (OBB flags, project name,
+ * app type) takes a path decided here, so the answer has to be visible when a run goes somewhere unexpected. */
+static void meta_say(const char *k, const char *v)
+{
+    static int said;
+    if (said++ > 300) return;
+    tl_log_line("ue4: meta-data %s = %s", k ? k : "(null)", v ? v : "(none)");
+}
+static void GA_hasMeta(tl_jcall *c) { const char *k = S(c->args[0].l), *v = meta(k); meta_say(k, v); c->ret = vz(v != NULL); }
+static void GA_metaString(tl_jcall *c) { const char *k = S(c->args[0].l), *v = meta(k); meta_say(k, v); c->ret = vl(v ? tl_jni_new_string(v) : NULL); }
+static void GA_metaBool(tl_jcall *c) { const char *k = S(c->args[0].l), *v = meta(k); meta_say(k, v); c->ret = vz(v && !strcmp(v, "true")); }
+static void GA_metaInt(tl_jcall *c) { const char *k = S(c->args[0].l), *v = meta(k); meta_say(k, v); c->ret = vi(v ? atoi(v) : 0); }
+static void GA_metaLong(tl_jcall *c) { const char *k = S(c->args[0].l), *v = meta(k); meta_say(k, v); c->ret = vj(v ? atoll(v) : 0); }
+static void GA_metaFloat(tl_jcall *c) { const char *k = S(c->args[0].l), *v = meta(k); meta_say(k, v); c->ret = vf(v ? (float)atof(v) : 0); }
 
 jobj *tl_hle_assets(void);
 static void GA_assetManager(tl_jcall *c) { c->ret = vl(tl_jni_ref(tl_hle_assets())); }
@@ -171,6 +179,10 @@ extern bool tl_pad_connected(int slot);
 static void GA_gamepad(tl_jcall *c) { c->ret = vz(tl_pad_connected(0)); }
 static void GA_listInputDevices(tl_jcall *c) { c->ret = vl(tl_jni_new_string("")); }
 static void GA_isOBBInAPK(tl_jcall *c) { c->ret = vz(0); }
+/* AndroidThunkJava_GooglePAD_Available: whether Play Asset Delivery can deliver this game's content. There is no Play service on
+ * iOS, so the answer is no -- but the answer decides how the game gets its paks (Play's asset packs, or a content CDN), which is
+ * why it is said rather than only returned. */
+static void GA_googlePAD(tl_jcall *c) { tl_log_line("ue4: AndroidThunkJava_GooglePAD_Available -> false (no Play Asset Delivery here)"); c->ret = vz(0); }
 static void GA_boolObj(tl_jcall *c)                                            /* java.lang.Boolean true */
 {
     jobj *b = tl_jni_new_object(tl_jni_class("java/lang/Boolean"));
@@ -232,7 +244,7 @@ static const tl_jhle k_hle[] = {
     M_(CLS, "AndroidThunkJava_IsScreensaverEnabled", "()Z", GA_false),
     M_(CLS, "AndroidThunkJava_IsScreenCaptureDisabled", "()Z", GA_false),
     M_(CLS, "AndroidThunkJava_IapIsAllowedToMakePurchases", "()Z", GA_false),
-    M_(CLS, "AndroidThunkJava_GooglePAD_Available", "()Z", GA_false),
+    M_(CLS, "AndroidThunkJava_GooglePAD_Available", "()Z", GA_googlePAD),
     M_(CLS, "AndroidThunkJava_IsAllowedRemoteNotifications", "()Z", GA_false),
     { NULL, NULL, NULL, NULL }
 };

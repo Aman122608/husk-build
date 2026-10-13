@@ -228,6 +228,18 @@ bool tl_na_start(const tl_ga_config *cfg)
     snprintf(N.obb_file, sizeof(N.obb_file), "%s/main.%d.%s.obb", N.obb_dir, OBB_VERSION, N.pkg);
     mkdirs(N.internal_dir); mkdirs(N.ext_dir); mkdirs(N.obb_dir);
 
+    /* This app ships with every trace off, so a run says nothing about what the engine asked for and then waited on -- "the log
+     * stops here" is then indistinguishable from "nothing happened". Turn on the three that answer "why is it stuck" for the UE4
+     * path: the JNI surface the engine looks up (so a missing Java class or method is named instead of inferred), every path it
+     * opens, and the network it tries. Each stays overridable from the environment (a real TL_JNI_TRACE/TL_FILE_TRACE/TL_NET_TRACE
+     * wins); TL_DIAG_OFF turns the lot off. */
+    if (!getenv("TL_DIAG_OFF")) {
+        tl_jni_set_trace(getenv("TL_JNI_TRACE") ? atoi(getenv("TL_JNI_TRACE")) : 1);
+        setenv("TL_FILE_TRACE", "1", 0);
+        setenv("TL_NET_TRACE", "1", 0);
+        tl_log_line("ue4: tracing on -- JNI lookups, file I/O, network");
+    }
+
     tl_set_data_dir(cfg->data_dir);
     tl_nwindow_configure(cfg->width, cfg->height, cfg->metal_layer);
     int n = tl_dexidx_open(cfg->apk_path);
