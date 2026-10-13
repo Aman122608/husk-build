@@ -499,6 +499,19 @@ static int b_kill(pthread_t t, int sig)
 static int b_setname_np(pthread_t t, const char *name)
 {
     if (pthread_equal(t, pthread_self())) pthread_setname_np(name);
+    /* The engine's own threads name themselves ("UnityMain", "il2cpp", "Loading", a job worker...). One line
+     * per distinct name is the cheapest proof that the engine's main thread was created at all: in the
+     * zero-frames runs, nothing else says whether UnityMain ever started, and the crash runs only named it
+     * after they had already faulted. */
+    if (name && name[0]) {
+        static char said[8][32]; static int nsaid;
+        int known = 0;
+        for (int i = 0; i < nsaid; i++) if (!strcmp(said[i], name)) { known = 1; break; }
+        if (!known) {
+            if (nsaid < 8) snprintf(said[nsaid++], sizeof(said[0]), "%s", name);
+            tl_log_line("thread: a guest thread named itself '%s' (an engine thread entry)", name);
+        }
+    }
     return 0;
 }
 

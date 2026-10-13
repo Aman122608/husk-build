@@ -526,9 +526,12 @@ static void jar_note(const jar_entry *j, bool found)
     const char *key = j->entry[0] ? j->entry : j->apk;
     for (int i = 0; i < nsaid; i++) if (!strcmp(said[i], key)) return;
     if (nsaid < 64) snprintf(said[nsaid++], sizeof(said[0]), "%s", key);
-    if (found)
+    if (found) {
+        static int said_first;
+        if (!said_first++) tl_log_line("husk: first content read this session: %s", j->entry[0] ? j->entry : j->apk);
         tl_log_line("husk: apk entry %s: %llu bytes, %s, from %s", j->entry, (unsigned long long)j->size,
                     j->method == 0 ? "stored (read in place)" : "deflated (inflated once)", j->apk);
+    }
     else
         tl_log_line("husk: apk entry %s: not in %s (ENOENT)", j->entry[0] ? j->entry : "(no entry named)", j->apk[0] ? j->apk : "(the APK)");
 }

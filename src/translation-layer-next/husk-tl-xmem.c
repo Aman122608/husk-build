@@ -34,8 +34,23 @@ static struct {
     /* True when the guest-facing view (g_x.rw) is the mapping that carries the JIT authorisation
      * (Fix A). It is the whole point of this file's two-view ordering: see tl_xmem_guest_view_is_jit. */
     bool guest_view_jit;
+    /* How the guest-facing view's authorisation was obtained, for the one-line report:
+     * "MAP_JIT" when the mapping the guest addresses is a MAP_JIT mmap, "plain" when it is
+     * plain RWX, NULL when the guest-facing view is a vm_remap (no authorisation of its own). */
+    const char *route;
     pthread_mutex_t lock;
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
+
+/* Set while building the translation layer's OWN arena: make_views then adopts ONLY the order
+ * where the guest-facing view is the mapping that carries the JIT authorisation (the address the
+ * guest both writes and executes). The fallback order -- guest-facing view a vm_remap -- is
+ * exactly what the two phone crashes proved iOS will not execute (PvZ's A64HookFunction arena,
+ * robot gf's UnityMain bus error), so when the layer can have an authorised view of its own it
+ * must not silently accept the fallback; if it cannot, the caller falls back to the debugger's
+ * region and says so. */
+#if defined(__APPLE__)
+static bool g_own_arena_only;
+#endif
 
 /*
  * The per-thread W^X toggle for a MAP_JIT mapping. pthread_jit_write_protect_np() is in libsystem
@@ -171,6 +186,7 @@ static bool make_views(uint8_t *base, size_t size, char *err, size_t errlen)
         bool guest_view_runs = self_runs(rw, rw);                          /* the question the phone died on */
         if (code_view_runs && guest_view_runs) {
             g_x.rw = rw; g_x.rx = (uint8_t *)(uintptr_t)alias; g_x.size = size; g_x.guest_view_jit = true;
+            g_x.route = guest_extra[k] ? "MAP_JIT" : "plain RWX";
             tl_log_line("xmem: Fix A: the view the guest addresses and calls (%p) is the %s mapping and the code view (%p) is a vm_remap of it; a guest's own arena there is authorised",
                         (void *)rw, guest_extra[k] ? "MAP_JIT" : "plain RWX", (void *)alias);
             return true;
@@ -180,6 +196,15 @@ static bool make_views(uint8_t *base, size_t size, char *err, size_t errlen)
                     !code_view_runs && !guest_view_runs ? "neither view executed a function written into it"
                     : code_view_runs ? "the guest-facing view did not execute (its code view did)"
                                      : "the code view (a vm_remap) did not execute");
+    }
+
+    /* The layer wanted an arena it owns (g_own_arena_only): the vm_remap fallback below gives the
+     * guest an address it cannot execute, which is the shape of the two phone crashes, so refuse
+     * here rather than adopt it -- the caller can then fall back to the debugger's region. */
+    if (g_own_arena_only) {
+        snprintf(err, errlen, "no guest-owned writable-and-executable view here: the MAP_JIT/RWX mmap was refused or did not execute (%s), so the only view left for the guest is a vm_remap",
+                 last_errno ? strerror(last_errno) : "refused");
+        return false;
     }
 
     /* The fallback: the mmap carries the authorisation as the code view; the guest-facing view is the
@@ -196,6 +221,7 @@ static bool make_views(uint8_t *base, size_t size, char *err, size_t errlen)
         if (vm_protect(me, alias, size, FALSE, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS) { last_errno = EPERM; continue; }
         if (self_runs(rx, (uint8_t *)(uintptr_t)alias)) {
             g_x.rx = rx; g_x.rw = (uint8_t *)(uintptr_t)alias; g_x.size = size; g_x.guest_view_jit = false;
+            g_x.route = "vm_remap";
             tl_log_line("xmem: no authorised guest-facing view here: fell back to the two-view order (%s mapping, code view %p, guest view %p); a guest arena in the writable view cannot be made to fetch",
                         code_extra[k] ? "MAP_JIT" : "plain", (void *)rx, (void *)alias);
             return true;
@@ -228,6 +254,34 @@ static bool grant_self(size_t host_bytes, char *err, size_t errlen)
     snprintf(err, errlen, "this process cannot make executable memory for itself (%s%s). It needs JIT: a jailbreak with JIT allowed for apps, TrollStore's enable-jit, or a debugger",
              last_errno ? strerror(last_errno) : "refused", debugged ? "" : "; it is not marked as debugged");
     return false;
+}
+
+/*
+ * The translation layer's OWN arena: a mapping the APP owns, obtained here (not the debugger's
+ * region, whose owner is QEMU), whose guest-facing view is the address the guest both writes and
+ * executes. Two phone crashes are the reason this is preferred over the debugger's region:
+ *
+ *   PvZ (083605): the guest computed a code pointer off the writable base the layer handed it
+ *   (0x13b012e10 in the writable view, `blr x8` from libRFLib.so A64HookFunction) and branched;
+ *   the page was mapped, vm_protect returned 0, and it still had no execute -- a vm_remap alias
+ *   that iOS will not run. The two-address scheme fails in the field whenever the guest derives an
+ *   address from the writable base.
+ *
+ *   robot gf (083442/083605): a fetch at a page whose entry NAMED execute (prot 5) still took a
+ *   bus error -- the page was not backed at all. That region is StikDebug's, reserved rather than
+ *   populated, and only a few MiB of it is ever mapped.
+ *
+ * An mmap of the app's own is fully backed and, with CS_DEBUGGED set, MAP_JIT is honoured here. It
+ * is proven by measurement, never by the version: make_views runs the function written through one
+ * view and called through the other (and through itself) before this returns true. When it cannot
+ * be had, the caller keeps the honest refusal and falls back to the debugger's region, naming why.
+ */
+static bool grant_own_arena(size_t host_bytes, char *err, size_t errlen)
+{
+    g_own_arena_only = true;
+    bool ok = grant_self(host_bytes, err, errlen);
+    g_own_arena_only = false;
+    return ok;
 }
 #endif
 
@@ -302,14 +356,44 @@ static void near_alias(void)
     tl_log_line("xmem: the writable view is %td MiB from the executable one and no address near it is free", d >> 20);
 }
 
-/* The phone: StikDebug's region if a debugger granted one, otherwise one the process makes for itself where the device allows that (before TXM). */
+/* The phone: an arena the layer makes for ITSELF if the device allows it (with CS_DEBUGGED set, MAP_JIT is honoured), and only
+ * then StikDebug's region -- whose owner is QEMU, which is reserved rather than populated and whose guest-facing view is a
+ * vm_remap iOS will not execute. Nothing is trusted by version: both routes are proven by running a function written into the
+ * view the guest addresses (make_views), and whichever is taken is named in one line. */
 static bool open_platform(size_t host_bytes, char *err, size_t errlen)
 {
     tl_dual_mapping *m = tl_find_stikdebug_prewarmed();
+
+    /* 1. The layer's own arena first: the address the guest both writes and executes, in a mapping the app owns. */
+    {
+        char own[160] = "";
+        if (grant_own_arena(host_bytes, own, sizeof(own))) {
+            tl_log_line("xmem: open: the translation layer's OWN arena -- guest-facing view %p (%s), code view %p, size %zu MiB, delta %td; the guest may write AND execute at one address here",
+                        (void *)g_x.rw, g_x.route ? g_x.route : "?", (void *)g_x.rx, g_x.size >> 20, tl_xmem_delta());
+            return true;
+        }
+        if (m && m->rw_addr && m->rx_addr)
+            tl_log_line("xmem: no arena of the layer's own (%s); falling back to StikDebug's region", own[0] ? own : "refused");
+        else {
+            /* No debugger region: the old path applies -- the layer makes its own and accepts the two-view
+             * fallback where Fix A is not granted (libraries still load and run through the code view; only a
+             * guest JIT arena is refused, and tl_xmem_allow_exec says so). From iOS 26 the Trusted Execution
+             * Monitor decides what may execute and an attempt to run unblessed memory can end the process, so
+             * without a debugger nothing is tried there. */
+            if (__builtin_available(iOS 26.0, *)) {
+                snprintf(err, errlen, "no arena of the layer's own (%s), and no StikDebug JIT region: this iOS enforces TXM, where only a debugger (StikDebug or Built-in StikJIT) can grant executable memory", own[0] ? own : "refused");
+                return false;
+            }
+            return grant_self(host_bytes, err, errlen);
+        }
+    }
+
     if (m && m->rw_addr && m->rx_addr) {
         g_x.rx = m->rx_addr;
         g_x.rw = m->rw_addr;
         g_x.size = m->size;
+        g_x.guest_view_jit = false;
+        g_x.route = "vm_remap";
         near_alias();
         /* This path used to say nothing, which is why the PvZ runs' region could not be identified:
          * their rw/rx pair sits exactly +0x37e6000 from the region the husk-jit log blessed (the same
@@ -321,13 +405,9 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
                                        : "the vm_remap of it: Fix A cannot run on this path (the debugger owns both views), so a guest arena here can only be refused honestly");
         return true;
     }
-    /* From iOS 26 the Trusted Execution Monitor decides what may execute, and an attempt to run unblessed memory can end the process rather than fail. Only a debugger
-     * servicing traps can grant memory there, so nothing is tried. */
-    if (__builtin_available(iOS 26.0, *)) {
-        snprintf(err, errlen, "no StikDebug JIT region: this iOS enforces TXM, where only a debugger (StikDebug or Built-in StikJIT) can grant executable memory");
-        return false;
-    }
-    return grant_self(host_bytes, err, errlen);
+    /* Reached only if tl_find_stikdebug_prewarmed changed its mind between the two calls. */
+    snprintf(err, errlen, "no StikDebug JIT region, and no arena of the layer's own");
+    return false;
 }
 #else
 /* A Mac (or a plain host): two views of ordinary memory. */
@@ -488,13 +568,6 @@ static xmem_entry xmem_probe_entry(uintptr_t p)
     return e;
 }
 
-/* Whether the map entry that holds `p` really reports VM_PROT_EXECUTE right now. */
-static bool xmem_entry_is_exec(uintptr_t p)
-{
-    xmem_entry e = xmem_probe_entry(p);
-    return e.kr == KERN_SUCCESS && (e.prot & VM_PROT_EXECUTE) != 0;
-}
-
 /*
  * The fetch itself: write a movz/ret through the writable view at `at` and call it there, under the
  * same sigsetjmp guard self_runs uses, so a page that names execute but will not fetch is caught
@@ -534,36 +607,40 @@ static bool xmem_writable_fetches(uintptr_t at)
 }
 
 /*
- * Say once, entry by entry, what the kernel says about the region the guest runs in -- the
- * executable view from its base to its end. Two crashes were invisible for want of exactly this:
- * the region's FIRST entry being executable is not proof that 177 MiB into it is, and robot gf's
- * fetch fault (UnityMain, pc == fault == 0x1234ee430, 177 MiB into this view) is inside the
- * executable view, where a fetch is supposed to run. A hole or a non-executable entry here is a
- * requestless fault waiting to happen, and it is one line to know.
+ * The one line that must end the guessing: the arena's own address and size, how many MiB of it the kernel says are MAPPED and
+ * how many EXECUTABLE, which route gave the guest its view (MAP_JIT, plain RWX, or a vm_remap that has no authorisation of its
+ * own), the delta between the two views, and -- separately below -- whether the guest-facing view really fetched a function
+ * written into it. Both phone crashes would have been one line instead of weeks: robot gf faulted on a page whose entry NAMED
+ * execute (prot 5) but was not backed, and PvZ's writable view was mapped but never executable. The old walk stopped at 128
+ * entries, which is exactly why a 512 MiB region could read as "2 MiB mapped" and hide an unbacked page; this walks the whole
+ * span.
  */
 static void xmem_report_region(void)
 {
     uintptr_t a = (uintptr_t)g_x.rx, end = a + g_x.size;
     size_t mapped = 0, execut = 0;
-    unsigned entries = 0, holes = 0, noexec = 0;
-    while (a < end && entries < 128) {
+    unsigned entries = 0, gaps = 0, noexec = 0;
+    while (a < end && entries < 200000) {
         xmem_entry e = xmem_probe_entry(a);
         if (e.kr != KERN_SUCCESS) {
-            tl_log_line("xmem: region walk at %p: vm_region_recurse_64 returned %d (%s) -- no entry there (a hole in the region)", (void *)a, (int)e.kr, mach_error_string(e.kr));
-            holes++;
+            tl_log_line("xmem: arena walk at %p: vm_region_recurse_64 returned %d (%s) -- no entry there (a hole)", (void *)a, (int)e.kr, mach_error_string(e.kr));
+            gaps++;
             break;
         }
         if (e.size == 0) break;
+        if (e.start != a) gaps++;                    /* an unmapped gap before this entry */
         mapped += e.size;
-        if (xmem_entry_is_exec(e.start)) execut += e.size;
-        else { noexec++; tl_log_line("xmem: region entry %p..%p prot %d max %d depth %u tag %u -- NOT EXECUTABLE", (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag); }
-        if (e.start != a) tl_log_line("xmem: region entry %p..%p prot %d max %d depth %u tag %u (gap before it)", (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag);
+        if (e.prot & VM_PROT_EXECUTE) execut += e.size;
+        else { noexec++; tl_log_line("xmem: arena entry %p..%p prot %d max %d depth %u tag %u -- NOT EXECUTABLE", (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag); }
         a = e.start + e.size;
         entries++;
     }
-    tl_log_line("xmem: region %p..%p (%zu MiB): %u entries, %zu MiB mapped, %zu MiB executable%s",
-                (void *)g_x.rx, (void *)end, g_x.size >> 20, entries, mapped >> 20, execut >> 20,
-                (holes || noexec) ? " -- a fetch inside a non-executable or unmapped entry is a requestless fault, not a permission the guest asked for" : "");
+    tl_log_line("xmem: arena %p..%p: %zu MiB, %zu MiB MAPPED, %zu MiB executable, guest-facing view %p is %s, delta %td -- %s",
+                (void *)g_x.rx, (void *)end, g_x.size >> 20, mapped >> 20, execut >> 20, (void *)g_x.rw,
+                g_x.route ? g_x.route : "? (the guest view has no authorisation of its own)", tl_xmem_delta(),
+                (gaps || noexec || a < end)
+                    ? "a fetch in an unmapped or non-executable entry is a requestless fault, not a permission the guest asked for"
+                    : "the whole arena is mapped and executable");
 }
 
 /*
@@ -580,7 +657,8 @@ static void xmem_probe_guest_view(void)
     tl_log_line("xmem: guest-facing view %p: read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write-then-execute %s%s",
                 (void *)at, e.kr == KERN_SUCCESS ? "ok" : "FAILED",
                 (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
-                f ? "RAN" : "FAULTED", f ? "" : " (an unblessed fetch here is a caught fault, not a dead process: the guest's own jump into it delivered signal 10)");
+                f ? "RAN -- the guest's JIT is live at this address" : "FAULTED -- the guest's arena still cannot fetch",
+                f ? "" : " (an unblessed fetch here is a caught fault, not a dead process)");
 }
 
 static void xmem_report_open(void)

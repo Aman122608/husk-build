@@ -93,11 +93,16 @@ bool tl_xmem_allow_exec(void *p, size_t n);
 /*
  * Whether the guest-facing view -- the address the loader's adrp retarget hands the guest for
  * writable content, and the one a JIT calls its own arena by -- is the mapping that carries the
- * JIT authorisation (Fix A). When true, the address the guest already holds genuinely becomes
- * executable when it asks with PROT_EXEC, and tl_xmem_allow_exec's read-back plus guarded fetch
- * succeed; when false, the layer fell back to the old order (the authorisation on the code view,
- * the writable view a vm_remap) and a writable-view arena cannot be made to fetch -- tl_xmem_allow_exec
- * then refuses it honestly with EACCES. Fixed once at open; valid after tl_xmem_open succeeds.
+ * JIT authorisation (Fix A), i.e. the address the guest BOTH writes and executes. When true, the
+ * address the guest already holds genuinely becomes executable when it asks with PROT_EXEC, and
+ * tl_xmem_allow_exec's read-back plus guarded fetch succeed; when false, the layer is running on a
+ * two-address scheme (the authorisation on the code view, the writable view a vm_remap) and a
+ * writable-view arena cannot be made to fetch -- tl_xmem_allow_exec then refuses it honestly with
+ * EACCES. Two phone crashes are why the layer now prefers an arena of its own over the debugger's
+ * region (open_platform, grant_own_arena): a guest that computes a code pointer off the writable
+ * base and branches (PvZ's A64HookFunction) cannot use the two-address scheme, and the debugger's
+ * region is reserved rather than fully backed (robot gf's bus error on a page whose entry named
+ * execute). Fixed once at open; valid after tl_xmem_open succeeds.
  */
 bool tl_xmem_guest_view_is_jit(void);
 

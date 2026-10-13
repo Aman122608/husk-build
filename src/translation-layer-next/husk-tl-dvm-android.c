@@ -925,6 +925,12 @@ static void *gl_main(void *arg)
     void (*clearColor)(float, float, float, float) = gl_fn("glClearColor");
     void (*clear)(uint32_t) = gl_fn("glClear");
     tl_log_line("javaapp: render thread ready (ES %d available), %dx%d", es3 ? 3 : 2, A.cfg.width, A.cfg.height);
+    /* Which EGL display/context/surface THIS app got, and that the render thread is a fresh one: the swap
+     * hypothesis is that a second app inherits the first app's surface/context, and this line proves or
+     * disproves it in one run (a surface/layer number that differs from the previous app's while the
+     * previous one is never destroyed is the leak; the display is process-wide and intentionally shared). */
+    tl_log_line("javaapp: GL up for this app: display %p, ui context %p, window surface %p (the render thread created it for this app; the previous app's surface is not reused)",
+                (void *)dpy, (void *)ui, (void *)surf);
 
     jobj *gl10 = NULL;
     jvalue p1[1];
@@ -947,6 +953,7 @@ static void *gl_main(void *arg)
             if (!app || !makeCurrent(dpy, surf, surf, app)) { tl_log_line("javaapp: no GL ES %d context for the app", es); A.gl_renderer = NULL; app = NULL; }
             else {
                 tl_log_line("javaapp: the app's GL ES %d context is ready", es);
+                tl_log_line("javaapp: app GL context %p on window surface %p (ES %d): onSurfaceCreated/onSurfaceChanged follow", (void *)app, (void *)surf, es);
                 gl10 = dvm_new_object(dvm_class_named("android/opengl/HuskGL10"));
                 dvm_slots(gl10);
                 tl_jclass *cfgc = dvm_class_named("javax/microedition/khronos/egl/HuskEGL$Config");
@@ -989,7 +996,7 @@ static void *gl_main(void *arg)
             if (!app) app_frame_draw(&appov, &appup, A.cfg.width, A.cfg.height);
             if (tl_ui_has_frame()) ov_draw(&ov, A.cfg.width, A.cfg.height);
             swapBuffers(dpy, surf);
-            atomic_fetch_add(&A.frames, 1);
+            if (atomic_fetch_add(&A.frames, 1) == 0) tl_log_line("javaapp: first frame presented for this app (the render thread's own compositor frame)");
         }
         next += 1000000000ll / 60;
         int64_t late = now_ns() - next;
