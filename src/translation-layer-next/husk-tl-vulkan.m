@@ -774,13 +774,23 @@ static int w_vkCreateImage(void *device, const void *ci, const void *alloc, void
 
 typedef struct { uint32_t sType; const void *pNext; } vk_chain_;
 
-/* Vulkan numbers the external-memory family in one band. None of it exists on Metal: the MTL* handle
- * types MoltenVK does support never need this retry, because they succeed on the first call. */
+/* The external-memory family, matched by band rather than by remembered constants.
+ *
+ * A hand-written list of these was here first and it was WRONG: it named 1000070000 as
+ * VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO, which is really 1000072002 -- so nothing matched, no
+ * retry fired, and the run behaved exactly like the build before the fix. The pNext trace is what
+ * caught it, by printing the sType the engine actually used. Hence a range: guessing one number wrong
+ * costs a whole round trip, and guessing a band wrong cannot.
+ *
+ * VK_KHR_external_memory's structures occupy 1000071xxx (the fd/win32 query structs) and 1000072xxx
+ * (external buffer/image create info, and the export-memory allocate info that was measured at
+ * 1000072002). The Android hardware buffer and host-pointer imports sit outside that run. None of it
+ * exists on Metal, and none of it is anything MoltenVK supports -- the MTL* handle types it does
+ * support never reach this retry, because they succeed on the first call. */
 static bool vk_external_memory_struct(uint32_t st)
 {
-    return st == 1000070000u    /* VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO */
-        || st == 1000071000u    /* VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR */
-        || st == 1000129000u    /* VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID */
+    if (st >= 1000071000u && st <= 1000072999u) return true;
+    return st == 1000129000u    /* VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID */
         || st == 1000178000u;   /* VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT */
 }
 
