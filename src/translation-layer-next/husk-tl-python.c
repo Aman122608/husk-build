@@ -159,11 +159,21 @@ static bool tl_renpy_prepare(const char *apk, const char *data_dir)
     return true;
 }
 
+/* The Ren'Py environment, for whichever driver runs the app. The SDL driver reaches it through tl_python_prepare
+   below; the Java/Dalvik driver calls it directly, because a Ren'Py game whose launcher is a PythonSDLActivity is
+   routed to that path, not to SDL, and its Python still needs the variables above before the interpreter starts.
+   One detection, one implementation: a non-Ren'Py APK is left untouched. */
+bool tl_renpy_prepare_if_app(const char *apk, const char *data_dir)
+{
+    if (!tl_renpy_is_app(apk)) return false;
+    return tl_renpy_prepare(apk, data_dir);
+}
+
 /* Unpack the app and Python once per APK (a stamp of its size and time), and set the environment. */
 bool tl_python_prepare(const char *apk, const char *data_dir)
 {
     /* Ren'Py gets its own Android environment; it shares nothing with the python-for-android branch below. */
-    if (tl_renpy_is_app(apk)) return tl_renpy_prepare(apk, data_dir);
+    if (tl_renpy_prepare_if_app(apk, data_dir)) return true;
     if (!tl_python_is_app(apk)) return false;
     char files[1024], app[1100], stamp_path[1200], stamp[64];
     snprintf(files, sizeof(files), "%s/files", data_dir);

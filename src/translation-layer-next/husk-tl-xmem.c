@@ -46,8 +46,10 @@ extern int csops(pid_t pid, unsigned int ops, void *useraddr, size_t usersize);
 #define TL_CS_OPS_STATUS 0
 #define TL_CS_DEBUGGED   0x10000000u
 
-static sigjmp_buf g_self_jump;
-static volatile sig_atomic_t g_self_running;
+/* Thread-local: the guarded fetch can run on any guest thread that asks to make its arena executable,
+ * and a fault must longjmp into the frame of the thread that faulted, not another's. */
+static __thread sigjmp_buf g_self_jump;
+static __thread volatile sig_atomic_t g_self_running;
 static void self_fault(int sig)
 {
     if (g_self_running) siglongjmp(g_self_jump, 1);
@@ -321,6 +323,67 @@ void tl_xmem_flush(const void *rx, size_t bytes)
 }
 
 /*
+ * b_mprotect, in the bionic shim, owns the guest's errno. step0 links only this file and carries
+ * no shim, so this is declared weak: allow_exec sets EACCES where the shim is present and still
+ * links where it is not.
+ */
+extern void tl_set_guest_errno(int guest_errno) __attribute__((weak));
+
+#if defined(__APPLE__)
+/*
+ * The two questions vm_protect's return code does not answer.
+ *
+ * vm_protect returning KERN_SUCCESS means only that the request was within the entry's
+ * max_protection and that the entry's protection field now names EXECUTE -- it says nothing about
+ * whether the pmap will publish a fetchable PTE. On iOS an alias made with vm_remap of pages whose
+ * defining mapping was never granted JIT authorisation (MAP_JIT) names execute and still will not
+ * fetch: that is the SIGBUS (pc == fault address) the writable-view path exists to end. So the
+ * verdict is taken from the two things that decide it, never from the return code.
+ */
+
+/* Whether the map entry that holds `p` really reports VM_PROT_EXECUTE right now. */
+static bool xmem_entry_is_exec(uintptr_t p)
+{
+    vm_address_t addr = (vm_address_t)p; vm_size_t sz = 0;
+    natural_t depth = 0; vm_region_submap_info_data_64_t info;
+    mach_msg_type_number_t cnt = VM_REGION_SUBMAP_INFO_COUNT_64;
+    if (vm_region_recurse_64(mach_task_self(), &addr, &sz, &depth, (vm_region_recurse_info_t)&info, &cnt) != KERN_SUCCESS)
+        return false;
+    return (info.protection & VM_PROT_EXECUTE) != 0;
+}
+
+/*
+ * The fetch itself: write a movz/ret through the writable view at `at` and call it there, under the
+ * same sigsetjmp guard self_selftest uses, so a page that names execute but will not fetch is caught
+ * rather than fatal. Nothing but a real fetch can answer the question, because a protection field
+ * can name EXECUTE while the pmap refuses the fetch. `at` is the guest's own arena, so its bytes are
+ * saved and put back whether the call returns or faults -- a thread that reached that address between
+ * the two writes must find the code it had, and nothing here unmaps or leaves a stub behind.
+ */
+static bool xmem_writable_fetches(uintptr_t at)
+{
+    static const uint32_t code[2] = { 0x528B4B40u, 0xD65F03C0u };   /* movz w0, #0x5a5a ; ret */
+    uint32_t saved[2];
+    memcpy(saved, (const void *)at, sizeof(saved));
+    struct sigaction sa, ob, os, oi;
+    memset(&sa, 0, sizeof(sa)); sa.sa_handler = self_fault; sigemptyset(&sa.sa_mask);
+    sigaction(SIGBUS, &sa, &ob); sigaction(SIGSEGV, &sa, &os); sigaction(SIGILL, &sa, &oi);
+    bool ok = false;
+    g_self_running = 1;
+    if (sigsetjmp(g_self_jump, 1) == 0) {
+        memcpy((void *)at, code, sizeof(code));
+        sys_icache_invalidate((void *)at, sizeof(code));
+        ok = ((int (*)(void))(void *)at)() == 0x5a5a;
+    }
+    g_self_running = 0;
+    sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
+    memcpy((void *)at, saved, sizeof(saved));
+    sys_icache_invalidate((void *)at, sizeof(saved));
+    return ok;
+}
+#endif
+
+/*
  * Make the writable view's pages executable where the guest named them with PROT_EXEC.
  *
  * A JIT -- here the game's own And64InlineHook -- writes a trampoline into memory it mapped
@@ -330,8 +393,16 @@ void tl_xmem_flush(const void *rx, size_t bytes)
  * to be added to that view -- and then flushed, so the bytes just written are what the CPU
  * fetches. The region is two kernels mappings of the same pages (one rx, one rw, husk-tl-xmem.c
  * open_platform/grant_self); adding execute to the rw alias is legal only where the device
- * permits RWX on it (a JIT-entitled/debugged process, MAP_JIT). Returns false -- and says so,
- * once -- when the kernel refuses, so the caller does not pretend the page is executable.
+ * permits RWX on it (a JIT-entitled/debugged process, MAP_JIT).
+ *
+ * The verdict is honest: vm_protect's KERN_SUCCESS is not enough, because the writable view is a
+ * vm_remap whose defining mapping was never granted JIT authorisation, and adding execute to such
+ * an alias is accepted yet the page will not fetch (this is the SIGBUS the log shows: the layer
+ * said "made executable" and the very next fetch faulted at an address inside the range). So the
+ * protect is followed by a read-back of the entry's protection and a guarded fetch of freshly
+ * written bytes; success is claimed only when both say executable. Returns false, and says which
+ * check failed, otherwise -- so the caller does not pretend the page is executable, and the guest
+ * gets EACCES and takes its interpreter fallback instead of jumping into a page that will not fetch.
  *
  * TL_NO_XMEM_RW_EXEC=1 never adds execute here, to force the store-emulation fallback.
  */
@@ -347,17 +418,28 @@ bool tl_xmem_allow_exec(void *p, size_t n)
     if (last > end) last = end;
     size_t len = last > page ? last - page : TL_XMEM_PAGE;
     bool ok;
+    char why[160];
 #if defined(__APPLE__)
     kern_return_t kr = vm_protect(mach_task_self(), (vm_address_t)page, len, FALSE,
                                   VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
-    ok = kr == KERN_SUCCESS;
+    bool named = kr == KERN_SUCCESS && xmem_entry_is_exec(page);
+    bool fetched = named && xmem_writable_fetches(page);
+    ok = named && fetched;
+    if (kr != KERN_SUCCESS)
+        snprintf(why, sizeof(why), "the kernel's vm_protect returned %d (the entry was never given execute)", (int)kr);
+    else if (!named)
+        snprintf(why, sizeof(why), "vm_protect returned 0 but the read-back of the entry still does not report VM_PROT_EXECUTE");
+    else
+        snprintf(why, sizeof(why), "vm_protect returned 0 and the read-back names execute, but a guarded fetch of freshly written bytes faulted");
 #else
     ok = mprotect((void *)page, len, PROT_READ | PROT_WRITE | PROT_EXEC) == 0;
+    snprintf(why, sizeof(why), "%s", ok ? "" : strerror(errno));
 #endif
     if (!ok) {
         static int said;
         if (said++ < 1)
-            tl_log_line("husk: xmem exec refused on the writable view at %p (%#zx bytes): this kernel will not add execute to a writable page (W^X), so the guest's JIT arena stays non-executable", p, n);
+            tl_log_line("husk: xmem exec refused on the writable view at %p (%#zx bytes): %s, so the guest's JIT arena stays non-executable", p, n, why);
+        if (tl_set_guest_errno) tl_set_guest_errno(13);   /* EACCES: an honest failure, not a lie */
         return false;
     }
     tl_xmem_flush(p, n);

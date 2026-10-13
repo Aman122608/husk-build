@@ -1144,6 +1144,10 @@ bool tl_javaapp_start(const tl_javaapp_config *cfg)
     tl_nwindow_configure(cfg->width, cfg->height, cfg->metal_layer);
     if (cfg->angle_egl && !tl_egl_init(cfg->angle_egl, cfg->angle_gles, cfg->frame_dir, cfg->frame_every)) return false;
     { void tl_set_data_dir(const char *dir); tl_set_data_dir(cfg->data_dir); }
+    /* A Ren'Py game routed to this driver (its launcher is a PythonSDLActivity, not a driver's own SDL) needs Ren'Py's
+       Android environment before its Python starts -- the SDL path sets it in tl_sdl_start, this path never did, and that
+       is why its loader found no modules. Same detection and the same single implementation; a non-Ren'Py app is untouched. */
+    { bool tl_renpy_prepare_if_app(const char *apk, const char *data_dir); tl_renpy_prepare_if_app(cfg->apk_path, cfg->data_dir); }
     /* the environment every Android process starts with (TrustedCertificateStore builds paths from ANDROID_DATA) */
     setenv("ANDROID_DATA", "/data", 0); setenv("ANDROID_ROOT", "/system", 0); setenv("ANDROID_STORAGE", "/storage", 0);
     setenv("EXTERNAL_STORAGE", "/sdcard", 0); setenv("ANDROID_ASSETS", "/system/app", 0); setenv("BOOTCLASSPATH", "", 0);

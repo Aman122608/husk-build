@@ -253,13 +253,22 @@ static const elf_sym *sym_at(const tl_lib *L, uint32_t i)
     return (const elf_sym *)at(L, L->symtab) + i;
 }
 
-/* The address a defined symbol is known by: the writable view for data. */
+static bool in_code(const tl_lib *L, uint64_t vaddr);   /* below: the executable sections, where instructions live */
+
+/* The address a defined symbol is known by: the executable view for code, the writable view for data.
+ * The symbol's type alone does not tell them apart -- a hand-written or stripped library marks a
+ * function STT_NOTYPE, and this test used to give that function the writable view, which is not a
+ * page the CPU will fetch (the address-provenance crash: a call into the writable view with no
+ * mprotect anywhere in the log). The section the symbol's vaddr falls in is what decides, exactly as
+ * it does for a relocated pointer in image_addr below: a symbol inside an executable section is code
+ * whatever its type says, and stays in the executable view. A non-code symbol on a writable page is
+ * data and keeps the writable view. */
 static void *sym_value(const tl_lib *L, const elf_sym *s)
 {
     uint64_t off = s->st_value - L->base_vaddr;
     size_t page = (size_t)(off / PAGE);
-    bool is_func = (s->st_info & 0xf) == 2;
-    if (!is_func && page < L->npages && (L->pflags[page] & TL_PAGE_W)) return L->rw + off;
+    bool is_code = (s->st_info & 0xf) == 2 || in_code(L, s->st_value);
+    if (!is_code && page < L->npages && (L->pflags[page] & TL_PAGE_W)) return L->rw + off;
     return L->rx + off;
 }
 
@@ -1100,6 +1109,19 @@ static bool in_code(const tl_lib *L, uint64_t vaddr)
 {
     for (int r = 0; r < L->ncode; r++) if (vaddr >= L->code[r].start && vaddr < L->code[r].end) return true;
     return false;
+}
+
+/* Whether an address (in either view) is inside one of the library's executable sections: what the
+ * loader knows about a vaddr being code, exposed so a diagnostic can say what a faulting branch
+ * target is. 1 = yes, 0 = in a library but not in an executable section, -1 = not in any library
+ * (an address in the region but outside every image, e.g. a JIT arena the guest carved out). */
+int tl_ld_va_is_code(const void *addr)
+{
+    tl_lib *L = tl_ld_lib_of(addr);
+    if (!L) return -1;
+    const uint8_t *a = addr;
+    uint64_t off = (a >= L->rx && a < L->rx + L->npages * PAGE) ? (uint64_t)(a - L->rx) : (uint64_t)(a - L->rw);
+    return in_code(L, off + L->base_vaddr) ? 1 : 0;
 }
 
 /* An adrp into a page that holds code and data both (a small library built for 4 KiB pages): what the next instructions make of it.

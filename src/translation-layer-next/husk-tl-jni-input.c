@@ -41,6 +41,61 @@ static const motion *M_(const tl_jcall *c) { return c->self ? c->self->native : 
 
 static int pidx(const motion *m, int i) { return i >= 0 && i < m->count ? i : 0; }
 
+/* ------------------------------------------------------------------ the device
+ *
+ * getDevice() on an InputEvent hands the engine an InputDevice. A framework class the interpreter runs answers this in Java
+ * (src/java-framework/src/android/view/InputEvent.java); when the class is not attached to the interpreter (no DVM) the JNI
+ * layer must answer it here, with a real object of the right class rather than null. This phone reports one touch screen.
+ */
+#define INPUT_DEVICE_ID 1                       /* the one device id this runtime hands out (MotionEvent.getDeviceId() is 1) */
+
+/* A device behind an InputDevice object is just its id; the getters below describe this phone's single touch screen. */
+typedef struct { int id; } idevice;
+
+void tl_log_line(const char *fmt, ...);          /* declared locally, as the other JNI files do */
+
+static jvalue vl(void *p) { jvalue v; v.j = 0; v.l = p; return v; }
+
+/* A gap logged once, so the next missing input API is visible in one run without flooding the log. */
+static void input_note_once(const char *what)
+{
+    static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+    static const char *seen[64]; static int n;
+    pthread_mutex_lock(&m);
+    for (int i = 0; i < n; i++) if (!strcmp(seen[i], what)) { pthread_mutex_unlock(&m); return; }
+    if (n < 64) seen[n++] = strdup(what);
+    pthread_mutex_unlock(&m);
+    tl_log_line("husk: input api missing %s", what);
+}
+
+static void ME_getDevice(tl_jcall *c)
+{
+    const motion *m = M_(c);
+    jobj *d = tl_jni_new_object(tl_jni_class("android/view/InputDevice"));
+    idevice *dev = malloc(sizeof(*dev));
+    dev->id = (m && m->device) ? m->device : INPUT_DEVICE_ID;
+    d->native = dev;
+    c->ret.l = d;
+}
+static const idevice *D_(const tl_jcall *c) { return c->self ? c->self->native : NULL; }
+static void ID_getId(tl_jcall *c)  { const idevice *d = D_(c); c->ret = vi(d ? d->id : INPUT_DEVICE_ID); }
+static void ID_getName(tl_jcall *c) { c->ret = vl(tl_jni_new_string("Husk Touchscreen")); }
+static void ID_getDescriptor(tl_jcall *c) { c->ret = vl(tl_jni_new_string("husk-touchscreen")); }
+static void ID_getSources(tl_jcall *c) { c->ret = vi(SOURCE_TOUCHSCREEN); }
+static void ID_zeroI(tl_jcall *c)  { c->ret = vi(0); }                 /* getProductId, getVendorId, getKeyboardType (KEYBOARD_TYPE_NONE) */
+static void ID_false(tl_jcall *c)  { c->ret = vz(0); }                 /* isVirtual, isExternal */
+static void ID_supportsSource(tl_jcall *c) { c->ret = vz((c->args[0].i & SOURCE_TOUCHSCREEN) == SOURCE_TOUCHSCREEN); }
+static void ID_getDeviceIds(tl_jcall *c)
+{
+    jobj *a = tl_jni_new_prim_array('I', 1);
+    ((int32_t *)a->arr.data)[0] = INPUT_DEVICE_ID;
+    c->ret = vl(a);
+}
+static void ID_getDevice(tl_jcall *c) { if (c->args[0].i == INPUT_DEVICE_ID) ME_getDevice(c); else c->ret.l = NULL; }
+/* These two cannot be answered honestly here: a null with a log is better than a made-up character map or a vibrator that does nothing. */
+static void ID_getKeyCharacterMap(tl_jcall *c) { input_note_once("InputDevice.getKeyCharacterMap (returning null)"); c->ret.l = NULL; }
+static void ID_getVibrator(tl_jcall *c)        { input_note_once("InputDevice.getVibrator (returning null)"); c->ret.l = NULL; }
+
 static void ME_getAction(tl_jcall *c)       { const motion *m = M_(c); c->ret = vi(m ? m->action : 0); }
 static void ME_getActionMasked(tl_jcall *c) { const motion *m = M_(c); c->ret = vi(m ? m->action & 0xFF : 0); }
 static void ME_getActionIndex(tl_jcall *c)  { const motion *m = M_(c); c->ret = vi(m ? (m->action >> 8) & 0xFF : 0); }
@@ -216,6 +271,29 @@ static const tl_jhle k_input_hle[] = {
     K("android/view/MotionEvent", "isFromSource", "(I)Z", ME_isTrue),
     K("android/view/MotionEvent", "obtain", "(Landroid/view/MotionEvent;)Landroid/view/MotionEvent;", ME_obtainCopy),
     K("android/view/MotionEvent", "recycle", "()V", ME_recycle),
+    /* a touch's history, as the framework's Java reports it: the newest sample (history size is 0 here) */
+    K("android/view/MotionEvent", "getHistoricalX", "(I)F", ME_getX), K("android/view/MotionEvent", "getHistoricalY", "(I)F", ME_getY),
+    K("android/view/MotionEvent", "getHistoricalX", "(II)F", ME_getXi), K("android/view/MotionEvent", "getHistoricalY", "(II)F", ME_getYi),
+    K("android/view/MotionEvent", "getHistoricalEventTime", "(I)J", ME_getEventTime),
+    /* getDevice(): the InputEvent the log named, and the same gap on the two subclasses */
+    K("android/view/InputEvent", "getDevice", "()Landroid/view/InputDevice;", ME_getDevice),
+    K("android/view/MotionEvent", "getDevice", "()Landroid/view/InputDevice;", ME_getDevice),
+    K("android/view/KeyEvent", "getDevice", "()Landroid/view/InputDevice;", ME_getDevice),
+    /* the device itself: this phone's one touch screen, described honestly */
+    K("android/view/InputDevice", "getId", "()I", ID_getId),
+    K("android/view/InputDevice", "getName", "()Ljava/lang/String;", ID_getName),
+    K("android/view/InputDevice", "getDescriptor", "()Ljava/lang/String;", ID_getDescriptor),
+    K("android/view/InputDevice", "getSources", "()I", ID_getSources),
+    K("android/view/InputDevice", "getKeyboardType", "()I", ID_zeroI),
+    K("android/view/InputDevice", "getProductId", "()I", ID_zeroI),
+    K("android/view/InputDevice", "getVendorId", "()I", ID_zeroI),
+    K("android/view/InputDevice", "isVirtual", "()Z", ID_false),
+    K("android/view/InputDevice", "isExternal", "()Z", ID_false),
+    K("android/view/InputDevice", "supportsSource", "(I)Z", ID_supportsSource),
+    K("android/view/InputDevice", "getDevice", "(I)Landroid/view/InputDevice;", ID_getDevice),
+    K("android/view/InputDevice", "getDeviceIds", "()[I", ID_getDeviceIds),
+    K("android/view/InputDevice", "getKeyCharacterMap", "()Landroid/view/KeyCharacterMap;", ID_getKeyCharacterMap),
+    K("android/view/InputDevice", "getVibrator", "()Landroid/os/Vibrator;", ID_getVibrator),
     { NULL, NULL, NULL, NULL }
 };
 
@@ -232,6 +310,7 @@ void tl_input_install(void)
     tl_jni_declare("android/view/InputEvent", "java/lang/Object");
     tl_jni_declare("android/view/MotionEvent", "android/view/InputEvent");
     tl_jni_declare("android/view/KeyEvent", "android/view/InputEvent");
+    tl_jni_declare("android/view/InputDevice", "java/lang/Object");
     tl_jni_register_hle(k_input_hle);
     static const struct { const char *n; int v; } key_consts[] = {
         { "ACTION_DOWN", 0 }, { "ACTION_UP", 1 }, { "KEYCODE_BACK", 4 }, { "KEYCODE_DPAD_UP", 19 }, { "KEYCODE_DPAD_DOWN", 20 }, { "KEYCODE_DPAD_LEFT", 21 },
@@ -248,5 +327,11 @@ void tl_input_install(void)
         { "AXIS_WHEEL", 21 }, { "AXIS_GAS", 22 }, { "AXIS_BRAKE", 23 },
     };
     for (size_t i = 0; i < sizeof(motion_consts) / sizeof(motion_consts[0]); i++) set_int_const("android/view/MotionEvent", motion_consts[i].n, motion_consts[i].v);
+    static const struct { const char *n; int v; } device_consts[] = {
+        { "SOURCE_TOUCHSCREEN", SOURCE_TOUCHSCREEN }, { "SOURCE_KEYBOARD", 0x101 }, { "SOURCE_DPAD", 0x201 }, { "SOURCE_GAMEPAD", 0x401 },
+        { "SOURCE_MOUSE", 0x2002 }, { "SOURCE_STYLUS", 0x4002 }, { "SOURCE_JOYSTICK", 0x1000010 }, { "SOURCE_CLASS_POINTER", 2 },
+        { "SOURCE_CLASS_BUTTON", 1 }, { "SOURCE_CLASS_JOYSTICK", 16 }, { "KEYBOARD_TYPE_NONE", 0 },
+    };
+    for (size_t i = 0; i < sizeof(device_consts) / sizeof(device_consts[0]); i++) set_int_const("android/view/InputDevice", device_consts[i].n, device_consts[i].v);
     tl_pad_install();
 }

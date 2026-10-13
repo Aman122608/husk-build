@@ -22,6 +22,7 @@
 #include "husk-tl-internal.h"
 #include "husk-tl-jni.h"
 #include "husk-tl-ld.h"
+#include "husk-tl-xmem.h"
 #include "husk-tl-godot.h"
 #include "husk-tl-unity.h"
 #include "husk-tl-audio.h"
@@ -108,6 +109,31 @@ static void where(char *out, size_t n, uintptr_t addr)
 static struct sigaction g_prev[32];
 
 /*
+ * One line, once, that names a branch target the guest fetched in the WRITABLE view: the target, its
+ * executable-view equivalent, the library+offset of the code that called it, and the loader's own
+ * verdict on whether that target is code. A writable-view address is not a page the CPU fetches -- the
+ * executable view of the same pages is -- so a fetch there is a pointer-provenance bug (a code pointer
+ * the loader produced in the wrong view), not a permission the guest asked for and the layer got wrong.
+ * The two crashes so far were identical in the log and differ only here, so one run settles it: the
+ * caller names who handed the address out, and known_code says whether it was a real function reached
+ * in the wrong view (a layer bug) or an address that was never code at all (a guest bug).
+ */
+static void write_view_pointer(uintptr_t pc, uintptr_t lr)
+{
+    if (!tl_xmem_contains((const void *)pc) || tl_xmem_is_rx((const void *)pc)) return;   /* not a writable-view fetch */
+    uintptr_t rx = (uintptr_t)((const char *)pc - tl_xmem_delta());
+    if (!tl_xmem_contains((const void *)rx)) return;                                      /* no executable view to name */
+    static int said;
+    if (said++ >= 4) return;                                                              /* a few per run, then quiet */
+    const char *lib = NULL; const void *sa = NULL;
+    const char *sym = tl_ld_symbol_at((const void *)lr, &lib, &sa);
+    if (!lib) { const tl_lib *cl = tl_ld_lib_of((const void *)lr); if (cl) lib = tl_ld_lib_name(cl); }
+    tl_log_line("husk: write-view pointer target=%p executable=%p caller=%s %s+%#lx known_code=%d",
+                (void *)pc, (void *)rx, lib ? lib : "?", sym ? sym : "?",
+                sa ? (unsigned long)(lr - (uintptr_t)sa) : 0ul, tl_ld_va_is_code((const void *)rx));
+}
+
+/*
  * A fault in guest code ends the process, as it would on Android, but not before the log says where:
  * the guest library and offset of the faulting instruction and of the code that called it. The app's
  * own crash handling (which keeps the log file) runs after.
@@ -123,6 +149,7 @@ static void on_fatal(int sig, siginfo_t *info, void *uctx)
     tl_log_line("=== FATAL signal %d on thread '%s': fault address %p (%s)", sig, tn, info->si_addr, c);
     tl_log_line("    pc %s", a);
     tl_log_line("    lr %s", b);
+    write_view_pointer((uintptr_t)uc->uc_mcontext->__ss.__pc, (uintptr_t)uc->uc_mcontext->__ss.__lr);
     uintptr_t fp = uc->uc_mcontext->__ss.__fp;
     for (int i = 0; i < 12 && fp && (fp & 7) == 0 && fp > 0x100000000ull; i++) {
         uintptr_t *f = (uintptr_t *)fp;

@@ -333,24 +333,42 @@ static bool lib_standin(const char *p, jar_entry *out)
     char jar[1400]; snprintf(jar, sizeof(jar), "jar:file://%s!/lib/arm64-v8a/%s", apk, name);
     return jar_lookup(jar, out) && out->found;
 }
+/* A URL fragment's percent-encoding ("%2F" for '/'), decoded into out: a jar: path names the entry as a zip does, once the
+ * escapes a URL adds are taken out. Anything that is not a complete "%XX" is copied as it stands. */
+static void jar_unescape(const char *s, const char *end, char *out, size_t n)
+{
+    size_t k = 0;
+    for (const char *c = s; c < end && k + 1 < n; c++) {
+        if (c[0] == '%' && c + 2 < end && isxdigit((unsigned char)c[1]) && isxdigit((unsigned char)c[2])) {
+            char hex[3] = { c[1], c[2], 0 }; out[k++] = (char)strtol(hex, NULL, 16); c += 2;
+        } else out[k++] = *c;
+    }
+    out[k] = 0;
+}
+
 static bool jar_lookup(const char *p, jar_entry *out)
 {
     if (p && p[0] == '/' && lib_standin(p, out)) return true;
     memset(out, 0, sizeof(*out));
+    /* "jar:file:<apk>!/<entry>" and "/jar:file:<apk>!/<entry>" (Unity's Addressables, with a leading slash) both name an
+     * entry in an APK; the "jar:file:" is found wherever it sits, so either spelling -- and a current directory glued in front
+     * of one -- is understood. The "//" of a plain file URL ("jar:file:///...") is consumed here too. */
     const char *q = p ? strstr(p, "jar:file:") : NULL;
     if (!q) return false;
     q += 9;
     while (q[0] == '/' && q[1] == '/') q++;
     const char *bang = strstr(q, "!/");
     if (!bang || (size_t)(bang - q) >= sizeof(out->apk)) return true;          /* a jar path, but not one that names an entry */
-    size_t n = 0;
-    for (const char *c = q; c < bang && n + 1 < sizeof(out->apk); c++) {        /* percent-decoding, as a URL needs */
-        if (c[0] == '%' && c + 2 < bang && isxdigit((unsigned char)c[1]) && isxdigit((unsigned char)c[2])) {
-            char hex[3] = { c[1], c[2], 0 }; out->apk[n++] = (char)strtol(hex, NULL, 16); c += 2;
-        } else out->apk[n++] = *c;
+    jar_unescape(q, bang, out->apk, sizeof(out->apk));
+    /* The APK is resolved the way every other path is: the layer hands an app its own real APK path (getPackageCodePath /
+     * sourceDir), but a path the layer maps -- or one the guest spelled itself -- is put through the same mapping, so the file
+     * is found. A real path is returned unchanged. */
+    {
+        char rb[1024];
+        const char *rp = tl_path_resolve(out->apk, rb, sizeof(rb));
+        if (rp && rp != out->apk) snprintf(out->apk, sizeof(out->apk), "%s", rp);
     }
-    out->apk[n] = 0;
-    snprintf(out->entry, sizeof(out->entry), "%s", bang + 2);
+    jar_unescape(bang + 2, bang + 2 + strlen(bang + 2), out->entry, sizeof(out->entry));
     pthread_mutex_lock(&g_jar_lock);
     if (strcmp(g_jar_apk, out->apk) != 0) {
         if (g_jar_apk[0]) tl_zip_close(&g_jar_zip);
@@ -374,6 +392,22 @@ static bool jar_lookup(const char *p, jar_entry *out)
     }
     pthread_mutex_unlock(&g_jar_lock);
     return true;
+}
+
+/* One line each, per distinct entry: that an APK entry was resolved (with its name, size and how it is served), so a phone log
+ * proves the APK was read; and that one was asked for and is not in the APK -- an honest ENOENT, said once, not a lie. */
+static void jar_note(const jar_entry *j, bool found)
+{
+    static char said[64][192];
+    static int nsaid;
+    const char *key = j->entry[0] ? j->entry : j->apk;
+    for (int i = 0; i < nsaid; i++) if (!strcmp(said[i], key)) return;
+    if (nsaid < 64) snprintf(said[nsaid++], sizeof(said[0]), "%s", key);
+    if (found)
+        tl_log_line("husk: apk entry %s: %llu bytes, %s, from %s", j->entry, (unsigned long long)j->size,
+                    j->method == 0 ? "stored (read in place)" : "deflated (inflated once)", j->apk);
+    else
+        tl_log_line("husk: apk entry %s: not in %s (ENOENT)", j->entry[0] ? j->entry : "(no entry named)", j->apk[0] ? j->apk : "(the APK)");
 }
 
 /* A compressed entry, inflated once into <data>/.jar-cache: the path to open instead, or NULL. */
@@ -507,7 +541,9 @@ static int b_open(const char *path, int flags, unsigned mode)
     char buf[1024]; static __thread char content[32768];
     jar_entry jar;
     if (jar_lookup(path, &jar)) {
+        if (!jar.found) jar_note(&jar, false);
         if (!jar.found || jar.dir || (flags & 3) != 0) { tl_set_guest_errno(jar.dir ? 21 : 2); ftrace_open_jar(path, -1); return -1; }
+        jar_note(&jar, true);
         int fd;
         if (jar.method == 0) {
             TL_ERRNO_BEGIN(); fd = open(jar.apk, O_RDONLY); TL_ERRNO_END();
@@ -1178,12 +1214,13 @@ static int b_mprotect(void *a, size_t l, int prot)
         /* A page the guest names with PROT_EXEC that is in the WRITABLE view is its own JIT arena (the loader retargets
          * the guest's adrp at the writable view, husk-tl-ld.c), which the guest then calls through that address. The
          * executable view of those pages already runs, but the address the guest holds does not, so execute is added to
-         * the writable view -- and only claimed if that really happened. */
+         * the writable view -- and only claimed if that really happened: tl_xmem_allow_exec reads the protection back and
+         * fetch-tests the page, because vm_protect's success on such an alias does not mean the page will fetch. */
         if ((prot & PROT_EXEC) && !tl_xmem_is_rx(a)) {
             bool ok = tl_xmem_allow_exec(a, l);
             static int said;
             if (said++ < 1)
-                tl_log_line("husk: mprotect exec on the writable view a=%p l=%#zx prot=%d (executable view %p): %s",
+                tl_log_line("husk: xmem exec on the writable view a=%p l=%#zx prot=%d (executable view %p): %s",
                             a, l, prot, (void *)((uintptr_t)a - (uintptr_t)tl_xmem_delta()),
                             ok ? "made executable (the guest's JIT arena)" : "REFUSED; the guest's arena stays non-executable");
             if (!ok) { tl_set_guest_errno(13); return -1; }  /* EACCES: an honest failure, not a lie */

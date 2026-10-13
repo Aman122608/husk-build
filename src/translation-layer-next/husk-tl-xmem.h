@@ -57,8 +57,17 @@ bool tl_xmem_is_rx(const void *p);
  * tl_xmem_is_rx): the executable view of those pages already runs, but a guest that keeps a
  * code pointer in memory it wrote -- a JIT's trampoline arena, which the loader's adrp rewrite
  * hands it in writable-view form -- holds an address in the writable view and calls it. Adds
- * execute to that view and flushes the instruction cache. Returns false, and says so once, when
- * the kernel refuses (W^X on the alias); the caller must not report success then.
+ * execute to that view and flushes the instruction cache.
+ *
+ * The verdict is not vm_protect's return code. On iOS the writable view is a vm_remap whose
+ * defining mapping was never granted JIT authorisation (MAP_JIT), and adding execute to such an
+ * alias is accepted by the kernel and yet the page will not fetch (SIGBUS with pc == fault
+ * address) -- vm_protect's KERN_SUCCESS only says the entry's protection field now names EXECUTE.
+ * So success is claimed only after BOTH (i) a vm_region_recurse_64 read-back of that page reports
+ * VM_PROT_EXECUTE and (ii) a guarded fetch of freshly written bytes at the page returns the
+ * expected value. Returns false -- and says so once, naming which check failed -- otherwise, and
+ * sets the guest errno to EACCES so a JIT takes its interpreter fallback instead of jumping into
+ * a page that will not fetch. The caller must not report success then.
  */
 bool tl_xmem_allow_exec(void *p, size_t n);
 

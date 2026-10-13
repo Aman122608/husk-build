@@ -104,6 +104,9 @@ tl_lib *tl_ld_lib_of(const void *addr);
 void *tl_ld_lib_base(const tl_lib *lib);
 const char *tl_ld_lib_name(const tl_lib *lib);
 const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void **sym_addr);
+/* Whether an address (either view) lies in a library's executable sections: 1 code, 0 data in a
+ * library, -1 not in a library. The loader's own "is this vaddr code" answer, for diagnostics. */
+int tl_ld_va_is_code(const void *addr);
 
 /*
  * Walk loaded libraries the way dl_iterate_phdr does. The callback gets the load
