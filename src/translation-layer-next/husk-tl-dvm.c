@@ -1138,7 +1138,22 @@ static bool call_native(dvm_method *m, jobj *self, const jvalue *params, jvalue 
 {
     if (m->intrinsic) return m->intrinsic(self, params, ret);
     void *fn = find_jni(m);
-    if (!fn) return dvm_throw("java/lang/UnsatisfiedLinkError", "No implementation found for %s.%s%s", m->cls->name, m->name, m->sig);
+    if (!fn) {
+        /* A native method this runtime has no implementation for: an ART/libcore native the layer does not bind, or one a
+         * .so was expected to register. The app still gets UnsatisfiedLinkError, but every unanswered native is named once
+         * under one stable prefix, so the whole unbound set is visible from one run instead of one crash at a time. */
+        static pthread_mutex_t no_native_mu = PTHREAD_MUTEX_INITIALIZER;
+        static char no_native_seen[256][240];
+        static int no_native_n;
+        char key[240]; snprintf(key, sizeof(key), "%s.%s%s", m->cls->name, m->name, m->sig);
+        pthread_mutex_lock(&no_native_mu);
+        bool dup = false;
+        for (int i = 0; i < no_native_n && !dup; i++) dup = !strcmp(no_native_seen[i], key);
+        if (!dup && no_native_n < 256) snprintf(no_native_seen[no_native_n++], sizeof(no_native_seen[0]), "%s", key);
+        pthread_mutex_unlock(&no_native_mu);
+        if (!dup) tl_log_line("husk: no native for %s", key);
+        return dvm_throw("java/lang/UnsatisfiedLinkError", "No implementation found for %s.%s%s", m->cls->name, m->name, m->sig);
+    }
     if (g_dvm_trace >= 2) tl_log_line("dvm: jni %s.%s%s", m->cls->name, m->name, m->sig);
     int64_t gp[8]; double fp[8]; int64_t stk[256];
     int ng = 0, nf = 0, ns = 0;
@@ -2291,14 +2306,46 @@ bool tl_dvm_load_library(const char *name_or_path)
     return tl_jni_load_library(slash ? slash + 1 : name_or_path);
 }
 
+/* The libraries ART loads with the runtime (libjavacore, libopenjdk, libicu_jni) register their natives in JNI_OnLoad. The
+ * lookup of a static field or a static method that registration does runs through the layer's hooks (hook_find_field /
+ * hook_invoke), so a core class's <clinit> can run then, and libcore's own native code can leave an exception pending (its
+ * JNU_*ThrowWithLastError). ART treats that as the library's business; here it is reported for the library it came from,
+ * once with where it came from, then cleared, so it cannot fail the boot. */
+static void report_libcore_natives(const char *lib)
+{
+    if (!tl_jni_pending()) return;
+    char b[400];
+    const char *desc = tl_dvm_describe_pending(b, sizeof(b));
+    tl_log_line("dvm: loading libcore's natives (%s) threw %s", lib, desc ? desc : "?");
+    static atomic_int shown;
+    jobj *e = tl_jni_pending_object();
+    if (e && atomic_fetch_add(&shown, 1) < 3) {
+        tl_jni_clear();
+        jvalue a[1], st; a[0].j = 0; a[0].l = e;
+        bool got = tl_dvm_call_static("android/util/Log", "getStackTraceString", "(Ljava/lang/Throwable;)Ljava/lang/String;", a, &st);
+        if (tl_jni_pending()) tl_jni_clear();               /* whatever the dump itself raised is not the app's */
+        if (got && st.l) {
+            const char *t = tl_jni_string(st.l);
+            for (int ln = 0; t && *t && ln < 12; ln++) {
+                const char *nl = strchr(t, '\n');
+                tl_log_line("dvm:   %.*s", nl ? (int)(nl - t) : (int)strlen(t), t);
+                t = nl ? nl + 1 : NULL;
+            }
+        }
+    }
+    tl_jni_clear();
+}
+
 bool tl_dvm_load_natives(const char *libdir)
 {
     tl_ld_add_search_dir(libdir);
     bool ok = tl_jni_load_library("libjavacore.so");
+    report_libcore_natives("libjavacore.so");
     ok = tl_jni_load_library("libopenjdk.so") && ok;
+    report_libcore_natives("libopenjdk.so");
     /* core-icu4j's natives (charset converters, ICU's Java side), which ART loads with the runtime */
     if (!tl_jni_load_library("libicu_jni.so")) tl_log_line("dvm: libicu_jni.so did not load");
-    if (tl_jni_pending()) { char b[300]; tl_log_line("dvm: loading libcore's natives threw %s", tl_dvm_describe_pending(b, sizeof(b)) ? b : "?"); tl_jni_clear(); }
+    report_libcore_natives("libicu_jni.so");
     /* What ART initialises as it starts, before any app code: the core classes, in an order where each one's <clinit> finds what
      * it needs (System's pulls in most of java.lang and java.util.concurrent). */
     static const char *const order[] = { "java/lang/Object", "java/lang/Class", "java/lang/String", "java/lang/System",
