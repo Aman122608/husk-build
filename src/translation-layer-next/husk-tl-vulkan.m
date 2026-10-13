@@ -35,6 +35,7 @@ typedef struct { uint32_t sType; const void *pNext; uint32_t flags; const void *
 #define VK_SUCCESS 0
 #define VK_INCOMPLETE 5
 #define VK_ERROR_EXTENSION_NOT_PRESENT (-7)
+#define VK_ERROR_FEATURE_NOT_PRESENT (-8)
 #define VK_STYPE_METAL_SURFACE_CI 1000217000
 
 typedef void *(*pfn_gipa)(void *, const char *);
@@ -684,6 +685,70 @@ static int w_vkCreateDevice(void *pd, const vk_device_ci *ci, const void *alloc,
     return r;
 }
 
+/* ------------------------------------------------------------------ images --- */
+
+/*
+ * MoltenVK refuses an image layout that Android's drivers accept, and engines ask for it.
+ *
+ * Measured: Unreal's FVulkanAndroidPlatform::SetupImageMemoryRequirementWorkaround creates a probe
+ * image with VK_IMAGE_TILING_LINEAR while the format is compressed *and* the mip count is above one.
+ * MoltenVK rejects both -- "If tiling is VK_IMAGE_TILING_LINEAR, format must not be a compressed
+ * format" and "... mipLevels must be 1" -- and UE4's VulkanRHI::VerifyVulkanResult treats any error
+ * as fatal, so the engine called AndroidThunkJava_ForceQuit and the game sat on its splash screen
+ * having drawn nothing. It is not Unreal-specific: any engine written against Adreno/Mali may ask
+ * for a linear image Metal has no equivalent of.
+ *
+ * So this is a retry, not a rewrite: ask MoltenVK for exactly what the caller asked for, and only
+ * when it refuses *and* the request is one Metal cannot represent, ask again with OPTIMAL tiling --
+ * the only tiling Metal actually has. A caller whose request MoltenVK accepts never reaches the
+ * second call, so this cannot change behaviour for a game that already worked.
+ *
+ * The caller then gets the memory requirements of the image that will really exist, rather than of
+ * one that cannot be created. Note the format and mip count are preserved: only the tiling changes,
+ * because that is the part Metal has no answer for.
+ */
+
+typedef struct {
+    uint32_t sType; const void *pNext; uint32_t flags;
+    uint32_t imageType; uint32_t format;
+    uint32_t width, height, depth;
+    uint32_t mipLevels; uint32_t arrayLayers; uint32_t samples;
+    uint32_t tiling; uint32_t usage; uint32_t sharingMode;
+    uint32_t queueFamilyIndexCount; const uint32_t *pQueueFamilyIndices;
+    uint32_t initialLayout;
+} vk_image_ci;
+
+#define VK_IMAGE_TILING_OPTIMAL_ 0
+#define VK_IMAGE_TILING_LINEAR_  1
+
+/* Vulkan numbers the block-compressed formats as one unbroken run: BC1..BC7 (131..146), ETC2/EAC
+ * (147..156), ASTC LDR/HDR (157..184). A range check is what the drivers themselves use. */
+static bool vk_format_compressed(uint32_t f) { return f >= 131 && f <= 184; }
+
+typedef int (*pfn_create_image)(void *, const vk_image_ci *, const void *, void **);
+
+static int w_vkCreateImage(void *device, const void *ci, const void *alloc, void **image)
+{
+    static pfn_create_image real;
+    if (!real) real = V.lib ? (pfn_create_image)dlsym(V.lib, "vkCreateImage") : NULL;
+    if (!real) return VK_ERROR_FEATURE_NOT_PRESENT;
+
+    int r = real(device, (const vk_image_ci *)ci, alloc, image);
+    if (r == VK_SUCCESS) return r;
+
+    const vk_image_ci *c = ci;
+    bool unrepresentable = c && c->tiling == VK_IMAGE_TILING_LINEAR_
+        && (vk_format_compressed(c->format) || c->mipLevels != 1 || c->arrayLayers != 1);
+    if (!unrepresentable) return r;
+
+    vk_image_ci fixed = *c;
+    fixed.tiling = VK_IMAGE_TILING_OPTIMAL_;
+    int r2 = real(device, &fixed, alloc, image);
+    tl_log_line("vulkan: vkCreateImage: MoltenVK refused LINEAR tiling (format %u, %u mip(s), %u layer(s)) -> %d; "
+                "asked again OPTIMAL -> %d", c->format, c->mipLevels, c->arrayLayers, r, r2);
+    return r2;
+}
+
 static void resolve_feature_hooks(void *instance)
 {
     if (!g_real_gpdf) g_real_gpdf = (pfn_get_features)V.gipa(instance, "vkGetPhysicalDeviceFeatures");
@@ -719,6 +784,9 @@ static const struct { const char *name; void *fn; } k_over[] = {
     { "vkCmdBindVertexBuffers", w_vkCmdBindVertexBuffers },
     { "vkCmdBindVertexBuffers2", w_vkCmdBindVertexBuffers2 },
     { "vkCmdBindVertexBuffers2EXT", w_vkCmdBindVertexBuffers2EXT },
+    /* One entry covers every way a game can fetch it: this table is consulted by vkGetInstanceProcAddr,
+     * vkGetDeviceProcAddr and the direct resolver alike. */
+    { "vkCreateImage", w_vkCreateImage },
 };
 
 static void *overridden(const char *name)

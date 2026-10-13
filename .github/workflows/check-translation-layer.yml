@@ -40,7 +40,11 @@ jobs:
           INC="-Isrc/translation-layer-next -Isrc/translation-layer"
           mkdir -p /tmp/tl-obj
           fail=0
-          for f in src/translation-layer-next/*.c; do
+          # *.m as well as *.c: the Vulkan integration that MoltenVK hangs off is Objective-C
+          # (husk-tl-vulkan.m), and compiling only *.c left it outside the gate entirely -- a change
+          # there could only ever be caught five minutes into build-ipa-prebuilt, which is the exact
+          # thing this workflow exists to avoid.
+          for f in src/translation-layer-next/*.c src/translation-layer-next/*.m; do
             obj="/tmp/tl-obj/$(basename "${f%.c}").o"
             if ! clang -isysroot "$SDK" \
                    -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
@@ -64,7 +68,7 @@ jobs:
           INC="-Isrc/translation-layer-next -Isrc/translation-layer"
           mkdir -p /tmp/tl-obj-old
           fail=0
-          for f in src/translation-layer/*.c; do
+          for f in src/translation-layer/*.c src/translation-layer/*.m; do
             obj="/tmp/tl-obj-old/$(basename "${f%.c}").o"
             if ! clang -isysroot "$SDK" \
                    -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
