@@ -101,8 +101,15 @@ static const char *engine_name(const engine_scan *s)
     if ((s->il2cpp || s->unity) && s->unity6) return "Unity 6";
     if (s->il2cpp) return "Unity (IL2CPP)";
     if (s->unity) return s->mono_unity ? "Unity (Mono)" : "Unity";
-    /* Supercell's games (libg.so) carry a Flutter module for some screens; the game itself is their engine behind a Java activity */
-    if (s->flutter && !s->supercell) return "Flutter";
+    /* A Flutter shell around a real game engine is a *launcher*, not a Flutter app, and calling it
+     * one sends the game down the Java runtime -- the launcher's runtime -- where it never starts.
+     * GTA San Andreas Definitive is exactly this: a Flutter Rockstar launcher with libUE4.so (193 MB)
+     * behind it. The Rockstar check above catches the classic trio, but this build ships no libGame.so,
+     * no libopenal and no mpg123, so it fell through to here and was reported as a Flutter app.
+     * Same rule as supercell below: an engine that is definitely present outranks the shell.
+     * (Cocos, Godot and GameMaker shells around a launcher would want the same exclusion; only the
+     * Unreal case has been measured, so only it is excluded here.) */
+    if (s->flutter && !s->supercell && !s->unreal) return "Flutter";
     if (s->gamemaker) return "GameMaker";
     /* Web apps: the app is HTML and JavaScript in a WebView (Ionic is one or the other underneath). */
     if (s->capacitor) return "Capacitor";
