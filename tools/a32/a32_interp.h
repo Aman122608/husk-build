@@ -63,10 +63,23 @@
  * LDM/STM/PUSH/POP kept apart from VFP, the parallel add/sub, B.W's
  * modified-immediate space).
  *
- * Memory model: one flat little-endian arena (ARENA_SIZE bytes) holding the
- * case's code and its 4 KiB scratch window next to each other. Every access is
- * bounds-checked; an out-of-range access is a clean, named failure carrying the
- * case id and the address, and never touches the harness.
+ * Memory model: two mappings behind one accessor.
+ *
+ *  - nregions == 0: one flat little-endian arena (ARENA_SIZE bytes) holding the
+ *    case's code and its 4 KiB scratch window next to each other. Every access
+ *    is bounds-checked; an out-of-range access is a clean, named failure
+ *    carrying the case id and the address, and never touches the harness. This
+ *    is the differential suite's mapping and a32_interp_run() is exactly it.
+ *
+ *  - nregions > 0 (a32_interp_run_image): a caller-registered REGION TABLE -- a
+ *    real library's PT_LOAD segments at their OWN virtual addresses, plus a
+ *    stack, a scratch region and a return sentinel -- so a whole real function
+ *    can run where its code, data and GOT actually live. This is what lets
+ *    standalone coverage be measured (a library's data does not fit the single
+ *    0x10000 arena, which is why so many real functions stop there). A fetch
+ *    additionally requires an EXECUTABLE region, so "control left the library"
+ *    (a return, an import stub, but also any jump into a data page) is a named
+ *    fault rather than a silent run into zeros.
  *
  * The scratch window's initial contents are the harness's agreed seed
  * (word k = 0x10000000 + k), and its FNV-1a hash is what the golden compares --
@@ -127,6 +140,52 @@ struct a32_interp_case {
  * counted as a pass. */
 int a32_interp_run(const struct a32_interp_case *c, struct a32_result *out,
                    char *err, size_t errn);
+
+/* ---------------------------------------------------------------------------
+ * The region-mapped image runner (a32_interp_run_image).
+ *
+ * A real library cannot be relocated into the single 0x10000 arena: its code
+ * carries absolute addresses, and its data/GOT live at addresses the arena does
+ * not contain -- which is exactly why 14,987 of 17,584 real functions stop with
+ * "outside the arena". So the map has to change, not the code: the caller maps
+ * each PT_LOAD at its REAL virtual address and registers it here.
+ *
+ * a32_interp_run_image() leaves a32_interp_run() untouched: the 500 A32 cases
+ * (indeed all 1007) are the contract, and tools/a32/a32_image_selftest.c asserts
+ * the two paths agree field-for-field on the whole suite before either is
+ * trusted. The image path compares registers and stop_reason; mem_hash over a
+ * single 4 KiB scratch is meaningless for an image run and is reported as 0.
+ * ------------------------------------------------------------------------- */
+#define A32_MAX_REGIONS 24
+
+/* One mapped range. `host` is a caller-owned, writable buffer of `size` bytes
+ * holding the segment image at [vaddr, vaddr+size). `exec` marks code: a fetch
+ * (pc) must land in an exec region, a data access in any region. */
+struct a32_interp_region {
+    uint32_t  vaddr;    /* the region's base virtual address        */
+    uint32_t  size;     /* bytes; must be > 0                       */
+    uint8_t  *host;     /* writable buffer of `size` bytes          */
+    uint32_t  exec;     /* 1 = executable (fetchable)               */
+};
+
+struct a32_interp_image {
+    uint32_t  id;       /* echoed into a fault message              */
+    uint32_t  pc;       /* entry virtual address (bit0 set = Thumb) */
+    int       thumb;    /* entry instruction-set state              */
+    uint32_t  regs[A32_NREG];  /* r0..r15; r13/r14 are overridden below */
+    uint32_t  sp;       /* initial r13                              */
+    uint32_t  lr;       /* initial r14 (the harness puts the sentinel here) */
+    uint32_t  ret_vaddr;/* stop with RETURN when pc == this         */
+    uint32_t  step_limit;/* 0 -> the interpreter's own STEP_LIMIT   */
+    int       nregions;
+    struct a32_interp_region regions[A32_MAX_REGIONS];
+};
+
+/* Run one real function in its own image. Returns 0 iff control reached
+ * ret_vaddr (the function returned); nonzero otherwise, with *out fully
+ * populated and err naming the reason. Identical contract to a32_interp_run. */
+int a32_interp_run_image(const struct a32_interp_image *im, struct a32_result *out,
+                         char *err, size_t errn);
 
 /* The arena the interpreter maps its code + scratch into (exposed for hosts). */
 #define A32_INTERP_ARENA_BASE 0x00010000u

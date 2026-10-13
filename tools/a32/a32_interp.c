@@ -34,6 +34,12 @@
 /* What a32_case_N's wrapper leaves: N=0 Z=1 C=1 V=0, user mode (0x10). */
 #define CPSR_INIT (F_Z | F_C | 0x10u)
 
+struct a32_region {
+    uint32_t lo, hi;            /* [lo, hi) virtual range            */
+    uint8_t *host;              /* host buffer for [lo, hi)          */
+    int      exec;              /* fetchable?                        */
+};
+
 struct cpu {
     uint32_t r[16];
     uint32_t cpsr;
@@ -43,7 +49,15 @@ struct cpu {
     uint8_t *mem;
     uint32_t case_id;
     uint32_t steps;
+    uint32_t step_limit;        /* STEP_LIMIT unless an image asks for less */
     uint32_t code_end;
+    /* Region table. nregions == 0 means the single flat arena above (the
+     * differential suite); nregions > 0 means a region-mapped image (a real
+     * library's PT_LOAD segments at their own virtual addresses). The arena path
+     * is kept first, so a32_interp_run's behaviour is bit-for-bit unchanged. */
+    struct a32_region regions[A32_MAX_REGIONS];
+    int      nregions;
+    uint32_t ret_vaddr;         /* image mode: pc == this -> RETURN   */
     int      tfault;
     char    *err;
     size_t   errn;
@@ -60,30 +74,64 @@ static void a32_fault(struct cpu *c, uint32_t pc, uint32_t insn, const char *why
 }
 
 /* ------------------------------------------------------------ memory */
-static int in_arena(uint32_t a, uint32_t n)
+/* One accessor behind two mappings (see a32_interp.h). With nregions == 0 the
+ * single arena is used exactly as before; with nregions > 0 the region table is
+ * consulted instead. Returns the host address of [a, a+n) or NULL if it is not
+ * fully mapped. */
+static uint8_t *mem_p(struct cpu *c, uint32_t a, uint32_t n)
 {
-    return a >= ARENA_BASE && (uint64_t)a + (uint64_t)n <= (uint64_t)ARENA_END;
+    if (!c->nregions) {
+        if (a >= ARENA_BASE && (uint64_t)a + (uint64_t)n <= (uint64_t)ARENA_END)
+            return c->mem + (a - c->base);
+        return NULL;
+    }
+    for (int i = 0; i < c->nregions; i++) {
+        uint32_t lo = c->regions[i].lo;
+        if (a >= lo && (uint64_t)a + (uint64_t)n <= (uint64_t)c->regions[i].hi)
+            return c->regions[i].host + (a - lo);
+    }
+    return NULL;
 }
-static uint32_t rd8(struct cpu *c, uint32_t a)  { return c->mem[a - c->base]; }
+static int in_arena(struct cpu *c, uint32_t a, uint32_t n)
+{
+    return mem_p(c, a, n) != NULL;
+}
+/* A fetch target must live in an EXECUTABLE region (image mode). In arena mode
+ * the code range is checked by a32_run_loop instead, so this is only used there. */
+static int in_exec(struct cpu *c, uint32_t a, uint32_t n)
+{
+    if (!c->nregions) return in_arena(c, a, n);
+    for (int i = 0; i < c->nregions; i++) {
+        if (!c->regions[i].exec) continue;
+        uint32_t lo = c->regions[i].lo;
+        if (a >= lo && (uint64_t)a + (uint64_t)n <= (uint64_t)c->regions[i].hi)
+            return 1;
+    }
+    return 0;
+}
+static uint32_t rd8(struct cpu *c, uint32_t a)  {
+    uint8_t *p = mem_p(c, a, 1); return p ? *p : 0;
+}
 static uint32_t rd16(struct cpu *c, uint32_t a) {
-    return (uint32_t)c->mem[a - c->base] | ((uint32_t)c->mem[a - c->base + 1] << 8);
+    uint8_t *p = mem_p(c, a, 2);
+    return p ? ((uint32_t)p[0] | ((uint32_t)p[1] << 8)) : 0;
 }
 static uint32_t rd32(struct cpu *c, uint32_t a) {
-    return (uint32_t)c->mem[a - c->base]
-         | ((uint32_t)c->mem[a - c->base + 1] << 8)
-         | ((uint32_t)c->mem[a - c->base + 2] << 16)
-         | ((uint32_t)c->mem[a - c->base + 3] << 24);
+    uint8_t *p = mem_p(c, a, 4);
+    return p ? ((uint32_t)p[0] | ((uint32_t)p[1] << 8) |
+                ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24)) : 0;
 }
-static void wr8(struct cpu *c, uint32_t a, uint32_t v)  { c->mem[a - c->base] = (uint8_t)v; }
+static void wr8(struct cpu *c, uint32_t a, uint32_t v)  {
+    uint8_t *p = mem_p(c, a, 1); if (p) *p = (uint8_t)v;
+}
 static void wr16(struct cpu *c, uint32_t a, uint32_t v) {
-    c->mem[a - c->base]     = (uint8_t)v;
-    c->mem[a - c->base + 1] = (uint8_t)(v >> 8);
+    uint8_t *p = mem_p(c, a, 2);
+    if (p) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); }
 }
 static void wr32(struct cpu *c, uint32_t a, uint32_t v) {
-    c->mem[a - c->base]     = (uint8_t)v;
-    c->mem[a - c->base + 1] = (uint8_t)(v >> 8);
-    c->mem[a - c->base + 2] = (uint8_t)(v >> 16);
-    c->mem[a - c->base + 3] = (uint8_t)(v >> 24);
+    uint8_t *p = mem_p(c, a, 4);
+    if (p) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8);
+             p[2] = (uint8_t)(v >> 16); p[3] = (uint8_t)(v >> 24); }
 }
 /* 64-bit little-endian access, for the VFP doubleword forms (d_n = s[2n]:s[2n+1]). */
 static uint64_t rd64(struct cpu *c, uint32_t a) {
@@ -281,7 +329,7 @@ static int decode_ldst_word(struct cpu *c, uint32_t pc, uint32_t insn, int is_re
     uint32_t off_addr = U ? base + off : base - off;
     uint32_t addr = P ? off_addr : base;
     uint32_t sz = B ? 1u : 4u;
-    if (!in_arena(addr, sz)) { a32_fault(c, pc, insn, "load/store outside the arena"); return 1; }
+    if (!in_arena(c, addr, sz)) { a32_fault(c, pc, insn, "load/store outside the arena"); return 1; }
     if (L) c->r[rd] = B ? rd8(c, addr) : rd32(c, addr);
     else   { if (B) wr8(c, addr, c->r[rd]); else wr32(c, addr, c->r[rd]); }
     if (!P || W) {
@@ -316,21 +364,21 @@ static int decode_extra_ldst(struct cpu *c, uint32_t pc, uint32_t insn)
     addr = P ? off_addr : base;
 
     if (n74 == 0xB) {                              /* LDRH / STRH */
-        if (!in_arena(addr, 2)) { a32_fault(c, pc, insn, "LDRH/STRH outside the arena"); return 1; }
+        if (!in_arena(c, addr, 2)) { a32_fault(c, pc, insn, "LDRH/STRH outside the arena"); return 1; }
         if (L) c->r[rd] = rd16(c, addr);
         else   wr16(c, addr, c->r[rd]);
     } else if (n74 == 0xD && L) {                  /* LDRSB */
-        if (!in_arena(addr, 1)) { a32_fault(c, pc, insn, "LDRSB outside the arena"); return 1; }
+        if (!in_arena(c, addr, 1)) { a32_fault(c, pc, insn, "LDRSB outside the arena"); return 1; }
         c->r[rd] = sx(rd8(c, addr), 8);
     } else if (n74 == 0xF && L) {                  /* LDRSH */
-        if (!in_arena(addr, 2)) { a32_fault(c, pc, insn, "LDRSH outside the arena"); return 1; }
+        if (!in_arena(c, addr, 2)) { a32_fault(c, pc, insn, "LDRSH outside the arena"); return 1; }
         c->r[rd] = sx(rd16(c, addr), 16);
     } else {                                       /* LDRD (1101) / STRD (1111) */
         int load = (n74 == 0xD);
         if (rd & 1) { a32_fault(c, pc, insn, "LDRD/STRD with an odd Rt"); return 1; }
         if (addr & 3u) { a32_fault(c, pc, insn, "unaligned LDRD/STRD"); return 1; }
         if (I && (off & 3u)) { a32_fault(c, pc, insn, "unaligned LDRD/STRD offset"); return 1; }
-        if (!in_arena(addr, 8)) { a32_fault(c, pc, insn, "LDRD/STRD outside the arena"); return 1; }
+        if (!in_arena(c, addr, 8)) { a32_fault(c, pc, insn, "LDRD/STRD outside the arena"); return 1; }
         if (load) { c->r[rd] = rd32(c, addr); c->r[rd + 1] = rd32(c, addr + 4); }
         else      { wr32(c, addr, c->r[rd]); wr32(c, addr + 4, c->r[rd + 1]); }
     }
@@ -363,7 +411,7 @@ static int decode_block(struct cpu *c, uint32_t pc, uint32_t insn)
     else if (P == 0 && U == 0) lo = base - (uint32_t)(n - 1) * 4u;  /* DA */
     else lo = base - (uint32_t)n * 4u;                   /* DB */
 
-    if (!in_arena(lo, (uint32_t)n * 4u)) { a32_fault(c, pc, insn, "LDM/STM outside the arena"); return 1; }
+    if (!in_arena(c, lo, (uint32_t)n * 4u)) { a32_fault(c, pc, insn, "LDM/STM outside the arena"); return 1; }
 
     uint32_t addr = lo;
     for (int r = 0; r < 16; r++) {
@@ -412,7 +460,7 @@ static int vfp_transfer(struct cpu *c, uint32_t pc, uint32_t word,
         uint32_t addr = U ? base + off : base - off;
         uint32_t size = dbl ? 8u : 4u;
         int first = dbl ? ((D << 4) | Vd) : ((Vd << 1) | D);
-        if (!in_arena(addr, size)) { a32_fault(c, pc, word, "VFP load/store outside the arena"); return 1; }
+        if (!in_arena(c, addr, size)) { a32_fault(c, pc, word, "VFP load/store outside the arena"); return 1; }
         if (L) {
             if (dbl) { uint64_t v = rd64(c, addr);
                        c->s[first * 2] = (uint32_t)v; c->s[first * 2 + 1] = (uint32_t)(v >> 32); }
@@ -446,7 +494,7 @@ static int vfp_transfer(struct cpu *c, uint32_t pc, uint32_t word,
     else if (P == 0 && U == 0) lo = base - (uint32_t)(count - 1) * esz;/* DA */
     else                       lo = base - (uint32_t)count * esz;      /* DB */
 
-    if (!in_arena(lo, (uint32_t)count * esz)) {
+    if (!in_arena(c, lo, (uint32_t)count * esz)) {
         a32_fault(c, pc, word, "VFP VLDM/VSTM outside the arena");
         return 1;
     }
@@ -554,7 +602,7 @@ static uint32_t thumb_step(struct cpu *c, uint32_t pc, int *fault)
     uint32_t len = is32 ? 4u : 2u;
     uint32_t next = pc + len;
 
-    if (is32 && !in_arena(pc, 4)) { a32_fault(c, pc, h1, "Thumb-2 fetch outside the arena"); *fault = 1; return 0; }
+    if (is32 && !in_arena(c, pc, 4)) { a32_fault(c, pc, h1, "Thumb-2 fetch outside the arena"); *fault = 1; return 0; }
 
     *fault = 0;
 
@@ -616,21 +664,21 @@ static int t_mem(struct cpu *c, uint32_t pc, int opc, uint32_t addr, int rt)
 {
     if (rt == 15) { a32_fault(c, pc, 0, "Thumb load/store to PC (Rt=15) not implemented"); return 1; }
     switch (opc) {
-    case 0: if (!in_arena(addr, 4)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    case 0: if (!in_arena(c, addr, 4)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
             wr32(c, addr, c->r[rt]); break;
-    case 4: if (!in_arena(addr, 4)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    case 4: if (!in_arena(c, addr, 4)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
             c->r[rt] = rd32(c, addr); break;
-    case 1: if (!in_arena(addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    case 1: if (!in_arena(c, addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
             wr16(c, addr, c->r[rt]); break;
-    case 5: if (!in_arena(addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    case 5: if (!in_arena(c, addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
             c->r[rt] = rd16(c, addr); break;
-    case 2: if (!in_arena(addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    case 2: if (!in_arena(c, addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
             wr8(c, addr, c->r[rt]); break;
-    case 6: if (!in_arena(addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    case 6: if (!in_arena(c, addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
             c->r[rt] = rd8(c, addr); break;
-    case 3: if (!in_arena(addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    case 3: if (!in_arena(c, addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
             c->r[rt] = sx(rd8(c, addr), 8); break;
-    default: if (!in_arena(addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+    default: if (!in_arena(c, addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
              c->r[rt] = sx(rd16(c, addr), 16); break;
     }
     return 0;
@@ -724,7 +772,7 @@ static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next)
     if ((h & 0xF800u) == 0x4800u) {                    /* 01001: format 6 LDR literal */
         uint32_t rd = (h >> 8) & 7u, imm8 = h & 0xFFu;
         uint32_t addr = align4(pc + 4u) + (imm8 << 2);
-        if (!in_arena(addr, 4)) { a32_fault(c, pc, h, "Thumb LDR literal outside the arena"); return 1; }
+        if (!in_arena(c, addr, 4)) { a32_fault(c, pc, h, "Thumb LDR literal outside the arena"); return 1; }
         c->r[rd] = rd32(c, addr);
         return 0;
     }
@@ -788,7 +836,7 @@ static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next)
             uint32_t sp = c->r[13];
             if (sp & 3u) { a32_fault(c, pc, h, "Thumb PUSH/POP with an unaligned SP"); return 1; }
             if (n == 0) { a32_fault(c, pc, h, "Thumb PUSH/POP with an empty list"); return 1; }
-            if (!in_arena(is_pop ? sp : sp - (uint32_t)n * 4u, (uint32_t)n * 4u)) {
+            if (!in_arena(c, is_pop ? sp : sp - (uint32_t)n * 4u, (uint32_t)n * 4u)) {
                 a32_fault(c, pc, h, "Thumb PUSH/POP outside the arena"); return 1;
             }
             if (!is_pop) {
@@ -846,7 +894,7 @@ static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next)
             a32_fault(c, pc, h, "Thumb LDM/STM with the base in the list (UNPREDICTABLE)"); return 1;
         }
         uint32_t base = c->r[rn];
-        if (!in_arena(base, (uint32_t)n * 4u)) { a32_fault(c, pc, h, "Thumb LDM/STM outside the arena"); return 1; }
+        if (!in_arena(c, base, (uint32_t)n * 4u)) { a32_fault(c, pc, h, "Thumb LDM/STM outside the arena"); return 1; }
         uint32_t a = base;
         for (int r = 0; r < 8; r++) {
             if (!(list & (1u << r))) continue;
@@ -933,7 +981,7 @@ static int thumb_wide_ldst(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2)
         addr = base + (c->r[rm] << imm2);
     }
 
-    if (!in_arena(addr, (uint32_t)sz)) { a32_fault(c, pc, h1, "Thumb-2 load/store outside the arena"); return 1; }
+    if (!in_arena(c, addr, (uint32_t)sz)) { a32_fault(c, pc, h1, "Thumb-2 load/store outside the arena"); return 1; }
     if (load) {
         if (sz == 4)      c->r[rt] = rd32(c, addr);
         else if (sz == 2) c->r[rt] = sign ? sx(rd16(c, addr), 16) : rd16(c, addr);
@@ -1221,7 +1269,7 @@ static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
         if ((h1 & 0xFFF0u) == 0xE8D0u && (h2 & 0xFFE0u) == 0xF000u) {
             uint32_t rn = h1 & 0xFu, hw = (h2 >> 4) & 1u, rm = h2 & 0xFu;
             uint32_t base = c->r[rn] + c->r[rm];
-            if (!in_arena(base, hw ? 2u : 1u)) { a32_fault(c, pc, h1, "Thumb TBB/TBH table outside the arena"); return 1; }
+            if (!in_arena(c, base, hw ? 2u : 1u)) { a32_fault(c, pc, h1, "Thumb TBB/TBH table outside the arena"); return 1; }
             uint32_t idx = hw ? rd16(c, base) : rd8(c, base);
             *next = pc + 4u + (idx << 1);   /* both scale the entry by 2 */
             return 0;
@@ -1243,7 +1291,7 @@ static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
                     uint32_t addr = d[k].u ? base + off : base - off;
                     if (rt & 1u || rt2 != rt + 1u) { a32_fault(c, pc, h1, "Thumb-2 LDRD/STRD with an odd or non-consecutive register pair"); return 1; }
                     if (addr & 3u) { a32_fault(c, pc, h1, "Thumb-2 unaligned LDRD/STRD"); return 1; }
-                    if (!in_arena(addr, 8)) { a32_fault(c, pc, h1, "Thumb-2 LDRD/STRD outside the arena"); return 1; }
+                    if (!in_arena(c, addr, 8)) { a32_fault(c, pc, h1, "Thumb-2 LDRD/STRD outside the arena"); return 1; }
                     if (d[k].load) { c->r[rt] = rd32(c, addr); c->r[rt2] = rd32(c, addr + 4); }
                     else           { wr32(c, addr, c->r[rt]); wr32(c, addr + 4, c->r[rt2]); }
                     if (d[k].w) c->r[rn] = d[k].u ? base + off : base - off;
@@ -1306,75 +1354,41 @@ static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
     a32_fault(c, pc, h1, "unimplemented Thumb-2 instruction"); return 1;
 }
 
-/* ==================================================================== run */
-
-int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
-                   char *err, size_t errn)
+/* The execution core, shared by a32_interp_run (nregions == 0, the arena)
+ * and a32_interp_run_image (nregions > 0, a real library at its own virtual
+ * addresses). The two mappings differ only in the fetch/return stop rule at
+ * the top of the loop and in what mem_p() resolves to; the decode-and-execute
+ * path below is ONE copy, so the two entry points cannot drift. a32_run_loop
+ * leaves the final pc in r[15] for the image run's register view. */
+static void a32_run_loop(struct cpu *c, struct a32_result *out, uint32_t pc)
 {
-    struct cpu cpu, *c = &cpu;
-    uint8_t *mem;
     int failed = 0;
-
-    memset(c, 0, sizeof(*c));
-    mem = (uint8_t *)malloc(ARENA_SIZE);
-    if (!mem) {
-        if (err) snprintf(err, errn, "out of memory for the interpreter arena");
-        return 1;
-    }
-    memset(mem, 0, ARENA_SIZE);
-
-    c->mem = mem;
-    c->base = ARENA_BASE;
-    c->case_id = in->id;
-    c->code_end = CODE_BASE + in->code_len;
-    c->err = err;
-    c->errn = errn;
-    if (err && errn) err[0] = 0;
-
-    if (in->code_len == 0 || in->code_len > (SCRATCH - CODE_BASE)) {
-        if (err) snprintf(err, errn, "case %u: bad fragment length (%u bytes)",
-                          c->case_id, in->code_len);
-        free(mem);
-        out->stop_reason = A32_STOP_FAULT;
-        return 1;
-    }
-    for (uint32_t i = 0; i < in->code_len; i++)
-        mem[(CODE_BASE - ARENA_BASE) + i] = in->code[i];
-
-    /* The scratch window's agreed seed: word k = 0x10000000 + k, exactly what
-     * a32oracle.c's mem_seed writes. */
-    for (uint32_t k = 0; k < A32_MEM_SIZE / 4u; k++)
-        wr32(c, SCRATCH + k * 4u, 0x10000000u + k);
-
-    /* Initial architectural state (see a32_interp.h). */
-    memset(c->r, 0, sizeof(c->r));
-    for (int i = 0; i < 16; i++)
-        if (i != 9 && i < 12)
-            c->r[i] = in->regs[i];
-    c->r[9] = SCRATCH;
-    c->r[15] = CODE_BASE;
-    c->cpsr = CPSR_INIT | (in->thumb ? F_T : 0u);
-    /* The harness's agreed VFP init: gen_cases.py's a32_fp_init writes
-     * `movw r1,#i` + `movt r1,#0x3f80`, so s_i starts at 0x3f800000 + i
-     * (1.0f + i ulp). Integer cases never touch the register file, so a case
-     * that does not reach VFP records exactly this -- the same value the old
-     * hard-coded out->fp[] produced, which is why the 500 A32 cases are
-     * unchanged. A VFP case writes real values over it. */
-    for (int i = 0; i < 32; i++) c->s[i] = 0x3f800000u + (uint32_t)i;
-
-    uint32_t pc = CODE_BASE;
     while (!c->tfault) {
-        if (c->steps++ >= STEP_LIMIT) {
-            if (err) snprintf(err, errn, "case %u: step limit (%u) exceeded at pc=0x%08x",
-                              c->case_id, STEP_LIMIT, pc);
+        if (c->steps++ >= c->step_limit) {
+            if (c->err) snprintf(c->err, c->errn, "case %u: step limit (%u) exceeded at pc=0x%08x",
+                                 c->case_id, c->step_limit, pc);
             failed = 1;
             out->stop_reason = A32_STOP_LIMIT;
             break;
         }
-        if (pc == c->code_end) { out->stop_reason = A32_STOP_RETURN; break; }
-        if (pc < CODE_BASE || pc >= c->code_end) {
-            a32_fault(c, pc, 0, "branch left the fragment");
-            break;
+        if (c->nregions) {
+            /* Region-mapped image: the fragment's end is not known, so the run
+             * ends when control reaches the return sentinel the harness put in
+             * lr, and a fetch anywhere else must land in an EXECUTABLE region or
+             * control has left the library's code -- a return, an import stub, a
+             * jump into a data page. Either is a nameable stop, never a silent
+             * run into zeros. */
+            if (pc == c->ret_vaddr) { out->stop_reason = A32_STOP_RETURN; break; }
+            if (!in_exec(c, pc, (c->cpsr & F_T) ? 2u : 4u)) {
+                a32_fault(c, pc, 0, "fetch left the image's executable regions");
+                break;
+            }
+        } else {
+            if (pc == c->code_end) { out->stop_reason = A32_STOP_RETURN; break; }
+            if (pc < CODE_BASE || pc >= c->code_end) {
+                a32_fault(c, pc, 0, "branch left the fragment");
+                break;
+            }
         }
 
         /* ---- Thumb state ------------------------------------------------ */
@@ -1452,7 +1466,7 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
                     uint32_t addr = get_r(c, rn, pc);
                     uint32_t v = get_r(c, rm, pc);
                     uint32_t sz = B ? 1u : 4u;
-                    if (!in_arena(addr, sz)) { a32_fault(c, pc, insn, "SWP outside the arena"); break; }
+                    if (!in_arena(c, addr, sz)) { a32_fault(c, pc, insn, "SWP outside the arena"); break; }
                     uint32_t old = B ? rd8(c, addr) : rd32(c, addr);
                     if (B) wr8(c, addr, v); else wr32(c, addr, v);
                     c->r[rd] = old;
@@ -1636,6 +1650,69 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
         a32_fault(c, pc, insn, "unimplemented instruction");
         break;
     }
+    c->r[15] = pc;
+    (void)failed;
+}
+
+/* ==================================================================== run */
+
+int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
+                   char *err, size_t errn)
+{
+    struct cpu cpu, *c = &cpu;
+    uint8_t *mem;
+    int failed = 0;
+
+    memset(c, 0, sizeof(*c));
+    mem = (uint8_t *)malloc(ARENA_SIZE);
+    if (!mem) {
+        if (err) snprintf(err, errn, "out of memory for the interpreter arena");
+        return 1;
+    }
+    memset(mem, 0, ARENA_SIZE);
+
+    c->mem = mem;
+    c->base = ARENA_BASE;
+    c->case_id = in->id;
+    c->step_limit = STEP_LIMIT;
+    c->code_end = CODE_BASE + in->code_len;
+    c->err = err;
+    c->errn = errn;
+    if (err && errn) err[0] = 0;
+
+    if (in->code_len == 0 || in->code_len > (SCRATCH - CODE_BASE)) {
+        if (err) snprintf(err, errn, "case %u: bad fragment length (%u bytes)",
+                          c->case_id, in->code_len);
+        free(mem);
+        out->stop_reason = A32_STOP_FAULT;
+        return 1;
+    }
+    for (uint32_t i = 0; i < in->code_len; i++)
+        mem[(CODE_BASE - ARENA_BASE) + i] = in->code[i];
+
+    /* The scratch window's agreed seed: word k = 0x10000000 + k, exactly what
+     * a32oracle.c's mem_seed writes. */
+    for (uint32_t k = 0; k < A32_MEM_SIZE / 4u; k++)
+        wr32(c, SCRATCH + k * 4u, 0x10000000u + k);
+
+    /* Initial architectural state (see a32_interp.h). */
+    memset(c->r, 0, sizeof(c->r));
+    for (int i = 0; i < 16; i++)
+        if (i != 9 && i < 12)
+            c->r[i] = in->regs[i];
+    c->r[9] = SCRATCH;
+    c->r[15] = CODE_BASE;
+    c->cpsr = CPSR_INIT | (in->thumb ? F_T : 0u);
+    /* The harness's agreed VFP init: gen_cases.py's a32_fp_init writes
+     * `movw r1,#i` + `movt r1,#0x3f80`, so s_i starts at 0x3f800000 + i
+     * (1.0f + i ulp). Integer cases never touch the register file, so a case
+     * that does not reach VFP records exactly this -- the same value the old
+     * hard-coded out->fp[] produced, which is why the 500 A32 cases are
+     * unchanged. A VFP case writes real values over it. */
+    for (int i = 0; i < 32; i++) c->s[i] = 0x3f800000u + (uint32_t)i;
+
+    a32_run_loop(c, out, CODE_BASE);
+
 
     if (c->tfault) { out->stop_reason = A32_STOP_FAULT; failed = 1; }
 
@@ -1655,5 +1732,85 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
     for (int i = 0; i < A32_NFP; i++) out->fp[i] = c->s[i];
 
     free(mem);
+    return failed;
+}
+
+/* ==================================================== region-mapped image run */
+
+int a32_interp_run_image(const struct a32_interp_image *im, struct a32_result *out,
+                         char *err, size_t errn)
+{
+    struct cpu cpu, *c = &cpu;
+    int failed = 0;
+
+    memset(c, 0, sizeof(*c));
+    memset(out, 0, sizeof(*out));
+    out->id = im->id;
+    c->case_id = im->id;
+    c->err = err;
+    c->errn = errn;
+    if (err && errn) err[0] = 0;
+
+    /* The region table IS the mapping here; there is no shot at falling back to
+     * the arena, because a real library's addresses are not the arena's. */
+    if (im->nregions <= 0 || im->nregions > A32_MAX_REGIONS) {
+        if (err) snprintf(err, errn, "image %u: bad region count %d (want 1..%d)",
+                          im->id, im->nregions, A32_MAX_REGIONS);
+        out->stop_reason = A32_STOP_FAULT;
+        return 1;
+    }
+    for (int i = 0; i < im->nregions; i++) {
+        const struct a32_interp_region *r = &im->regions[i];
+        if (!r->host || r->size == 0u) {
+            if (err) snprintf(err, errn, "image %u: region %d is empty (host=%p size=%u)",
+                              im->id, i, (void *)r->host, r->size);
+            out->stop_reason = A32_STOP_FAULT;
+            return 1;
+        }
+        if ((uint64_t)r->vaddr + (uint64_t)r->size > 0x100000000ull) {
+            if (err) snprintf(err, errn, "image %u: region %d wraps the address space",
+                              im->id, i);
+            out->stop_reason = A32_STOP_FAULT;
+            return 1;
+        }
+        c->regions[i].lo = r->vaddr;
+        c->regions[i].hi = r->vaddr + r->size;
+        c->regions[i].host = r->host;
+        c->regions[i].exec = r->exec ? 1 : 0;
+    }
+    c->nregions = im->nregions;
+    c->ret_vaddr = im->ret_vaddr;
+    c->step_limit = im->step_limit ? im->step_limit : STEP_LIMIT;
+    c->code_end = 0;                 /* unused: image mode returns via ret_vaddr */
+    c->mem = NULL;                   /* the arena is not used */
+    c->base = 0;
+
+    /* The harness's neutral entry state: r0-r3 (in regs[]) point into a
+     * zero-filled scratch region, sp is a scratch stack, lr is the return
+     * sentinel. Flags use the interpreter's own agreed convention (N=0 Z=1 C=1
+     * V=0, user mode), and the VFP file its agreed init -- the same constants a
+     * case run uses, so an image run is as deterministic as a case run. */
+    for (int i = 0; i < 16; i++) c->r[i] = im->regs[i];
+    c->r[13] = im->sp;
+    c->r[14] = im->lr;
+    c->cpsr = CPSR_INIT | (im->thumb ? F_T : 0u);
+    for (int i = 0; i < 32; i++) c->s[i] = 0x3f800000u + (uint32_t)i;
+
+    a32_run_loop(c, out, im->pc & ~1u);
+
+    if (c->tfault) { out->stop_reason = A32_STOP_FAULT; failed = 1; }
+
+    /* The image run's result: the whole register file (r15 is the final pc) and
+     * the stop_reason. mem_size/mem_hash are over one 4 KiB scratch in the arena
+     * model and mean nothing for a whole library at its real addresses, so they
+     * are reported as 0 and the standalone report compares registers and
+     * stop_reason only. */
+    for (int i = 0; i < 16; i++) out->regs[i] = c->r[i];
+    out->cpsr = c->cpsr;
+    out->fpscr = 0;
+    out->mem_size = 0;
+    out->mem_hash = 0;
+    out->mem_first_diff = 0;
+    for (int i = 0; i < A32_NFP; i++) out->fp[i] = c->s[i];
     return failed;
 }

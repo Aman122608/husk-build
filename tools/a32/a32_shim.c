@@ -96,3 +96,53 @@ A32_EXPORT int a32_shim_run_full(const uint8_t *code, uint32_t code_len, int thu
     if (out_stop) *out_stop = r.stop_reason;
     return rc;
 }
+
+/* Run one REAL function in a region-mapped image (see a32_interp_run_image).
+ * The region descriptors are flat arrays so a ctypes host can pass them without
+ * a second struct definition: nregions entries of (vaddr[i], size[i], exec[i])
+ * with host[i] a writable buffer of size[i] bytes. Returns 0 iff the function
+ * returned (reached ret_vaddr); otherwise err names the reason. */
+A32_EXPORT int a32_shim_run_image(
+    const uint32_t *vaddr, const uint32_t *size, const uint32_t *exec,
+    uint8_t **host, uint32_t nregions,
+    uint32_t pc, int thumb,
+    const uint32_t *in_regs, uint32_t sp, uint32_t lr, uint32_t ret_vaddr,
+    uint32_t step_limit, uint32_t id,
+    uint32_t *out_regs, uint32_t *out_cpsr, uint32_t *out_stop,
+    char *err, size_t errn)
+{
+    struct a32_interp_image im;
+    struct a32_result r;
+    int rc, i;
+
+    memset(&im, 0, sizeof(im));
+    im.id = id;
+    im.pc = pc;
+    im.thumb = thumb ? 1 : 0;
+    im.sp = sp;
+    im.lr = lr;
+    im.ret_vaddr = ret_vaddr;
+    im.step_limit = step_limit;
+    if (nregions > (uint32_t)A32_MAX_REGIONS)
+        nregions = (uint32_t)A32_MAX_REGIONS;
+    im.nregions = (int)nregions;
+    for (i = 0; i < (int)nregions; i++) {
+        im.regions[i].vaddr = vaddr[i];
+        im.regions[i].size  = size[i];
+        im.regions[i].exec  = exec[i];
+        im.regions[i].host  = host[i];
+    }
+    if (in_regs)
+        for (i = 0; i < A32_NREG; i++)
+            im.regs[i] = in_regs[i];
+
+    memset(&r, 0, sizeof(r));
+    rc = a32_interp_run_image(&im, &r, err, errn);
+
+    if (out_regs)
+        for (i = 0; i < A32_NREG; i++)
+            out_regs[i] = r.regs[i];
+    if (out_cpsr) *out_cpsr = r.cpsr;
+    if (out_stop) *out_stop = r.stop_reason;
+    return rc;
+}

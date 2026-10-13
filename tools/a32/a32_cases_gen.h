@@ -1000,6 +1000,43 @@ extern void a32_case_967(struct a32_result *, void *);
 extern void a32_case_968(struct a32_result *, void *);
 extern void a32_case_969(struct a32_result *, void *);
 extern void a32_case_970(struct a32_result *, void *);
+extern void a32_case_971(struct a32_result *, void *);
+extern void a32_case_972(struct a32_result *, void *);
+extern void a32_case_973(struct a32_result *, void *);
+extern void a32_case_974(struct a32_result *, void *);
+extern void a32_case_975(struct a32_result *, void *);
+extern void a32_case_976(struct a32_result *, void *);
+extern void a32_case_977(struct a32_result *, void *);
+extern void a32_case_978(struct a32_result *, void *);
+extern void a32_case_979(struct a32_result *, void *);
+extern void a32_case_980(struct a32_result *, void *);
+extern void a32_case_981(struct a32_result *, void *);
+extern void a32_case_982(struct a32_result *, void *);
+extern void a32_case_983(struct a32_result *, void *);
+extern void a32_case_984(struct a32_result *, void *);
+extern void a32_case_985(struct a32_result *, void *);
+extern void a32_case_986(struct a32_result *, void *);
+extern void a32_case_987(struct a32_result *, void *);
+extern void a32_case_988(struct a32_result *, void *);
+extern void a32_case_989(struct a32_result *, void *);
+extern void a32_case_990(struct a32_result *, void *);
+extern void a32_case_991(struct a32_result *, void *);
+extern void a32_case_992(struct a32_result *, void *);
+extern void a32_case_993(struct a32_result *, void *);
+extern void a32_case_994(struct a32_result *, void *);
+extern void a32_case_995(struct a32_result *, void *);
+extern void a32_case_996(struct a32_result *, void *);
+extern void a32_case_997(struct a32_result *, void *);
+extern void a32_case_998(struct a32_result *, void *);
+extern void a32_case_999(struct a32_result *, void *);
+extern void a32_case_1000(struct a32_result *, void *);
+extern void a32_case_1001(struct a32_result *, void *);
+extern void a32_case_1002(struct a32_result *, void *);
+extern void a32_case_1003(struct a32_result *, void *);
+extern void a32_case_1004(struct a32_result *, void *);
+extern void a32_case_1005(struct a32_result *, void *);
+extern void a32_case_1006(struct a32_result *, void *);
+extern void a32_case_1007(struct a32_result *, void *);
 
 static const struct a32_case_meta a32_cases[] = {
     { 1, "dp_reg_and_0", "dp-reg", "arm", "handwritten", "AND r0,r1,r2 (reg form)", a32_case_1 },
@@ -1972,6 +2009,43 @@ static const struct a32_case_meta a32_cases[] = {
     { 968, "t_iw_a2t_2", "interwork", "arm", "handwritten", "A32 BLX(register, odd)->Thumb->BX lr->ARM", a32_case_968 },
     { 969, "t_iw_blximm_0", "interwork", "thumb", "handwritten", "T32 BLX immediate -> ARM", a32_case_969 },
     { 970, "t_iw_blximm_1", "interwork", "thumb", "handwritten", "T32 BLX immediate -> ARM", a32_case_970 },
+    { 971, "w_mul", "wide-mul", "thumb", "handwritten", "Thumb-2 MUL.W Rd,Rn,Rm (Ra=15 alias)", a32_case_971 },
+    { 972, "w_mla", "wide-mul", "thumb", "handwritten", "Thumb-2 MLA.W adds Ra (distinguishes it from MUL)", a32_case_972 },
+    { 973, "w_mls", "wide-mul", "thumb", "handwritten", "Thumb-2 MLS.W Ra - Rn*Rm", a32_case_973 },
+    { 974, "w_smull", "wide-mul", "thumb", "handwritten", "Thumb-2 SMULL signed 64-bit product", a32_case_974 },
+    { 975, "w_umull", "wide-mul", "thumb", "handwritten", "Thumb-2 UMULL unsigned 64-bit product", a32_case_975 },
+    { 976, "w_smlal", "wide-mul", "thumb", "handwritten", "Thumb-2 SMLAL signed accumulate (64-bit) and sign", a32_case_976 },
+    { 977, "w_umlal", "wide-mul", "thumb", "handwritten", "Thumb-2 UMLAL unsigned accumulate (64-bit)", a32_case_977 },
+    { 978, "w_ldrb_imm12", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDRB imm12 (0xF890)", a32_case_978 },
+    { 979, "w_ldr_imm12", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDR imm12 (0xF8D0)", a32_case_979 },
+    { 980, "w_str_imm12", "wide-ldst", "thumb", "handwritten", "Thumb-2 STR imm12 writes the scratch window", a32_case_980 },
+    { 981, "w_strh_imm12", "wide-ldst", "thumb", "handwritten", "Thumb-2 STRH imm12", a32_case_981 },
+    { 982, "w_ldrh_imm12", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDRH imm12", a32_case_982 },
+    { 983, "w_ldrb_imm8_pos", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDRB imm8 P=1,U=1,W=0 (the T3 form)", a32_case_983 },
+    { 984, "w_ldrb_imm8_neg", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDRB imm8 U=0 reads below the base (0 in the arena)", a32_case_984 },
+    { 985, "w_ldr_post", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDR post-indexed: the writeback moves the next load's address", a32_case_985 },
+    { 986, "w_ldr_pre_wb", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDR pre-indexed writeback (P=1,U=1,W=1)", a32_case_986 },
+    { 987, "w_str_pre_wb_neg", "wide-ldst", "thumb", "handwritten", "Thumb-2 STR pre-indexed negative writeback writes below the base", a32_case_987 },
+    { 988, "w_ldr_reg", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDR register offset", a32_case_988 },
+    { 989, "w_ldr_reg_lsl", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDR register offset with LSL #1 (tests the shift)", a32_case_989 },
+    { 990, "w_ldrsb", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDRSB sign-extends a planted 0xFF byte", a32_case_990 },
+    { 991, "w_ldrsh", "wide-ldst", "thumb", "handwritten", "Thumb-2 LDRSH sign-extends a planted 0x8001 halfword", a32_case_991 },
+    { 992, "w_x_sxtb", "wide-ext", "thumb", "handwritten", "Thumb-1 SXTB sign-extends the low byte", a32_case_992 },
+    { 993, "w_x_uxtb", "wide-ext", "thumb", "handwritten", "Thumb-1 UXTB keeps only the low byte", a32_case_993 },
+    { 994, "w_x_sxth", "wide-ext", "thumb", "handwritten", "Thumb-1 SXTH sign-extends the low halfword", a32_case_994 },
+    { 995, "w_x_uxth", "wide-ext", "thumb", "handwritten", "Thumb-1 UXTH keeps only the low halfword", a32_case_995 },
+    { 996, "w_x_rev", "wide-ext", "thumb", "handwritten", "Thumb-1 REV byte-reverses the word", a32_case_996 },
+    { 997, "w_x_rev16", "wide-ext", "thumb", "handwritten", "Thumb-1 REV16 byte-reverses each halfword", a32_case_997 },
+    { 998, "w_x_revsh", "wide-ext", "thumb", "handwritten", "Thumb-1 REVSH reverses the low halfword and sign-extends", a32_case_998 },
+    { 999, "w_vfp_vldr_s", "wide-vfp", "arm", "handwritten", "A32 VLDR s0, [r9]: the register file takes the memory word", a32_case_999 },
+    { 1000, "w_vfp_vstr_s", "wide-vfp", "arm", "handwritten", "A32 VSTR s0, [r9, #4]: the scratch window takes s0", a32_case_1000 },
+    { 1001, "w_vfp_vldr_d", "wide-vfp", "arm", "handwritten", "A32 VLDR d0, [r9, #4]: two s registers from one doubleword", a32_case_1001 },
+    { 1002, "w_vfp_vpush_vpop_s", "wide-vfp", "arm", "handwritten", "A32 VPUSH then VPOP: s8..s15 come back equal to s0..s7", a32_case_1002 },
+    { 1003, "w_vfp_vpush_vpop_d", "wide-vfp", "arm", "handwritten", "A32 VPUSH/VPOP doublewords: d4..d7 come back equal to d0..d3", a32_case_1003 },
+    { 1004, "w_vfp_vstm_vldm", "wide-vfp", "arm", "handwritten", "A32 VSTMIA/VLDMIA on a general register (no writeback)", a32_case_1004 },
+    { 1005, "w_vfp_t32_vldr", "wide-vfp", "thumb", "handwritten", "Thumb-2 VLDR s0, [r9]", a32_case_1005 },
+    { 1006, "w_vfp_t32_vstr", "wide-vfp", "thumb", "handwritten", "Thumb-2 VSTR s0, [r9, #4]", a32_case_1006 },
+    { 1007, "w_vfp_t32_vstm_vldm", "wide-vfp", "thumb", "handwritten", "Thumb-2 VSTMIA/VLDMIA round trip", a32_case_1007 },
 };
 
 #define A32_CASE_COUNT (sizeof(a32_cases) / sizeof(a32_cases[0]))
@@ -5009,6 +5083,117 @@ static const uint8_t a32_code_970[20] = {
     0x66, 0x20, 0x00, 0xf0, 0x04, 0xe8, 0x77, 0x21, 0x04, 0xe0, 0x00, 0xbf, 0x88, 0x20, 0xa0,
     0xe3, 0x1e, 0xff, 0x2f, 0xe1,
 };
+static const uint8_t a32_code_971[4] = {
+    0x00, 0xfb, 0x01, 0xf2,
+};
+static const uint8_t a32_code_972[4] = {
+    0x00, 0xfb, 0x01, 0x32,
+};
+static const uint8_t a32_code_973[4] = {
+    0x00, 0xfb, 0x11, 0x32,
+};
+static const uint8_t a32_code_974[4] = {
+    0x80, 0xfb, 0x01, 0x23,
+};
+static const uint8_t a32_code_975[4] = {
+    0xa0, 0xfb, 0x01, 0x23,
+};
+static const uint8_t a32_code_976[4] = {
+    0xc0, 0xfb, 0x01, 0x23,
+};
+static const uint8_t a32_code_977[4] = {
+    0xe0, 0xfb, 0x01, 0x23,
+};
+static const uint8_t a32_code_978[4] = {
+    0x99, 0xf8, 0x04, 0x00,
+};
+static const uint8_t a32_code_979[4] = {
+    0xd9, 0xf8, 0x04, 0x00,
+};
+static const uint8_t a32_code_980[4] = {
+    0xc9, 0xf8, 0x08, 0x00,
+};
+static const uint8_t a32_code_981[4] = {
+    0xa9, 0xf8, 0x06, 0x00,
+};
+static const uint8_t a32_code_982[4] = {
+    0xb9, 0xf8, 0x04, 0x00,
+};
+static const uint8_t a32_code_983[4] = {
+    0x19, 0xf8, 0x04, 0x0e,
+};
+static const uint8_t a32_code_984[4] = {
+    0x19, 0xf8, 0x04, 0x0c,
+};
+static const uint8_t a32_code_985[8] = {
+    0x59, 0xf8, 0x04, 0x0b, 0x59, 0xf8, 0x00, 0x1e,
+};
+static const uint8_t a32_code_986[8] = {
+    0x59, 0xf8, 0x04, 0x0f, 0x59, 0xf8, 0x00, 0x1e,
+};
+static const uint8_t a32_code_987[4] = {
+    0x49, 0xf8, 0x04, 0x0d,
+};
+static const uint8_t a32_code_988[4] = {
+    0x59, 0xf8, 0x02, 0x00,
+};
+static const uint8_t a32_code_989[4] = {
+    0x59, 0xf8, 0x12, 0x00,
+};
+static const uint8_t a32_code_990[8] = {
+    0x89, 0xf8, 0x01, 0x10, 0x99, 0xf9, 0x01, 0x00,
+};
+static const uint8_t a32_code_991[8] = {
+    0xa9, 0xf8, 0x02, 0x10, 0xb9, 0xf9, 0x02, 0x00,
+};
+static const uint8_t a32_code_992[2] = {
+    0x41, 0xb2,
+};
+static const uint8_t a32_code_993[2] = {
+    0xc1, 0xb2,
+};
+static const uint8_t a32_code_994[2] = {
+    0x01, 0xb2,
+};
+static const uint8_t a32_code_995[2] = {
+    0x81, 0xb2,
+};
+static const uint8_t a32_code_996[2] = {
+    0x01, 0xba,
+};
+static const uint8_t a32_code_997[2] = {
+    0x41, 0xba,
+};
+static const uint8_t a32_code_998[2] = {
+    0xc1, 0xba,
+};
+static const uint8_t a32_code_999[4] = {
+    0x00, 0x0a, 0x99, 0xed,
+};
+static const uint8_t a32_code_1000[4] = {
+    0x01, 0x0a, 0x89, 0xed,
+};
+static const uint8_t a32_code_1001[4] = {
+    0x01, 0x0b, 0x99, 0xed,
+};
+static const uint8_t a32_code_1002[12] = {
+    0x01, 0xdc, 0x89, 0xe2, 0x08, 0x0a, 0x2d, 0xed, 0x08, 0x4a, 0xbd, 0xec,
+};
+static const uint8_t a32_code_1003[12] = {
+    0x01, 0xdc, 0x89, 0xe2, 0x08, 0x0b, 0x2d, 0xed, 0x08, 0x4b, 0xbd, 0xec,
+};
+static const uint8_t a32_code_1004[8] = {
+    0x08, 0x0a, 0x89, 0xec, 0x08, 0x4a, 0x99, 0xec,
+};
+static const uint8_t a32_code_1005[4] = {
+    0x99, 0xed, 0x00, 0x0a,
+};
+static const uint8_t a32_code_1006[4] = {
+    0x89, 0xed, 0x01, 0x0a,
+};
+static const uint8_t a32_code_1007[8] = {
+    0x89, 0xec, 0x08, 0x0a, 0x99, 0xec, 0x08, 0x4a,
+};
 
 static const struct a32_case_words a32_case_words[] = {
     { 1, "dp_reg_and_0", "dp-reg", "AND r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_1 },
@@ -5981,6 +6166,43 @@ static const struct a32_case_words a32_case_words[] = {
     { 968, "t_iw_a2t_2", "interwork", "A32 BLX(register, odd)->Thumb->BX lr->ARM", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 28, a32_code_968 },
     { 969, "t_iw_blximm_0", "interwork", "T32 BLX immediate -> ARM", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_969 },
     { 970, "t_iw_blximm_1", "interwork", "T32 BLX immediate -> ARM", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_970 },
+    { 971, "w_mul", "wide-mul", "Thumb-2 MUL.W Rd,Rn,Rm (Ra=15 alias)", "thumb", { 0x12345678u, 0x00001000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_971 },
+    { 972, "w_mla", "wide-mul", "Thumb-2 MLA.W adds Ra (distinguishes it from MUL)", "thumb", { 0x00000005u, 0x00000007u, 0, 0x00000064u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_972 },
+    { 973, "w_mls", "wide-mul", "Thumb-2 MLS.W Ra - Rn*Rm", "thumb", { 0x00000005u, 0x00000007u, 0, 0x00000064u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_973 },
+    { 974, "w_smull", "wide-mul", "Thumb-2 SMULL signed 64-bit product", "thumb", { 0xffffffffu, 0x00000002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_974 },
+    { 975, "w_umull", "wide-mul", "Thumb-2 UMULL unsigned 64-bit product", "thumb", { 0xffffffffu, 0x00000002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_975 },
+    { 976, "w_smlal", "wide-mul", "Thumb-2 SMLAL signed accumulate (64-bit) and sign", "thumb", { 0x80000000u, 0x00000002u, 0x00000001u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_976 },
+    { 977, "w_umlal", "wide-mul", "Thumb-2 UMLAL unsigned accumulate (64-bit)", "thumb", { 0xffffffffu, 0x00000003u, 0x00000001u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_977 },
+    { 978, "w_ldrb_imm12", "wide-ldst", "Thumb-2 LDRB imm12 (0xF890)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_978 },
+    { 979, "w_ldr_imm12", "wide-ldst", "Thumb-2 LDR imm12 (0xF8D0)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_979 },
+    { 980, "w_str_imm12", "wide-ldst", "Thumb-2 STR imm12 writes the scratch window", "thumb", { 0xcafebabeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_980 },
+    { 981, "w_strh_imm12", "wide-ldst", "Thumb-2 STRH imm12", "thumb", { 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_981 },
+    { 982, "w_ldrh_imm12", "wide-ldst", "Thumb-2 LDRH imm12", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_982 },
+    { 983, "w_ldrb_imm8_pos", "wide-ldst", "Thumb-2 LDRB imm8 P=1,U=1,W=0 (the T3 form)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_983 },
+    { 984, "w_ldrb_imm8_neg", "wide-ldst", "Thumb-2 LDRB imm8 U=0 reads below the base (0 in the arena)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_984 },
+    { 985, "w_ldr_post", "wide-ldst", "Thumb-2 LDR post-indexed: the writeback moves the next load's address", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_985 },
+    { 986, "w_ldr_pre_wb", "wide-ldst", "Thumb-2 LDR pre-indexed writeback (P=1,U=1,W=1)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_986 },
+    { 987, "w_str_pre_wb_neg", "wide-ldst", "Thumb-2 STR pre-indexed negative writeback writes below the base", "thumb", { 0xaaaa5555u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_987 },
+    { 988, "w_ldr_reg", "wide-ldst", "Thumb-2 LDR register offset", "thumb", { 0, 0, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_988 },
+    { 989, "w_ldr_reg_lsl", "wide-ldst", "Thumb-2 LDR register offset with LSL #1 (tests the shift)", "thumb", { 0, 0, 0x00000002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_989 },
+    { 990, "w_ldrsb", "wide-ldst", "Thumb-2 LDRSB sign-extends a planted 0xFF byte", "thumb", { 0, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_990 },
+    { 991, "w_ldrsh", "wide-ldst", "Thumb-2 LDRSH sign-extends a planted 0x8001 halfword", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_991 },
+    { 992, "w_x_sxtb", "wide-ext", "Thumb-1 SXTB sign-extends the low byte", "thumb", { 0x000080ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_992 },
+    { 993, "w_x_uxtb", "wide-ext", "Thumb-1 UXTB keeps only the low byte", "thumb", { 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_993 },
+    { 994, "w_x_sxth", "wide-ext", "Thumb-1 SXTH sign-extends the low halfword", "thumb", { 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_994 },
+    { 995, "w_x_uxth", "wide-ext", "Thumb-1 UXTH keeps only the low halfword", "thumb", { 0x1234abcdu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_995 },
+    { 996, "w_x_rev", "wide-ext", "Thumb-1 REV byte-reverses the word", "thumb", { 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_996 },
+    { 997, "w_x_rev16", "wide-ext", "Thumb-1 REV16 byte-reverses each halfword", "thumb", { 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_997 },
+    { 998, "w_x_revsh", "wide-ext", "Thumb-1 REVSH reverses the low halfword and sign-extends", "thumb", { 0x00000080u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_998 },
+    { 999, "w_vfp_vldr_s", "wide-vfp", "A32 VLDR s0, [r9]: the register file takes the memory word", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_999 },
+    { 1000, "w_vfp_vstr_s", "wide-vfp", "A32 VSTR s0, [r9, #4]: the scratch window takes s0", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_1000 },
+    { 1001, "w_vfp_vldr_d", "wide-vfp", "A32 VLDR d0, [r9, #4]: two s registers from one doubleword", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_1001 },
+    { 1002, "w_vfp_vpush_vpop_s", "wide-vfp", "A32 VPUSH then VPOP: s8..s15 come back equal to s0..s7", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_1002 },
+    { 1003, "w_vfp_vpush_vpop_d", "wide-vfp", "A32 VPUSH/VPOP doublewords: d4..d7 come back equal to d0..d3", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_1003 },
+    { 1004, "w_vfp_vstm_vldm", "wide-vfp", "A32 VSTMIA/VLDMIA on a general register (no writeback)", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_1004 },
+    { 1005, "w_vfp_t32_vldr", "wide-vfp", "Thumb-2 VLDR s0, [r9]", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_1005 },
+    { 1006, "w_vfp_t32_vstr", "wide-vfp", "Thumb-2 VSTR s0, [r9, #4]", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_1006 },
+    { 1007, "w_vfp_t32_vstm_vldm", "wide-vfp", "Thumb-2 VSTMIA/VLDMIA round trip", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_1007 },
 };
 
 #define A32_WORDS_COUNT (sizeof(a32_case_words) / sizeof(a32_case_words[0]))

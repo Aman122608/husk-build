@@ -5,6 +5,9 @@
 #   step0    the go/no-go: does this host execute code the process just wrote?
 #            (drives src/translation-layer-next/husk-tl-xmem.c's own self-test)
 #   diff     the macos-26 comparer (a32diff) + the executable-memory proof
+#   diff-plain  the comparer + interpreter only (no Apple, no qemu; local use)
+#   image-selftest  the region-mapped image path == the single-arena path, proven
+#            on the whole case suite before the region table is trusted
 #   oracle   the armhf AArch32 oracle (needs arm-linux-gnueabi-gcc; run under qemu-arm)
 #
 # For step0/diff this mirrors tools/regress/build.sh: clang, the two include
@@ -53,6 +56,18 @@ case "$target" in
     "$cc" -std=c11 -O1 -Wall -I"$A" -o "$out" "$A/a32diff.c" "$A/a32_interp.c"
     echo "built $out"
     echo "run:   $out <goldens-dir> [--self-check]"
+    ;;
+  image-selftest)
+    # The region-mapped image path (a32_interp_run_image) must reproduce the
+    # single-arena path (a32_interp_run) field-for-field on the whole case suite
+    # BEFORE either is trusted: a memory-model change to a hard contract.
+    out="${out:-/tmp/a32-image-selftest}"
+    cc="${A32_CC:-cc}"
+    command -v "$cc" >/dev/null || { echo "$cc not found" >&2; exit 2; }
+    rm -f "$out"
+    "$cc" -std=c11 -O2 -Wall -I"$A" -o "$out" "$A/a32_image_selftest.c" "$A/a32_interp.c"
+    echo "built $out"
+    echo "run:   $out     # asserts the region path == the arena path on every case"
     ;;
   oracle)
     out="${out:-/tmp/a32oracle}"

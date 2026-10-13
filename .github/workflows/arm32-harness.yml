@@ -135,7 +135,18 @@ jobs:
           for rec in g["cases"]:
               assert len(rec["regs"]) == 16 and len(rec["fp"]) == 32, rec["id"]
               assert rec["stop_reason"] == 0, rec["id"]
-          print("goldens: %s, %d cases, all structurally sound" % (g["format"], g["count"]))
+          # The wide/Thumb-2 + VFP-memory classes (ids 971..1007) must actually be
+          # in the run, not merely in a side file. A case that is generated only
+          # off to one side is a case CI does not protect -- the Thumb-1 SUB SP
+          # lesson -- so the four groups are named and a floor is set here. Adding
+          # cases raises this floor; nothing is relaxed.
+          groups = {rec["group"] for rec in c["cases"]}
+          want = {"wide-mul", "wide-ldst", "wide-ext", "wide-vfp"}
+          missing = want - groups
+          assert not missing, "no cases for group(s) %s: the work-queue cases are not in CI" % sorted(missing)
+          assert g["count"] >= 1007, "only %d cases: the 37 work-queue cases are missing" % g["count"]
+          print("goldens: %s, %d cases (incl. the 4 wide groups), all structurally sound"
+                % (g["format"], g["count"]))
           PY
 
       - name: Upload the goldens
@@ -193,6 +204,20 @@ jobs:
           grep -q "MISMATCH case" compare.log
           grep -q "field regs\[3\]" compare.log
           echo "::notice::the failure report names the case and the field; a real translator red will too."
+
+      - name: The region-mapped image path must equal the arena path (image selftest)
+        # a32_interp_run_image() registers a region table (a real library's
+        # PT_LOAD segments) instead of the single 0x10000 arena -- a memory-model
+        # change to a file with a hard contract. Before it is trusted it must
+        # reproduce a32_interp_run() field-for-field on EVERY case: regs[0..11],
+        # nzcvq, fp[], stop_reason and the scratch bytes the region writes left.
+        # This step is that proof; it adds a gate and relaxes none.
+        run: |
+          set -euo pipefail
+          bash tools/a32/build.sh image-selftest /tmp/a32-image-selftest
+          /tmp/a32-image-selftest | tee image-selftest.log
+          grep -q 'image-selftest: PASS' image-selftest.log
+          echo "::notice::the region-mapped image path reproduces the arena path on every case."
 
       - name: Upload the compare log
         if: always()

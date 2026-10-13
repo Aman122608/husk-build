@@ -144,6 +144,10 @@ def run_unicorn(cases, fp_init):
         uc.reg_write(ac.UC_ARM_REG_PC, CODE_BASE)
         cpsr = CPSR_INIT | (T_BIT if c["mode"] == "thumb" else 0)
         uc.reg_write(ac.UC_ARM_REG_CPSR, cpsr)
+        # Unicorn leaves the VFP disabled by default, so a VLDR/VSTR/VLDM/VSTM
+        # case is UC_ERR_INSN_INVALID until FPEXC.EN is set (the qemu oracle the
+        # CI job uses has it set). The wide-vfp cases need this.
+        uc.reg_write(ac.UC_ARM_REG_FPEXC, 0x40000000)
         # the VFP init the generated assembly establishes (source of truth).
         for i, v in enumerate(fp_init):
             uc.reg_write(getattr(ac, "UC_ARM_REG_S%d" % i), v)
@@ -363,6 +367,7 @@ def wrapper_check(cases):
             uc.reg_write(ac.UC_ARM_REG_R1, SCRATCH)
             uc.reg_write(ac.UC_ARM_REG_SP, STACKTOP)
             uc.reg_write(ac.UC_ARM_REG_LR, SENTINEL)
+            uc.reg_write(ac.UC_ARM_REG_FPEXC, 0x40000000)   # enable VFP (see run_unicorn)
             return uc
 
         # A. the harness's own prologue + the fragment, stopping exactly where

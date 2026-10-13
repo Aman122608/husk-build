@@ -120,7 +120,16 @@ class Interp:
         f.argtypes = [C.c_char_p, C.c_uint32, C.c_int, C.POINTER(C.c_uint32),
                       C.c_uint32, C.POINTER(C.c_uint32), C.POINTER(C.c_uint32),
                       C.POINTER(C.c_uint32), C.c_char_p, C.c_size_t]
+        g = self.lib.a32_shim_run_image
+        g.restype = C.c_int
+        g.argtypes = [C.POINTER(C.c_uint32), C.POINTER(C.c_uint32),
+                      C.POINTER(C.c_uint32), C.POINTER(C.c_void_p), C.c_uint32,
+                      C.c_uint32, C.c_int, C.POINTER(C.c_uint32), C.c_uint32,
+                      C.c_uint32, C.c_uint32, C.c_uint32, C.c_uint32,
+                      C.POINTER(C.c_uint32), C.POINTER(C.c_uint32),
+                      C.POINTER(C.c_uint32), C.c_char_p, C.c_size_t]
         self._probe_cache = {}
+        self._img = None
 
     def run(self, code: bytes, thumb: int, regs=None):
         """Run one fragment as one interpreter case. Returns
@@ -137,6 +146,32 @@ class Interp:
         buf = bytes(code)
         rc = self.lib.a32_shim_run(buf, len(code), 1 if thumb else 0, inp, 1,
                                    out, C.byref(cpsr), C.byref(stop), err, 512)
+        return rc, stop.value, err.value.decode("latin-1"), list(out)
+
+    def set_image(self, regions):
+        """Register one region table (an image) for run_image(). `regions` is a
+        list of (vaddr, size, exec, ctypes_buffer); the buffers are kept alive
+        here for the lifetime of the image."""
+        self._img = list(regions)
+        n = len(self._img)
+        self._va = (C.c_uint32 * n)(*[r[0] for r in self._img])
+        self._sz = (C.c_uint32 * n)(*[r[1] for r in self._img])
+        self._ex = (C.c_uint32 * n)(*[r[2] for r in self._img])
+        self._hp = (C.c_void_p * n)(*[C.addressof(r[3]) for r in self._img])
+
+    def run_image(self, pc, thumb, regs, sp, lr, ret, step_limit):
+        """Run one real function in the registered image. Returns
+        (rc, stop_reason, err, out_regs)."""
+        n = len(self._img)
+        inr = (C.c_uint32 * 16)(*regs)
+        out = (C.c_uint32 * 16)()
+        stop = C.c_uint32()
+        cpsr = C.c_uint32()
+        err = C.create_string_buffer(512)
+        rc = self.lib.a32_shim_run_image(
+            self._va, self._sz, self._ex, self._hp, n, pc, 1 if thumb else 0,
+            inr, sp, lr, ret, step_limit, 1, out, C.byref(cpsr),
+            C.byref(stop), err, 512)
         return rc, stop.value, err.value.decode("latin-1"), list(out)
 
     def refuses(self, mode: str, raw: bytes):
@@ -241,6 +276,43 @@ SCRATCH_BASE = 0x60000000  # a zero-filled "heap" the r0-r3 arguments point into
 SCRATCH_SIZE = 0x00200000
 MAX_AUTOMAP = 512          # cap on pages we zero-fill on demand, per function
 AUTOMAP_HI = 0x80000000    # never auto-map the sentinel/high space
+
+# ---- the region-mapped interpreter image (a32_interp_run_image) ------------
+# The same neutral inputs the Unicorn run uses (r0-r3 = distinct pointers into a
+# zero-filled scratch, SP on a scratch stack, LR = the return sentinel), but now
+# the library is registered at its OWN virtual addresses instead of a 0x10000
+# arena, which is what lets the reference interpreter RUN real code rather than
+# stop at the first data access its arena cannot express.
+IMAGE_STEP_LIMIT = 20000   # bound on a runaway function in the image pass
+IMG_R0 = (SCRATCH_BASE + 0x00100, SCRATCH_BASE + 0x10100,
+          SCRATCH_BASE + 0x20100, SCRATCH_BASE + 0x30100)
+
+
+def build_image(img: LibImage, page=0x1000):
+    """One host buffer per PT_LOAD at its real p_vaddr (page-rounded), plus a
+    zero-filled scratch region, a scratch stack and a return sentinel. Overlaps
+    are resolved by keeping the first region, exactly as map_image() does for
+    Unicorn. Returns a list of (vaddr, size, exec, buffer)."""
+    regions = []
+    have = []
+    for vaddr, memsz, filesz, flags, sdata in img.segments:
+        if memsz == 0:
+            continue
+        lo = vaddr & ~(page - 1)
+        hi = (vaddr + memsz + page - 1) & ~(page - 1)
+        if any(not (hi <= a or lo >= b) for (a, b) in have):
+            continue                       # overlap: keep the first
+        buf = C.create_string_buffer(hi - lo)
+        if filesz:
+            C.memmove(C.addressof(buf) + (vaddr - lo), sdata[:filesz], filesz)
+        have.append((lo, hi))
+        regions.append((lo, hi - lo, 1 if (flags & EXEC) else 0, buf))
+    for base, size, ex in ((SCRATCH_BASE, SCRATCH_SIZE, 0),
+                           (STACK_BASE, STACK_SIZE, 0),
+                           (SENTINEL, 0x1000, 0)):
+        regions.append((base, size, ex, C.create_string_buffer(size)))
+    return regions
+
 
 # classes, in report order
 CLASS_ORDER = ["integer", "vfp", "neon", "exotic"]
@@ -462,8 +534,16 @@ def analyze_library(data, name, eng, interp, per_lib, max_steps, iwindow=32768):
         # interpreter pass on the same functions
         "istop": collections.Counter(), "insn_exec_by_interp": 0,
         "interp_refused": collections.Counter(),   # fault name -> count
+        # the region-mapped image pass (a32_interp_run_image): real coverage
+        "istop_image": collections.Counter(),
+        "img_refused": collections.Counter(),      # refused encoding by name
+        "img_other": collections.Counter(),        # other named fault by name
+        "img_left": collections.Counter(),         # left-library, by kind
         "automap_total": 0,                        # lenient data pages mapped
     }
+
+    if interp is not None:
+        interp.set_image(build_image(img))
 
     for (faddr, thumb) in chosen:
         st = run_function(eng, img, faddr, thumb, max_steps)
@@ -496,6 +576,37 @@ def analyze_library(data, name, eng, interp, per_lib, max_steps, iwindow=32768):
                     agg["istop"]["step_limit"] += 1
                 else:
                     agg["istop"]["other"] += 1
+
+        # ---- the region-mapped image pass: run the function where it lives ---
+        if interp is not None:
+            cregs = [0] * 16
+            cregs[0], cregs[1], cregs[2], cregs[3] = IMG_R0
+            sp = STACK_BASE + STACK_SIZE - 0x100
+            rc, stop, err, _ = interp.run_image(
+                faddr & ~1, thumb, cregs, sp, SENTINEL, SENTINEL, IMAGE_STEP_LIMIT)
+            if rc == 0 and stop == 0:
+                agg["istop_image"]["return"] += 1
+            elif "step limit" in err:
+                agg["istop_image"]["step_limit"] += 1
+            elif UNIMPL_MARK in err:
+                agg["istop_image"]["refused_encoding"] += 1
+                reason = err.split(": ", 1)[-1].split(" at pc=", 1)[0]
+                agg["img_refused"][reason] += 1
+            elif "outside the arena" in err or "executable regions" in err:
+                # a data address no PT_LOAD contains, or a fetch into a
+                # non-executable page: control left the library, or the library
+                # touched memory we did not model. Counted, never coverage.
+                agg["istop_image"]["left_library"] += 1
+                agg["img_left"]["fetch_not_exec" if "executable regions" in err
+                               else "data_unmapped"] += 1
+            else:
+                # everything else is a NAMED fault (an unimplemented encoding the
+                # classifier above did not match, an unsupported architectural
+                # form); name it so the report says what still stops.
+                agg["istop_image"]["other"] += 1
+                reason = (err.split(": ", 1)[-1].split(" at pc=", 1)[0]
+                          if err else "no reason")
+                agg["img_other"][reason] += 1
     return agg
 
 
@@ -537,7 +648,8 @@ def main():
 
     lib_rows = []
     A = {k: collections.Counter() for k in
-         ("cls", "mne", "mode", "enc", "stop", "istop", "interp_refused")}
+         ("cls", "mne", "mode", "enc", "stop", "istop", "interp_refused",
+          "istop_image", "img_refused", "img_other", "img_left")}
     A["instructions"] = 0
     A["functions_run"] = 0
     A["functions_total"] = 0
@@ -560,7 +672,8 @@ def main():
                 row["apk"] = apk
                 lib_rows.append(row)
                 merge(A, row, ("cls", "mne", "mode", "enc", "stop", "istop",
-                               "interp_refused"))
+                               "interp_refused", "istop_image", "img_refused",
+                               "img_other", "img_left"))
                 A["instructions"] += row["instructions"]
                 A["functions_run"] += row["functions_run"]
                 A["functions_total"] += row["functions_total"]
@@ -610,6 +723,13 @@ def main():
             "stop_reasons": dict(A["stop"]),
             "interp_stop_reasons": dict(A["istop"]),
             "interp_refused_by_name": dict(A["interp_refused"].most_common(60)),
+            "interp_image_stop_reasons": dict(A["istop_image"]),
+            "interp_image_refused_by_name": dict(A["img_refused"].most_common(40)),
+            "interp_image_other_faults": dict(A["img_other"].most_common(40)),
+            "interp_image_left_library": dict(A["img_left"]),
+            "standalone_functions_returned": A["istop_image"].get("return", 0),
+            "standalone_return_fraction": round(
+                100.0 * A["istop_image"].get("return", 0) / max(1, A["functions_run"]), 4),
             "top_mnemonics": A["mne"].most_common(40),
             "refused_dynamic": refused.most_common(60),
             "refused_by_mnemonic": refused_mne.most_common(40),
@@ -628,6 +748,7 @@ def main():
             "classification": dict(r["cls"]), "mode": dict(r["mode"]),
             "stop_reasons": dict(r["stop"]),
             "interp_stop_reasons": dict(r["istop"]),
+            "interp_image_stop_reasons": dict(r["istop_image"]),
             "automap_pages": r["automap_total"],
         } for r in lib_rows],
     }
@@ -711,6 +832,44 @@ def write_markdown(path, j):
     for k, c in sorted(t["interp_stop_reasons"].items(), key=lambda kv: -kv[1]):
         w("| %s | %d |" % (k, c))
     w("")
+    w("### The region-mapped image run (standalone coverage)\n")
+    w("The same functions run through `a32_interp_run_image` with the library "
+      "mapped at its **real PT_LOAD virtual addresses** (plus a scratch stack, a "
+      "zero-filled scratch region r0-r3 point into, and a return sentinel in lr). "
+      "This is the number that separates \"decodes real code\" from \"runs it\": a "
+      "function the single 0x10000 arena stops at the first data access now runs "
+      "to a `bx lr` and is counted as covering.\n")
+    w("| image outcome | functions |")
+    w("|---------------|-----------|")
+    for k, c in sorted(t.get("interp_image_stop_reasons", {}).items(), key=lambda kv: -kv[1]):
+        w("| %s | %d |" % (k, c))
+    w("")
+    w("**Standalone coverage: %d of %d functions ran to a return (%.2f%%)** -- "
+      "against %d that ran to a return under the single-arena pass.\n"
+      % (t.get("standalone_functions_returned", 0), t["functions_run"],
+         t.get("standalone_return_fraction", 0.0),
+         t.get("interp_stop_reasons", {}).get("ran_to_end", 0)))
+    if t.get("interp_image_refused_by_name"):
+        w("Image-run refusals by name (a run that decodes cleanly but hits an "
+          "unimplemented encoding still faults, never silently covers):\n")
+        w("| # | refused encoding | functions |")
+        w("|---|------------------|-----------|")
+        for i, (lab, c) in enumerate(t["interp_image_refused_by_name"].items(), 1):
+            w("| %d | `%s` | %d |" % (i, lab, c))
+        w("")
+    if t.get("interp_image_other_faults"):
+        w("Image-run other named faults (the run stopped with a name, not a "
+          "wrong answer):\n")
+        w("| # | fault | functions |")
+        w("|---|-------|-----------|")
+        for i, (lab, c) in enumerate(t["interp_image_other_faults"].items(), 1):
+            w("| %d | `%s` | %d |" % (i, lab, c))
+        w("")
+    if t.get("interp_image_left_library"):
+        w("Why the left-library stops happened: "
+          + ", ".join("`%s`=%d" % kv for kv in sorted(t["interp_image_left_library"].items()))
+          + " (a data address no PT_LOAD contains, vs a fetch into a page that "
+            "is not executable).\n")
 
     w("## 4. Encodings the interpreter REFUSES, by dynamic frequency\n")
     w("Each distinct encoding the real code executes is probed against the "
