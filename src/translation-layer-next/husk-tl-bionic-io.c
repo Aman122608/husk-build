@@ -130,6 +130,23 @@ static const char *synth_content(const char *path, char *buf, size_t n)
     return NULL;
 }
 
+/* The directories the synthesised files above live in (/proc, /proc/self, /sys/devices/system/cpu). A caller
+ * that checks the *containing* directory before opening a file -- Mono's FileStream does, and reports a missing
+ * one as "DirectoryNotFoundException: Could not find a part of the path <file>", which is exactly the wording
+ * robot gf's memory probe produced -- must find them. Reaching this is not enough on its own: the file itself
+ * is served by synth_content()/b_open(), so an app whose directory check fails never gets that far. Nothing
+ * here shadows a real host path: iOS has no /proc and no /sys. */
+static bool synth_dir(const char *p)
+{
+    static const char *const dirs[] = {
+        "/proc", "/proc/self",
+        "/sys", "/sys/devices", "/sys/devices/system", "/sys/devices/system/cpu",
+    };
+    if (!p) return false;
+    for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++) if (!strcmp(p, dirs[i])) return true;
+    return false;
+}
+
 /* A file for a path whose contents are made up (/proc/cpuinfo ...), or -1 when the path is real. */
 int tl_synth_open(const char *path)
 {
@@ -733,7 +750,7 @@ static void ftrace(const char *what, const char *path, int r, int e)
     if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0;
     if (tr && said++ < (tr > 1 ? 4000000 : 3000)) tl_log_line("file: %s(%s) -> %d%s", what, path ? path : "(null)", r, r < 0 ? (e == ENOENT ? " ENOENT" : " error") : "");
 }
-static int b_access(const char *p, int m) { char b[1024]; jar_entry jar; if (renpy_hidden_macver(p)) { tl_set_guest_errno(2); return -1; } if (jar_lookup(p, &jar)) { if (!jar.found) { tl_set_guest_errno(2); return -1; } if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } if (vfile_find(p)) { if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } TL_ERRNO_BEGIN(); int r = access(tl_path_resolve(p, b, sizeof(b)), m); int e = errno; TL_ERRNO_END(); ftrace("access", p, r, e); return r; }
+static int b_access(const char *p, int m) { char b[1024]; jar_entry jar; if (renpy_hidden_macver(p)) { tl_set_guest_errno(2); return -1; } if (synth_dir(p)) return 0; if (jar_lookup(p, &jar)) { if (!jar.found) { tl_set_guest_errno(2); return -1; } if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } if (vfile_find(p)) { if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } TL_ERRNO_BEGIN(); int r = access(tl_path_resolve(p, b, sizeof(b)), m); int e = errno; TL_ERRNO_END(); ftrace("access", p, r, e); return r; }
 static int b_chmod(const char *p, unsigned m) { char b[1024]; TL_ERRNO_BEGIN(); int r = chmod(tl_path_resolve(p, b, sizeof(b)), (mode_t)m); TL_ERRNO_END(); return r; }
 static int b_fchmod(int fd, unsigned m) { TL_ERRNO_BEGIN(); int r = fchmod(fd, (mode_t)m); TL_ERRNO_END(); return r; }
 static int b_link(const char *a, const char *b2) { char x[1024], y[1024]; TL_ERRNO_BEGIN(); int r = link(tl_path_resolve(a, x, sizeof(x)), tl_path_resolve(b2, y, sizeof(y))); TL_ERRNO_END(); return r; }
@@ -799,6 +816,7 @@ static int b_stat(const char *p, guest_stat *g)
 {
     char b[1024], c[8192]; struct stat s;
     if (renpy_hidden_macver(p)) { tl_set_guest_errno(2); return -1; }     /* os.path.exists() must say no (see above) */
+    if (synth_dir(p)) { memset(g, 0, sizeof(*g)); g->st_mode = S_IFDIR | 0555; g->st_nlink = 2; g->st_size = 4096; return 0; }
     if (synth_content(p, c, sizeof(c))) { memset(g, 0, sizeof(*g)); g->st_mode = S_IFREG | 0444; g->st_nlink = 1; return 0; }
     jar_entry jar;
     if (jar_lookup(p, &jar)) {
@@ -826,6 +844,7 @@ static int b_lstat(const char *p, guest_stat *g)
 {
     char b[1024]; struct stat s;
     if (renpy_hidden_macver(p)) { tl_set_guest_errno(2); return -1; }     /* see above */
+    if (synth_dir(p)) { memset(g, 0, sizeof(*g)); g->st_mode = S_IFDIR | 0555; g->st_nlink = 2; g->st_size = 4096; return 0; }
     if (p && strstr(p, "jar:file:")) return b_stat(p, g);
     /* /proc/self/exe is a link (to app_process64, as readlink says): Dart finds its own executable through it, and its code assumes a link */
     if (is_proc_exe(p)) {
