@@ -159,6 +159,25 @@ void tl_set_cacerts_dir(const char *dir) { snprintf(g_cacerts, sizeof(g_cacerts)
 static char g_sysfonts[1024];
 void tl_set_system_fonts_dir(const char *dir) { snprintf(g_sysfonts, sizeof(g_sysfonts), "%s", dir ? dir : ""); }
 
+/* ------------------------------------------------------------------ the Macintosh that Ren'Py thinks it is
+ * Ren'Py asks CPython's platform.mac_ver() what it is running on, in renpy/__init__.py's if/elif chain: a Windows
+ * test, then RENPY_PLATFORM starting with "ios", then mac_ver(), and *then* ("ANDROID_PRIVATE" in os.environ) -- the
+ * test that sets renpy.android. mac_ver() answers with the iOS version, because the host's
+ * /System/Library/CoreServices/SystemVersion.plist is right there and readable, so Ren'Py calls itself macintosh and
+ * the Android branch is never reached: renpy.loader never runs its "if renpy.android:" block (loader.py:76), no APK
+ * is indexed, and since Ren'Py's common modules exist only in the APK (assets/x-renpy/x-common/) the first
+ * load_module("_errorhandling") raises "Module _errorhandling could not be loaded." (script.py:377). Setting
+ * ANDROID_PRIVATE alone cannot help: that branch is never tested. So for a Ren'Py app -- and only then; the flag is
+ * turned on by tl_renpy_prepare, the layer's one Ren'Py entry point -- the guest is told that one host file is not
+ * there, mac_ver() falls through to the Android test, and renpy.android is true. Nothing else in the guest reads it,
+ * and no other engine turns the flag on. */
+static bool g_renpy_android;
+void tl_renpy_android_on(void) { g_renpy_android = true; }
+static bool renpy_hidden_macver(const char *p)
+{
+    return g_renpy_android && p && (strstr(p, "/CoreServices/SystemVersion.plist") != NULL);
+}
+
 const char *tl_path_resolve(const char *path, char *buf, size_t n)
 {
     if (!path) return path;
@@ -540,6 +559,7 @@ static int b_open(const char *path, int flags, unsigned mode)
 {
     char buf[1024]; static __thread char content[32768];
     jar_entry jar;
+    if (renpy_hidden_macver(path)) { tl_set_guest_errno(2); return -1; }   /* Ren'Py must not look like a Mac (see above) */
     if (jar_lookup(path, &jar)) {
         if (!jar.found) jar_note(&jar, false);
         if (!jar.found || jar.dir || (flags & 3) != 0) { tl_set_guest_errno(jar.dir ? 21 : 2); ftrace_open_jar(path, -1); return -1; }
@@ -713,7 +733,7 @@ static void ftrace(const char *what, const char *path, int r, int e)
     if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0;
     if (tr && said++ < (tr > 1 ? 4000000 : 3000)) tl_log_line("file: %s(%s) -> %d%s", what, path ? path : "(null)", r, r < 0 ? (e == ENOENT ? " ENOENT" : " error") : "");
 }
-static int b_access(const char *p, int m) { char b[1024]; jar_entry jar; if (jar_lookup(p, &jar)) { if (!jar.found) { tl_set_guest_errno(2); return -1; } if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } if (vfile_find(p)) { if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } TL_ERRNO_BEGIN(); int r = access(tl_path_resolve(p, b, sizeof(b)), m); int e = errno; TL_ERRNO_END(); ftrace("access", p, r, e); return r; }
+static int b_access(const char *p, int m) { char b[1024]; jar_entry jar; if (renpy_hidden_macver(p)) { tl_set_guest_errno(2); return -1; } if (jar_lookup(p, &jar)) { if (!jar.found) { tl_set_guest_errno(2); return -1; } if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } if (vfile_find(p)) { if (m & 2) { tl_set_guest_errno(13); return -1; } return 0; } TL_ERRNO_BEGIN(); int r = access(tl_path_resolve(p, b, sizeof(b)), m); int e = errno; TL_ERRNO_END(); ftrace("access", p, r, e); return r; }
 static int b_chmod(const char *p, unsigned m) { char b[1024]; TL_ERRNO_BEGIN(); int r = chmod(tl_path_resolve(p, b, sizeof(b)), (mode_t)m); TL_ERRNO_END(); return r; }
 static int b_fchmod(int fd, unsigned m) { TL_ERRNO_BEGIN(); int r = fchmod(fd, (mode_t)m); TL_ERRNO_END(); return r; }
 static int b_link(const char *a, const char *b2) { char x[1024], y[1024]; TL_ERRNO_BEGIN(); int r = link(tl_path_resolve(a, x, sizeof(x)), tl_path_resolve(b2, y, sizeof(y))); TL_ERRNO_END(); return r; }
@@ -778,6 +798,7 @@ static int b_fstat(int fd, guest_stat *g);
 static int b_stat(const char *p, guest_stat *g)
 {
     char b[1024], c[8192]; struct stat s;
+    if (renpy_hidden_macver(p)) { tl_set_guest_errno(2); return -1; }     /* os.path.exists() must say no (see above) */
     if (synth_content(p, c, sizeof(c))) { memset(g, 0, sizeof(*g)); g->st_mode = S_IFREG | 0444; g->st_nlink = 1; return 0; }
     jar_entry jar;
     if (jar_lookup(p, &jar)) {
@@ -804,6 +825,7 @@ static int b_stat(const char *p, guest_stat *g)
 static int b_lstat(const char *p, guest_stat *g)
 {
     char b[1024]; struct stat s;
+    if (renpy_hidden_macver(p)) { tl_set_guest_errno(2); return -1; }     /* see above */
     if (p && strstr(p, "jar:file:")) return b_stat(p, g);
     /* /proc/self/exe is a link (to app_process64, as readlink says): Dart finds its own executable through it, and its code assumes a link */
     if (is_proc_exe(p)) {

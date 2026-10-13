@@ -156,6 +156,34 @@ static bool tl_renpy_prepare(const char *apk, const char *data_dir)
     tl_log_line("husk: renpy env ANDROID_PUBLIC=%s", pub);
     tl_log_line("husk: renpy env ANDROID_OLD_PUBLIC=%s", pub);
     tl_log_line("husk: renpy env RENPY_PLATFORM=android-arm64");
+    /* The guest must not look like a Macintosh to Ren'Py either. renpy/__init__.py decides what it is running on by an
+       if/elif chain -- a Windows test, RENPY_PLATFORM starting with "ios", then platform.mac_ver(), and only then
+       ("ANDROID_PRIVATE" in os.environ). On iOS mac_ver() reads the host's SystemVersion.plist and answers with the
+       iOS version, so Ren'Py calls itself macintosh and never tests ANDROID_PRIVATE: renpy.android stays false, the APK
+       is never indexed, and no common module is found. tl_renpy_android_on() (husk-tl-bionic-io.c) makes the guest see
+       that one host file as absent, so mac_ver() falls through to the Android branch. */
+    { void tl_renpy_android_on(void); tl_renpy_android_on(); }
+    /* One line, once per app, naming what the loader will ask for and what the layer can see, so the next phone log
+       settles this module lookup without another round trip: the directory the loader scans, the entry name it asks the
+       APK for, how many entries the layer finds under that directory, and the platform gate above. */
+    {
+        tl_zip z; char err[160];
+        int entries = 0; bool named = false;
+        if (tl_zip_open(&z, apk, err, sizeof(err))) {
+            for (size_t i = 0; i < z.count; i++) {
+                const char *nm = z.entries[i].name;
+                if (!strncmp(nm, "assets/x-renpy/x-common/", 24)) entries++;
+                if (!strcmp(nm, "assets/x-renpy/x-common/x-_errorhandling.rpymc")) named = true;
+            }
+            tl_zip_close(&z);
+        }
+        struct stat st;
+        bool host_has = stat("/System/Library/CoreServices/SystemVersion.plist", &st) == 0;
+        tl_log_line("husk: renpy lookup: dir 'assets/x-renpy/x-common/' entries %d, name 'x-_errorhandling.rpymc' %s; "
+                    "platform.mac_ver source %s -> guest is android, renpy.android true",
+                    entries, named ? "present" : "MISSING",
+                    host_has ? "present on the host, now hidden from the guest" : "absent on the host already");
+    }
     return true;
 }
 
