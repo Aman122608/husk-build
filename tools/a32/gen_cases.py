@@ -271,12 +271,12 @@ def it_mask(firstcond, senses):
 class Body:
     def __init__(self):
         self.items = []        # dict(mode,size,val,text)
-        self.post = []         # raw words emitted after the fragment (excluded from code)
         self.labels = {}
         self.fixups = []
 
-    def w(self, word, text, mode="arm"):
-        self.items.append(dict(mode=mode, size=4, val=word & 0xFFFFFFFF, text=text))
+    def w(self, word, text, mode="arm", data=False):
+        self.items.append(dict(mode=mode, size=4, val=word & 0xFFFFFFFF,
+                               text=text, data=data))
         return len(self.items) - 1
 
     def t(self, h, text):
@@ -400,6 +400,7 @@ class Body:
             else:
                 assert o % 2 == 0, "thumb item at unaligned offset %d" % o
             o += it["size"]
+        self.offs = offs        # item-index -> byte offset (plus the end offset)
         return self.items
 
 
@@ -415,7 +416,7 @@ for _n, _c in COND.items():
 CASES = []
 
 
-def add(name, group, desc, init, body, mode=None):
+def add(name, group, desc, init, body, mode=None, placed=None):
     cid = len(CASES) + 1
     for reg in init:
         assert reg in (0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11), \
@@ -426,8 +427,34 @@ def add(name, group, desc, init, body, mode=None):
         total = sum(it["size"] for it in items)
         assert total % 4 == 0, \
             "an ARM-entry fragment must be a multiple of 4 bytes (the ARM capture follows it unshifted)"
+    # Placement-dependent compared registers. A GPR the case derives from the
+    # fragment's own PC (ADR / a BLX target) or from the scratch-window base (r9)
+    # holds an absolute ADDRESS, not a value: the oracle's code and window sit at
+    # addresses the interpreter's arena (code 0x10000, window 0x18000) cannot
+    # share, so the bare numbers differ for no architectural reason. Each such
+    # register is recorded here with the architectural content that IS comparable
+    # -- its offset from the side's own base and the Thumb state bit -- and
+    # a32diff.c checks that on each side instead of diffing the absolute values.
+    # `spec` is either {"base":"code","label":L,"plus":n,"odd":b,"reason":S} or
+    # {"base":"sp","offset":n,"odd":b,"reason":S}; the reason is emitted into the
+    # generated header as the case's own record of why the register is special.
+    placed_list = []
+    for reg, spec in sorted((placed or {}).items()):
+        if spec["base"] == "code":
+            off = body.offs[body.labels[spec["label"]]] + spec.get("plus", 0)
+        else:
+            off = spec["offset"]
+        placed_list.append(dict(reg=reg, base=1 if spec["base"] == "sp" else 0,
+                                offset=off, odd=1 if spec.get("odd") else 0,
+                                reason=spec["reason"]))
     CASES.append(dict(id=cid, name=name, group=group, desc=desc,
-                      init=init, items=items, post=body.post, mode=entry))
+                      init=init, items=items, mode=entry,
+                      placed=placed_list))
+    # There is deliberately NO Body.post: a word that must be in the case image
+    # has to be an ITEM of the fragment (like a real function's literal pool,
+    # see gen_t_ldr_lit), because the interpreter maps exactly the fragment's
+    # bytes. A word emitted only into the oracle's .S would be invisible to the
+    # interpreter -- the exact gap that made t_ldr_lit read 0.
 
 
 # ---------------------------------------------------------------------------
@@ -906,7 +933,13 @@ def gen_t_hi():
         bd.t(t_mov8(2, 0x66), "movs r2, #0x66")
         bd.t(t_bx(14), "bx lr")
         bd.label("done")
-        add("t_blx_reg_%d" % k, "thumb-hi", "T BLX register (odd, stays Thumb) + BX lr", {}, bd)
+        add("t_blx_reg_%d" % k, "thumb-hi", "T BLX register (odd, stays Thumb) + BX lr", {},
+            bd, placed={3: dict(
+                base="code", label="tgt", plus=1, odd=True,
+                reason="r3 = ADR(tgt)+1, the target address of `blx r3`: an address of "
+                       "this case's own code. Only its Thumb state bit (odd) is "
+                       "architectural; the BLX/BX path is proven by r1=0x55, r2=0x66 "
+                       "and nzcvq.T.")})
 
 
 def gen_t_ldst_reg():
@@ -948,18 +981,28 @@ def gen_t_ldst_imm():
 
 
 def gen_t_ldr_lit():
-    # LDR literal reads a word placed after the fragment (so the interpreter
-    # never executes the literal as an instruction): base = Align(pc+4,4).
+    # LDR literal reads a word that lives INSIDE the fragment -- exactly like a
+    # real function's literal pool, which sits after the instructions and an
+    # unconditional branch over it. Keeping the literal in the fragment's own
+    # bytes (rather than in Body.post, which is emitted only into the oracle's
+    # .S) is what lets the interpreter read it too: the interpreter maps exactly
+    # the fragment's code bytes and zeroes everything past code_len, so a word
+    # placed after the fragment was never in its image and it read 0 instead.
+    # With the pool inside the image, both engines compute the same PC-relative
+    # address (Align(pc+4,4) + imm8*4) and read the same word.
     for k, imm8 in enumerate((1, 2, 3)):
         bd = Body()
         bd.t(t_ldr_lit(0, imm8), "ldr r0, [pc, #%d]" % (imm8 * 4))
-        # pad the fragment to exactly imm8*4 + 4 - 4 = imm8*4 bytes so the
-        # literal lands at Align(4,4) + imm8*4 = 4 + imm8*4.
+        # pad the fragment so the literal lands at Align(pc+4,4) + imm8*4
+        # = 4 + imm8*4 past a 4-aligned entry.
         while _bytes_len(bd) < imm8 * 4:
             bd.t(t_nop(), "nop")
-        bd.post.append(0x12345678 + k)
+        bd.tb("done")                 # 2-byte unconditional b over the literal
+        bd.t(t_nop(), "nop")          # 2 bytes of filler, skipped by the branch
+        bd.w(0x12345678 + k, "literal read by this fragment", mode="thumb", data=True)
+        bd.label("done")              # == fragment end: the interpreter stops here
         add("t_ldr_lit_%d" % k, "thumb-ldst",
-            "T LDR literal reads a word after the fragment", {}, bd)
+            "T LDR literal reads a word in the fragment's own literal pool", {}, bd)
 
 
 def gen_t_sp():
@@ -979,7 +1022,13 @@ def gen_t_add_rdsp():
         bd.t(t_add_rdsp(0, 0), "add r0, sp, #0")
         bd.t(t_add_rdsp(1, (off >> 2) + 2), "add r1, sp, #%d" % (off + 8))
         bd.t(t_sub3(0, 1, 0), "subs r0, r1, r0")   # the architectural delta (off+8)
-        add("t_add_rdsp_%d" % k, "thumb-adr", "T ADD rd,sp,#imm8*4 (delta recorded)", {}, bd)
+        add("t_add_rdsp_%d" % k, "thumb-adr", "T ADD rd,sp,#imm8*4 (delta recorded)", {},
+            bd, placed={1: dict(
+                base="sp", offset=off + 8, odd=False,
+                reason="r1 = sp + #%d = r9 + %d: an address derived from the "
+                       "scratch-window base, which the oracle and the interpreter map "
+                       "at different addresses. Checked as (r1 - r9) on both sides."
+                       % (off + 8, off + 8))})
 
 
 def gen_t_adr():
@@ -995,7 +1044,12 @@ def gen_t_adr():
         bd.label("b")
         bd.t(t_nop(), "nop")
         bd.label("done")
-        add("t_adr_%d" % k, "thumb-adr", "T ADR of two labels; the difference", {}, bd)
+        add("t_adr_%d" % k, "thumb-adr", "T ADR of two labels; the difference", {},
+            bd, placed={1: dict(
+                base="code", label="b", plus=0, odd=False,
+                reason="r1 = ADR(b): an address of this case's own code. The "
+                       "architectural content is the delta b - ADR(a), already "
+                       "compared as r0 (SUBS r0, r1, r0).")})
 
 
 def gen_t_pushpop():
@@ -1434,7 +1488,12 @@ def gen_t_interworking():
         bd.label("back")                                            # 24 (Thumb)
         bd.t(t_mov8(2, 0x33), "movs r2, #0x33")
         add("t_iw_t2a_%d" % k, "interwork",
-            "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", {}, bd)
+            "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", {},
+            bd, placed={3: dict(
+                base="code", label="arm", plus=0, odd=False,
+                reason="r3 = ADR(arm): an address of this case's own code (ARM entry, "
+                       "so bit0 must be 0). The interworking is proven by r1=0x22, "
+                       "r2=0x33 and nzcvq.T.")})
     # ARM entry -> Thumb (BLX register to an odd address) -> back to ARM.
     for k in range(3):
         bd = Body()
@@ -1449,7 +1508,13 @@ def gen_t_interworking():
         bd.t(t_bx(14), "bx lr")                                     # -> ARM
         bd.label("end")
         add("t_iw_a2t_%d" % k, "interwork",
-            "A32 BLX(register, odd)->Thumb->BX lr->ARM", {}, bd)
+            "A32 BLX(register, odd)->Thumb->BX lr->ARM", {},
+            bd, placed={3: dict(
+                base="code", label="thumb", plus=1, odd=True,
+                reason="r3 = ADR(thumb)+1, the odd Thumb target of `blx r3`: an "
+                       "address of this case's own code. Only the state bit (odd) is "
+                       "architectural; interworking is proven by r0=0x55, r1=0x44 and "
+                       "nzcvq.T.")})
     # BLX immediate (32-bit Thumb) switches to ARM.
     for k in range(2):
         bd = Body()
@@ -1607,18 +1672,6 @@ def emit_s():
                   "\t.word\t1f + 1",
                   "\t.thumb", "\t.p2align 1", "1:"]
             emit_body_items(c["items"], o, "thumb")
-            if c["post"]:
-                # A 4-byte branch over the literal. Without it the oracle FALLS
-                # INTO the data and executes it -- t_ldr_lit's word is `str r0,
-                # [r7, r6]`, a store to address 0, i.e. SIGSEGV. Four bytes also
-                # puts the literal at the address the fragment's own PC-relative
-                # load computes (fragment end + 4), so the case actually reads the
-                # literal the generator placed for it.
-                o.append("\tb.w\t2f\t/* jump over this fragment's literal */")
-            for w in c["post"]:
-                o.append("\t.word\t0x%08x\t/* literal read by this fragment */" % (w & 0xFFFFFFFF))
-            if c["post"]:
-                o.append("2:")
             # The Thumb capture (not executed by the interpreter: it stops at the
             # fragment's byte end). Capture BEFORE the return gadget clobbers r3.
             #
@@ -1697,6 +1750,31 @@ def emit_h():
                  % (c["id"], c["name"], c["group"], c["mode"], _cstr(c["desc"]), c["id"]))
     o += ["};", "",
           "#define A32_CASE_COUNT (sizeof(a32_cases) / sizeof(a32_cases[0]))", ""]
+
+    o += ["/* Compared GPRs whose value is an ADDRESS the case derives from its own",
+          " * code (base 0) or from the scratch-window base r9 (base 1). The absolute",
+          " * value is loader-dependent -- the oracle's code/window and the",
+          " * interpreter's arena sit at different addresses -- so a32diff never diffs",
+          " * the two numbers; it checks each side against its OWN base + offset and",
+          " * against the Thumb state bit (`odd`). `reason` is the case's own record of",
+          " * why the register is placement-dependent and what still proves it. */",
+          "struct a32_placed_reg {",
+          "    int         id;",
+          "    int         reg;",
+          "    int         base;    /* 0 = case code base, 1 = scratch base (r9) */",
+          "    uint32_t    offset;  /* reg == base + offset */",
+          "    int         odd;     /* 1 if the address must be odd (Thumb bit set) */",
+          "    const char *reason;",
+          "};",
+          "static const struct a32_placed_reg a32_placed_regs[] = {"]
+    for c in CASES:
+        for p in c["placed"]:
+            o.append('    { %d, %d, %d, 0x%xu, %d, "%s" },'
+                     % (c["id"], p["reg"], p["base"], p["offset"], p["odd"],
+                        _cstr(p["reason"])))
+    o += ["};", "",
+          "#define A32_PLACED_COUNT (sizeof(a32_placed_regs) / sizeof(a32_placed_regs[0]))",
+          ""]
 
     for c in CASES:
         o.append("static const uint8_t a32_code_%d[%d] = {" % (c["id"], max(1, len(_bytes(c)))))

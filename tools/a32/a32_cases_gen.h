@@ -1653,9 +1653,9 @@ static const struct a32_case_meta a32_cases[] = {
     { 649, "t_strb_ldrb_0", "thumb-ldst", "thumb", "handwritten", "T STRB/LDRB imm5", a32_case_649 },
     { 650, "t_strb_ldrb_1", "thumb-ldst", "thumb", "handwritten", "T STRB/LDRB imm5", a32_case_650 },
     { 651, "t_strb_ldrb_2", "thumb-ldst", "thumb", "handwritten", "T STRB/LDRB imm5", a32_case_651 },
-    { 652, "t_ldr_lit_0", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word after the fragment", a32_case_652 },
-    { 653, "t_ldr_lit_1", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word after the fragment", a32_case_653 },
-    { 654, "t_ldr_lit_2", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word after the fragment", a32_case_654 },
+    { 652, "t_ldr_lit_0", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word in the fragment's own literal pool", a32_case_652 },
+    { 653, "t_ldr_lit_1", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word in the fragment's own literal pool", a32_case_653 },
+    { 654, "t_ldr_lit_2", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word in the fragment's own literal pool", a32_case_654 },
     { 655, "t_sp_ldst_0", "thumb-sp", "thumb", "handwritten", "T STR/LDR [sp,#imm8*4]", a32_case_655 },
     { 656, "t_sp_ldst_1", "thumb-sp", "thumb", "handwritten", "T STR/LDR [sp,#imm8*4]", a32_case_656 },
     { 657, "t_sp_ldst_2", "thumb-sp", "thumb", "handwritten", "T STR/LDR [sp,#imm8*4]", a32_case_657 },
@@ -1975,6 +1975,40 @@ static const struct a32_case_meta a32_cases[] = {
 };
 
 #define A32_CASE_COUNT (sizeof(a32_cases) / sizeof(a32_cases[0]))
+
+/* Compared GPRs whose value is an ADDRESS the case derives from its own
+ * code (base 0) or from the scratch-window base r9 (base 1). The absolute
+ * value is loader-dependent -- the oracle's code/window and the
+ * interpreter's arena sit at different addresses -- so a32diff never diffs
+ * the two numbers; it checks each side against its OWN base + offset and
+ * against the Thumb state bit (`odd`). `reason` is the case's own record of
+ * why the register is placement-dependent and what still proves it. */
+struct a32_placed_reg {
+    int         id;
+    int         reg;
+    int         base;    /* 0 = case code base, 1 = scratch base (r9) */
+    uint32_t    offset;  /* reg == base + offset */
+    int         odd;     /* 1 if the address must be odd (Thumb bit set) */
+    const char *reason;
+};
+static const struct a32_placed_reg a32_placed_regs[] = {
+    { 616, 3, 0, 0xdu, 1, "r3 = ADR(tgt)+1, the target address of `blx r3`: an address of this case's own code. Only its Thumb state bit (odd) is architectural; the BLX/BX path is proven by r1=0x55, r2=0x66 and nzcvq.T." },
+    { 617, 3, 0, 0xdu, 1, "r3 = ADR(tgt)+1, the target address of `blx r3`: an address of this case's own code. Only its Thumb state bit (odd) is architectural; the BLX/BX path is proven by r1=0x55, r2=0x66 and nzcvq.T." },
+    { 659, 1, 1, 0x8u, 0, "r1 = sp + #8 = r9 + 8: an address derived from the scratch-window base, which the oracle and the interpreter map at different addresses. Checked as (r1 - r9) on both sides." },
+    { 660, 1, 1, 0xcu, 0, "r1 = sp + #12 = r9 + 12: an address derived from the scratch-window base, which the oracle and the interpreter map at different addresses. Checked as (r1 - r9) on both sides." },
+    { 661, 1, 1, 0x18u, 0, "r1 = sp + #24 = r9 + 24: an address derived from the scratch-window base, which the oracle and the interpreter map at different addresses. Checked as (r1 - r9) on both sides." },
+    { 662, 1, 1, 0x44u, 0, "r1 = sp + #68 = r9 + 68: an address derived from the scratch-window base, which the oracle and the interpreter map at different addresses. Checked as (r1 - r9) on both sides." },
+    { 663, 1, 0, 0xcu, 0, "r1 = ADR(b): an address of this case's own code. The architectural content is the delta b - ADR(a), already compared as r0 (SUBS r0, r1, r0)." },
+    { 664, 1, 0, 0xcu, 0, "r1 = ADR(b): an address of this case's own code. The architectural content is the delta b - ADR(a), already compared as r0 (SUBS r0, r1, r0)." },
+    { 963, 3, 0, 0x10u, 0, "r3 = ADR(arm): an address of this case's own code (ARM entry, so bit0 must be 0). The interworking is proven by r1=0x22, r2=0x33 and nzcvq.T." },
+    { 964, 3, 0, 0x10u, 0, "r3 = ADR(arm): an address of this case's own code (ARM entry, so bit0 must be 0). The interworking is proven by r1=0x22, r2=0x33 and nzcvq.T." },
+    { 965, 3, 0, 0x10u, 0, "r3 = ADR(arm): an address of this case's own code (ARM entry, so bit0 must be 0). The interworking is proven by r1=0x22, r2=0x33 and nzcvq.T." },
+    { 966, 3, 0, 0x19u, 1, "r3 = ADR(thumb)+1, the odd Thumb target of `blx r3`: an address of this case's own code. Only the state bit (odd) is architectural; interworking is proven by r0=0x55, r1=0x44 and nzcvq.T." },
+    { 967, 3, 0, 0x19u, 1, "r3 = ADR(thumb)+1, the odd Thumb target of `blx r3`: an address of this case's own code. Only the state bit (odd) is architectural; interworking is proven by r0=0x55, r1=0x44 and nzcvq.T." },
+    { 968, 3, 0, 0x19u, 1, "r3 = ADR(thumb)+1, the odd Thumb target of `blx r3`: an address of this case's own code. Only the state bit (odd) is architectural; interworking is proven by r0=0x55, r1=0x44 and nzcvq.T." },
+};
+
+#define A32_PLACED_COUNT (sizeof(a32_placed_regs) / sizeof(a32_placed_regs[0]))
 
 static const uint8_t a32_code_1[4] = {
     0x02, 0x00, 0x01, 0xe0,
@@ -4002,14 +4036,16 @@ static const uint8_t a32_code_650[8] = {
 static const uint8_t a32_code_651[8] = {
     0x4f, 0x46, 0xf9, 0x71, 0xf8, 0x79, 0x00, 0x27,
 };
-static const uint8_t a32_code_652[4] = {
-    0x01, 0x48, 0x00, 0xbf,
+static const uint8_t a32_code_652[12] = {
+    0x01, 0x48, 0x00, 0xbf, 0x02, 0xe0, 0x00, 0xbf, 0x78, 0x56, 0x34, 0x12,
 };
-static const uint8_t a32_code_653[8] = {
-    0x02, 0x48, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf,
+static const uint8_t a32_code_653[16] = {
+    0x02, 0x48, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x02, 0xe0, 0x00, 0xbf, 0x79, 0x56, 0x34,
+    0x12,
 };
-static const uint8_t a32_code_654[12] = {
-    0x03, 0x48, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf,
+static const uint8_t a32_code_654[20] = {
+    0x03, 0x48, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x02, 0xe0, 0x00,
+    0xbf, 0x7a, 0x56, 0x34, 0x12,
 };
 static const uint8_t a32_code_655[8] = {
     0xcd, 0x46, 0x10, 0xb0, 0x00, 0x91, 0x00, 0x98,
@@ -5626,9 +5662,9 @@ static const struct a32_case_words a32_case_words[] = {
     { 649, "t_strb_ldrb_0", "thumb-ldst", "T STRB/LDRB imm5", "thumb", { 0, 0x0000005au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_649 },
     { 650, "t_strb_ldrb_1", "thumb-ldst", "T STRB/LDRB imm5", "thumb", { 0, 0x0000005au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_650 },
     { 651, "t_strb_ldrb_2", "thumb-ldst", "T STRB/LDRB imm5", "thumb", { 0, 0x0000005au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_651 },
-    { 652, "t_ldr_lit_0", "thumb-ldst", "T LDR literal reads a word after the fragment", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_652 },
-    { 653, "t_ldr_lit_1", "thumb-ldst", "T LDR literal reads a word after the fragment", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_653 },
-    { 654, "t_ldr_lit_2", "thumb-ldst", "T LDR literal reads a word after the fragment", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_654 },
+    { 652, "t_ldr_lit_0", "thumb-ldst", "T LDR literal reads a word in the fragment's own literal pool", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_652 },
+    { 653, "t_ldr_lit_1", "thumb-ldst", "T LDR literal reads a word in the fragment's own literal pool", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_653 },
+    { 654, "t_ldr_lit_2", "thumb-ldst", "T LDR literal reads a word in the fragment's own literal pool", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_654 },
     { 655, "t_sp_ldst_0", "thumb-sp", "T STR/LDR [sp,#imm8*4]", "thumb", { 0, 0x0badf00du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_655 },
     { 656, "t_sp_ldst_1", "thumb-sp", "T STR/LDR [sp,#imm8*4]", "thumb", { 0, 0x0badf00du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_656 },
     { 657, "t_sp_ldst_2", "thumb-sp", "T STR/LDR [sp,#imm8*4]", "thumb", { 0, 0x0badf00du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_657 },

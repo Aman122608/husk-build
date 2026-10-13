@@ -93,6 +93,8 @@ def decode_check(cases):
     mnems = {}
     for c in cases:
         for i, it in enumerate(c["items"]):
+            if it.get("data"):
+                continue        # a literal-pool word: data in the fragment, not an instruction
             b = (it["val"] & (0xFFFF if it["size"] == 2 else 0xFFFFFFFF))
             b = b.to_bytes(it["size"], "little")
             md = md_thumb if it["mode"] == "thumb" else md_arm
@@ -122,8 +124,7 @@ def run_unicorn(cases, fp_init):
     goldens, manifest = [], []
     faults = 0
     for c in cases:
-        code = gen_cases._bytes(c) + b"".join(
-            (w & 0xFFFFFFFF).to_bytes(4, "little") for w in c["post"])
+        code = gen_cases._bytes(c)
         uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
         uc.mem_map(CODE_BASE, ARENA)
         uc.mem_write(CODE_BASE, code)
@@ -181,7 +182,7 @@ def run_unicorn(cases, fp_init):
 
 # ---------------------------------------------------------------------------
 # Wrapper check (dev-only). Build the WHOLE per-case wrapper -- the prologue the
-# generator emits, the case's own bytes and post literals, and the capture +
+# generator emits, the case's own bytes, and the capture +
 # return epilogue in the mode the fixed .S pins -- run it under Unicorn, and
 # assert it RETURNS (reaches the sentinel LR with no fault) with the state it
 # captured equal to a direct run of the fragment.
@@ -334,21 +335,15 @@ def wrapper_check(cases):
     for c in cases:
         G = gen_cases
         frag = G._bytes(c)
-        post = _u32(c["post"])
         frag_off = _prologue_len(c)          # where the fragment starts
         pro = _u32(_prologue_words(c, frag_off))
         assert len(pro) == frag_off
-        # between the fragment and the capture: the generator's b.w over the
-        # post-fragment literal (Thumb entry only) and then the literal itself
-        guard = b""
-        if c["mode"] == "thumb" and c["post"]:
-            a = frag_off + len(frag)
-            off = (a + 4 + len(post)) - ((a + 4) & ~3)
-            guard = _u16(_t_bw(off))
-            assert len(guard) == 4
-        a = frag_off + len(frag) + len(guard) + len(post)
+        # The fragment now carries its own literal pool (see gen_cases.gen_t_ldr_lit):
+        # there is no post-fragment guard/literal section in the .S any more, so the
+        # capture follows the fragment immediately.
+        a = frag_off + len(frag)
         epi = _u32(_epilogue_arm()) if c["mode"] == "arm" else _epilogue_thumb(a)
-        image = pro + frag + guard + post + epi
+        image = pro + frag + epi
 
         def fresh():
             uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)

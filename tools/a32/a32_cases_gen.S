@@ -29778,9 +29778,9 @@ a32_case_652:
 1:
 	.hword	0x4801	/* ldr r0, [pc, #4] */
 	.hword	0xbf00	/* nop */
-	b.w	2f	/* jump over this fragment's literal */
+	.hword	0xe002	/* b done */
+	.hword	0xbf00	/* nop */
 	.word	0x12345678	/* literal read by this fragment */
-2:
 	.thumb
 	.p2align 1
 	stmia	r12, {r0-r11}
@@ -29840,9 +29840,9 @@ a32_case_653:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
-	b.w	2f	/* jump over this fragment's literal */
+	.hword	0xe002	/* b done */
+	.hword	0xbf00	/* nop */
 	.word	0x12345679	/* literal read by this fragment */
-2:
 	.thumb
 	.p2align 1
 	stmia	r12, {r0-r11}
@@ -29904,9 +29904,9 @@ a32_case_654:
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
 	.hword	0xbf00	/* nop */
-	b.w	2f	/* jump over this fragment's literal */
+	.hword	0xe002	/* b done */
+	.hword	0xbf00	/* nop */
 	.word	0x1234567a	/* literal read by this fragment */
-2:
 	.thumb
 	.p2align 1
 	stmia	r12, {r0-r11}

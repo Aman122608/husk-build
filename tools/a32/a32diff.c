@@ -373,6 +373,19 @@ static int rx_proof(void)
 static const int a32_interp_cmp_reg[] =
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15 };
 
+/* A compared register the case's own metadata marks as an ADDRESS of the case's
+ * code or of its scratch window (see the a32_placed_regs table gen_cases.py
+ * emits). Its value is real architectural state but its absolute magnitude is
+ * placement-dependent, so it is checked against the side's OWN base, never
+ * against the other side's number. */
+static const struct a32_placed_reg *a32_placed(const int id, const int reg)
+{
+    for (size_t i = 0; i < A32_PLACED_COUNT; i++)
+        if (a32_placed_regs[i].id == id && a32_placed_regs[i].reg == reg)
+            return &a32_placed_regs[i];
+    return NULL;
+}
+
 static int cmp_u32_golden(uint32_t x, jv *g, const char *field, int id, const char *name)
 {
     uint64_t y = jhex(jget(g, field));
@@ -396,9 +409,40 @@ static int interp_cmp(struct a32_result *r, jv *g, int id, const char *name)
 {
     int d = 0;
     jv *gr = jget(g, "regs");
+    uint32_t gscratch = (gr && gr->n > 9) ? (uint32_t)jhex(gr->items[9]) : 0;
     for (size_t k = 0; k < sizeof(a32_interp_cmp_reg) / sizeof(a32_interp_cmp_reg[0]); k++) {
         int reg = a32_interp_cmp_reg[k];
         uint64_t y = (gr && (size_t)reg < gr->n) ? jhex(gr->items[reg]) : 0;
+        const struct a32_placed_reg *pr = a32_placed(id, reg);
+        if (pr) {
+            /* A placement-dependent address: compare the architectural content
+             * -- the offset from THIS side's own base and the Thumb state bit --
+             * on each side, and never the two absolute numbers. */
+            uint32_t ibase = pr->base ? r->regs[9] : A32_INTERP_ARENA_BASE;
+            int bad = ((r->regs[reg] - ibase) != pr->offset) ||
+                      ((r->regs[reg] & 1u) != (uint32_t)pr->odd);
+            /* The scratch base is in the golden too (regs[9]), so a
+             * scratch-relative address is fully checked on both sides; a
+             * code-relative one has no oracle base in the golden, so only its
+             * architectural part (the state bit) is checked there. */
+            if (pr->base)
+                bad |= ((uint32_t)y - gscratch) != pr->offset;
+            bad |= ((uint32_t)y & 1u) != (uint32_t)pr->odd;   /* state bit */
+            bad |= (y == 0);                                  /* an address is not 0 */
+            if (bad) {
+                char gb[64] = "";
+                if (pr->base)
+                    snprintf(gb, sizeof(gb), " golden base(r9)=0x%08x", gscratch);
+                d++;
+                snprintf(g_last_field, sizeof(g_last_field), "regs[%d](placed)", reg);
+                printf("  MISMATCH case %d (%s) field regs[%d]: placement-dependent "
+                       "address WRONG -- %s (interp base=0x%08x reg=0x%08x want off=0x%x "
+                       "odd=%d; golden reg=0x%08x%s)\n",
+                       id, name, reg, pr->reason, ibase, r->regs[reg], pr->offset,
+                       pr->odd, (unsigned)y, gb);
+            }
+            continue;
+        }
         if ((uint64_t)r->regs[reg] == y) continue;
         d++;
         snprintf(g_last_field, sizeof(g_last_field), "regs[%d]", reg);
