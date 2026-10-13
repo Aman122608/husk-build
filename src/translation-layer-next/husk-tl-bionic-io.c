@@ -429,6 +429,85 @@ static void vfd_note_dropped(int fd, const char *call, long r, int host_errno)
         tl_log_line("husk: virtual file: %s on fd %d returned %ld bytes with NO redirect: this descriptor last served the APK entry %s (%llu bytes) and its redirect was dropped when the descriptor was closed or replaced, so these are the APK's own bytes at the APK's own offset -- a wrong file, silently.",
                     call, fd, r, g_vfd[fd].name[0] ? g_vfd[fd].name : "(unnamed)", (unsigned long long)g_vfd[fd].size);
 }
+
+/* ------------------------------------------------- a kernel write into a guest buffer, and where it lands
+ *
+ * A read does not only hand the layer a file and an offset -- it hands the KERNEL an address to write the
+ * bytes into. That address is the guest's own (the guest runs natively, so a guest address is already a host
+ * address and this layer performs no guest->host translation on the path), and the layer passes it through
+ * unchanged. So a read can fail with EFAULT (14) with the file, the offset and the descriptor all correct:
+ * errno 14 is the kernel saying it will not write THERE. EBADF 9, EINVAL 22, EIO 5 and ESPIPE 29 are what a
+ * wrong descriptor, offset or file answer; 14 is the destination, and nothing else.
+ *
+ * When the destination can be unwritable while the GUEST still believes it writable: the JIT region
+ * (husk-tl-xmem.c) is one set of pages seen through two views a fixed delta apart. The guest's own stores into
+ * the EXECUTABLE view (a JIT's code arena the loader's adrp retarget handed it, or any buffer the layer put
+ * there) are carried out by the code-write emulation through the other view (husk-tl-codewrite.c put()), so
+ * to the guest the memory is writable -- but a kernel read()/pread() writes through the page tables, meets the
+ * view's real protection (read+execute) and answers EFAULT. The two views are the same pages, so the kernel is
+ * sent to the writable view at the fixed delta and writes the very bytes the guest will read back at its own
+ * address. Nothing is bounced and nothing is copied twice: this is exactly the move codewrite.c already makes
+ * for a store, and it is why the fix belongs here rather than in the redirect, which was always right. */
+static void *kernel_dst(void *p, size_t n)
+{
+    if (n && tl_xmem_is_rx(p) && tl_xmem_is_rx((char *)p + n - 1)) {
+        static int said;
+        if (said++ < 1)
+            tl_log_line("husk: read into the JIT region's EXECUTABLE view: destination %p (%zu bytes) is not writable by the kernel, so the read goes to the writable view %p (same pages, delta %td) -- the guest reads the result back at %p",
+                        p, n, (void *)((char *)p + tl_xmem_delta()), tl_xmem_delta(), p);
+        return (char *)p + tl_xmem_delta();
+    }
+    return p;
+}
+
+/* The iovec form of the same translation, for readv/preadv: any iovec whose base is the JIT region's executable
+ * view is sent to the writable view, so the kernel can fill it. Up to 32 iovecs (the count a guest uses); more
+ * is passed through unchanged, since a read into the executable view across that many iovecs is not a shape any
+ * guest produces. Returns whether anything was moved. */
+static int iov_dst(const struct iovec *v, int n, struct iovec *out, int cap)
+{
+    if (n <= 0 || n > cap) return 0;
+    int moved = 0;
+    for (int i = 0; i < n; i++) {
+        out[i] = v[i];
+        void *d = kernel_dst(out[i].iov_base, out[i].iov_len);
+        if (d != out[i].iov_base) { out[i].iov_base = d; moved = 1; }
+    }
+    return moved;
+}
+
+/* A host-side verdict on the address a read was told to write into, said when that write failed, so an EFAULT
+ * stops being a guess: is the address mapped at all, with what protection, and is it the JIT region's
+ * executable view -- the one mapping the kernel will not write but the guest still stores to through the
+ * code-write emulation? Printed with the destination pointer, how it was arrived at (handed to the kernel
+ * unchanged), and the length. Only EFAULT prints it: that is the only errno that is about the destination. */
+static void vfd_note_dst(bool redirected, int fd, const char *call, const void *p, size_t n, int host_errno)
+{
+    if (host_errno != EFAULT) return;
+    static int said;
+    if (said >= 16) return;                        /* enough to name it; a storm of them must not bury the log */
+    said++;
+    vm_address_t a = (vm_address_t)p; vm_size_t sz = 0;
+    vm_region_basic_info_data_64_t info; mach_msg_type_number_t cnt = VM_REGION_BASIC_INFO_COUNT_64; mach_port_t obj = MACH_PORT_NULL;
+    kern_return_t kr = vm_region_64(mach_task_self(), &a, &sz, VM_REGION_BASIC_INFO_64, (vm_region_info_t)&info, &cnt, &obj);
+    char region[160];
+    if (kr == KERN_SUCCESS) {
+        char prot[4], mx[4];
+        prot[0] = (info.protection & VM_PROT_READ) ? 'r' : '-'; prot[1] = (info.protection & VM_PROT_WRITE) ? 'w' : '-'; prot[2] = (info.protection & VM_PROT_EXECUTE) ? 'x' : '-'; prot[3] = 0;
+        mx[0] = (info.max_protection & VM_PROT_READ) ? 'r' : '-'; mx[1] = (info.max_protection & VM_PROT_WRITE) ? 'w' : '-'; mx[2] = (info.max_protection & VM_PROT_EXECUTE) ? 'x' : '-'; mx[3] = 0;
+        snprintf(region, sizeof region, "vm_region: mapped at %p prot %s max %s, %s", (void *)(uintptr_t)a, prot, mx,
+                 info.protection & VM_PROT_WRITE ? "writable" : "NOT writable");
+    } else {
+        snprintf(region, sizeof region, "vm_region: NOT MAPPED (kern_return %d)", kr);
+    }
+    const char *where =
+        tl_xmem_is_rx(p)        ? "the JIT region's EXECUTABLE view (the kernel will not write it; the guest's stores there are emulated through the writable view at delta)" :
+        tl_xmem_contains(p)     ? "the JIT region's writable (guest-facing) view" :
+        (kr == KERN_SUCCESS)    ? "an ordinary mapping" : "an unmapped address";
+    tl_log_line("husk: virtual file: %s on %sfd %d FAILED with errno %d (guest %d): the DESTINATION is the fault, not the file, the offset or the descriptor -- buffer %p (%zu bytes) handed to the kernel unchanged is %s [%s]",
+                call, redirected ? "redirected " : "", fd, host_errno, tl_errno_to_guest(host_errno), p, n, where, region);
+}
+
 /* b_dup3 (husk-tl-bionic-ldbl.c) must route through b_dup2, so this file's descriptor->entry table follows dup3 exactly as
  * it follows dup/dup2/F_DUPFD (see vfd_copy); it looks b_dup2 up by name for that. */
 
@@ -874,12 +953,13 @@ static long b_read(int fd, void *p, size_t n)
         if (n > v->size - v->pos) n = (size_t)(v->size - v->pos);
         uint64_t pos = v->pos;
         { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 400)) tl_log_line("file: read(fd %d, %zu bytes at %llu of the virtual file)", fd, n, (unsigned long long)pos); }
-        TL_ERRNO_BEGIN(); long r = pread(fd, p, n, (off_t)(v->off + pos)); int e = errno; TL_ERRNO_END();
-        if (r < 0) vfd_note_failed(fd, "read", v, pos, n, e);
+        TL_ERRNO_BEGIN(); long r = pread(fd, kernel_dst(p, n), n, (off_t)(v->off + pos)); int e = errno; TL_ERRNO_END();
+        if (r < 0) { vfd_note_failed(fd, "read", v, pos, n, e); vfd_note_dst(true, fd, "read", p, n, e); }
         if (r > 0) v->pos += (uint64_t)r;
         return r;
     }
-    TL_ERRNO_BEGIN(); long r = read(fd, p, n); int e = errno; TL_ERRNO_END();
+    TL_ERRNO_BEGIN(); long r = read(fd, kernel_dst(p, n), n); int e = errno; TL_ERRNO_END();
+    if (r < 0) vfd_note_dst(false, fd, "read", p, n, e);
     if (fd >= 0 && fd < 4096 && g_vfd[fd].was) vfd_note_dropped(fd, "read", r, e);     /* the layer DID redirect this number once (see vfd_drop) */
     { static int tr = -1; if (tr < 0) tr = getenv("TL_TIMERFD_TRACE") ? 1 : 0;
       bool tl_timerfd_is(int fd);
@@ -930,6 +1010,8 @@ static long b_readv(int fd, const struct iovec *v, int n)
         }
         return total;
     }
+    struct iovec iv[32];
+    if (iov_dst(v, n, iv, 32)) { TL_ERRNO_BEGIN(); long r = readv(fd, iv, n); TL_ERRNO_END(); return r; }
     TL_ERRNO_BEGIN(); long r = readv(fd, v, n); TL_ERRNO_END(); return r;
 }
 static long b_preadv(int fd, const struct iovec *v, int n, long off)
@@ -945,6 +1027,8 @@ static long b_preadv(int fd, const struct iovec *v, int n, long off)
         }
         return total;
     }
+    struct iovec iv[32];
+    if (iov_dst(v, n, iv, 32)) { TL_ERRNO_BEGIN(); long r = preadv(fd, iv, n, off); TL_ERRNO_END(); return r; }
     TL_ERRNO_BEGIN(); long r = preadv(fd, v, n, off); TL_ERRNO_END(); return r;
 }
 static long b_pread64(int fd, void *p, size_t n, long off)
@@ -955,11 +1039,12 @@ static long b_pread64(int fd, void *p, size_t n, long off)
         if ((uint64_t)off >= v->size) return 0;
         if (n > v->size - (uint64_t)off) n = (size_t)(v->size - (uint64_t)off);
         { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 400)) tl_log_line("file: pread(fd %d, %zu bytes at %ld of the virtual file)", fd, n, off); }
-        TL_ERRNO_BEGIN(); long r = pread(fd, p, n, off + (long)v->off); int e = errno; TL_ERRNO_END();
-        if (r < 0) vfd_note_failed(fd, "pread64", v, (uint64_t)off, n, e);
+        TL_ERRNO_BEGIN(); long r = pread(fd, kernel_dst(p, n), n, off + (long)v->off); int e = errno; TL_ERRNO_END();
+        if (r < 0) { vfd_note_failed(fd, "pread64", v, (uint64_t)off, n, e); vfd_note_dst(true, fd, "pread64", p, n, e); }
         return r;
     }
-    TL_ERRNO_BEGIN(); long r = pread(fd, p, n, off); int e = errno; TL_ERRNO_END();
+    TL_ERRNO_BEGIN(); long r = pread(fd, kernel_dst(p, n), n, off); int e = errno; TL_ERRNO_END();
+    if (r < 0) vfd_note_dst(false, fd, "pread64", p, n, e);
     if (fd >= 0 && fd < 4096 && g_vfd[fd].was) vfd_note_dropped(fd, "pread64", r, e);
     return r;
 }
@@ -1888,7 +1973,7 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
         return fd < 0 ? -*tl_guest_errno_ptr() : fd;
     }
     case 57: { int r = b_close((int)a0); return r < 0 ? -(*tl_guest_errno_ptr() ? *tl_guest_errno_ptr() : 9 /* EBADF */) : r; }   /* through the shim: a raw close must drop the descriptor's redirect (see vfd_drop) */
-    case 63: { if (vfd_is((int)a0)) { long r = b_read((int)a0, (void *)a1, (size_t)a2); return r < 0 ? -(*tl_guest_errno_ptr() ? *tl_guest_errno_ptr() : 5) : r; } long r = read((int)a0, (void *)a1, (size_t)a2); return r < 0 ? -tl_errno_to_guest(errno) : r; }
+    case 63: { if (vfd_is((int)a0)) { long r = b_read((int)a0, (void *)a1, (size_t)a2); return r < 0 ? -(*tl_guest_errno_ptr() ? *tl_guest_errno_ptr() : 5) : r; } long r = read((int)a0, kernel_dst((void *)a1, (size_t)a2), (size_t)a2); return r < 0 ? -tl_errno_to_guest(errno) : r; }
     case 64: { long r = write((int)a0, (const void *)a1, (size_t)a2); return r < 0 ? -tl_errno_to_guest(errno) : r; }
     case 113: { int r = clock_gettime(clock_to_darwin((int)a0), (struct timespec *)a1); return r < 0 ? -tl_errno_to_guest(errno) : 0; }
     case 169: return b_gettimeofday((int64_t *)a0, (void *)a1);
