@@ -179,12 +179,15 @@ extern bool tl_pad_connected(int slot);
 static void GA_gamepad(tl_jcall *c) { c->ret = vz(tl_pad_connected(0)); }
 static void GA_listInputDevices(tl_jcall *c) { c->ret = vl(tl_jni_new_string("")); }
 static void GA_isOBBInAPK(tl_jcall *c) { c->ret = vz(0); }
-/* AndroidThunkJava_GooglePAD_Available: whether Play Asset Delivery can deliver this game's content. iOS has no Play
- * service, but "no" is not an answer this game can use: its content is delivered as Play asset packs and it has no other
- * source for it, so "no" leaves it waiting at 0% forever. The packs it asks about are the APK's own (inside the OBB, which
- * the layer mounts and Play Asset Delivery in it reports as installed), so the answer Play would give a phone whose packs
- * are all in place is "yes". */
-static void GA_googlePAD(tl_jcall *c) { tl_log_line("ue4: AndroidThunkJava_GooglePAD_Available -> true (Play Asset Delivery is answered by the layer)"); c->ret = vz(1); }
+/* AndroidThunkJava_GooglePAD_Available: whether Play Asset Delivery can deliver this game's content.
+ *
+ * The answer is "no" on purpose for now, and it is the honest one: the layer's Play Asset Delivery section answers Play's
+ * questions, but UE's plugin registers NativeAssetPackStateUpdateListener and then waits for onStateUpdate callbacks it never
+ * asks for -- so a game given "yes" moves past its download screen and sits on a black one instead. Measured on GTA SA DE:
+ * with "yes" it asked for pakchunk0_s45's location, found no pakchunk0_s45.pak, and stopped drawing. Until that callback is
+ * delivered (the pack names are in the game's own GooglePAD-Manifest.txt, inside the OBB), "yes" is worse than "no" for
+ * every game, complete or not. See the Play Asset Delivery section in husk-tl-jni-gms.c. */
+static void GA_googlePAD(tl_jcall *c) { tl_log_line("ue4: AndroidThunkJava_GooglePAD_Available -> false (no Play Asset Delivery here)"); c->ret = vz(0); }
 static void GA_boolObj(tl_jcall *c)                                            /* java.lang.Boolean true */
 {
     jobj *b = tl_jni_new_object(tl_jni_class("java/lang/Boolean"));
