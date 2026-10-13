@@ -85,8 +85,11 @@
 #define A32_OFF_MDIFF   340u     /* uint32_t mem_first_diff       */
 #define A32_OFF_STOP    344u     /* uint32_t stop_reason          */
 
-/* cpsr bits AArch32 user mode defines and both sides must agree on: NZCV + Q. */
-#define A32_CPSR_MASK 0xF8000000u
+/* cpsr bits AArch32 user mode defines and both sides must agree on: NZCV + Q,
+ * plus the T (Thumb state) bit -- a state-transition bug must not pass, so the
+ * entry/exit instruction-set state is part of the compared record. In ARM state
+ * T is 0 on both sides, so this does not change any A32 case's compared value. */
+#define A32_CPSR_MASK 0xF8000020u
 
 /* FPSCR bits that are architectural state (NZCV, QC, AHP, DN, FZ, RMode, Stride,
  * Len, and the cumulative-exception flags); the reserved bits differ between any

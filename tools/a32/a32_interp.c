@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * a32_interp.c -- the A32 (ARM state) integer reference interpreter.
+ * a32_interp.c -- the AArch32 (ARM + Thumb) integer reference interpreter.
  *
  * One instruction in, one instruction out, in C, with no tricks. See
  * a32_interp.h for the scope, the memory model and the exact initial state it
@@ -30,12 +30,14 @@
 #define F_C 0x20000000u
 #define F_V 0x10000000u
 #define F_Q 0x08000000u
+#define F_T 0x00000020u          /* Thumb state */
 /* What a32_case_N's wrapper leaves: N=0 Z=1 C=1 V=0, user mode (0x10). */
 #define CPSR_INIT (F_Z | F_C | 0x10u)
 
 struct cpu {
     uint32_t r[16];
     uint32_t cpsr;
+    uint32_t itstate;           /* Thumb IT block state (cond:mask), 0 = none */
     uint32_t base;
     uint8_t *mem;
     uint32_t case_id;
@@ -87,6 +89,10 @@ static void wr32(struct cpu *c, uint32_t a, uint32_t v) {
 static uint32_t get_r(struct cpu *c, int n, uint32_t pc)
 {
     return (n == 15) ? (pc + 8u) : c->r[n];   /* reading PC yields pc+8 in ARM */
+}
+static uint32_t t_get_r(struct cpu *c, int n, uint32_t pc)
+{
+    return (n == 15) ? (pc + 4u) : c->r[n];   /* reading PC yields pc+4 in Thumb */
 }
 
 static int cond_true(uint32_t cond, uint32_t cpsr)
@@ -162,6 +168,7 @@ static int popcount16(uint32_t x)
     while (x) { n += (int)(x & 1u); x >>= 1; }
     return n;
 }
+static uint32_t align4(uint32_t x) { return x & ~3u; }
 
 /* --------------------------------------------------- data-processing exec */
 /* opcode is the 4-bit DP opcode (0x0 AND .. 0xF MVN). Returns 1 if the
@@ -363,6 +370,709 @@ static int decode_block(struct cpu *c, uint32_t pc, uint32_t insn)
     return 0;
 }
 
+/* ==========================================================================
+ *                                  THUMB (T32)
+ * ========================================================================== */
+
+/* ThumbExpandImm (ARM ARM A7.4.3): the modified immediate of a 32-bit Thumb
+ * data-processing instruction, imm12 = i:imm3:imm8. */
+static uint32_t thumb_expand_imm(uint32_t imm12)
+{
+    if ((imm12 & 0xC00u) == 0) {
+        uint32_t b = imm12 & 0xFFu;
+        switch ((imm12 >> 8) & 3u) {
+        case 0: return b;
+        case 1: if (b == 0) return b; return b | (b << 16);
+        case 2: if (b == 0) return b; return (b << 24) | (b << 8);
+        default: return b * 0x01010101u;
+        }
+    }
+    { uint32_t v = 0x80u | (imm12 & 0x7Fu);
+      uint32_t rot = (imm12 >> 7) & 0x1Fu;
+      if (rot == 0) return v;
+      return (v >> rot) | (v << (32 - rot)); }
+}
+
+static void flags_nz(struct cpu *c, uint32_t res)
+{
+    c->cpsr &= ~(F_N | F_Z);
+    if (res & F_N) c->cpsr |= F_N;
+    if (res == 0)  c->cpsr |= F_Z;
+}
+static void flags_nzc(struct cpu *c, uint32_t res, int cout)
+{
+    c->cpsr &= ~(F_N | F_Z | F_C);
+    if (res & F_N) c->cpsr |= F_N;
+    if (res == 0)  c->cpsr |= F_Z;
+    if (cout)      c->cpsr |= F_C;
+}
+static void flags_add(struct cpu *c, uint32_t a, uint32_t b, uint32_t res, int cin)
+{
+    uint64_t t = (uint64_t)a + b + (uint32_t)cin;
+    c->cpsr &= ~(F_N | F_Z | F_C | F_V);
+    if (res & F_N) c->cpsr |= F_N;
+    if (res == 0)  c->cpsr |= F_Z;
+    if (t >> 32)   c->cpsr |= F_C;
+    if ((~(a ^ b) & (a ^ res)) >> 31) c->cpsr |= F_V;
+}
+static void flags_sub(struct cpu *c, uint32_t a, uint32_t b, uint32_t res, int cin)
+{
+    /* res == a - b - (1 - cin) */
+    uint64_t sub = (uint64_t)b + (uint32_t)(1 - cin);
+    c->cpsr &= ~(F_N | F_Z | F_C | F_V);
+    if (res & F_N) c->cpsr |= F_N;
+    if (res == 0)  c->cpsr |= F_Z;
+    if ((uint64_t)a >= sub) c->cpsr |= F_C;
+    if (((a ^ b) & (a ^ res)) >> 31) c->cpsr |= F_V;
+}
+
+/* The 16-bit and 32-bit Thumb executes (defined below). */
+static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next);
+static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
+                        uint32_t ins, uint32_t *next);
+
+/* One Thumb instruction: handles the IT block (skip/execute + advance). */
+static uint32_t thumb_step(struct cpu *c, uint32_t pc, int *fault)
+{
+    uint32_t h1 = rd16(c, pc);
+    int is32 = (h1 & 0xF800u) >= 0xE800u;    /* 11101 / 11110 / 11111 */
+    uint32_t len = is32 ? 4u : 2u;
+    uint32_t next = pc + len;
+
+    if (is32 && !in_arena(pc, 4)) { a32_fault(c, pc, h1, "Thumb-2 fetch outside the arena"); *fault = 1; return 0; }
+
+    *fault = 0;
+
+    /* IT / hint: only a 16-bit opcode. */
+    if (!is32 && (h1 & 0xFF00u) == 0xBF00u) {
+        uint32_t mask = h1 & 0xFu, firstcond = (h1 >> 4) & 0xFu;
+        if (mask == 0u) {
+            if (c->itstate) { a32_fault(c, pc, h1, "Thumb hint inside an IT block (UNPREDICTABLE)"); *fault = 1; return 0; }
+            return pc + 2u;             /* HINT: no architectural effect */
+        }
+        if (c->itstate) { a32_fault(c, pc, h1, "nested Thumb IT block (UNPREDICTABLE)"); *fault = 1; return 0; }
+        if (firstcond == 0xFu || (firstcond == 0xEu && mask != 0u)) {
+            a32_fault(c, pc, h1, "Thumb IT with an invalid condition"); *fault = 1; return 0;
+        }
+        c->itstate = (firstcond << 4) | mask;
+        return pc + 2u;
+    }
+
+    /* Conditional execution inside an IT block. */
+    if (c->itstate) {
+        uint32_t cond = c->itstate >> 4;
+        if (cond_true(cond, c->cpsr)) {
+            int f = 0;
+            uint32_t nx = next;
+            /* In an IT block the APSR flag update is suppressed for the
+             * instruction (this matches the oracle: qemu's QEMU-TCG suppresses
+             * the flag write for a conditional instruction inside an IT block).
+             * The flags are saved here and restored after execution. */
+            uint32_t saved = c->cpsr & (F_N | F_Z | F_C | F_V | F_Q);
+            if (is32) {
+                uint32_t h2 = rd16(c, pc + 2);
+                f = thumb_exec32(c, pc, h1, h2, ((uint32_t)h1 << 16) | h2, &nx);
+            } else {
+                f = thumb_exec16(c, pc, h1, &nx);
+            }
+            if (f) { *fault = 1; return 0; }
+            c->cpsr = (c->cpsr & ~(F_N | F_Z | F_C | F_V | F_Q)) | saved;
+            next = nx;
+        }
+        if ((c->itstate & 7u) == 0) c->itstate = 0;
+        else c->itstate = (c->itstate & 0xE0u) | ((c->itstate & 0x0Fu) << 1);
+        return next;
+    }
+
+    if (is32) {
+        uint32_t h2 = rd16(c, pc + 2);
+        if (thumb_exec32(c, pc, h1, h2, ((uint32_t)h1 << 16) | h2, &next)) { *fault = 1; return 0; }
+    } else {
+        if (thumb_exec16(c, pc, h1, &next)) { *fault = 1; return 0; }
+    }
+    return next;
+}
+
+/* ---- 16-bit Thumb forms ------------------------------------------------ */
+/* One 16-bit Thumb load/store. opc: 0 STR,1 STRH,2 STRB,3 LDRSB,4 LDR,
+ * 5 LDRH,6 LDRB,7 LDRSH -- the format-7 register-offset opcode order, which a
+ * format-8/9/10 immediate form maps into. addr is the fully formed address. */
+static int t_mem(struct cpu *c, uint32_t pc, int opc, uint32_t addr, int rt)
+{
+    if (rt == 15) { a32_fault(c, pc, 0, "Thumb load/store to PC (Rt=15) not implemented"); return 1; }
+    switch (opc) {
+    case 0: if (!in_arena(addr, 4)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+            wr32(c, addr, c->r[rt]); break;
+    case 4: if (!in_arena(addr, 4)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+            c->r[rt] = rd32(c, addr); break;
+    case 1: if (!in_arena(addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+            wr16(c, addr, c->r[rt]); break;
+    case 5: if (!in_arena(addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+            c->r[rt] = rd16(c, addr); break;
+    case 2: if (!in_arena(addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+            wr8(c, addr, c->r[rt]); break;
+    case 6: if (!in_arena(addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+            c->r[rt] = rd8(c, addr); break;
+    case 3: if (!in_arena(addr, 1)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+            c->r[rt] = sx(rd8(c, addr), 8); break;
+    default: if (!in_arena(addr, 2)) { a32_fault(c, pc, 0, "Thumb load/store outside the arena"); return 1; }
+             c->r[rt] = sx(rd16(c, addr), 16); break;
+    }
+    return 0;
+}
+
+static int thumb_exec16(struct cpu *c, uint32_t pc, uint32_t h, uint32_t *next)
+{
+    uint32_t b1513 = h >> 13;
+
+    if (b1513 == 0) {                                  /* 000: format 1/2 */
+        uint32_t op = (h >> 11) & 3u;
+        if (op != 3u) {                                /* move shifted register */
+            uint32_t imm5 = (h >> 6) & 0x1Fu, rm = (h >> 3) & 7u, rd = h & 7u;
+            uint32_t v = c->r[rm], res; int cout = (c->cpsr & F_C) ? 1 : 0;
+            if (op == 0 && imm5 == 0) { c->r[rd] = v; flags_nz(c, v); return 0; }  /* MOVS */
+            { uint32_t amt = imm5; if ((op == 1 || op == 2) && amt == 0) amt = 32;
+              res = do_shift(v, (int)op, amt, &cout); }
+            c->r[rd] = res; flags_nzc(c, res, cout);
+            return 0;
+        }
+        { uint32_t subop = (h >> 9) & 3u, rn = (h >> 3) & 7u, rd = h & 7u;
+          uint32_t b = (subop & 2u) ? ((h >> 6) & 7u) : c->r[(h >> 6) & 7u];
+          uint32_t a = c->r[rn], res;
+          if ((subop & 1u) == 0u) { res = a + b; c->r[rd] = res; flags_add(c, a, b, res, 0); }
+          else                    { res = a - b; c->r[rd] = res; flags_sub(c, a, b, res, 1); } }
+        return 0;
+    }
+
+    if (b1513 == 1) {                                  /* 001: format 3 imm8 */
+        uint32_t op = (h >> 11) & 3u, rd = (h >> 8) & 7u, imm = h & 0xFFu;
+        if (op == 0) { c->r[rd] = imm; flags_nz(c, imm); }
+        else if (op == 1) { uint32_t a = c->r[rd]; flags_sub(c, a, imm, a - imm, 1); }
+        else if (op == 2) { uint32_t a = c->r[rd], res = a + imm; c->r[rd] = res; flags_add(c, a, imm, res, 0); }
+        else              { uint32_t a = c->r[rd], res = a - imm; c->r[rd] = res; flags_sub(c, a, imm, res, 1); }
+        return 0;
+    }
+
+    if ((h & 0xFC00u) == 0x4000u) {                    /* 010000: format 4 ALU */
+        uint32_t op = (h >> 6) & 0xFu, rm = (h >> 3) & 7u, rd = h & 7u;
+        uint32_t a = c->r[rd], b = c->r[rm], res;
+        int cout = (c->cpsr & F_C) ? 1 : 0;
+        switch (op) {
+        case 0x0: res = a & b; c->r[rd] = res; flags_nzc(c, res, cout); break;
+        case 0x1: res = a ^ b; c->r[rd] = res; flags_nzc(c, res, cout); break;
+        case 0x2: case 0x3: case 0x4: {
+            uint32_t amt = b & 0xFFu; int chg = 0;
+            if (amt == 0) { res = a; chg = 0; }
+            else { res = do_shift(a, (int)(op - 2), amt, &cout); chg = 1; }
+            c->r[rd] = res; if (chg) flags_nzc(c, res, cout); else flags_nz(c, res);
+            break; }
+        case 0x5: { uint32_t ci = (c->cpsr & F_C) ? 1u : 0u; res = a + b + ci;
+                    c->r[rd] = res; flags_add(c, a, b, res, (int)ci); } break;
+        case 0x6: { uint32_t ci = (c->cpsr & F_C) ? 1u : 0u; res = a - b - (1u - ci);
+                    c->r[rd] = res; flags_sub(c, a, b, res, (int)ci); } break;
+        case 0x7: { uint32_t amt = b & 0xFFu;
+                    if (amt == 0) { res = a; c->r[rd] = res; flags_nz(c, res); }
+                    else { res = do_shift(a, 3, amt, &cout); c->r[rd] = res; flags_nzc(c, res, cout); }
+                  } break;
+        case 0x8: res = a & b; flags_nzc(c, res, cout); break;
+        case 0x9: res = 0u - b; c->r[rd] = res; flags_sub(c, 0u, b, res, 1); break;
+        case 0xA: flags_sub(c, a, b, a - b, 1); break;
+        case 0xB: { uint32_t r2 = a + b; flags_add(c, a, b, r2, 0); } break;
+        case 0xC: res = a | b; c->r[rd] = res; flags_nzc(c, res, cout); break;
+        case 0xD: res = a * b; c->r[rd] = res; flags_nz(c, res); break;
+        case 0xE: res = a & ~b; c->r[rd] = res; flags_nzc(c, res, cout); break;
+        default:  res = ~b; c->r[rd] = res; flags_nzc(c, res, cout); break;
+        }
+        return 0;
+    }
+
+    if ((h & 0xFC00u) == 0x4400u) {                    /* 010001: format 5 hi reg/BX */
+        uint32_t op = (h >> 8) & 3u;
+        uint32_t rm = ((h >> 3) & 7u) | (((h >> 6) & 1u) << 3);
+        uint32_t rd = (h & 7u) | (((h >> 7) & 1u) << 3);
+        if (op == 0) { c->r[rd] = t_get_r(c, (int)rd, pc) + t_get_r(c, (int)rm, pc); return 0; }
+        if (op == 1) { uint32_t a = t_get_r(c, (int)rd, pc), b = t_get_r(c, (int)rm, pc);
+                       flags_sub(c, a, b, a - b, 1); return 0; }
+        if (op == 2) { c->r[rd] = t_get_r(c, (int)rm, pc); return 0; }
+        { uint32_t v = t_get_r(c, (int)rm, pc);
+          if (!((h >> 7) & 1u)) {                      /* BX */
+              c->cpsr = (c->cpsr & ~F_T) | ((v & 1u) ? F_T : 0u);
+              *next = v & ~1u;
+          } else {                                     /* BLX (register) */
+              c->r[14] = (pc + 2u) | 1u;
+              c->cpsr = (c->cpsr & ~F_T) | ((v & 1u) ? F_T : 0u);
+              *next = v & ~1u;
+          } }
+        return 0;
+    }
+
+    if ((h & 0xF800u) == 0x4800u) {                    /* 01001: format 6 LDR literal */
+        uint32_t rd = (h >> 8) & 7u, imm8 = h & 0xFFu;
+        uint32_t addr = align4(pc + 4u) + (imm8 << 2);
+        if (!in_arena(addr, 4)) { a32_fault(c, pc, h, "Thumb LDR literal outside the arena"); return 1; }
+        c->r[rd] = rd32(c, addr);
+        return 0;
+    }
+
+    if ((h & 0xF000u) == 0x5000u) {                    /* 0101: format 7 reg offset */
+        uint32_t op = (h >> 9) & 7u, rm = (h >> 6) & 7u, rn = (h >> 3) & 7u, rt = h & 7u;
+        return t_mem(c, pc, (int)op, c->r[rn] + c->r[rm], (int)rt);
+    }
+
+    if ((h & 0xF000u) == 0x6000u) {                    /* 0110: LDR/STR word imm5 */
+        uint32_t l = (h >> 11) & 1u, imm5 = (h >> 6) & 0x1Fu, rn = (h >> 3) & 7u, rt = h & 7u;
+        return t_mem(c, pc, l ? 4 : 0, c->r[rn] + (imm5 << 2), (int)rt);
+    }
+
+    if ((h & 0xF000u) == 0x7000u) {                    /* 0111: LDRB/STRB imm5 (byte) */
+        uint32_t l = (h >> 11) & 1u, imm5 = (h >> 6) & 0x1Fu, rn = (h >> 3) & 7u, rt = h & 7u;
+        return t_mem(c, pc, l ? 6 : 2, c->r[rn] + imm5, (int)rt);
+    }
+
+    if ((h & 0xF000u) == 0x8000u) {                    /* 1000: LDRH/STRH imm5 (halfword) */
+        uint32_t l = (h >> 11) & 1u, imm5 = (h >> 6) & 0x1Fu, rn = (h >> 3) & 7u, rt = h & 7u;
+        return t_mem(c, pc, l ? 5 : 1, c->r[rn] + (imm5 << 1), (int)rt);
+    }
+
+    if ((h & 0xF000u) == 0x9000u) {                    /* 1001: format 11 SP-relative */
+        uint32_t l = (h >> 11) & 1u, rd = (h >> 8) & 7u, imm8 = h & 0xFFu;
+        return t_mem(c, pc, l ? 4 : 0, c->r[13] + (imm8 << 2), (int)rd);
+    }
+
+    if ((h & 0xF000u) == 0xA000u) {                    /* 1010: format 12 load address */
+        uint32_t sp = (h >> 11) & 1u, rd = (h >> 8) & 7u, imm8 = h & 0xFFu;
+        uint32_t base = sp ? c->r[13] : align4(pc + 4u);
+        c->r[rd] = base + (imm8 << 2);
+        return 0;
+    }
+
+    if ((h & 0xF000u) == 0xB000u) {                    /* 1011: format 13/14 (and CBZ/CBNZ/BKPT) */
+        if ((h & 0xFF80u) == 0xB000u) {                /* ADD/SUB SP, #imm7*4 */
+            uint32_t sign = (h >> 7) & 1u, imm7 = h & 0x7Fu;
+            if (sign) c->r[13] -= (imm7 << 2); else c->r[13] += (imm7 << 2);
+            return 0;
+        }
+        if ((h & 0xFD00u) == 0xB100u || (h & 0xFD00u) == 0xB900u) {   /* CBZ / CBNZ */
+            uint32_t nz = ((h >> 11) & 1u);            /* 0 = CBZ, 1 = CBNZ */
+            uint32_t i = (h >> 9) & 1u, imm5 = (h >> 3) & 0x1Fu, rn = h & 7u;
+            uint32_t off = ((i << 5) | imm5) << 1;
+            int zero = (c->r[rn] == 0);
+            if ((nz == 0u) == zero) *next = pc + 4u + off;
+            return 0;
+        }
+        if ((h & 0xFE00u) == 0xB400u || (h & 0xFE00u) == 0xBC00u) {  /* PUSH / POP */
+            uint32_t is_pop = (h >> 11) & 1u, m = (h >> 8) & 1u, list = h & 0xFFu;
+            int n = popcount16(list) + (m ? 1 : 0);
+            uint32_t sp = c->r[13];
+            if (sp & 3u) { a32_fault(c, pc, h, "Thumb PUSH/POP with an unaligned SP"); return 1; }
+            if (n == 0) { a32_fault(c, pc, h, "Thumb PUSH/POP with an empty list"); return 1; }
+            if (!in_arena(is_pop ? sp : sp - (uint32_t)n * 4u, (uint32_t)n * 4u)) {
+                a32_fault(c, pc, h, "Thumb PUSH/POP outside the arena"); return 1;
+            }
+            if (!is_pop) {
+                uint32_t a = sp - (uint32_t)n * 4u;
+                for (int r = 0; r < 8; r++) if (list & (1u << r)) { wr32(c, a, c->r[r]); a += 4; }
+                if (m) wr32(c, a, c->r[14]);
+                c->r[13] = sp - (uint32_t)n * 4u;
+            } else {
+                uint32_t a = sp;
+                for (int r = 0; r < 8; r++) if (list & (1u << r)) { c->r[r] = rd32(c, a); a += 4; }
+                if (m) { *next = rd32(c, a) & ~1u; }
+                c->r[13] = sp + (uint32_t)n * 4u;
+            }
+            return 0;
+        }
+        if ((h & 0xFF00u) == 0xBE00u) { a32_fault(c, pc, h, "Thumb BKPT not implemented"); return 1; }
+        a32_fault(c, pc, h, "unimplemented Thumb 1011 encoding"); return 1;
+    }
+
+    if ((h & 0xF000u) == 0xC000u) {                    /* 1100: format 15 LDMIA/STMIA */
+        uint32_t l = (h >> 11) & 1u, rn = (h >> 8) & 7u, list = h & 0xFFu;
+        int n = popcount16(list);
+        if (list == 0) { a32_fault(c, pc, h, "Thumb LDM/STM with an empty register list"); return 1; }
+        if (list & (1u << (int)rn)) {
+            a32_fault(c, pc, h, "Thumb LDM/STM with the base in the list (UNPREDICTABLE)"); return 1;
+        }
+        uint32_t base = c->r[rn];
+        if (!in_arena(base, (uint32_t)n * 4u)) { a32_fault(c, pc, h, "Thumb LDM/STM outside the arena"); return 1; }
+        uint32_t a = base;
+        for (int r = 0; r < 8; r++) {
+            if (!(list & (1u << r))) continue;
+            if (l) c->r[r] = rd32(c, a); else wr32(c, a, c->r[r]);
+            a += 4;
+        }
+        c->r[rn] = base + (uint32_t)n * 4u;
+        return 0;
+    }
+
+    if ((h & 0xF000u) == 0xD000u) {                    /* 1101: format 16 cond branch */
+        uint32_t cond = (h >> 8) & 0xFu;
+        if (cond == 0xEu) { a32_fault(c, pc, h, "Thumb UDF (permanently undefined) executed"); return 1; }
+        if (cond == 0xFu) { a32_fault(c, pc, h, "Thumb SVC not implemented (user mode)"); return 1; }
+        { uint32_t off = sx(h & 0xFFu, 8) << 1;
+          if (cond_true(cond, c->cpsr)) *next = pc + 4u + off; }
+        return 0;
+    }
+
+    if ((h & 0xF800u) == 0xE000u) {                    /* 11100: format 18 B */
+        uint32_t off = sx(h & 0x7FFu, 11) << 1;
+        *next = pc + 4u + off;
+        return 0;
+    }
+
+    a32_fault(c, pc, h, "unimplemented 16-bit Thumb encoding"); return 1;
+}
+
+/* Wide Thumb-2 load/store single (11111 group). */
+static int thumb_wide_ldst(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2)
+{
+    uint32_t key = h1 & 0xFFF0u;
+    uint32_t rn = h1 & 0xFu;
+    uint32_t rt = (h2 >> 12) & 0xFu;
+    uint32_t base = c->r[rn];
+    uint32_t imm12 = h2 & 0xFFFu;
+    uint32_t addr = 0, sz = 0;
+    int load = 0, sign = 0;
+
+    if (rt == 15) { a32_fault(c, pc, h1, "Thumb-2 load/store to PC not implemented"); return 1; }
+
+    switch (key) {
+    case 0xF8D0u: load = 1; sz = 4; addr = base + imm12; break;   /* LDR  imm12 */
+    case 0xF8C0u: load = 0; sz = 4; addr = base + imm12; break;   /* STR  imm12 */
+    case 0xF890u: load = 1; sz = 1; addr = base + imm12; break;   /* LDRB imm12 */
+    case 0xF880u: load = 0; sz = 1; addr = base + imm12; break;   /* STRB imm12 */
+    case 0xF8B0u: load = 1; sz = 2; addr = base + imm12; break;   /* LDRH imm12 */
+    case 0xF8A0u: load = 0; sz = 2; addr = base + imm12; break;   /* STRH imm12 */
+    case 0xF990u: load = 1; sign = 1; sz = 1; addr = base + imm12; break; /* LDRSB imm12 */
+    case 0xF9B0u: load = 1; sign = 1; sz = 2; addr = base + imm12; break; /* LDRSH imm12 */
+    case 0xF850u: case 0xF840u:                    /* LDR/STR word: imm8 (neg) or reg */
+        load = (key == 0xF850u);
+        sz = 4;
+        if ((h2 & 0x0F00u) == 0x0C00u) {
+            addr = base - (h2 & 0xFFu);            /* negative 8-bit immediate */
+        } else if ((h2 & 0x0FC0u) == 0u) {
+            uint32_t rm = h2 & 0xFu, imm2 = (h2 >> 4) & 3u;
+            addr = base + c->r[rm];
+            if (imm2 != 0u) { a32_fault(c, pc, h1, "Thumb-2 load/store with a non-zero shift on a register offset"); return 1; }
+        } else {
+            a32_fault(c, pc, h1, "unimplemented Thumb-2 load/store encoding (1101 form)"); return 1;
+        }
+        break;
+    default:
+        a32_fault(c, pc, h1, "unimplemented Thumb-2 load/store encoding"); return 1;
+    }
+    (void)sign;
+    if (!in_arena(addr, sz)) { a32_fault(c, pc, h1, "Thumb-2 load/store outside the arena"); return 1; }
+    if (load) {
+        if (sz == 4)      c->r[rt] = rd32(c, addr);
+        else if (sz == 2) c->r[rt] = sign ? sx(rd16(c, addr), 16) : rd16(c, addr);
+        else              c->r[rt] = sign ? sx(rd8(c, addr), 8) : rd8(c, addr);
+    } else {
+        if (sz == 4)      wr32(c, addr, c->r[rt]);
+        else if (sz == 2) wr16(c, addr, c->r[rt]);
+        else              wr8(c, addr, c->r[rt]);
+    }
+    return 0;
+}
+
+/* 32-bit Thumb-2 execute. `ins` = h1:h2 as a 32-bit instruction word. */
+static int thumb_exec32(struct cpu *c, uint32_t pc, uint32_t h1, uint32_t h2,
+                        uint32_t ins, uint32_t *next)
+{
+    uint32_t op1 = (h1 >> 11) & 0x1Fu;   /* 11101 / 11110 / 11111 */
+    (void)ins;
+
+    /* ---- BL / BLX immediate (11110 ... | 11 ...) -------------------------- */
+    if ((h1 & 0xF800u) == 0xF000u && (h2 & 0xC000u) == 0xC000u) {
+        uint32_t S  = (h1 >> 10) & 1u;
+        uint32_t j1 = (h2 >> 13) & 1u, j2 = (h2 >> 11) & 1u;
+        uint32_t i1 = ((j1 ^ S) ^ 1u), i2 = ((j2 ^ S) ^ 1u);
+        uint32_t imm = (S << 24) | (i1 << 23) | ((h1 & 0x3FFu) << 13) |
+                       (i2 << 12) | (h2 & 0x7FFu);
+        int32_t v = (int32_t)(imm << 7) >> 7;        /* sign-extend the 25-bit offset */
+        int32_t off = v * 2;
+        int is_blx = ((h2 >> 12) & 1u) == 0u;
+        if (is_blx) {
+            /* BLX (immediate) executed in Thumb state switches to ARM. */
+            c->r[14] = (pc + 4u) | 1u;
+            c->cpsr &= ~F_T;
+            *next = align4(pc + 4u) + (uint32_t)off;
+        } else {
+            c->r[14] = (pc + 4u) | 1u;
+            *next = pc + 4u + (uint32_t)off;
+        }
+        return 0;
+    }
+
+    if (op1 == 0x1Eu) {                          /* 11110 */
+        /* MOVW / MOVT */
+        if ((h1 & 0xFBF0u) == 0xF240u || (h1 & 0xFBF0u) == 0xF2C0u) {
+            uint32_t i = (h1 >> 10) & 1u, imm4 = h1 & 0xFu;
+            uint32_t imm3 = (h2 >> 12) & 7u, rd = (h2 >> 8) & 0xFu, imm8 = h2 & 0xFFu;
+            uint32_t imm16 = (imm4 << 12) | (i << 11) | (imm3 << 8) | imm8;
+            if ((h1 & 0xFBF0u) == 0xF240u) c->r[rd] = imm16;
+            else c->r[rd] = (c->r[rd] & 0xFFFFu) | (imm16 << 16);
+            return 0;
+        }
+        /* Misc: MRS / MSR / SSAT / USAT / BFI / BFC / UBFX / SBFX (1111 0011 ..) */
+        if ((h1 & 0xFF00u) == 0xF300u) {
+            if (h1 == 0xF3EFu) {                              /* MRS Rd, APSR/CPSR */
+                uint32_t rd = (h2 >> 8) & 0xFu;
+                uint32_t sysm = h2 & 0xFFu;
+                if (sysm != 0u) { a32_fault(c, pc, h1, "Thumb MRS of a sysm other than APSR/CPSR not implemented"); return 1; }
+                c->r[rd] = c->cpsr;
+                return 0;
+            }
+            if ((h1 & 0xFFF0u) == 0xF380u && (h2 & 0xF000u) == 0x8000u) {   /* MSR APSR, Rn */
+                uint32_t mask = (h2 >> 8) & 0xFu, rn = h1 & 0xFu;
+                if (mask & 0x7u) { a32_fault(c, pc, h1, "Thumb MSR of a field other than flags not implemented"); return 1; }
+                c->cpsr = (c->cpsr & ~(F_N | F_Z | F_C | F_V)) | (c->r[rn] & (F_N | F_Z | F_C | F_V));
+                return 0;
+            }
+            if ((h1 & 0xFFF0u) == 0xF300u) {                  /* SSAT */
+                uint32_t rn = h1 & 0xFu, rd = (h2 >> 8) & 0xFu;
+                uint32_t sat = (h2 & 0x1Fu) + 1u, lsb = (((h2 >> 12) & 7u) << 2) | ((h2 >> 6) & 3u);
+                int32_t v = (int32_t)(c->r[rn] << lsb);
+                int32_t max = (int32_t)((1u << (sat - 1u)) - 1u), min = -(int32_t)(1u << (sat - 1u));
+                int satd = 0;
+                if (v > max) { v = max; satd = 1; } else if (v < min) { v = min; satd = 1; }
+                c->r[rd] = (uint32_t)v;
+                if (satd) c->cpsr |= F_Q;
+                return 0;
+            }
+            if ((h1 & 0xFFF0u) == 0xF380u) {                  /* USAT */
+                uint32_t rn = h1 & 0xFu, rd = (h2 >> 8) & 0xFu;
+                uint32_t sat = h2 & 0x1Fu, lsb = (((h2 >> 12) & 7u) << 2) | ((h2 >> 6) & 3u);
+                int64_t v = (int64_t)(int32_t)(c->r[rn] << lsb);
+                int64_t max = (int64_t)((1u << sat) - 1u);
+                int satd = 0;
+                if (v < 0) { v = 0; satd = 1; } else if (v > max) { v = max; satd = 1; }
+                c->r[rd] = (uint32_t)v;
+                if (satd) c->cpsr |= F_Q;
+                return 0;
+            }
+            if ((h1 & 0xFFF0u) == 0xF360u) {                  /* BFI / BFC */
+                uint32_t rn = h1 & 0xFu, rd = (h2 >> 8) & 0xFu;
+                uint32_t lsb = (((h2 >> 12) & 7u) << 2) | ((h2 >> 6) & 3u);
+                uint32_t msb = h2 & 0x1Fu, width = msb - lsb + 1u;
+                if (width == 0u || width > 32u || msb > 31u) { a32_fault(c, pc, h1, "Thumb-2 BFI/BFC with an invalid field"); return 1; }
+                uint32_t mask = (width == 32u) ? 0xFFFFFFFFu : (((1u << width) - 1u) << lsb);
+                uint32_t src = (rn == 15u) ? 0u : c->r[rn];
+                c->r[rd] = (c->r[rd] & ~mask) | ((src << lsb) & mask);
+                return 0;
+            }
+            if ((h1 & 0xFFF0u) == 0xF3C0u) {                  /* UBFX */
+                uint32_t rn = h1 & 0xFu, rd = (h2 >> 8) & 0xFu;
+                uint32_t lsb = (((h2 >> 12) & 7u) << 2) | ((h2 >> 6) & 3u);
+                uint32_t width = (h2 & 0x1Fu) + 1u;
+                if (lsb + width > 32u) { a32_fault(c, pc, h1, "Thumb-2 UBFX with an invalid field"); return 1; }
+                uint32_t mask = (width == 32u) ? 0xFFFFFFFFu : ((1u << width) - 1u);
+                c->r[rd] = (c->r[rn] >> lsb) & mask;
+                return 0;
+            }
+            if ((h1 & 0xFFF0u) == 0xF340u) {                  /* SBFX */
+                uint32_t rn = h1 & 0xFu, rd = (h2 >> 8) & 0xFu;
+                uint32_t lsb = (((h2 >> 12) & 7u) << 2) | ((h2 >> 6) & 3u);
+                uint32_t width = (h2 & 0x1Fu) + 1u;
+                if (lsb + width > 32u) { a32_fault(c, pc, h1, "Thumb-2 SBFX with an invalid field"); return 1; }
+                c->r[rd] = sx((c->r[rn] >> lsb) & ((width == 32u) ? 0xFFFFFFFFu : ((1u << width) - 1u)), (int)width);
+                return 0;
+            }
+            a32_fault(c, pc, h1, "unimplemented Thumb-2 11110 011 encoding"); return 1;
+        }
+        /* ADDW / SUBW (plain imm12) */
+        if ((h1 & 0xFB00u) == 0xF200u) {
+            uint32_t op = (h1 >> 5) & 0xFu, rn = h1 & 0xFu;
+            uint32_t i = (h1 >> 10) & 1u, imm3 = (h2 >> 12) & 7u;
+            uint32_t rd = (h2 >> 8) & 0xFu, imm8 = h2 & 0xFFu;
+            uint32_t imm12 = (i << 11) | (imm3 << 8) | imm8;
+            if (op == 0u) c->r[rd] = c->r[rn] + imm12;
+            else if (op == 5u) c->r[rd] = c->r[rn] - imm12;
+            else { a32_fault(c, pc, h1, "unimplemented Thumb-2 11110 encoding"); return 1; }
+            return 0;
+        }
+        /* Data-processing (modified immediate): bits[15:11]==11110, bit9==0. */
+        if ((h1 & 0xFA00u) == 0xF000u) {
+            uint32_t op = (h1 >> 5) & 0xFu, s = (h1 >> 4) & 1u, rn = h1 & 0xFu;
+            uint32_t i = (h1 >> 10) & 1u, imm3 = (h2 >> 12) & 7u;
+            uint32_t rd = (h2 >> 8) & 0xFu, imm8 = h2 & 0xFFu;
+            uint32_t op2 = thumb_expand_imm((i << 11) | (imm3 << 8) | imm8);
+            /* map to the A32 4-bit opcode and reuse dp_execute */
+            int opc = -1, is_test = 0;
+            switch (op) {
+            case 0x0: opc = 0x0; break;                 /* AND */
+            case 0x1: opc = 0xE; break;                 /* BIC */
+            case 0x2:                                   /* ORR, or MOV if Rn==15 */
+                opc = (rn == 15u) ? 0xD : 0xC; break;
+            case 0x3:                                   /* ORN, or MVN if Rn==15 */
+                if (rn == 15u) { opc = 0xF; }
+                else { opc = 0xC; op2 = ~op2; }
+                break;
+            case 0x4: opc = 0x1; break;                 /* EOR */
+            case 0x8: opc = 0x4; break;                 /* ADD */
+            case 0xA: opc = 0x5; break;                 /* ADC */
+            case 0xB: opc = 0x6; break;                 /* SBC */
+            case 0xD: opc = 0x2; break;                 /* SUB */
+            case 0xE: opc = 0x3; break;                 /* RSB */
+            default: a32_fault(c, pc, h1, "unimplemented Thumb-2 modified-immediate opcode"); return 1;
+            }
+
+            if (s && rd == 15u) {                       /* TST/TEQ/CMN/CMP */
+                is_test = 1;
+                switch (op) {
+                case 0x0: opc = 0x8; break;             /* TST */
+                case 0x4: opc = 0x9; break;             /* TEQ */
+                case 0x8: opc = 0xB; break;             /* CMN */
+                case 0xD: opc = 0xA; break;             /* CMP */
+                default: a32_fault(c, pc, h1, "unimplemented Thumb-2 test encoding"); return 1;
+                }
+            }
+            (void)is_test;
+            if (dp_execute(c, pc, opc, (int)s, (int)rn, (int)rd, op2, (c->cpsr & F_C) ? 1 : 0))
+                return 1;
+            return 0;
+        }
+        a32_fault(c, pc, h1, "unimplemented Thumb-2 11110 encoding"); return 1;
+    }
+
+    if (op1 == 0x1Du) {                          /* 11101: DP register / dual / table / multi */
+        if ((h1 & 0xFE00u) == 0xEA00u) {         /* data-processing (register) */
+            uint32_t op = (h1 >> 5) & 0xFu, s = (h1 >> 4) & 1u, rn = h1 & 0xFu;
+            uint32_t rd = (h2 >> 8) & 0xFu, imm3 = (h2 >> 12) & 7u;
+            uint32_t imm2 = (h2 >> 6) & 3u, st = (h2 >> 4) & 3u, rm = h2 & 0xFu;
+            uint32_t amt = (imm3 << 2) | imm2;
+            int cout = (c->cpsr & F_C) ? 1 : 0;
+            uint32_t op2;
+            int type = (int)st;
+            if ((h2 & 0x8000u) == 0u && (imm3 & 4u) == 0u && st == 0 && amt == 0 && (h1 & 0xFu) != 0xFu && (h2 & 0x0080u)) {
+                /* shift-by-register form is not generated; fall through to imm path */
+            }
+            if (st == 3) {                       /* ROR with amt==0 => RRX */
+                if (amt == 0) { uint32_t v = c->r[rm];
+                    op2 = (uint32_t)(((c->cpsr & F_C) ? 1u : 0u) << 31) | (v >> 1);
+                    cout = (int)(v & 1u);
+                } else op2 = do_shift(c->r[rm], 3, amt, &cout);
+            } else {
+                op2 = do_shift(c->r[rm], type, amt, &cout);
+            }
+            int opc = -1;
+            switch (op) {
+            case 0x0: opc = 0x0; break;             /* AND */
+            case 0x1: opc = 0xE; break;             /* BIC */
+            case 0x2:                                   /* ORR, or MOV if Rn==15 */
+                opc = (rn == 15u) ? 0xD : 0xC; break;
+            case 0x3:                                   /* ORN, or MVN if Rn==15 */
+                if (rn == 15u) { opc = 0xF; }
+                else { opc = 0xC; op2 = ~op2; }
+                break;
+            case 0x4: opc = 0x1; break;             /* EOR */
+            case 0x8: opc = 0x4; break;             /* ADD */
+            case 0xA: opc = 0x5; break;             /* ADC */
+            case 0xB: opc = 0x6; break;             /* SBC */
+            case 0xD: opc = 0x2; break;             /* SUB */
+            case 0xE: opc = 0x3; break;             /* RSB */
+            default: a32_fault(c, pc, h1, "unimplemented Thumb-2 register opcode"); return 1;
+            }
+
+            if (s && rd == 15u) {
+                switch (op) {
+                case 0x0: opc = 0x8; break;
+                case 0x4: opc = 0x9; break;
+                case 0x8: opc = 0xB; break;
+                case 0xD: opc = 0xA; break;
+                default: a32_fault(c, pc, h1, "unimplemented Thumb-2 register test"); return 1;
+                }
+            }
+            if (dp_execute(c, pc, opc, (int)s, (int)rn, (int)rd, op2, cout)) return 1;
+            return 0;
+        }
+        /* TBB / TBH */
+        if ((h1 & 0xFFF0u) == 0xE8D0u && (h2 & 0xFFE0u) == 0xF000u) {
+            uint32_t rn = h1 & 0xFu, hw = (h2 >> 4) & 1u, rm = h2 & 0xFu;
+            uint32_t base = c->r[rn] + c->r[rm];
+            if (!in_arena(base, hw ? 2u : 1u)) { a32_fault(c, pc, h1, "Thumb TBB/TBH table outside the arena"); return 1; }
+            uint32_t idx = hw ? rd16(c, base) : rd8(c, base);
+            *next = pc + 4u + (idx << 1);   /* both scale the entry by 2 */
+            return 0;
+        }
+        /* LDRD / STRD (immediate). Rt:Rt2 = h2[15:12]:h2[11:8], imm8 = h2[7:0]. */
+        {
+            uint32_t hw = h1 & 0xFFF0u;
+            static const struct { uint32_t v; int load, u, w; } d[] = {
+                { 0xE9D0u, 1, 1, 0 }, { 0xE950u, 1, 0, 0 },
+                { 0xE9F0u, 1, 1, 1 }, { 0xE970u, 1, 0, 1 },
+                { 0xE9C0u, 0, 1, 0 }, { 0xE940u, 0, 0, 0 },
+                { 0xE9E0u, 0, 1, 1 }, { 0xE960u, 0, 0, 1 },
+            };
+            for (unsigned k = 0; k < sizeof(d) / sizeof(d[0]); k++) {
+                if (hw == d[k].v) {
+                    uint32_t rn = h1 & 0xFu, rt = (h2 >> 12) & 0xFu, rt2 = (h2 >> 8) & 0xFu;
+                    uint32_t imm8 = h2 & 0xFFu, off = imm8 << 2;
+                    uint32_t base = c->r[rn];
+                    uint32_t addr = d[k].u ? base + off : base - off;
+                    if (rt & 1u || rt2 != rt + 1u) { a32_fault(c, pc, h1, "Thumb-2 LDRD/STRD with an odd or non-consecutive register pair"); return 1; }
+                    if (addr & 3u) { a32_fault(c, pc, h1, "Thumb-2 unaligned LDRD/STRD"); return 1; }
+                    if (!in_arena(addr, 8)) { a32_fault(c, pc, h1, "Thumb-2 LDRD/STRD outside the arena"); return 1; }
+                    if (d[k].load) { c->r[rt] = rd32(c, addr); c->r[rt2] = rd32(c, addr + 4); }
+                    else           { wr32(c, addr, c->r[rt]); wr32(c, addr + 4, c->r[rt2]); }
+                    if (d[k].w) c->r[rn] = d[k].u ? base + off : base - off;
+                    return 0;
+                }
+            }
+        }
+        /* LDM/STM wide (1110 100x ...): not generated; fault by name. */
+        if ((h1 & 0xFE00u) == 0xE800u) {
+            a32_fault(c, pc, h1, "Thumb-2 LDM/STM (wide) not implemented"); return 1;
+        }
+        a32_fault(c, pc, h1, "unimplemented Thumb-2 11101 encoding"); return 1;
+    }
+
+    if (op1 == 0x1Fu) {                          /* 11111 */
+        /* Extend / reverse / CLZ: 1111 1010 xxxx ... */
+        if ((h1 & 0xFF00u) == 0xFA00u) {
+            uint32_t rn = h1 & 0xFu, rm = h2 & 0xFu, rd = (h2 >> 8) & 0xFu, op = (h2 >> 4) & 0xFu;
+            uint32_t add = (rn == 15u) ? 0u : c->r[rn];   /* SXTAB/UXTAH add Rn */
+            switch (h1 & 0xFFF0u) {
+            case 0xFA40u: c->r[rd] = add + sx(c->r[rm] & 0xFFu, 8); return 0;    /* SXTB/SXTAB */
+            case 0xFA00u: c->r[rd] = add + sx(c->r[rm] & 0xFFFFu, 16); return 0; /* SXTH/SXTAH */
+            case 0xFA50u: c->r[rd] = add + (c->r[rm] & 0xFFu); return 0; /* UXTB/UXTAB */
+            case 0xFA10u: c->r[rd] = add + (c->r[rm] & 0xFFFFu); return 0;/* UXTH/UXTAH */
+            case 0xFAB0u: {                                              /* CLZ */
+                uint32_t v = c->r[rm], n = 0;
+                while (n < 32 && !((v >> (31 - n)) & 1u)) n++;
+                c->r[rd] = n; return 0; }
+            case 0xFA90u:                                                /* REV/REV16/REVSH */
+                if (op == 0x8u) {
+                    uint32_t v = c->r[rm];
+                    c->r[rd] = ((v & 0xFFu) << 24) | ((v & 0xFF00u) << 8) |
+                               ((v >> 8) & 0xFF00u) | ((v >> 24) & 0xFFu);
+                    return 0;
+                }
+                if (op == 0x9u) {
+                    uint32_t v = c->r[rm];
+                    c->r[rd] = ((v & 0xFFu) << 8) | ((v >> 8) & 0xFFu) |
+                               ((v & 0xFF0000u) << 8) | ((v >> 8) & 0xFF0000u);
+                    return 0;
+                }
+                if (op == 0xBu) {
+                    uint32_t v = c->r[rm];
+                    c->r[rd] = (uint32_t)(int32_t)(int16_t)(((v & 0xFFu) << 8) | ((v >> 8) & 0xFFu));
+                    return 0;
+                }
+                break;
+            default: break;
+            }
+            a32_fault(c, pc, h1, "unimplemented Thumb-2 extend/reverse encoding"); return 1;
+        }
+        /* load/store single */
+        if ((h1 & 0xFE00u) == 0xF800u) return thumb_wide_ldst(c, pc, h1, h2);
+        a32_fault(c, pc, h1, "unimplemented Thumb-2 11111 encoding"); return 1;
+    }
+
+
+    a32_fault(c, pc, h1, "unimplemented Thumb-2 instruction"); return 1;
+}
+
 /* ==================================================================== run */
 
 int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
@@ -383,25 +1093,20 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
     c->mem = mem;
     c->base = ARENA_BASE;
     c->case_id = in->id;
-    c->code_end = CODE_BASE + in->code_len * 4u;
+    c->code_end = CODE_BASE + in->code_len;
     c->err = err;
     c->errn = errn;
     if (err && errn) err[0] = 0;
 
-    if (in->code_len == 0 || in->code_len > (SCRATCH - CODE_BASE) / 4u) {
-        if (err) snprintf(err, errn, "case %u: bad fragment length (%u words)",
+    if (in->code_len == 0 || in->code_len > (SCRATCH - CODE_BASE)) {
+        if (err) snprintf(err, errn, "case %u: bad fragment length (%u bytes)",
                           c->case_id, in->code_len);
         free(mem);
         out->stop_reason = A32_STOP_FAULT;
         return 1;
     }
-    for (uint32_t i = 0; i < in->code_len; i++) {
-        uint32_t w = in->code[i];
-        mem[(CODE_BASE - ARENA_BASE) + i * 4 + 0] = (uint8_t)w;
-        mem[(CODE_BASE - ARENA_BASE) + i * 4 + 1] = (uint8_t)(w >> 8);
-        mem[(CODE_BASE - ARENA_BASE) + i * 4 + 2] = (uint8_t)(w >> 16);
-        mem[(CODE_BASE - ARENA_BASE) + i * 4 + 3] = (uint8_t)(w >> 24);
-    }
+    for (uint32_t i = 0; i < in->code_len; i++)
+        mem[(CODE_BASE - ARENA_BASE) + i] = in->code[i];
 
     /* The scratch window's agreed seed: word k = 0x10000000 + k, exactly what
      * a32oracle.c's mem_seed writes. */
@@ -415,7 +1120,7 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
             c->r[i] = in->regs[i];
     c->r[9] = SCRATCH;
     c->r[15] = CODE_BASE;
-    c->cpsr = CPSR_INIT;
+    c->cpsr = CPSR_INIT | (in->thumb ? F_T : 0u);
 
     uint32_t pc = CODE_BASE;
     while (!c->tfault) {
@@ -431,6 +1136,16 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
             a32_fault(c, pc, 0, "branch left the fragment");
             break;
         }
+
+        /* ---- Thumb state ------------------------------------------------ */
+        if (c->cpsr & F_T) {
+            if (pc & 1u) { a32_fault(c, pc, 0, "pc is not halfword-aligned in Thumb state"); break; }
+            int f = 0;
+            pc = thumb_step(c, pc, &f);
+            if (f) break;
+            continue;
+        }
+
         if (pc & 3u) { a32_fault(c, pc, 0, "pc is not word-aligned"); break; }
 
         uint32_t insn = rd32(c, pc);
@@ -442,11 +1157,9 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
             if ((insn & 0xFE000000u) == 0xFA000000u) {   /* BLX immediate */
                 uint32_t off = ((insn & 0x01000000u) >> 24) << 24 | (insn & 0x00FFFFFFu);
                 c->r[14] = pc + 4u;
+                c->cpsr |= F_T;                          /* BLX immediate enters Thumb */
                 pc = pc + 8u + sx(off << 2, 26);
-                a32_fault(c, pc, insn,
-                          "BLX immediate enters Thumb state, which is not implemented "
-                          "(A32-only interpreter)");
-                break;
+                continue;
             }
             a32_fault(c, pc, insn, "unimplemented unconditional instruction");
             break;
@@ -527,19 +1240,13 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
 
             if ((insn & 0x0FFFFFF0u) == 0x012FFF10u) {   /* BX */
                 uint32_t v = get_r(c, (int)(insn & 0xF), pc);
-                if (v & 1u) {
-                    a32_fault(c, pc, insn, "BX to a Thumb address (Thumb is not implemented)");
-                    break;
-                }
+                c->cpsr = (c->cpsr & ~F_T) | ((v & 1u) ? F_T : 0u);
                 pc = v & ~1u; continue;
             }
             if ((insn & 0x0FFFFFF0u) == 0x012FFF30u) {   /* BLX (register) */
                 uint32_t v = get_r(c, (int)(insn & 0xF), pc);
                 c->r[14] = pc + 4u;
-                if (v & 1u) {
-                    a32_fault(c, pc, insn, "BLX register to a Thumb address (Thumb is not implemented)");
-                    break;
-                }
+                c->cpsr = (c->cpsr & ~F_T) | ((v & 1u) ? F_T : 0u);
                 pc = v & ~1u; continue;
             }
 
@@ -686,7 +1393,12 @@ int a32_interp_run(const struct a32_interp_case *in, struct a32_result *out,
     out->mem_size = A32_MEM_SIZE;
     out->mem_hash = fnv1a(mem + (SCRATCH - ARENA_BASE), A32_MEM_SIZE);
     out->mem_first_diff = 0;
-    for (int i = 0; i < A32_NFP; i++) out->fp[i] = 0x3f800000ull;
+    /* The harness's agreed VFP init: gen_cases.py's a32_fp_init writes
+     * `movw r1,#i` + `movt r1,#0x3f80`, so s_i starts at 0x3f800000 + i
+     * (1.0f + i ulp). Integer cases never touch VFP, so the recorded fp[] is
+     * exactly this; hardcoding 0x3f800000 here made every case fail on the
+     * initial state against a real oracle. */
+    for (int i = 0; i < A32_NFP; i++) out->fp[i] = 0x3f800000ull + (unsigned)i;
 
     free(mem);
     return failed;

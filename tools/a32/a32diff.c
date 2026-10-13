@@ -530,6 +530,7 @@ int main(int argc, char **argv)
             for (int r = 0; r < A32_NREG; r++) ic.regs[r] = w->init[r];
             ic.code = w->code;
             ic.code_len = w->code_len;
+            ic.thumb = (strcmp(w->mode, "thumb") == 0);
 
             struct a32_result res;
             memset(&res, 0, sizeof(res));

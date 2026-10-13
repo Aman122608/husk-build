@@ -16,17 +16,18 @@ struct a32_case_meta {
     void       (*fn)(struct a32_result *, void *);
 };
 
-/* The word-level view of each case: the initial register file and the raw
- * A32 fragment, byte-identical to what a32_case_<id> executes. a32diff runs
- * these through a32_interp. */
+/* The byte-level view of each case: the initial register file, the raw
+ * code bytes (byte-identical to what a32_case_<id> executes) and the
+ * entry instruction-set state. a32diff runs these through a32_interp. */
 struct a32_case_words {
     int          id;
     const char  *name;
     const char  *group;
     const char  *desc;
+    const char  *mode;
     uint32_t     init[A32_NREG];
     uint32_t     code_len;
-    const uint32_t *code;
+    const uint8_t *code;
 };
 
 extern void a32_case_1(struct a32_result *, void *);
@@ -529,6 +530,476 @@ extern void a32_case_497(struct a32_result *, void *);
 extern void a32_case_498(struct a32_result *, void *);
 extern void a32_case_499(struct a32_result *, void *);
 extern void a32_case_500(struct a32_result *, void *);
+extern void a32_case_501(struct a32_result *, void *);
+extern void a32_case_502(struct a32_result *, void *);
+extern void a32_case_503(struct a32_result *, void *);
+extern void a32_case_504(struct a32_result *, void *);
+extern void a32_case_505(struct a32_result *, void *);
+extern void a32_case_506(struct a32_result *, void *);
+extern void a32_case_507(struct a32_result *, void *);
+extern void a32_case_508(struct a32_result *, void *);
+extern void a32_case_509(struct a32_result *, void *);
+extern void a32_case_510(struct a32_result *, void *);
+extern void a32_case_511(struct a32_result *, void *);
+extern void a32_case_512(struct a32_result *, void *);
+extern void a32_case_513(struct a32_result *, void *);
+extern void a32_case_514(struct a32_result *, void *);
+extern void a32_case_515(struct a32_result *, void *);
+extern void a32_case_516(struct a32_result *, void *);
+extern void a32_case_517(struct a32_result *, void *);
+extern void a32_case_518(struct a32_result *, void *);
+extern void a32_case_519(struct a32_result *, void *);
+extern void a32_case_520(struct a32_result *, void *);
+extern void a32_case_521(struct a32_result *, void *);
+extern void a32_case_522(struct a32_result *, void *);
+extern void a32_case_523(struct a32_result *, void *);
+extern void a32_case_524(struct a32_result *, void *);
+extern void a32_case_525(struct a32_result *, void *);
+extern void a32_case_526(struct a32_result *, void *);
+extern void a32_case_527(struct a32_result *, void *);
+extern void a32_case_528(struct a32_result *, void *);
+extern void a32_case_529(struct a32_result *, void *);
+extern void a32_case_530(struct a32_result *, void *);
+extern void a32_case_531(struct a32_result *, void *);
+extern void a32_case_532(struct a32_result *, void *);
+extern void a32_case_533(struct a32_result *, void *);
+extern void a32_case_534(struct a32_result *, void *);
+extern void a32_case_535(struct a32_result *, void *);
+extern void a32_case_536(struct a32_result *, void *);
+extern void a32_case_537(struct a32_result *, void *);
+extern void a32_case_538(struct a32_result *, void *);
+extern void a32_case_539(struct a32_result *, void *);
+extern void a32_case_540(struct a32_result *, void *);
+extern void a32_case_541(struct a32_result *, void *);
+extern void a32_case_542(struct a32_result *, void *);
+extern void a32_case_543(struct a32_result *, void *);
+extern void a32_case_544(struct a32_result *, void *);
+extern void a32_case_545(struct a32_result *, void *);
+extern void a32_case_546(struct a32_result *, void *);
+extern void a32_case_547(struct a32_result *, void *);
+extern void a32_case_548(struct a32_result *, void *);
+extern void a32_case_549(struct a32_result *, void *);
+extern void a32_case_550(struct a32_result *, void *);
+extern void a32_case_551(struct a32_result *, void *);
+extern void a32_case_552(struct a32_result *, void *);
+extern void a32_case_553(struct a32_result *, void *);
+extern void a32_case_554(struct a32_result *, void *);
+extern void a32_case_555(struct a32_result *, void *);
+extern void a32_case_556(struct a32_result *, void *);
+extern void a32_case_557(struct a32_result *, void *);
+extern void a32_case_558(struct a32_result *, void *);
+extern void a32_case_559(struct a32_result *, void *);
+extern void a32_case_560(struct a32_result *, void *);
+extern void a32_case_561(struct a32_result *, void *);
+extern void a32_case_562(struct a32_result *, void *);
+extern void a32_case_563(struct a32_result *, void *);
+extern void a32_case_564(struct a32_result *, void *);
+extern void a32_case_565(struct a32_result *, void *);
+extern void a32_case_566(struct a32_result *, void *);
+extern void a32_case_567(struct a32_result *, void *);
+extern void a32_case_568(struct a32_result *, void *);
+extern void a32_case_569(struct a32_result *, void *);
+extern void a32_case_570(struct a32_result *, void *);
+extern void a32_case_571(struct a32_result *, void *);
+extern void a32_case_572(struct a32_result *, void *);
+extern void a32_case_573(struct a32_result *, void *);
+extern void a32_case_574(struct a32_result *, void *);
+extern void a32_case_575(struct a32_result *, void *);
+extern void a32_case_576(struct a32_result *, void *);
+extern void a32_case_577(struct a32_result *, void *);
+extern void a32_case_578(struct a32_result *, void *);
+extern void a32_case_579(struct a32_result *, void *);
+extern void a32_case_580(struct a32_result *, void *);
+extern void a32_case_581(struct a32_result *, void *);
+extern void a32_case_582(struct a32_result *, void *);
+extern void a32_case_583(struct a32_result *, void *);
+extern void a32_case_584(struct a32_result *, void *);
+extern void a32_case_585(struct a32_result *, void *);
+extern void a32_case_586(struct a32_result *, void *);
+extern void a32_case_587(struct a32_result *, void *);
+extern void a32_case_588(struct a32_result *, void *);
+extern void a32_case_589(struct a32_result *, void *);
+extern void a32_case_590(struct a32_result *, void *);
+extern void a32_case_591(struct a32_result *, void *);
+extern void a32_case_592(struct a32_result *, void *);
+extern void a32_case_593(struct a32_result *, void *);
+extern void a32_case_594(struct a32_result *, void *);
+extern void a32_case_595(struct a32_result *, void *);
+extern void a32_case_596(struct a32_result *, void *);
+extern void a32_case_597(struct a32_result *, void *);
+extern void a32_case_598(struct a32_result *, void *);
+extern void a32_case_599(struct a32_result *, void *);
+extern void a32_case_600(struct a32_result *, void *);
+extern void a32_case_601(struct a32_result *, void *);
+extern void a32_case_602(struct a32_result *, void *);
+extern void a32_case_603(struct a32_result *, void *);
+extern void a32_case_604(struct a32_result *, void *);
+extern void a32_case_605(struct a32_result *, void *);
+extern void a32_case_606(struct a32_result *, void *);
+extern void a32_case_607(struct a32_result *, void *);
+extern void a32_case_608(struct a32_result *, void *);
+extern void a32_case_609(struct a32_result *, void *);
+extern void a32_case_610(struct a32_result *, void *);
+extern void a32_case_611(struct a32_result *, void *);
+extern void a32_case_612(struct a32_result *, void *);
+extern void a32_case_613(struct a32_result *, void *);
+extern void a32_case_614(struct a32_result *, void *);
+extern void a32_case_615(struct a32_result *, void *);
+extern void a32_case_616(struct a32_result *, void *);
+extern void a32_case_617(struct a32_result *, void *);
+extern void a32_case_618(struct a32_result *, void *);
+extern void a32_case_619(struct a32_result *, void *);
+extern void a32_case_620(struct a32_result *, void *);
+extern void a32_case_621(struct a32_result *, void *);
+extern void a32_case_622(struct a32_result *, void *);
+extern void a32_case_623(struct a32_result *, void *);
+extern void a32_case_624(struct a32_result *, void *);
+extern void a32_case_625(struct a32_result *, void *);
+extern void a32_case_626(struct a32_result *, void *);
+extern void a32_case_627(struct a32_result *, void *);
+extern void a32_case_628(struct a32_result *, void *);
+extern void a32_case_629(struct a32_result *, void *);
+extern void a32_case_630(struct a32_result *, void *);
+extern void a32_case_631(struct a32_result *, void *);
+extern void a32_case_632(struct a32_result *, void *);
+extern void a32_case_633(struct a32_result *, void *);
+extern void a32_case_634(struct a32_result *, void *);
+extern void a32_case_635(struct a32_result *, void *);
+extern void a32_case_636(struct a32_result *, void *);
+extern void a32_case_637(struct a32_result *, void *);
+extern void a32_case_638(struct a32_result *, void *);
+extern void a32_case_639(struct a32_result *, void *);
+extern void a32_case_640(struct a32_result *, void *);
+extern void a32_case_641(struct a32_result *, void *);
+extern void a32_case_642(struct a32_result *, void *);
+extern void a32_case_643(struct a32_result *, void *);
+extern void a32_case_644(struct a32_result *, void *);
+extern void a32_case_645(struct a32_result *, void *);
+extern void a32_case_646(struct a32_result *, void *);
+extern void a32_case_647(struct a32_result *, void *);
+extern void a32_case_648(struct a32_result *, void *);
+extern void a32_case_649(struct a32_result *, void *);
+extern void a32_case_650(struct a32_result *, void *);
+extern void a32_case_651(struct a32_result *, void *);
+extern void a32_case_652(struct a32_result *, void *);
+extern void a32_case_653(struct a32_result *, void *);
+extern void a32_case_654(struct a32_result *, void *);
+extern void a32_case_655(struct a32_result *, void *);
+extern void a32_case_656(struct a32_result *, void *);
+extern void a32_case_657(struct a32_result *, void *);
+extern void a32_case_658(struct a32_result *, void *);
+extern void a32_case_659(struct a32_result *, void *);
+extern void a32_case_660(struct a32_result *, void *);
+extern void a32_case_661(struct a32_result *, void *);
+extern void a32_case_662(struct a32_result *, void *);
+extern void a32_case_663(struct a32_result *, void *);
+extern void a32_case_664(struct a32_result *, void *);
+extern void a32_case_665(struct a32_result *, void *);
+extern void a32_case_666(struct a32_result *, void *);
+extern void a32_case_667(struct a32_result *, void *);
+extern void a32_case_668(struct a32_result *, void *);
+extern void a32_case_669(struct a32_result *, void *);
+extern void a32_case_670(struct a32_result *, void *);
+extern void a32_case_671(struct a32_result *, void *);
+extern void a32_case_672(struct a32_result *, void *);
+extern void a32_case_673(struct a32_result *, void *);
+extern void a32_case_674(struct a32_result *, void *);
+extern void a32_case_675(struct a32_result *, void *);
+extern void a32_case_676(struct a32_result *, void *);
+extern void a32_case_677(struct a32_result *, void *);
+extern void a32_case_678(struct a32_result *, void *);
+extern void a32_case_679(struct a32_result *, void *);
+extern void a32_case_680(struct a32_result *, void *);
+extern void a32_case_681(struct a32_result *, void *);
+extern void a32_case_682(struct a32_result *, void *);
+extern void a32_case_683(struct a32_result *, void *);
+extern void a32_case_684(struct a32_result *, void *);
+extern void a32_case_685(struct a32_result *, void *);
+extern void a32_case_686(struct a32_result *, void *);
+extern void a32_case_687(struct a32_result *, void *);
+extern void a32_case_688(struct a32_result *, void *);
+extern void a32_case_689(struct a32_result *, void *);
+extern void a32_case_690(struct a32_result *, void *);
+extern void a32_case_691(struct a32_result *, void *);
+extern void a32_case_692(struct a32_result *, void *);
+extern void a32_case_693(struct a32_result *, void *);
+extern void a32_case_694(struct a32_result *, void *);
+extern void a32_case_695(struct a32_result *, void *);
+extern void a32_case_696(struct a32_result *, void *);
+extern void a32_case_697(struct a32_result *, void *);
+extern void a32_case_698(struct a32_result *, void *);
+extern void a32_case_699(struct a32_result *, void *);
+extern void a32_case_700(struct a32_result *, void *);
+extern void a32_case_701(struct a32_result *, void *);
+extern void a32_case_702(struct a32_result *, void *);
+extern void a32_case_703(struct a32_result *, void *);
+extern void a32_case_704(struct a32_result *, void *);
+extern void a32_case_705(struct a32_result *, void *);
+extern void a32_case_706(struct a32_result *, void *);
+extern void a32_case_707(struct a32_result *, void *);
+extern void a32_case_708(struct a32_result *, void *);
+extern void a32_case_709(struct a32_result *, void *);
+extern void a32_case_710(struct a32_result *, void *);
+extern void a32_case_711(struct a32_result *, void *);
+extern void a32_case_712(struct a32_result *, void *);
+extern void a32_case_713(struct a32_result *, void *);
+extern void a32_case_714(struct a32_result *, void *);
+extern void a32_case_715(struct a32_result *, void *);
+extern void a32_case_716(struct a32_result *, void *);
+extern void a32_case_717(struct a32_result *, void *);
+extern void a32_case_718(struct a32_result *, void *);
+extern void a32_case_719(struct a32_result *, void *);
+extern void a32_case_720(struct a32_result *, void *);
+extern void a32_case_721(struct a32_result *, void *);
+extern void a32_case_722(struct a32_result *, void *);
+extern void a32_case_723(struct a32_result *, void *);
+extern void a32_case_724(struct a32_result *, void *);
+extern void a32_case_725(struct a32_result *, void *);
+extern void a32_case_726(struct a32_result *, void *);
+extern void a32_case_727(struct a32_result *, void *);
+extern void a32_case_728(struct a32_result *, void *);
+extern void a32_case_729(struct a32_result *, void *);
+extern void a32_case_730(struct a32_result *, void *);
+extern void a32_case_731(struct a32_result *, void *);
+extern void a32_case_732(struct a32_result *, void *);
+extern void a32_case_733(struct a32_result *, void *);
+extern void a32_case_734(struct a32_result *, void *);
+extern void a32_case_735(struct a32_result *, void *);
+extern void a32_case_736(struct a32_result *, void *);
+extern void a32_case_737(struct a32_result *, void *);
+extern void a32_case_738(struct a32_result *, void *);
+extern void a32_case_739(struct a32_result *, void *);
+extern void a32_case_740(struct a32_result *, void *);
+extern void a32_case_741(struct a32_result *, void *);
+extern void a32_case_742(struct a32_result *, void *);
+extern void a32_case_743(struct a32_result *, void *);
+extern void a32_case_744(struct a32_result *, void *);
+extern void a32_case_745(struct a32_result *, void *);
+extern void a32_case_746(struct a32_result *, void *);
+extern void a32_case_747(struct a32_result *, void *);
+extern void a32_case_748(struct a32_result *, void *);
+extern void a32_case_749(struct a32_result *, void *);
+extern void a32_case_750(struct a32_result *, void *);
+extern void a32_case_751(struct a32_result *, void *);
+extern void a32_case_752(struct a32_result *, void *);
+extern void a32_case_753(struct a32_result *, void *);
+extern void a32_case_754(struct a32_result *, void *);
+extern void a32_case_755(struct a32_result *, void *);
+extern void a32_case_756(struct a32_result *, void *);
+extern void a32_case_757(struct a32_result *, void *);
+extern void a32_case_758(struct a32_result *, void *);
+extern void a32_case_759(struct a32_result *, void *);
+extern void a32_case_760(struct a32_result *, void *);
+extern void a32_case_761(struct a32_result *, void *);
+extern void a32_case_762(struct a32_result *, void *);
+extern void a32_case_763(struct a32_result *, void *);
+extern void a32_case_764(struct a32_result *, void *);
+extern void a32_case_765(struct a32_result *, void *);
+extern void a32_case_766(struct a32_result *, void *);
+extern void a32_case_767(struct a32_result *, void *);
+extern void a32_case_768(struct a32_result *, void *);
+extern void a32_case_769(struct a32_result *, void *);
+extern void a32_case_770(struct a32_result *, void *);
+extern void a32_case_771(struct a32_result *, void *);
+extern void a32_case_772(struct a32_result *, void *);
+extern void a32_case_773(struct a32_result *, void *);
+extern void a32_case_774(struct a32_result *, void *);
+extern void a32_case_775(struct a32_result *, void *);
+extern void a32_case_776(struct a32_result *, void *);
+extern void a32_case_777(struct a32_result *, void *);
+extern void a32_case_778(struct a32_result *, void *);
+extern void a32_case_779(struct a32_result *, void *);
+extern void a32_case_780(struct a32_result *, void *);
+extern void a32_case_781(struct a32_result *, void *);
+extern void a32_case_782(struct a32_result *, void *);
+extern void a32_case_783(struct a32_result *, void *);
+extern void a32_case_784(struct a32_result *, void *);
+extern void a32_case_785(struct a32_result *, void *);
+extern void a32_case_786(struct a32_result *, void *);
+extern void a32_case_787(struct a32_result *, void *);
+extern void a32_case_788(struct a32_result *, void *);
+extern void a32_case_789(struct a32_result *, void *);
+extern void a32_case_790(struct a32_result *, void *);
+extern void a32_case_791(struct a32_result *, void *);
+extern void a32_case_792(struct a32_result *, void *);
+extern void a32_case_793(struct a32_result *, void *);
+extern void a32_case_794(struct a32_result *, void *);
+extern void a32_case_795(struct a32_result *, void *);
+extern void a32_case_796(struct a32_result *, void *);
+extern void a32_case_797(struct a32_result *, void *);
+extern void a32_case_798(struct a32_result *, void *);
+extern void a32_case_799(struct a32_result *, void *);
+extern void a32_case_800(struct a32_result *, void *);
+extern void a32_case_801(struct a32_result *, void *);
+extern void a32_case_802(struct a32_result *, void *);
+extern void a32_case_803(struct a32_result *, void *);
+extern void a32_case_804(struct a32_result *, void *);
+extern void a32_case_805(struct a32_result *, void *);
+extern void a32_case_806(struct a32_result *, void *);
+extern void a32_case_807(struct a32_result *, void *);
+extern void a32_case_808(struct a32_result *, void *);
+extern void a32_case_809(struct a32_result *, void *);
+extern void a32_case_810(struct a32_result *, void *);
+extern void a32_case_811(struct a32_result *, void *);
+extern void a32_case_812(struct a32_result *, void *);
+extern void a32_case_813(struct a32_result *, void *);
+extern void a32_case_814(struct a32_result *, void *);
+extern void a32_case_815(struct a32_result *, void *);
+extern void a32_case_816(struct a32_result *, void *);
+extern void a32_case_817(struct a32_result *, void *);
+extern void a32_case_818(struct a32_result *, void *);
+extern void a32_case_819(struct a32_result *, void *);
+extern void a32_case_820(struct a32_result *, void *);
+extern void a32_case_821(struct a32_result *, void *);
+extern void a32_case_822(struct a32_result *, void *);
+extern void a32_case_823(struct a32_result *, void *);
+extern void a32_case_824(struct a32_result *, void *);
+extern void a32_case_825(struct a32_result *, void *);
+extern void a32_case_826(struct a32_result *, void *);
+extern void a32_case_827(struct a32_result *, void *);
+extern void a32_case_828(struct a32_result *, void *);
+extern void a32_case_829(struct a32_result *, void *);
+extern void a32_case_830(struct a32_result *, void *);
+extern void a32_case_831(struct a32_result *, void *);
+extern void a32_case_832(struct a32_result *, void *);
+extern void a32_case_833(struct a32_result *, void *);
+extern void a32_case_834(struct a32_result *, void *);
+extern void a32_case_835(struct a32_result *, void *);
+extern void a32_case_836(struct a32_result *, void *);
+extern void a32_case_837(struct a32_result *, void *);
+extern void a32_case_838(struct a32_result *, void *);
+extern void a32_case_839(struct a32_result *, void *);
+extern void a32_case_840(struct a32_result *, void *);
+extern void a32_case_841(struct a32_result *, void *);
+extern void a32_case_842(struct a32_result *, void *);
+extern void a32_case_843(struct a32_result *, void *);
+extern void a32_case_844(struct a32_result *, void *);
+extern void a32_case_845(struct a32_result *, void *);
+extern void a32_case_846(struct a32_result *, void *);
+extern void a32_case_847(struct a32_result *, void *);
+extern void a32_case_848(struct a32_result *, void *);
+extern void a32_case_849(struct a32_result *, void *);
+extern void a32_case_850(struct a32_result *, void *);
+extern void a32_case_851(struct a32_result *, void *);
+extern void a32_case_852(struct a32_result *, void *);
+extern void a32_case_853(struct a32_result *, void *);
+extern void a32_case_854(struct a32_result *, void *);
+extern void a32_case_855(struct a32_result *, void *);
+extern void a32_case_856(struct a32_result *, void *);
+extern void a32_case_857(struct a32_result *, void *);
+extern void a32_case_858(struct a32_result *, void *);
+extern void a32_case_859(struct a32_result *, void *);
+extern void a32_case_860(struct a32_result *, void *);
+extern void a32_case_861(struct a32_result *, void *);
+extern void a32_case_862(struct a32_result *, void *);
+extern void a32_case_863(struct a32_result *, void *);
+extern void a32_case_864(struct a32_result *, void *);
+extern void a32_case_865(struct a32_result *, void *);
+extern void a32_case_866(struct a32_result *, void *);
+extern void a32_case_867(struct a32_result *, void *);
+extern void a32_case_868(struct a32_result *, void *);
+extern void a32_case_869(struct a32_result *, void *);
+extern void a32_case_870(struct a32_result *, void *);
+extern void a32_case_871(struct a32_result *, void *);
+extern void a32_case_872(struct a32_result *, void *);
+extern void a32_case_873(struct a32_result *, void *);
+extern void a32_case_874(struct a32_result *, void *);
+extern void a32_case_875(struct a32_result *, void *);
+extern void a32_case_876(struct a32_result *, void *);
+extern void a32_case_877(struct a32_result *, void *);
+extern void a32_case_878(struct a32_result *, void *);
+extern void a32_case_879(struct a32_result *, void *);
+extern void a32_case_880(struct a32_result *, void *);
+extern void a32_case_881(struct a32_result *, void *);
+extern void a32_case_882(struct a32_result *, void *);
+extern void a32_case_883(struct a32_result *, void *);
+extern void a32_case_884(struct a32_result *, void *);
+extern void a32_case_885(struct a32_result *, void *);
+extern void a32_case_886(struct a32_result *, void *);
+extern void a32_case_887(struct a32_result *, void *);
+extern void a32_case_888(struct a32_result *, void *);
+extern void a32_case_889(struct a32_result *, void *);
+extern void a32_case_890(struct a32_result *, void *);
+extern void a32_case_891(struct a32_result *, void *);
+extern void a32_case_892(struct a32_result *, void *);
+extern void a32_case_893(struct a32_result *, void *);
+extern void a32_case_894(struct a32_result *, void *);
+extern void a32_case_895(struct a32_result *, void *);
+extern void a32_case_896(struct a32_result *, void *);
+extern void a32_case_897(struct a32_result *, void *);
+extern void a32_case_898(struct a32_result *, void *);
+extern void a32_case_899(struct a32_result *, void *);
+extern void a32_case_900(struct a32_result *, void *);
+extern void a32_case_901(struct a32_result *, void *);
+extern void a32_case_902(struct a32_result *, void *);
+extern void a32_case_903(struct a32_result *, void *);
+extern void a32_case_904(struct a32_result *, void *);
+extern void a32_case_905(struct a32_result *, void *);
+extern void a32_case_906(struct a32_result *, void *);
+extern void a32_case_907(struct a32_result *, void *);
+extern void a32_case_908(struct a32_result *, void *);
+extern void a32_case_909(struct a32_result *, void *);
+extern void a32_case_910(struct a32_result *, void *);
+extern void a32_case_911(struct a32_result *, void *);
+extern void a32_case_912(struct a32_result *, void *);
+extern void a32_case_913(struct a32_result *, void *);
+extern void a32_case_914(struct a32_result *, void *);
+extern void a32_case_915(struct a32_result *, void *);
+extern void a32_case_916(struct a32_result *, void *);
+extern void a32_case_917(struct a32_result *, void *);
+extern void a32_case_918(struct a32_result *, void *);
+extern void a32_case_919(struct a32_result *, void *);
+extern void a32_case_920(struct a32_result *, void *);
+extern void a32_case_921(struct a32_result *, void *);
+extern void a32_case_922(struct a32_result *, void *);
+extern void a32_case_923(struct a32_result *, void *);
+extern void a32_case_924(struct a32_result *, void *);
+extern void a32_case_925(struct a32_result *, void *);
+extern void a32_case_926(struct a32_result *, void *);
+extern void a32_case_927(struct a32_result *, void *);
+extern void a32_case_928(struct a32_result *, void *);
+extern void a32_case_929(struct a32_result *, void *);
+extern void a32_case_930(struct a32_result *, void *);
+extern void a32_case_931(struct a32_result *, void *);
+extern void a32_case_932(struct a32_result *, void *);
+extern void a32_case_933(struct a32_result *, void *);
+extern void a32_case_934(struct a32_result *, void *);
+extern void a32_case_935(struct a32_result *, void *);
+extern void a32_case_936(struct a32_result *, void *);
+extern void a32_case_937(struct a32_result *, void *);
+extern void a32_case_938(struct a32_result *, void *);
+extern void a32_case_939(struct a32_result *, void *);
+extern void a32_case_940(struct a32_result *, void *);
+extern void a32_case_941(struct a32_result *, void *);
+extern void a32_case_942(struct a32_result *, void *);
+extern void a32_case_943(struct a32_result *, void *);
+extern void a32_case_944(struct a32_result *, void *);
+extern void a32_case_945(struct a32_result *, void *);
+extern void a32_case_946(struct a32_result *, void *);
+extern void a32_case_947(struct a32_result *, void *);
+extern void a32_case_948(struct a32_result *, void *);
+extern void a32_case_949(struct a32_result *, void *);
+extern void a32_case_950(struct a32_result *, void *);
+extern void a32_case_951(struct a32_result *, void *);
+extern void a32_case_952(struct a32_result *, void *);
+extern void a32_case_953(struct a32_result *, void *);
+extern void a32_case_954(struct a32_result *, void *);
+extern void a32_case_955(struct a32_result *, void *);
+extern void a32_case_956(struct a32_result *, void *);
+extern void a32_case_957(struct a32_result *, void *);
+extern void a32_case_958(struct a32_result *, void *);
+extern void a32_case_959(struct a32_result *, void *);
+extern void a32_case_960(struct a32_result *, void *);
+extern void a32_case_961(struct a32_result *, void *);
+extern void a32_case_962(struct a32_result *, void *);
+extern void a32_case_963(struct a32_result *, void *);
+extern void a32_case_964(struct a32_result *, void *);
+extern void a32_case_965(struct a32_result *, void *);
+extern void a32_case_966(struct a32_result *, void *);
+extern void a32_case_967(struct a32_result *, void *);
+extern void a32_case_968(struct a32_result *, void *);
+extern void a32_case_969(struct a32_result *, void *);
+extern void a32_case_970(struct a32_result *, void *);
 
 static const struct a32_case_meta a32_cases[] = {
     { 1, "dp_reg_and_0", "dp-reg", "arm", "handwritten", "AND r0,r1,r2 (reg form)", a32_case_1 },
@@ -1031,2013 +1502,4449 @@ static const struct a32_case_meta a32_cases[] = {
     { 498, "mixed_17", "mixed", "arm", "handwritten", "ADDS/MOV-shift/STR/LDR/EOR", a32_case_498 },
     { 499, "mixed_18", "mixed", "arm", "handwritten", "ADDS/MOV-shift/STR/LDR/EOR", a32_case_499 },
     { 500, "mixed_19", "mixed", "arm", "handwritten", "ADDS/MOV-shift/STR/LDR/EOR", a32_case_500 },
+    { 501, "t_shift_lsl_0", "thumb-shift", "thumb", "handwritten", "T LSL r0,r1,#0", a32_case_501 },
+    { 502, "t_shift_lsl_1", "thumb-shift", "thumb", "handwritten", "T LSL r0,r1,#1", a32_case_502 },
+    { 503, "t_shift_lsl_5", "thumb-shift", "thumb", "handwritten", "T LSL r0,r1,#5", a32_case_503 },
+    { 504, "t_shift_lsl_31", "thumb-shift", "thumb", "handwritten", "T LSL r0,r1,#31", a32_case_504 },
+    { 505, "t_shift_lsr_0", "thumb-shift", "thumb", "handwritten", "T LSR r0,r1,#0", a32_case_505 },
+    { 506, "t_shift_lsr_1", "thumb-shift", "thumb", "handwritten", "T LSR r0,r1,#1", a32_case_506 },
+    { 507, "t_shift_lsr_5", "thumb-shift", "thumb", "handwritten", "T LSR r0,r1,#5", a32_case_507 },
+    { 508, "t_shift_lsr_31", "thumb-shift", "thumb", "handwritten", "T LSR r0,r1,#31", a32_case_508 },
+    { 509, "t_shift_asr_0", "thumb-shift", "thumb", "handwritten", "T ASR r0,r1,#0", a32_case_509 },
+    { 510, "t_shift_asr_1", "thumb-shift", "thumb", "handwritten", "T ASR r0,r1,#1", a32_case_510 },
+    { 511, "t_shift_asr_5", "thumb-shift", "thumb", "handwritten", "T ASR r0,r1,#5", a32_case_511 },
+    { 512, "t_shift_asr_31", "thumb-shift", "thumb", "handwritten", "T ASR r0,r1,#31", a32_case_512 },
+    { 513, "t_alu_and_0", "thumb-alu", "thumb", "handwritten", "T AND r0,r1", a32_case_513 },
+    { 514, "t_alu_and_1", "thumb-alu", "thumb", "handwritten", "T AND r0,r1", a32_case_514 },
+    { 515, "t_alu_and_2", "thumb-alu", "thumb", "handwritten", "T AND r0,r1", a32_case_515 },
+    { 516, "t_alu_and_3", "thumb-alu", "thumb", "handwritten", "T AND r0,r1", a32_case_516 },
+    { 517, "t_alu_eor_0", "thumb-alu", "thumb", "handwritten", "T EOR r0,r1", a32_case_517 },
+    { 518, "t_alu_eor_1", "thumb-alu", "thumb", "handwritten", "T EOR r0,r1", a32_case_518 },
+    { 519, "t_alu_eor_2", "thumb-alu", "thumb", "handwritten", "T EOR r0,r1", a32_case_519 },
+    { 520, "t_alu_eor_3", "thumb-alu", "thumb", "handwritten", "T EOR r0,r1", a32_case_520 },
+    { 521, "t_alu_lsl_0", "thumb-alu", "thumb", "handwritten", "T LSL r0,r1", a32_case_521 },
+    { 522, "t_alu_lsl_1", "thumb-alu", "thumb", "handwritten", "T LSL r0,r1", a32_case_522 },
+    { 523, "t_alu_lsl_2", "thumb-alu", "thumb", "handwritten", "T LSL r0,r1", a32_case_523 },
+    { 524, "t_alu_lsl_3", "thumb-alu", "thumb", "handwritten", "T LSL r0,r1", a32_case_524 },
+    { 525, "t_alu_lsr_0", "thumb-alu", "thumb", "handwritten", "T LSR r0,r1", a32_case_525 },
+    { 526, "t_alu_lsr_1", "thumb-alu", "thumb", "handwritten", "T LSR r0,r1", a32_case_526 },
+    { 527, "t_alu_lsr_2", "thumb-alu", "thumb", "handwritten", "T LSR r0,r1", a32_case_527 },
+    { 528, "t_alu_lsr_3", "thumb-alu", "thumb", "handwritten", "T LSR r0,r1", a32_case_528 },
+    { 529, "t_alu_asr_0", "thumb-alu", "thumb", "handwritten", "T ASR r0,r1", a32_case_529 },
+    { 530, "t_alu_asr_1", "thumb-alu", "thumb", "handwritten", "T ASR r0,r1", a32_case_530 },
+    { 531, "t_alu_asr_2", "thumb-alu", "thumb", "handwritten", "T ASR r0,r1", a32_case_531 },
+    { 532, "t_alu_asr_3", "thumb-alu", "thumb", "handwritten", "T ASR r0,r1", a32_case_532 },
+    { 533, "t_alu_adc_0", "thumb-alu", "thumb", "handwritten", "T ADC r0,r1", a32_case_533 },
+    { 534, "t_alu_adc_1", "thumb-alu", "thumb", "handwritten", "T ADC r0,r1", a32_case_534 },
+    { 535, "t_alu_adc_2", "thumb-alu", "thumb", "handwritten", "T ADC r0,r1", a32_case_535 },
+    { 536, "t_alu_adc_3", "thumb-alu", "thumb", "handwritten", "T ADC r0,r1", a32_case_536 },
+    { 537, "t_alu_sbc_0", "thumb-alu", "thumb", "handwritten", "T SBC r0,r1", a32_case_537 },
+    { 538, "t_alu_sbc_1", "thumb-alu", "thumb", "handwritten", "T SBC r0,r1", a32_case_538 },
+    { 539, "t_alu_sbc_2", "thumb-alu", "thumb", "handwritten", "T SBC r0,r1", a32_case_539 },
+    { 540, "t_alu_sbc_3", "thumb-alu", "thumb", "handwritten", "T SBC r0,r1", a32_case_540 },
+    { 541, "t_alu_ror_0", "thumb-alu", "thumb", "handwritten", "T ROR r0,r1", a32_case_541 },
+    { 542, "t_alu_ror_1", "thumb-alu", "thumb", "handwritten", "T ROR r0,r1", a32_case_542 },
+    { 543, "t_alu_ror_2", "thumb-alu", "thumb", "handwritten", "T ROR r0,r1", a32_case_543 },
+    { 544, "t_alu_ror_3", "thumb-alu", "thumb", "handwritten", "T ROR r0,r1", a32_case_544 },
+    { 545, "t_alu_tst_0", "thumb-alu", "thumb", "handwritten", "T TST r0,r1", a32_case_545 },
+    { 546, "t_alu_tst_1", "thumb-alu", "thumb", "handwritten", "T TST r0,r1", a32_case_546 },
+    { 547, "t_alu_tst_2", "thumb-alu", "thumb", "handwritten", "T TST r0,r1", a32_case_547 },
+    { 548, "t_alu_tst_3", "thumb-alu", "thumb", "handwritten", "T TST r0,r1", a32_case_548 },
+    { 549, "t_alu_neg_0", "thumb-alu", "thumb", "handwritten", "T NEG r0,r1", a32_case_549 },
+    { 550, "t_alu_neg_1", "thumb-alu", "thumb", "handwritten", "T NEG r0,r1", a32_case_550 },
+    { 551, "t_alu_neg_2", "thumb-alu", "thumb", "handwritten", "T NEG r0,r1", a32_case_551 },
+    { 552, "t_alu_neg_3", "thumb-alu", "thumb", "handwritten", "T NEG r0,r1", a32_case_552 },
+    { 553, "t_alu_cmp_0", "thumb-alu", "thumb", "handwritten", "T CMP r0,r1", a32_case_553 },
+    { 554, "t_alu_cmp_1", "thumb-alu", "thumb", "handwritten", "T CMP r0,r1", a32_case_554 },
+    { 555, "t_alu_cmp_2", "thumb-alu", "thumb", "handwritten", "T CMP r0,r1", a32_case_555 },
+    { 556, "t_alu_cmp_3", "thumb-alu", "thumb", "handwritten", "T CMP r0,r1", a32_case_556 },
+    { 557, "t_alu_cmn_0", "thumb-alu", "thumb", "handwritten", "T CMN r0,r1", a32_case_557 },
+    { 558, "t_alu_cmn_1", "thumb-alu", "thumb", "handwritten", "T CMN r0,r1", a32_case_558 },
+    { 559, "t_alu_cmn_2", "thumb-alu", "thumb", "handwritten", "T CMN r0,r1", a32_case_559 },
+    { 560, "t_alu_cmn_3", "thumb-alu", "thumb", "handwritten", "T CMN r0,r1", a32_case_560 },
+    { 561, "t_alu_orr_0", "thumb-alu", "thumb", "handwritten", "T ORR r0,r1", a32_case_561 },
+    { 562, "t_alu_orr_1", "thumb-alu", "thumb", "handwritten", "T ORR r0,r1", a32_case_562 },
+    { 563, "t_alu_orr_2", "thumb-alu", "thumb", "handwritten", "T ORR r0,r1", a32_case_563 },
+    { 564, "t_alu_orr_3", "thumb-alu", "thumb", "handwritten", "T ORR r0,r1", a32_case_564 },
+    { 565, "t_alu_mul_0", "thumb-alu", "thumb", "handwritten", "T MUL r0,r1", a32_case_565 },
+    { 566, "t_alu_mul_1", "thumb-alu", "thumb", "handwritten", "T MUL r0,r1", a32_case_566 },
+    { 567, "t_alu_mul_2", "thumb-alu", "thumb", "handwritten", "T MUL r0,r1", a32_case_567 },
+    { 568, "t_alu_mul_3", "thumb-alu", "thumb", "handwritten", "T MUL r0,r1", a32_case_568 },
+    { 569, "t_alu_bic_0", "thumb-alu", "thumb", "handwritten", "T BIC r0,r1", a32_case_569 },
+    { 570, "t_alu_bic_1", "thumb-alu", "thumb", "handwritten", "T BIC r0,r1", a32_case_570 },
+    { 571, "t_alu_bic_2", "thumb-alu", "thumb", "handwritten", "T BIC r0,r1", a32_case_571 },
+    { 572, "t_alu_bic_3", "thumb-alu", "thumb", "handwritten", "T BIC r0,r1", a32_case_572 },
+    { 573, "t_alu_mvn_0", "thumb-alu", "thumb", "handwritten", "T MVN r0,r1", a32_case_573 },
+    { 574, "t_alu_mvn_1", "thumb-alu", "thumb", "handwritten", "T MVN r0,r1", a32_case_574 },
+    { 575, "t_alu_mvn_2", "thumb-alu", "thumb", "handwritten", "T MVN r0,r1", a32_case_575 },
+    { 576, "t_alu_mvn_3", "thumb-alu", "thumb", "handwritten", "T MVN r0,r1", a32_case_576 },
+    { 577, "t_movs_imm8_0", "thumb-imm8", "thumb", "handwritten", "T movs r0,#0x0", a32_case_577 },
+    { 578, "t_movs_imm8_1", "thumb-imm8", "thumb", "handwritten", "T movs r0,#0x1", a32_case_578 },
+    { 579, "t_movs_imm8_2", "thumb-imm8", "thumb", "handwritten", "T movs r0,#0x7f", a32_case_579 },
+    { 580, "t_movs_imm8_3", "thumb-imm8", "thumb", "handwritten", "T movs r0,#0xff", a32_case_580 },
+    { 581, "t_cmp_imm8_0", "thumb-imm8", "thumb", "handwritten", "T cmp r0,#0x0", a32_case_581 },
+    { 582, "t_cmp_imm8_1", "thumb-imm8", "thumb", "handwritten", "T cmp r0,#0x1", a32_case_582 },
+    { 583, "t_cmp_imm8_2", "thumb-imm8", "thumb", "handwritten", "T cmp r0,#0x7f", a32_case_583 },
+    { 584, "t_cmp_imm8_3", "thumb-imm8", "thumb", "handwritten", "T cmp r0,#0xff", a32_case_584 },
+    { 585, "t_adds_imm8_0", "thumb-imm8", "thumb", "handwritten", "T adds r0,#0x0", a32_case_585 },
+    { 586, "t_adds_imm8_1", "thumb-imm8", "thumb", "handwritten", "T adds r0,#0x1", a32_case_586 },
+    { 587, "t_adds_imm8_2", "thumb-imm8", "thumb", "handwritten", "T adds r0,#0x7f", a32_case_587 },
+    { 588, "t_adds_imm8_3", "thumb-imm8", "thumb", "handwritten", "T adds r0,#0xff", a32_case_588 },
+    { 589, "t_subs_imm8_0", "thumb-imm8", "thumb", "handwritten", "T subs r0,#0x0", a32_case_589 },
+    { 590, "t_subs_imm8_1", "thumb-imm8", "thumb", "handwritten", "T subs r0,#0x1", a32_case_590 },
+    { 591, "t_subs_imm8_2", "thumb-imm8", "thumb", "handwritten", "T subs r0,#0x7f", a32_case_591 },
+    { 592, "t_subs_imm8_3", "thumb-imm8", "thumb", "handwritten", "T subs r0,#0xff", a32_case_592 },
+    { 593, "t_adds_reg_0", "thumb-addsub", "thumb", "handwritten", "T ADDS r0,r1,r2", a32_case_593 },
+    { 594, "t_subs_reg_0", "thumb-addsub", "thumb", "handwritten", "T SUBS r0,r1,r2", a32_case_594 },
+    { 595, "t_adds_reg_1", "thumb-addsub", "thumb", "handwritten", "T ADDS r0,r1,r2", a32_case_595 },
+    { 596, "t_subs_reg_1", "thumb-addsub", "thumb", "handwritten", "T SUBS r0,r1,r2", a32_case_596 },
+    { 597, "t_adds_reg_2", "thumb-addsub", "thumb", "handwritten", "T ADDS r0,r1,r2", a32_case_597 },
+    { 598, "t_subs_reg_2", "thumb-addsub", "thumb", "handwritten", "T SUBS r0,r1,r2", a32_case_598 },
+    { 599, "t_adds_i3_0", "thumb-addsub", "thumb", "handwritten", "T ADDS r0,r1,#0", a32_case_599 },
+    { 600, "t_subs_i3_0", "thumb-addsub", "thumb", "handwritten", "T SUBS r0,r1,#0", a32_case_600 },
+    { 601, "t_adds_i3_1", "thumb-addsub", "thumb", "handwritten", "T ADDS r0,r1,#1", a32_case_601 },
+    { 602, "t_subs_i3_1", "thumb-addsub", "thumb", "handwritten", "T SUBS r0,r1,#1", a32_case_602 },
+    { 603, "t_adds_i3_2", "thumb-addsub", "thumb", "handwritten", "T ADDS r0,r1,#3", a32_case_603 },
+    { 604, "t_subs_i3_2", "thumb-addsub", "thumb", "handwritten", "T SUBS r0,r1,#3", a32_case_604 },
+    { 605, "t_adds_i3_3", "thumb-addsub", "thumb", "handwritten", "T ADDS r0,r1,#7", a32_case_605 },
+    { 606, "t_subs_i3_3", "thumb-addsub", "thumb", "handwritten", "T SUBS r0,r1,#7", a32_case_606 },
+    { 607, "t_add_hi_0", "thumb-hi", "thumb", "handwritten", "T ADD r0,r8", a32_case_607 },
+    { 608, "t_mov_hi_0", "thumb-hi", "thumb", "handwritten", "T MOV r11,r2", a32_case_608 },
+    { 609, "t_cmp_hi_0", "thumb-hi", "thumb", "handwritten", "T CMP r8,r1 then MOVS (flags)", a32_case_609 },
+    { 610, "t_add_hi_1", "thumb-hi", "thumb", "handwritten", "T ADD r0,r8", a32_case_610 },
+    { 611, "t_mov_hi_1", "thumb-hi", "thumb", "handwritten", "T MOV r11,r2", a32_case_611 },
+    { 612, "t_cmp_hi_1", "thumb-hi", "thumb", "handwritten", "T CMP r8,r1 then MOVS (flags)", a32_case_612 },
+    { 613, "t_add_hi_2", "thumb-hi", "thumb", "handwritten", "T ADD r0,r8", a32_case_613 },
+    { 614, "t_mov_hi_2", "thumb-hi", "thumb", "handwritten", "T MOV r11,r2", a32_case_614 },
+    { 615, "t_cmp_hi_2", "thumb-hi", "thumb", "handwritten", "T CMP r8,r1 then MOVS (flags)", a32_case_615 },
+    { 616, "t_blx_reg_0", "thumb-hi", "thumb", "handwritten", "T BLX register (odd, stays Thumb) + BX lr", a32_case_616 },
+    { 617, "t_blx_reg_1", "thumb-hi", "thumb", "handwritten", "T BLX register (odd, stays Thumb) + BX lr", a32_case_617 },
+    { 618, "t_str_reg_0", "thumb-ldst", "thumb", "handwritten", "T STR r0,[r7,r2]", a32_case_618 },
+    { 619, "t_str_reg_1", "thumb-ldst", "thumb", "handwritten", "T STR r0,[r7,r4]", a32_case_619 },
+    { 620, "t_str_reg_2", "thumb-ldst", "thumb", "handwritten", "T STR r0,[r7,r6]", a32_case_620 },
+    { 621, "t_strh_reg_0", "thumb-ldst", "thumb", "handwritten", "T STRH r0,[r7,r2]", a32_case_621 },
+    { 622, "t_strh_reg_1", "thumb-ldst", "thumb", "handwritten", "T STRH r0,[r7,r4]", a32_case_622 },
+    { 623, "t_strh_reg_2", "thumb-ldst", "thumb", "handwritten", "T STRH r0,[r7,r6]", a32_case_623 },
+    { 624, "t_strb_reg_0", "thumb-ldst", "thumb", "handwritten", "T STRB r0,[r7,r2]", a32_case_624 },
+    { 625, "t_strb_reg_1", "thumb-ldst", "thumb", "handwritten", "T STRB r0,[r7,r4]", a32_case_625 },
+    { 626, "t_strb_reg_2", "thumb-ldst", "thumb", "handwritten", "T STRB r0,[r7,r6]", a32_case_626 },
+    { 627, "t_ldrsb_reg_0", "thumb-ldst", "thumb", "handwritten", "T LDRSB r0,[r7,r2]", a32_case_627 },
+    { 628, "t_ldrsb_reg_1", "thumb-ldst", "thumb", "handwritten", "T LDRSB r0,[r7,r4]", a32_case_628 },
+    { 629, "t_ldrsb_reg_2", "thumb-ldst", "thumb", "handwritten", "T LDRSB r0,[r7,r6]", a32_case_629 },
+    { 630, "t_ldr_reg_0", "thumb-ldst", "thumb", "handwritten", "T LDR r0,[r7,r2]", a32_case_630 },
+    { 631, "t_ldr_reg_1", "thumb-ldst", "thumb", "handwritten", "T LDR r0,[r7,r4]", a32_case_631 },
+    { 632, "t_ldr_reg_2", "thumb-ldst", "thumb", "handwritten", "T LDR r0,[r7,r6]", a32_case_632 },
+    { 633, "t_ldrh_reg_0", "thumb-ldst", "thumb", "handwritten", "T LDRH r0,[r7,r2]", a32_case_633 },
+    { 634, "t_ldrh_reg_1", "thumb-ldst", "thumb", "handwritten", "T LDRH r0,[r7,r4]", a32_case_634 },
+    { 635, "t_ldrh_reg_2", "thumb-ldst", "thumb", "handwritten", "T LDRH r0,[r7,r6]", a32_case_635 },
+    { 636, "t_ldrb_reg_0", "thumb-ldst", "thumb", "handwritten", "T LDRB r0,[r7,r2]", a32_case_636 },
+    { 637, "t_ldrb_reg_1", "thumb-ldst", "thumb", "handwritten", "T LDRB r0,[r7,r4]", a32_case_637 },
+    { 638, "t_ldrb_reg_2", "thumb-ldst", "thumb", "handwritten", "T LDRB r0,[r7,r6]", a32_case_638 },
+    { 639, "t_ldrsh_reg_0", "thumb-ldst", "thumb", "handwritten", "T LDRSH r0,[r7,r2]", a32_case_639 },
+    { 640, "t_ldrsh_reg_1", "thumb-ldst", "thumb", "handwritten", "T LDRSH r0,[r7,r4]", a32_case_640 },
+    { 641, "t_ldrsh_reg_2", "thumb-ldst", "thumb", "handwritten", "T LDRSH r0,[r7,r6]", a32_case_641 },
+    { 642, "t_str_ldr_imm_0", "thumb-ldst", "thumb", "handwritten", "T STR/LDR imm5", a32_case_642 },
+    { 643, "t_str_ldr_imm_1", "thumb-ldst", "thumb", "handwritten", "T STR/LDR imm5", a32_case_643 },
+    { 644, "t_str_ldr_imm_2", "thumb-ldst", "thumb", "handwritten", "T STR/LDR imm5", a32_case_644 },
+    { 645, "t_str_ldr_imm_3", "thumb-ldst", "thumb", "handwritten", "T STR/LDR imm5", a32_case_645 },
+    { 646, "t_strh_ldrh_0", "thumb-ldst", "thumb", "handwritten", "T STRH/LDRH imm5", a32_case_646 },
+    { 647, "t_strh_ldrh_1", "thumb-ldst", "thumb", "handwritten", "T STRH/LDRH imm5", a32_case_647 },
+    { 648, "t_strh_ldrh_2", "thumb-ldst", "thumb", "handwritten", "T STRH/LDRH imm5", a32_case_648 },
+    { 649, "t_strb_ldrb_0", "thumb-ldst", "thumb", "handwritten", "T STRB/LDRB imm5", a32_case_649 },
+    { 650, "t_strb_ldrb_1", "thumb-ldst", "thumb", "handwritten", "T STRB/LDRB imm5", a32_case_650 },
+    { 651, "t_strb_ldrb_2", "thumb-ldst", "thumb", "handwritten", "T STRB/LDRB imm5", a32_case_651 },
+    { 652, "t_ldr_lit_0", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word after the fragment", a32_case_652 },
+    { 653, "t_ldr_lit_1", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word after the fragment", a32_case_653 },
+    { 654, "t_ldr_lit_2", "thumb-ldst", "thumb", "handwritten", "T LDR literal reads a word after the fragment", a32_case_654 },
+    { 655, "t_sp_ldst_0", "thumb-sp", "thumb", "handwritten", "T STR/LDR [sp,#imm8*4]", a32_case_655 },
+    { 656, "t_sp_ldst_1", "thumb-sp", "thumb", "handwritten", "T STR/LDR [sp,#imm8*4]", a32_case_656 },
+    { 657, "t_sp_ldst_2", "thumb-sp", "thumb", "handwritten", "T STR/LDR [sp,#imm8*4]", a32_case_657 },
+    { 658, "t_sp_ldst_3", "thumb-sp", "thumb", "handwritten", "T STR/LDR [sp,#imm8*4]", a32_case_658 },
+    { 659, "t_add_rdsp_0", "thumb-adr", "thumb", "handwritten", "T ADD rd,sp,#imm8*4 (delta recorded)", a32_case_659 },
+    { 660, "t_add_rdsp_1", "thumb-adr", "thumb", "handwritten", "T ADD rd,sp,#imm8*4 (delta recorded)", a32_case_660 },
+    { 661, "t_add_rdsp_2", "thumb-adr", "thumb", "handwritten", "T ADD rd,sp,#imm8*4 (delta recorded)", a32_case_661 },
+    { 662, "t_add_rdsp_3", "thumb-adr", "thumb", "handwritten", "T ADD rd,sp,#imm8*4 (delta recorded)", a32_case_662 },
+    { 663, "t_adr_0", "thumb-adr", "thumb", "handwritten", "T ADR of two labels; the difference", a32_case_663 },
+    { 664, "t_adr_1", "thumb-adr", "thumb", "handwritten", "T ADR of two labels; the difference", a32_case_664 },
+    { 665, "t_pushpop_0", "thumb-pushpop", "thumb", "handwritten", "T PUSH/POP r-list", a32_case_665 },
+    { 666, "t_pushpop_1", "thumb-pushpop", "thumb", "handwritten", "T PUSH/POP r-list", a32_case_666 },
+    { 667, "t_pushpop_2", "thumb-pushpop", "thumb", "handwritten", "T PUSH/POP r-list", a32_case_667 },
+    { 668, "t_push_lr_0", "thumb-pushpop", "thumb", "handwritten", "T PUSH {r0,lr}", a32_case_668 },
+    { 669, "t_push_lr_1", "thumb-pushpop", "thumb", "handwritten", "T PUSH {r0,lr}", a32_case_669 },
+    { 670, "t_pushpop_lr_0", "thumb-pushpop", "thumb", "handwritten", "T PUSH/POP with LR", a32_case_670 },
+    { 671, "t_pushpop_lr_1", "thumb-pushpop", "thumb", "handwritten", "T PUSH/POP with LR", a32_case_671 },
+    { 672, "t_ldmstm_0", "thumb-block", "thumb", "handwritten", "T STMIA/LDMIA", a32_case_672 },
+    { 673, "t_ldmstm_1", "thumb-block", "thumb", "handwritten", "T STMIA/LDMIA", a32_case_673 },
+    { 674, "t_stmia_0", "thumb-block", "thumb", "handwritten", "T STMIA r7!,{r2,r3}", a32_case_674 },
+    { 675, "t_stmia_1", "thumb-block", "thumb", "handwritten", "T STMIA r7!,{r2,r3}", a32_case_675 },
+    { 676, "t_b_forward", "thumb-branch", "thumb", "handwritten", "T B forward skips a write", a32_case_676 },
+    { 677, "t_b_backward", "thumb-branch", "thumb", "handwritten", "T B backward loop to r0=4", a32_case_677 },
+    { 678, "t_cond_b_eq", "thumb-branch", "thumb", "handwritten", "T Beq after CMP r1,#0", a32_case_678 },
+    { 679, "t_cond_b_ne", "thumb-branch", "thumb", "handwritten", "T Bne after CMP r1,#0", a32_case_679 },
+    { 680, "t_cond_b_cs", "thumb-branch", "thumb", "handwritten", "T Bcs after CMP r1,#0", a32_case_680 },
+    { 681, "t_cond_b_cc", "thumb-branch", "thumb", "handwritten", "T Bcc after CMP r1,#0", a32_case_681 },
+    { 682, "t_cond_b_mi", "thumb-branch", "thumb", "handwritten", "T Bmi after CMP r1,#0", a32_case_682 },
+    { 683, "t_cond_b_pl", "thumb-branch", "thumb", "handwritten", "T Bpl after CMP r1,#0", a32_case_683 },
+    { 684, "t_cond_b_vs", "thumb-branch", "thumb", "handwritten", "T Bvs after CMP r1,#0", a32_case_684 },
+    { 685, "t_cond_b_vc", "thumb-branch", "thumb", "handwritten", "T Bvc after CMP r1,#0", a32_case_685 },
+    { 686, "t_cond_b_hi", "thumb-branch", "thumb", "handwritten", "T Bhi after CMP r1,#0", a32_case_686 },
+    { 687, "t_cond_b_ls", "thumb-branch", "thumb", "handwritten", "T Bls after CMP r1,#0", a32_case_687 },
+    { 688, "t_cond_b_ge", "thumb-branch", "thumb", "handwritten", "T Bge after CMP r1,#0", a32_case_688 },
+    { 689, "t_cond_b_lt", "thumb-branch", "thumb", "handwritten", "T Blt after CMP r1,#0", a32_case_689 },
+    { 690, "t_cond_b_gt", "thumb-branch", "thumb", "handwritten", "T Bgt after CMP r1,#0", a32_case_690 },
+    { 691, "t_cond_b_le", "thumb-branch", "thumb", "handwritten", "T Ble after CMP r1,#0", a32_case_691 },
+    { 692, "t_cbz_0", "thumb-cbz", "thumb", "handwritten", "T CBZ r1", a32_case_692 },
+    { 693, "t_cbz_1", "thumb-cbz", "thumb", "handwritten", "T CBZ r1", a32_case_693 },
+    { 694, "t_cbz_2", "thumb-cbz", "thumb", "handwritten", "T CBZ r1", a32_case_694 },
+    { 695, "t_cbz_3", "thumb-cbz", "thumb", "handwritten", "T CBZ r1", a32_case_695 },
+    { 696, "t_cbnz_0", "thumb-cbz", "thumb", "handwritten", "T CBNZ r1", a32_case_696 },
+    { 697, "t_cbnz_1", "thumb-cbz", "thumb", "handwritten", "T CBNZ r1", a32_case_697 },
+    { 698, "t_bl_bx", "thumb-branch", "thumb", "handwritten", "T BL then BX lr", a32_case_698 },
+    { 699, "t_it_0", "thumb-it", "thumb", "handwritten", "T IT EQ (r1=0)", a32_case_699 },
+    { 700, "t_it_1", "thumb-it", "thumb", "handwritten", "T IT EQ (r1=1)", a32_case_700 },
+    { 701, "t_ite_0", "thumb-it", "thumb", "handwritten", "T ITE EQ (r1=0)", a32_case_701 },
+    { 702, "t_ite_1", "thumb-it", "thumb", "handwritten", "T ITE EQ (r1=1)", a32_case_702 },
+    { 703, "t_itt_0", "thumb-it", "thumb", "handwritten", "T ITT EQ (r1=0)", a32_case_703 },
+    { 704, "t_itt_1", "thumb-it", "thumb", "handwritten", "T ITT EQ (r1=1)", a32_case_704 },
+    { 705, "t_iteee_0", "thumb-it", "thumb", "handwritten", "T ITEEE NE (r1=0)", a32_case_705 },
+    { 706, "t_iteee_1", "thumb-it", "thumb", "handwritten", "T ITEEE NE (r1=1)", a32_case_706 },
+    { 707, "t_it_flag_eq", "thumb-it", "thumb", "handwritten", "T IT eq after CMP equal", a32_case_707 },
+    { 708, "t_it_flag_ne", "thumb-it", "thumb", "handwritten", "T IT ne after CMP equal", a32_case_708 },
+    { 709, "t_it_flag_cc", "thumb-it", "thumb", "handwritten", "T IT cc after CMP equal", a32_case_709 },
+    { 710, "t_it_flag_cs", "thumb-it", "thumb", "handwritten", "T IT cs after CMP equal", a32_case_710 },
+    { 711, "t32_dp_and_0_0", "thumb2-dp", "thumb", "handwritten", "T32 AND.w r0,r1,r2", a32_case_711 },
+    { 712, "t32_dp_and_0_2", "thumb2-dp", "thumb", "handwritten", "T32 AND.w r0,r1,r2 lsl #2", a32_case_712 },
+    { 713, "t32_dp_and_1_0", "thumb2-dp", "thumb", "handwritten", "T32 AND.w r0,r1,r2", a32_case_713 },
+    { 714, "t32_dp_and_1_2", "thumb2-dp", "thumb", "handwritten", "T32 AND.w r0,r1,r2 lsl #2", a32_case_714 },
+    { 715, "t32_dp_and_2_0", "thumb2-dp", "thumb", "handwritten", "T32 AND.w r0,r1,r2", a32_case_715 },
+    { 716, "t32_dp_and_2_2", "thumb2-dp", "thumb", "handwritten", "T32 AND.w r0,r1,r2 lsl #2", a32_case_716 },
+    { 717, "t32_dp_bic_0_0", "thumb2-dp", "thumb", "handwritten", "T32 BIC.w r0,r1,r2", a32_case_717 },
+    { 718, "t32_dp_bic_0_2", "thumb2-dp", "thumb", "handwritten", "T32 BIC.w r0,r1,r2 lsl #2", a32_case_718 },
+    { 719, "t32_dp_bic_1_0", "thumb2-dp", "thumb", "handwritten", "T32 BIC.w r0,r1,r2", a32_case_719 },
+    { 720, "t32_dp_bic_1_2", "thumb2-dp", "thumb", "handwritten", "T32 BIC.w r0,r1,r2 lsl #2", a32_case_720 },
+    { 721, "t32_dp_bic_2_0", "thumb2-dp", "thumb", "handwritten", "T32 BIC.w r0,r1,r2", a32_case_721 },
+    { 722, "t32_dp_bic_2_2", "thumb2-dp", "thumb", "handwritten", "T32 BIC.w r0,r1,r2 lsl #2", a32_case_722 },
+    { 723, "t32_dp_orr_0_0", "thumb2-dp", "thumb", "handwritten", "T32 ORR.w r0,r1,r2", a32_case_723 },
+    { 724, "t32_dp_orr_0_2", "thumb2-dp", "thumb", "handwritten", "T32 ORR.w r0,r1,r2 lsl #2", a32_case_724 },
+    { 725, "t32_dp_orr_1_0", "thumb2-dp", "thumb", "handwritten", "T32 ORR.w r0,r1,r2", a32_case_725 },
+    { 726, "t32_dp_orr_1_2", "thumb2-dp", "thumb", "handwritten", "T32 ORR.w r0,r1,r2 lsl #2", a32_case_726 },
+    { 727, "t32_dp_orr_2_0", "thumb2-dp", "thumb", "handwritten", "T32 ORR.w r0,r1,r2", a32_case_727 },
+    { 728, "t32_dp_orr_2_2", "thumb2-dp", "thumb", "handwritten", "T32 ORR.w r0,r1,r2 lsl #2", a32_case_728 },
+    { 729, "t32_dp_orn_0_0", "thumb2-dp", "thumb", "handwritten", "T32 ORN.w r0,r1,r2", a32_case_729 },
+    { 730, "t32_dp_orn_0_2", "thumb2-dp", "thumb", "handwritten", "T32 ORN.w r0,r1,r2 lsl #2", a32_case_730 },
+    { 731, "t32_dp_orn_1_0", "thumb2-dp", "thumb", "handwritten", "T32 ORN.w r0,r1,r2", a32_case_731 },
+    { 732, "t32_dp_orn_1_2", "thumb2-dp", "thumb", "handwritten", "T32 ORN.w r0,r1,r2 lsl #2", a32_case_732 },
+    { 733, "t32_dp_orn_2_0", "thumb2-dp", "thumb", "handwritten", "T32 ORN.w r0,r1,r2", a32_case_733 },
+    { 734, "t32_dp_orn_2_2", "thumb2-dp", "thumb", "handwritten", "T32 ORN.w r0,r1,r2 lsl #2", a32_case_734 },
+    { 735, "t32_dp_eor_0_0", "thumb2-dp", "thumb", "handwritten", "T32 EOR.w r0,r1,r2", a32_case_735 },
+    { 736, "t32_dp_eor_0_2", "thumb2-dp", "thumb", "handwritten", "T32 EOR.w r0,r1,r2 lsl #2", a32_case_736 },
+    { 737, "t32_dp_eor_1_0", "thumb2-dp", "thumb", "handwritten", "T32 EOR.w r0,r1,r2", a32_case_737 },
+    { 738, "t32_dp_eor_1_2", "thumb2-dp", "thumb", "handwritten", "T32 EOR.w r0,r1,r2 lsl #2", a32_case_738 },
+    { 739, "t32_dp_eor_2_0", "thumb2-dp", "thumb", "handwritten", "T32 EOR.w r0,r1,r2", a32_case_739 },
+    { 740, "t32_dp_eor_2_2", "thumb2-dp", "thumb", "handwritten", "T32 EOR.w r0,r1,r2 lsl #2", a32_case_740 },
+    { 741, "t32_dp_add_0_0", "thumb2-dp", "thumb", "handwritten", "T32 ADD.w r0,r1,r2", a32_case_741 },
+    { 742, "t32_dp_add_0_2", "thumb2-dp", "thumb", "handwritten", "T32 ADD.w r0,r1,r2 lsl #2", a32_case_742 },
+    { 743, "t32_dp_add_1_0", "thumb2-dp", "thumb", "handwritten", "T32 ADD.w r0,r1,r2", a32_case_743 },
+    { 744, "t32_dp_add_1_2", "thumb2-dp", "thumb", "handwritten", "T32 ADD.w r0,r1,r2 lsl #2", a32_case_744 },
+    { 745, "t32_dp_add_2_0", "thumb2-dp", "thumb", "handwritten", "T32 ADD.w r0,r1,r2", a32_case_745 },
+    { 746, "t32_dp_add_2_2", "thumb2-dp", "thumb", "handwritten", "T32 ADD.w r0,r1,r2 lsl #2", a32_case_746 },
+    { 747, "t32_dp_adc_0_0", "thumb2-dp", "thumb", "handwritten", "T32 ADC.w r0,r1,r2", a32_case_747 },
+    { 748, "t32_dp_adc_0_2", "thumb2-dp", "thumb", "handwritten", "T32 ADC.w r0,r1,r2 lsl #2", a32_case_748 },
+    { 749, "t32_dp_adc_1_0", "thumb2-dp", "thumb", "handwritten", "T32 ADC.w r0,r1,r2", a32_case_749 },
+    { 750, "t32_dp_adc_1_2", "thumb2-dp", "thumb", "handwritten", "T32 ADC.w r0,r1,r2 lsl #2", a32_case_750 },
+    { 751, "t32_dp_adc_2_0", "thumb2-dp", "thumb", "handwritten", "T32 ADC.w r0,r1,r2", a32_case_751 },
+    { 752, "t32_dp_adc_2_2", "thumb2-dp", "thumb", "handwritten", "T32 ADC.w r0,r1,r2 lsl #2", a32_case_752 },
+    { 753, "t32_dp_sbc_0_0", "thumb2-dp", "thumb", "handwritten", "T32 SBC.w r0,r1,r2", a32_case_753 },
+    { 754, "t32_dp_sbc_0_2", "thumb2-dp", "thumb", "handwritten", "T32 SBC.w r0,r1,r2 lsl #2", a32_case_754 },
+    { 755, "t32_dp_sbc_1_0", "thumb2-dp", "thumb", "handwritten", "T32 SBC.w r0,r1,r2", a32_case_755 },
+    { 756, "t32_dp_sbc_1_2", "thumb2-dp", "thumb", "handwritten", "T32 SBC.w r0,r1,r2 lsl #2", a32_case_756 },
+    { 757, "t32_dp_sbc_2_0", "thumb2-dp", "thumb", "handwritten", "T32 SBC.w r0,r1,r2", a32_case_757 },
+    { 758, "t32_dp_sbc_2_2", "thumb2-dp", "thumb", "handwritten", "T32 SBC.w r0,r1,r2 lsl #2", a32_case_758 },
+    { 759, "t32_dp_sub_0_0", "thumb2-dp", "thumb", "handwritten", "T32 SUB.w r0,r1,r2", a32_case_759 },
+    { 760, "t32_dp_sub_0_2", "thumb2-dp", "thumb", "handwritten", "T32 SUB.w r0,r1,r2 lsl #2", a32_case_760 },
+    { 761, "t32_dp_sub_1_0", "thumb2-dp", "thumb", "handwritten", "T32 SUB.w r0,r1,r2", a32_case_761 },
+    { 762, "t32_dp_sub_1_2", "thumb2-dp", "thumb", "handwritten", "T32 SUB.w r0,r1,r2 lsl #2", a32_case_762 },
+    { 763, "t32_dp_sub_2_0", "thumb2-dp", "thumb", "handwritten", "T32 SUB.w r0,r1,r2", a32_case_763 },
+    { 764, "t32_dp_sub_2_2", "thumb2-dp", "thumb", "handwritten", "T32 SUB.w r0,r1,r2 lsl #2", a32_case_764 },
+    { 765, "t32_dp_rsb_0_0", "thumb2-dp", "thumb", "handwritten", "T32 RSB.w r0,r1,r2", a32_case_765 },
+    { 766, "t32_dp_rsb_0_2", "thumb2-dp", "thumb", "handwritten", "T32 RSB.w r0,r1,r2 lsl #2", a32_case_766 },
+    { 767, "t32_dp_rsb_1_0", "thumb2-dp", "thumb", "handwritten", "T32 RSB.w r0,r1,r2", a32_case_767 },
+    { 768, "t32_dp_rsb_1_2", "thumb2-dp", "thumb", "handwritten", "T32 RSB.w r0,r1,r2 lsl #2", a32_case_768 },
+    { 769, "t32_dp_rsb_2_0", "thumb2-dp", "thumb", "handwritten", "T32 RSB.w r0,r1,r2", a32_case_769 },
+    { 770, "t32_dp_rsb_2_2", "thumb2-dp", "thumb", "handwritten", "T32 RSB.w r0,r1,r2 lsl #2", a32_case_770 },
+    { 771, "t32_mov_0", "thumb2-dp", "thumb", "handwritten", "T32 MOV.W r0,r2", a32_case_771 },
+    { 772, "t32_mvn_0", "thumb2-dp", "thumb", "handwritten", "T32 MVN.W r0,r2", a32_case_772 },
+    { 773, "t32_mov_1", "thumb2-dp", "thumb", "handwritten", "T32 MOV.W r0,r2", a32_case_773 },
+    { 774, "t32_mvn_1", "thumb2-dp", "thumb", "handwritten", "T32 MVN.W r0,r2", a32_case_774 },
+    { 775, "t32_mov_2", "thumb2-dp", "thumb", "handwritten", "T32 MOV.W r0,r2", a32_case_775 },
+    { 776, "t32_mvn_2", "thumb2-dp", "thumb", "handwritten", "T32 MVN.W r0,r2", a32_case_776 },
+    { 777, "t32_mov_3", "thumb2-dp", "thumb", "handwritten", "T32 MOV.W r0,r2", a32_case_777 },
+    { 778, "t32_mvn_3", "thumb2-dp", "thumb", "handwritten", "T32 MVN.W r0,r2", a32_case_778 },
+    { 779, "t32_mov_4", "thumb2-dp", "thumb", "handwritten", "T32 MOV.W r0,r2", a32_case_779 },
+    { 780, "t32_mvn_4", "thumb2-dp", "thumb", "handwritten", "T32 MVN.W r0,r2", a32_case_780 },
+    { 781, "t32_mov_5", "thumb2-dp", "thumb", "handwritten", "T32 MOV.W r0,r2", a32_case_781 },
+    { 782, "t32_mvn_5", "thumb2-dp", "thumb", "handwritten", "T32 MVN.W r0,r2", a32_case_782 },
+    { 783, "t32_immi_and_0", "thumb2-imm", "thumb", "handwritten", "T32 AND.w r0,r1,#0x1", a32_case_783 },
+    { 784, "t32_immi_and_1", "thumb2-imm", "thumb", "handwritten", "T32 AND.w r0,r1,#0xff", a32_case_784 },
+    { 785, "t32_immi_and_2", "thumb2-imm", "thumb", "handwritten", "T32 AND.w r0,r1,#0x100", a32_case_785 },
+    { 786, "t32_immi_and_3", "thumb2-imm", "thumb", "handwritten", "T32 AND.w r0,r1,#0x80000000", a32_case_786 },
+    { 787, "t32_immi_and_4", "thumb2-imm", "thumb", "handwritten", "T32 AND.w r0,r1,#0xff00", a32_case_787 },
+    { 788, "t32_immi_and_5", "thumb2-imm", "thumb", "handwritten", "T32 AND.w r0,r1,#0xf", a32_case_788 },
+    { 789, "t32_immi_bic_0", "thumb2-imm", "thumb", "handwritten", "T32 BIC.w r0,r1,#0x1", a32_case_789 },
+    { 790, "t32_immi_bic_1", "thumb2-imm", "thumb", "handwritten", "T32 BIC.w r0,r1,#0xff", a32_case_790 },
+    { 791, "t32_immi_bic_2", "thumb2-imm", "thumb", "handwritten", "T32 BIC.w r0,r1,#0x100", a32_case_791 },
+    { 792, "t32_immi_bic_3", "thumb2-imm", "thumb", "handwritten", "T32 BIC.w r0,r1,#0x80000000", a32_case_792 },
+    { 793, "t32_immi_bic_4", "thumb2-imm", "thumb", "handwritten", "T32 BIC.w r0,r1,#0xff00", a32_case_793 },
+    { 794, "t32_immi_bic_5", "thumb2-imm", "thumb", "handwritten", "T32 BIC.w r0,r1,#0xf", a32_case_794 },
+    { 795, "t32_immi_orr_0", "thumb2-imm", "thumb", "handwritten", "T32 ORR.w r0,r1,#0x1", a32_case_795 },
+    { 796, "t32_immi_orr_1", "thumb2-imm", "thumb", "handwritten", "T32 ORR.w r0,r1,#0xff", a32_case_796 },
+    { 797, "t32_immi_orr_2", "thumb2-imm", "thumb", "handwritten", "T32 ORR.w r0,r1,#0x100", a32_case_797 },
+    { 798, "t32_immi_orr_3", "thumb2-imm", "thumb", "handwritten", "T32 ORR.w r0,r1,#0x80000000", a32_case_798 },
+    { 799, "t32_immi_orr_4", "thumb2-imm", "thumb", "handwritten", "T32 ORR.w r0,r1,#0xff00", a32_case_799 },
+    { 800, "t32_immi_orr_5", "thumb2-imm", "thumb", "handwritten", "T32 ORR.w r0,r1,#0xf", a32_case_800 },
+    { 801, "t32_immi_orn_0", "thumb2-imm", "thumb", "handwritten", "T32 ORN.w r0,r1,#0x1", a32_case_801 },
+    { 802, "t32_immi_orn_1", "thumb2-imm", "thumb", "handwritten", "T32 ORN.w r0,r1,#0xff", a32_case_802 },
+    { 803, "t32_immi_orn_2", "thumb2-imm", "thumb", "handwritten", "T32 ORN.w r0,r1,#0x100", a32_case_803 },
+    { 804, "t32_immi_orn_3", "thumb2-imm", "thumb", "handwritten", "T32 ORN.w r0,r1,#0x80000000", a32_case_804 },
+    { 805, "t32_immi_orn_4", "thumb2-imm", "thumb", "handwritten", "T32 ORN.w r0,r1,#0xff00", a32_case_805 },
+    { 806, "t32_immi_orn_5", "thumb2-imm", "thumb", "handwritten", "T32 ORN.w r0,r1,#0xf", a32_case_806 },
+    { 807, "t32_immi_eor_0", "thumb2-imm", "thumb", "handwritten", "T32 EOR.w r0,r1,#0x1", a32_case_807 },
+    { 808, "t32_immi_eor_1", "thumb2-imm", "thumb", "handwritten", "T32 EOR.w r0,r1,#0xff", a32_case_808 },
+    { 809, "t32_immi_eor_2", "thumb2-imm", "thumb", "handwritten", "T32 EOR.w r0,r1,#0x100", a32_case_809 },
+    { 810, "t32_immi_eor_3", "thumb2-imm", "thumb", "handwritten", "T32 EOR.w r0,r1,#0x80000000", a32_case_810 },
+    { 811, "t32_immi_eor_4", "thumb2-imm", "thumb", "handwritten", "T32 EOR.w r0,r1,#0xff00", a32_case_811 },
+    { 812, "t32_immi_eor_5", "thumb2-imm", "thumb", "handwritten", "T32 EOR.w r0,r1,#0xf", a32_case_812 },
+    { 813, "t32_immi_add_0", "thumb2-imm", "thumb", "handwritten", "T32 ADD.w r0,r1,#0x1", a32_case_813 },
+    { 814, "t32_immi_add_1", "thumb2-imm", "thumb", "handwritten", "T32 ADD.w r0,r1,#0xff", a32_case_814 },
+    { 815, "t32_immi_add_2", "thumb2-imm", "thumb", "handwritten", "T32 ADD.w r0,r1,#0x100", a32_case_815 },
+    { 816, "t32_immi_add_3", "thumb2-imm", "thumb", "handwritten", "T32 ADD.w r0,r1,#0x80000000", a32_case_816 },
+    { 817, "t32_immi_add_4", "thumb2-imm", "thumb", "handwritten", "T32 ADD.w r0,r1,#0xff00", a32_case_817 },
+    { 818, "t32_immi_add_5", "thumb2-imm", "thumb", "handwritten", "T32 ADD.w r0,r1,#0xf", a32_case_818 },
+    { 819, "t32_immi_adc_0", "thumb2-imm", "thumb", "handwritten", "T32 ADC.w r0,r1,#0x1", a32_case_819 },
+    { 820, "t32_immi_adc_1", "thumb2-imm", "thumb", "handwritten", "T32 ADC.w r0,r1,#0xff", a32_case_820 },
+    { 821, "t32_immi_adc_2", "thumb2-imm", "thumb", "handwritten", "T32 ADC.w r0,r1,#0x100", a32_case_821 },
+    { 822, "t32_immi_adc_3", "thumb2-imm", "thumb", "handwritten", "T32 ADC.w r0,r1,#0x80000000", a32_case_822 },
+    { 823, "t32_immi_adc_4", "thumb2-imm", "thumb", "handwritten", "T32 ADC.w r0,r1,#0xff00", a32_case_823 },
+    { 824, "t32_immi_adc_5", "thumb2-imm", "thumb", "handwritten", "T32 ADC.w r0,r1,#0xf", a32_case_824 },
+    { 825, "t32_immi_sbc_0", "thumb2-imm", "thumb", "handwritten", "T32 SBC.w r0,r1,#0x1", a32_case_825 },
+    { 826, "t32_immi_sbc_1", "thumb2-imm", "thumb", "handwritten", "T32 SBC.w r0,r1,#0xff", a32_case_826 },
+    { 827, "t32_immi_sbc_2", "thumb2-imm", "thumb", "handwritten", "T32 SBC.w r0,r1,#0x100", a32_case_827 },
+    { 828, "t32_immi_sbc_3", "thumb2-imm", "thumb", "handwritten", "T32 SBC.w r0,r1,#0x80000000", a32_case_828 },
+    { 829, "t32_immi_sbc_4", "thumb2-imm", "thumb", "handwritten", "T32 SBC.w r0,r1,#0xff00", a32_case_829 },
+    { 830, "t32_immi_sbc_5", "thumb2-imm", "thumb", "handwritten", "T32 SBC.w r0,r1,#0xf", a32_case_830 },
+    { 831, "t32_immi_sub_0", "thumb2-imm", "thumb", "handwritten", "T32 SUB.w r0,r1,#0x1", a32_case_831 },
+    { 832, "t32_immi_sub_1", "thumb2-imm", "thumb", "handwritten", "T32 SUB.w r0,r1,#0xff", a32_case_832 },
+    { 833, "t32_immi_sub_2", "thumb2-imm", "thumb", "handwritten", "T32 SUB.w r0,r1,#0x100", a32_case_833 },
+    { 834, "t32_immi_sub_3", "thumb2-imm", "thumb", "handwritten", "T32 SUB.w r0,r1,#0x80000000", a32_case_834 },
+    { 835, "t32_immi_sub_4", "thumb2-imm", "thumb", "handwritten", "T32 SUB.w r0,r1,#0xff00", a32_case_835 },
+    { 836, "t32_immi_sub_5", "thumb2-imm", "thumb", "handwritten", "T32 SUB.w r0,r1,#0xf", a32_case_836 },
+    { 837, "t32_immi_rsb_0", "thumb2-imm", "thumb", "handwritten", "T32 RSB.w r0,r1,#0x1", a32_case_837 },
+    { 838, "t32_immi_rsb_1", "thumb2-imm", "thumb", "handwritten", "T32 RSB.w r0,r1,#0xff", a32_case_838 },
+    { 839, "t32_immi_rsb_2", "thumb2-imm", "thumb", "handwritten", "T32 RSB.w r0,r1,#0x100", a32_case_839 },
+    { 840, "t32_immi_rsb_3", "thumb2-imm", "thumb", "handwritten", "T32 RSB.w r0,r1,#0x80000000", a32_case_840 },
+    { 841, "t32_immi_rsb_4", "thumb2-imm", "thumb", "handwritten", "T32 RSB.w r0,r1,#0xff00", a32_case_841 },
+    { 842, "t32_immi_rsb_5", "thumb2-imm", "thumb", "handwritten", "T32 RSB.w r0,r1,#0xf", a32_case_842 },
+    { 843, "t32_movw_0", "thumb2-imm", "thumb", "handwritten", "T32 MOVW r0,#0x1234", a32_case_843 },
+    { 844, "t32_movt_0", "thumb2-imm", "thumb", "handwritten", "T32 MOVT r0,#0x1234", a32_case_844 },
+    { 845, "t32_movw_1", "thumb2-imm", "thumb", "handwritten", "T32 MOVW r0,#0xbeef", a32_case_845 },
+    { 846, "t32_movt_1", "thumb2-imm", "thumb", "handwritten", "T32 MOVT r0,#0xbeef", a32_case_846 },
+    { 847, "t32_movw_2", "thumb2-imm", "thumb", "handwritten", "T32 MOVW r0,#0x0", a32_case_847 },
+    { 848, "t32_movt_2", "thumb2-imm", "thumb", "handwritten", "T32 MOVT r0,#0x0", a32_case_848 },
+    { 849, "t32_movw_3", "thumb2-imm", "thumb", "handwritten", "T32 MOVW r0,#0xffff", a32_case_849 },
+    { 850, "t32_movt_3", "thumb2-imm", "thumb", "handwritten", "T32 MOVT r0,#0xffff", a32_case_850 },
+    { 851, "t32_addw_0", "thumb2-imm", "thumb", "handwritten", "T32 ADDW r0,r1,#0x123", a32_case_851 },
+    { 852, "t32_subw_0", "thumb2-imm", "thumb", "handwritten", "T32 SUBW r0,r1,#0x123", a32_case_852 },
+    { 853, "t32_addw_1", "thumb2-imm", "thumb", "handwritten", "T32 ADDW r0,r1,#0xfff", a32_case_853 },
+    { 854, "t32_subw_1", "thumb2-imm", "thumb", "handwritten", "T32 SUBW r0,r1,#0xfff", a32_case_854 },
+    { 855, "t32_addw_2", "thumb2-imm", "thumb", "handwritten", "T32 ADDW r0,r1,#0x10", a32_case_855 },
+    { 856, "t32_subw_2", "thumb2-imm", "thumb", "handwritten", "T32 SUBW r0,r1,#0x10", a32_case_856 },
+    { 857, "t32_ldr_str_imm_0", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR imm12", a32_case_857 },
+    { 858, "t32_ldr_str_imm_1", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR imm12", a32_case_858 },
+    { 859, "t32_ldr_str_imm_2", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR imm12", a32_case_859 },
+    { 860, "t32_ldr_str_imm_3", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR imm12", a32_case_860 },
+    { 861, "t32_ldr_str_neg_0", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR negative imm8", a32_case_861 },
+    { 862, "t32_ldr_str_neg_1", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR negative imm8", a32_case_862 },
+    { 863, "t32_ldr_str_reg_0", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR register offset", a32_case_863 },
+    { 864, "t32_ldr_str_reg_1", "thumb2-ldst", "thumb", "handwritten", "T32 LDR/STR register offset", a32_case_864 },
+    { 865, "t32_strb_ldrb_0", "thumb2-ldst", "thumb", "handwritten", "T32 STRB/LDRB imm12", a32_case_865 },
+    { 866, "t32_strb_ldrb_1", "thumb2-ldst", "thumb", "handwritten", "T32 STRB/LDRB imm12", a32_case_866 },
+    { 867, "t32_strb_ldrb_2", "thumb2-ldst", "thumb", "handwritten", "T32 STRB/LDRB imm12", a32_case_867 },
+    { 868, "t32_strh_ldrh_0", "thumb2-ldst", "thumb", "handwritten", "T32 STRH/LDRH imm12", a32_case_868 },
+    { 869, "t32_strh_ldrh_1", "thumb2-ldst", "thumb", "handwritten", "T32 STRH/LDRH imm12", a32_case_869 },
+    { 870, "t32_strh_ldrh_2", "thumb2-ldst", "thumb", "handwritten", "T32 STRH/LDRH imm12", a32_case_870 },
+    { 871, "t32_ldrsb_0", "thumb2-ldst", "thumb", "handwritten", "T32 LDRSB imm12", a32_case_871 },
+    { 872, "t32_ldrsb_1", "thumb2-ldst", "thumb", "handwritten", "T32 LDRSB imm12", a32_case_872 },
+    { 873, "t32_ldrsh_0", "thumb2-ldst", "thumb", "handwritten", "T32 LDRSH imm12", a32_case_873 },
+    { 874, "t32_ldrsh_1", "thumb2-ldst", "thumb", "handwritten", "T32 LDRSH imm12", a32_case_874 },
+    { 875, "t32_strd_ldrd_0", "thumb2-dual", "thumb", "handwritten", "T32 STRD/LDRD imm", a32_case_875 },
+    { 876, "t32_strd_ldrd_1", "thumb2-dual", "thumb", "handwritten", "T32 STRD/LDRD imm", a32_case_876 },
+    { 877, "t32_strd_ldrd_2", "thumb2-dual", "thumb", "handwritten", "T32 STRD/LDRD imm", a32_case_877 },
+    { 878, "t32_ldrd_wb", "thumb2-dual", "thumb", "handwritten", "T32 LDRD pre-indexed writeback", a32_case_878 },
+    { 879, "t32_ldrd_neg_0", "thumb2-dual", "thumb", "handwritten", "T32 LDRD negative imm", a32_case_879 },
+    { 880, "t32_ldrd_neg_1", "thumb2-dual", "thumb", "handwritten", "T32 LDRD negative imm", a32_case_880 },
+    { 881, "t32_tbb_0", "thumb2-table", "thumb", "handwritten", "T32 TBB", a32_case_881 },
+    { 882, "t32_tbb_1", "thumb2-table", "thumb", "handwritten", "T32 TBB", a32_case_882 },
+    { 883, "t32_tbh_0", "thumb2-table", "thumb", "handwritten", "T32 TBH", a32_case_883 },
+    { 884, "t32_tbh_1", "thumb2-table", "thumb", "handwritten", "T32 TBH", a32_case_884 },
+    { 885, "t32_sxtb_0", "thumb2-extend", "thumb", "handwritten", "T32 SXTB r0,r1", a32_case_885 },
+    { 886, "t32_sxtb_1", "thumb2-extend", "thumb", "handwritten", "T32 SXTB r0,r1", a32_case_886 },
+    { 887, "t32_sxtb_2", "thumb2-extend", "thumb", "handwritten", "T32 SXTB r0,r1", a32_case_887 },
+    { 888, "t32_sxtb_3", "thumb2-extend", "thumb", "handwritten", "T32 SXTB r0,r1", a32_case_888 },
+    { 889, "t32_sxth_0", "thumb2-extend", "thumb", "handwritten", "T32 SXTH r0,r1", a32_case_889 },
+    { 890, "t32_sxth_1", "thumb2-extend", "thumb", "handwritten", "T32 SXTH r0,r1", a32_case_890 },
+    { 891, "t32_sxth_2", "thumb2-extend", "thumb", "handwritten", "T32 SXTH r0,r1", a32_case_891 },
+    { 892, "t32_sxth_3", "thumb2-extend", "thumb", "handwritten", "T32 SXTH r0,r1", a32_case_892 },
+    { 893, "t32_uxtb_0", "thumb2-extend", "thumb", "handwritten", "T32 UXTB r0,r1", a32_case_893 },
+    { 894, "t32_uxtb_1", "thumb2-extend", "thumb", "handwritten", "T32 UXTB r0,r1", a32_case_894 },
+    { 895, "t32_uxtb_2", "thumb2-extend", "thumb", "handwritten", "T32 UXTB r0,r1", a32_case_895 },
+    { 896, "t32_uxtb_3", "thumb2-extend", "thumb", "handwritten", "T32 UXTB r0,r1", a32_case_896 },
+    { 897, "t32_uxth_0", "thumb2-extend", "thumb", "handwritten", "T32 UXTH r0,r1", a32_case_897 },
+    { 898, "t32_uxth_1", "thumb2-extend", "thumb", "handwritten", "T32 UXTH r0,r1", a32_case_898 },
+    { 899, "t32_uxth_2", "thumb2-extend", "thumb", "handwritten", "T32 UXTH r0,r1", a32_case_899 },
+    { 900, "t32_uxth_3", "thumb2-extend", "thumb", "handwritten", "T32 UXTH r0,r1", a32_case_900 },
+    { 901, "t32_rev_0", "thumb2-extend", "thumb", "handwritten", "T32 REV r0,r1", a32_case_901 },
+    { 902, "t32_rev_1", "thumb2-extend", "thumb", "handwritten", "T32 REV r0,r1", a32_case_902 },
+    { 903, "t32_rev_2", "thumb2-extend", "thumb", "handwritten", "T32 REV r0,r1", a32_case_903 },
+    { 904, "t32_rev16_0", "thumb2-extend", "thumb", "handwritten", "T32 REV16 r0,r1", a32_case_904 },
+    { 905, "t32_rev16_1", "thumb2-extend", "thumb", "handwritten", "T32 REV16 r0,r1", a32_case_905 },
+    { 906, "t32_rev16_2", "thumb2-extend", "thumb", "handwritten", "T32 REV16 r0,r1", a32_case_906 },
+    { 907, "t32_revsh_0", "thumb2-extend", "thumb", "handwritten", "T32 REVSH r0,r1", a32_case_907 },
+    { 908, "t32_revsh_1", "thumb2-extend", "thumb", "handwritten", "T32 REVSH r0,r1", a32_case_908 },
+    { 909, "t32_revsh_2", "thumb2-extend", "thumb", "handwritten", "T32 REVSH r0,r1", a32_case_909 },
+    { 910, "t32_clz_0", "thumb2-misc", "thumb", "handwritten", "T32 CLZ r0,r1", a32_case_910 },
+    { 911, "t32_clz_1", "thumb2-misc", "thumb", "handwritten", "T32 CLZ r0,r1", a32_case_911 },
+    { 912, "t32_clz_2", "thumb2-misc", "thumb", "handwritten", "T32 CLZ r0,r1", a32_case_912 },
+    { 913, "t32_clz_3", "thumb2-misc", "thumb", "handwritten", "T32 CLZ r0,r1", a32_case_913 },
+    { 914, "t32_ubfx_0", "thumb2-bitfield", "thumb", "handwritten", "T32 UBFX r0,r1,#0,#4", a32_case_914 },
+    { 915, "t32_sbfx_0", "thumb2-bitfield", "thumb", "handwritten", "T32 SBFX r0,r1,#0,#4", a32_case_915 },
+    { 916, "t32_ubfx_1", "thumb2-bitfield", "thumb", "handwritten", "T32 UBFX r0,r1,#4,#4", a32_case_916 },
+    { 917, "t32_sbfx_1", "thumb2-bitfield", "thumb", "handwritten", "T32 SBFX r0,r1,#4,#4", a32_case_917 },
+    { 918, "t32_ubfx_2", "thumb2-bitfield", "thumb", "handwritten", "T32 UBFX r0,r1,#8,#8", a32_case_918 },
+    { 919, "t32_sbfx_2", "thumb2-bitfield", "thumb", "handwritten", "T32 SBFX r0,r1,#8,#8", a32_case_919 },
+    { 920, "t32_ubfx_3", "thumb2-bitfield", "thumb", "handwritten", "T32 UBFX r0,r1,#0,#16", a32_case_920 },
+    { 921, "t32_sbfx_3", "thumb2-bitfield", "thumb", "handwritten", "T32 SBFX r0,r1,#0,#16", a32_case_921 },
+    { 922, "t32_bfi_0", "thumb2-bitfield", "thumb", "handwritten", "T32 BFI r0,r1,#0,#4", a32_case_922 },
+    { 923, "t32_bfc_0", "thumb2-bitfield", "thumb", "handwritten", "T32 BFC r0,#0,#4", a32_case_923 },
+    { 924, "t32_bfi_1", "thumb2-bitfield", "thumb", "handwritten", "T32 BFI r0,r1,#4,#4", a32_case_924 },
+    { 925, "t32_bfc_1", "thumb2-bitfield", "thumb", "handwritten", "T32 BFC r0,#4,#4", a32_case_925 },
+    { 926, "t32_bfi_2", "thumb2-bitfield", "thumb", "handwritten", "T32 BFI r0,r1,#8,#8", a32_case_926 },
+    { 927, "t32_bfc_2", "thumb2-bitfield", "thumb", "handwritten", "T32 BFC r0,#8,#8", a32_case_927 },
+    { 928, "t32_ssat_0", "thumb2-sat", "thumb", "handwritten", "T32 SSAT r0,#8,r1,lsl #0", a32_case_928 },
+    { 929, "t32_usat_0", "thumb2-sat", "thumb", "handwritten", "T32 USAT r0,#8,r1,lsl #0", a32_case_929 },
+    { 930, "t32_ssat_1", "thumb2-sat", "thumb", "handwritten", "T32 SSAT r0,#8,r1,lsl #4", a32_case_930 },
+    { 931, "t32_usat_1", "thumb2-sat", "thumb", "handwritten", "T32 USAT r0,#8,r1,lsl #4", a32_case_931 },
+    { 932, "t32_ssat_2", "thumb2-sat", "thumb", "handwritten", "T32 SSAT r0,#16,r1,lsl #0", a32_case_932 },
+    { 933, "t32_usat_2", "thumb2-sat", "thumb", "handwritten", "T32 USAT r0,#16,r1,lsl #0", a32_case_933 },
+    { 934, "t32_ssat_3", "thumb2-sat", "thumb", "handwritten", "T32 SSAT r0,#4,r1,lsl #0", a32_case_934 },
+    { 935, "t32_usat_3", "thumb2-sat", "thumb", "handwritten", "T32 USAT r0,#4,r1,lsl #0", a32_case_935 },
+    { 936, "t32_mrs_0", "thumb2-psr", "thumb", "handwritten", "T32 MRS + LSR #28 (flag nibble)", a32_case_936 },
+    { 937, "t32_mrs_1", "thumb2-psr", "thumb", "handwritten", "T32 MRS + LSR #28 (flag nibble)", a32_case_937 },
+    { 938, "t32_mrs_2", "thumb2-psr", "thumb", "handwritten", "T32 MRS + LSR #28 (flag nibble)", a32_case_938 },
+    { 939, "t32_msr_0", "thumb2-psr", "thumb", "handwritten", "T32 MSR apsr_nzcvq + MRS", a32_case_939 },
+    { 940, "t32_msr_1", "thumb2-psr", "thumb", "handwritten", "T32 MSR apsr_nzcvq + MRS", a32_case_940 },
+    { 941, "t32_msr_2", "thumb2-psr", "thumb", "handwritten", "T32 MSR apsr_nzcvq + MRS", a32_case_941 },
+    { 942, "t32_bl_bx", "thumb2-branch", "thumb", "handwritten", "T32 BL then BX lr", a32_case_942 },
+    { 943, "t_mixed_0", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_943 },
+    { 944, "t_mixed_1", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_944 },
+    { 945, "t_mixed_2", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_945 },
+    { 946, "t_mixed_3", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_946 },
+    { 947, "t_mixed_4", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_947 },
+    { 948, "t_mixed_5", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_948 },
+    { 949, "t_mixed_6", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_949 },
+    { 950, "t_mixed_7", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_950 },
+    { 951, "t_mixed_8", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_951 },
+    { 952, "t_mixed_9", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_952 },
+    { 953, "t_mixed_10", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_953 },
+    { 954, "t_mixed_11", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_954 },
+    { 955, "t_mixed_12", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_955 },
+    { 956, "t_mixed_13", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_956 },
+    { 957, "t_mixed_14", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_957 },
+    { 958, "t_mixed_15", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_958 },
+    { 959, "t_mixed_16", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_959 },
+    { 960, "t_mixed_17", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_960 },
+    { 961, "t_mixed_18", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_961 },
+    { 962, "t_mixed_19", "thumb-mixed", "thumb", "handwritten", "T ADDS/LSLS/STR/LDR/EORS", a32_case_962 },
+    { 963, "t_iw_t2a_0", "interwork", "thumb", "handwritten", "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", a32_case_963 },
+    { 964, "t_iw_t2a_1", "interwork", "thumb", "handwritten", "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", a32_case_964 },
+    { 965, "t_iw_t2a_2", "interwork", "thumb", "handwritten", "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", a32_case_965 },
+    { 966, "t_iw_a2t_0", "interwork", "arm", "handwritten", "A32 BLX(register, odd)->Thumb->BX lr->ARM", a32_case_966 },
+    { 967, "t_iw_a2t_1", "interwork", "arm", "handwritten", "A32 BLX(register, odd)->Thumb->BX lr->ARM", a32_case_967 },
+    { 968, "t_iw_a2t_2", "interwork", "arm", "handwritten", "A32 BLX(register, odd)->Thumb->BX lr->ARM", a32_case_968 },
+    { 969, "t_iw_blximm_0", "interwork", "thumb", "handwritten", "T32 BLX immediate -> ARM", a32_case_969 },
+    { 970, "t_iw_blximm_1", "interwork", "thumb", "handwritten", "T32 BLX immediate -> ARM", a32_case_970 },
 };
 
 #define A32_CASE_COUNT (sizeof(a32_cases) / sizeof(a32_cases[0]))
 
-static const uint32_t a32_words_1[1] = {
-    0xe0010002u,
+static const uint8_t a32_code_1[4] = {
+    0x02, 0x00, 0x01, 0xe0,
 };
-static const uint32_t a32_words_2[1] = {
-    0xe0010002u,
+static const uint8_t a32_code_2[4] = {
+    0x02, 0x00, 0x01, 0xe0,
 };
-static const uint32_t a32_words_3[1] = {
-    0xe0010002u,
+static const uint8_t a32_code_3[4] = {
+    0x02, 0x00, 0x01, 0xe0,
 };
-static const uint32_t a32_words_4[1] = {
-    0xe0010002u,
+static const uint8_t a32_code_4[4] = {
+    0x02, 0x00, 0x01, 0xe0,
 };
-static const uint32_t a32_words_5[1] = {
-    0xe0010002u,
+static const uint8_t a32_code_5[4] = {
+    0x02, 0x00, 0x01, 0xe0,
 };
-static const uint32_t a32_words_6[1] = {
-    0xe0010002u,
+static const uint8_t a32_code_6[4] = {
+    0x02, 0x00, 0x01, 0xe0,
 };
-static const uint32_t a32_words_7[1] = {
-    0xe0210002u,
+static const uint8_t a32_code_7[4] = {
+    0x02, 0x00, 0x21, 0xe0,
 };
-static const uint32_t a32_words_8[1] = {
-    0xe0210002u,
+static const uint8_t a32_code_8[4] = {
+    0x02, 0x00, 0x21, 0xe0,
 };
-static const uint32_t a32_words_9[1] = {
-    0xe0210002u,
+static const uint8_t a32_code_9[4] = {
+    0x02, 0x00, 0x21, 0xe0,
 };
-static const uint32_t a32_words_10[1] = {
-    0xe0210002u,
+static const uint8_t a32_code_10[4] = {
+    0x02, 0x00, 0x21, 0xe0,
 };
-static const uint32_t a32_words_11[1] = {
-    0xe0210002u,
+static const uint8_t a32_code_11[4] = {
+    0x02, 0x00, 0x21, 0xe0,
 };
-static const uint32_t a32_words_12[1] = {
-    0xe0210002u,
+static const uint8_t a32_code_12[4] = {
+    0x02, 0x00, 0x21, 0xe0,
 };
-static const uint32_t a32_words_13[1] = {
-    0xe0410002u,
+static const uint8_t a32_code_13[4] = {
+    0x02, 0x00, 0x41, 0xe0,
 };
-static const uint32_t a32_words_14[1] = {
-    0xe0410002u,
+static const uint8_t a32_code_14[4] = {
+    0x02, 0x00, 0x41, 0xe0,
 };
-static const uint32_t a32_words_15[1] = {
-    0xe0410002u,
+static const uint8_t a32_code_15[4] = {
+    0x02, 0x00, 0x41, 0xe0,
 };
-static const uint32_t a32_words_16[1] = {
-    0xe0410002u,
+static const uint8_t a32_code_16[4] = {
+    0x02, 0x00, 0x41, 0xe0,
 };
-static const uint32_t a32_words_17[1] = {
-    0xe0410002u,
+static const uint8_t a32_code_17[4] = {
+    0x02, 0x00, 0x41, 0xe0,
 };
-static const uint32_t a32_words_18[1] = {
-    0xe0410002u,
+static const uint8_t a32_code_18[4] = {
+    0x02, 0x00, 0x41, 0xe0,
 };
-static const uint32_t a32_words_19[1] = {
-    0xe0610002u,
+static const uint8_t a32_code_19[4] = {
+    0x02, 0x00, 0x61, 0xe0,
 };
-static const uint32_t a32_words_20[1] = {
-    0xe0610002u,
+static const uint8_t a32_code_20[4] = {
+    0x02, 0x00, 0x61, 0xe0,
 };
-static const uint32_t a32_words_21[1] = {
-    0xe0610002u,
+static const uint8_t a32_code_21[4] = {
+    0x02, 0x00, 0x61, 0xe0,
 };
-static const uint32_t a32_words_22[1] = {
-    0xe0610002u,
+static const uint8_t a32_code_22[4] = {
+    0x02, 0x00, 0x61, 0xe0,
 };
-static const uint32_t a32_words_23[1] = {
-    0xe0610002u,
+static const uint8_t a32_code_23[4] = {
+    0x02, 0x00, 0x61, 0xe0,
 };
-static const uint32_t a32_words_24[1] = {
-    0xe0610002u,
+static const uint8_t a32_code_24[4] = {
+    0x02, 0x00, 0x61, 0xe0,
 };
-static const uint32_t a32_words_25[1] = {
-    0xe0810002u,
+static const uint8_t a32_code_25[4] = {
+    0x02, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_26[1] = {
-    0xe0810002u,
+static const uint8_t a32_code_26[4] = {
+    0x02, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_27[1] = {
-    0xe0810002u,
+static const uint8_t a32_code_27[4] = {
+    0x02, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_28[1] = {
-    0xe0810002u,
+static const uint8_t a32_code_28[4] = {
+    0x02, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_29[1] = {
-    0xe0810002u,
+static const uint8_t a32_code_29[4] = {
+    0x02, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_30[1] = {
-    0xe0810002u,
+static const uint8_t a32_code_30[4] = {
+    0x02, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_31[1] = {
-    0xe0a10002u,
+static const uint8_t a32_code_31[4] = {
+    0x02, 0x00, 0xa1, 0xe0,
 };
-static const uint32_t a32_words_32[1] = {
-    0xe0a10002u,
+static const uint8_t a32_code_32[4] = {
+    0x02, 0x00, 0xa1, 0xe0,
 };
-static const uint32_t a32_words_33[1] = {
-    0xe0a10002u,
+static const uint8_t a32_code_33[4] = {
+    0x02, 0x00, 0xa1, 0xe0,
 };
-static const uint32_t a32_words_34[1] = {
-    0xe0a10002u,
+static const uint8_t a32_code_34[4] = {
+    0x02, 0x00, 0xa1, 0xe0,
 };
-static const uint32_t a32_words_35[1] = {
-    0xe0a10002u,
+static const uint8_t a32_code_35[4] = {
+    0x02, 0x00, 0xa1, 0xe0,
 };
-static const uint32_t a32_words_36[1] = {
-    0xe0a10002u,
+static const uint8_t a32_code_36[4] = {
+    0x02, 0x00, 0xa1, 0xe0,
 };
-static const uint32_t a32_words_37[1] = {
-    0xe0c10002u,
+static const uint8_t a32_code_37[4] = {
+    0x02, 0x00, 0xc1, 0xe0,
 };
-static const uint32_t a32_words_38[1] = {
-    0xe0c10002u,
+static const uint8_t a32_code_38[4] = {
+    0x02, 0x00, 0xc1, 0xe0,
 };
-static const uint32_t a32_words_39[1] = {
-    0xe0c10002u,
+static const uint8_t a32_code_39[4] = {
+    0x02, 0x00, 0xc1, 0xe0,
 };
-static const uint32_t a32_words_40[1] = {
-    0xe0c10002u,
+static const uint8_t a32_code_40[4] = {
+    0x02, 0x00, 0xc1, 0xe0,
 };
-static const uint32_t a32_words_41[1] = {
-    0xe0c10002u,
+static const uint8_t a32_code_41[4] = {
+    0x02, 0x00, 0xc1, 0xe0,
 };
-static const uint32_t a32_words_42[1] = {
-    0xe0c10002u,
+static const uint8_t a32_code_42[4] = {
+    0x02, 0x00, 0xc1, 0xe0,
 };
-static const uint32_t a32_words_43[1] = {
-    0xe0e10002u,
+static const uint8_t a32_code_43[4] = {
+    0x02, 0x00, 0xe1, 0xe0,
 };
-static const uint32_t a32_words_44[1] = {
-    0xe0e10002u,
+static const uint8_t a32_code_44[4] = {
+    0x02, 0x00, 0xe1, 0xe0,
 };
-static const uint32_t a32_words_45[1] = {
-    0xe0e10002u,
+static const uint8_t a32_code_45[4] = {
+    0x02, 0x00, 0xe1, 0xe0,
 };
-static const uint32_t a32_words_46[1] = {
-    0xe0e10002u,
+static const uint8_t a32_code_46[4] = {
+    0x02, 0x00, 0xe1, 0xe0,
 };
-static const uint32_t a32_words_47[1] = {
-    0xe0e10002u,
+static const uint8_t a32_code_47[4] = {
+    0x02, 0x00, 0xe1, 0xe0,
 };
-static const uint32_t a32_words_48[1] = {
-    0xe0e10002u,
+static const uint8_t a32_code_48[4] = {
+    0x02, 0x00, 0xe1, 0xe0,
 };
-static const uint32_t a32_words_49[1] = {
-    0xe1110002u,
+static const uint8_t a32_code_49[4] = {
+    0x02, 0x00, 0x11, 0xe1,
 };
-static const uint32_t a32_words_50[1] = {
-    0xe1110002u,
+static const uint8_t a32_code_50[4] = {
+    0x02, 0x00, 0x11, 0xe1,
 };
-static const uint32_t a32_words_51[1] = {
-    0xe1110002u,
+static const uint8_t a32_code_51[4] = {
+    0x02, 0x00, 0x11, 0xe1,
 };
-static const uint32_t a32_words_52[1] = {
-    0xe1110002u,
+static const uint8_t a32_code_52[4] = {
+    0x02, 0x00, 0x11, 0xe1,
 };
-static const uint32_t a32_words_53[1] = {
-    0xe1110002u,
+static const uint8_t a32_code_53[4] = {
+    0x02, 0x00, 0x11, 0xe1,
 };
-static const uint32_t a32_words_54[1] = {
-    0xe1110002u,
+static const uint8_t a32_code_54[4] = {
+    0x02, 0x00, 0x11, 0xe1,
 };
-static const uint32_t a32_words_55[1] = {
-    0xe1310002u,
+static const uint8_t a32_code_55[4] = {
+    0x02, 0x00, 0x31, 0xe1,
 };
-static const uint32_t a32_words_56[1] = {
-    0xe1310002u,
+static const uint8_t a32_code_56[4] = {
+    0x02, 0x00, 0x31, 0xe1,
 };
-static const uint32_t a32_words_57[1] = {
-    0xe1310002u,
+static const uint8_t a32_code_57[4] = {
+    0x02, 0x00, 0x31, 0xe1,
 };
-static const uint32_t a32_words_58[1] = {
-    0xe1310002u,
+static const uint8_t a32_code_58[4] = {
+    0x02, 0x00, 0x31, 0xe1,
 };
-static const uint32_t a32_words_59[1] = {
-    0xe1310002u,
+static const uint8_t a32_code_59[4] = {
+    0x02, 0x00, 0x31, 0xe1,
 };
-static const uint32_t a32_words_60[1] = {
-    0xe1310002u,
+static const uint8_t a32_code_60[4] = {
+    0x02, 0x00, 0x31, 0xe1,
 };
-static const uint32_t a32_words_61[1] = {
-    0xe1510002u,
+static const uint8_t a32_code_61[4] = {
+    0x02, 0x00, 0x51, 0xe1,
 };
-static const uint32_t a32_words_62[1] = {
-    0xe1510002u,
+static const uint8_t a32_code_62[4] = {
+    0x02, 0x00, 0x51, 0xe1,
 };
-static const uint32_t a32_words_63[1] = {
-    0xe1510002u,
+static const uint8_t a32_code_63[4] = {
+    0x02, 0x00, 0x51, 0xe1,
 };
-static const uint32_t a32_words_64[1] = {
-    0xe1510002u,
+static const uint8_t a32_code_64[4] = {
+    0x02, 0x00, 0x51, 0xe1,
 };
-static const uint32_t a32_words_65[1] = {
-    0xe1510002u,
+static const uint8_t a32_code_65[4] = {
+    0x02, 0x00, 0x51, 0xe1,
 };
-static const uint32_t a32_words_66[1] = {
-    0xe1510002u,
+static const uint8_t a32_code_66[4] = {
+    0x02, 0x00, 0x51, 0xe1,
 };
-static const uint32_t a32_words_67[1] = {
-    0xe1710002u,
+static const uint8_t a32_code_67[4] = {
+    0x02, 0x00, 0x71, 0xe1,
 };
-static const uint32_t a32_words_68[1] = {
-    0xe1710002u,
+static const uint8_t a32_code_68[4] = {
+    0x02, 0x00, 0x71, 0xe1,
 };
-static const uint32_t a32_words_69[1] = {
-    0xe1710002u,
+static const uint8_t a32_code_69[4] = {
+    0x02, 0x00, 0x71, 0xe1,
 };
-static const uint32_t a32_words_70[1] = {
-    0xe1710002u,
+static const uint8_t a32_code_70[4] = {
+    0x02, 0x00, 0x71, 0xe1,
 };
-static const uint32_t a32_words_71[1] = {
-    0xe1710002u,
+static const uint8_t a32_code_71[4] = {
+    0x02, 0x00, 0x71, 0xe1,
 };
-static const uint32_t a32_words_72[1] = {
-    0xe1710002u,
+static const uint8_t a32_code_72[4] = {
+    0x02, 0x00, 0x71, 0xe1,
 };
-static const uint32_t a32_words_73[1] = {
-    0xe1810002u,
+static const uint8_t a32_code_73[4] = {
+    0x02, 0x00, 0x81, 0xe1,
 };
-static const uint32_t a32_words_74[1] = {
-    0xe1810002u,
+static const uint8_t a32_code_74[4] = {
+    0x02, 0x00, 0x81, 0xe1,
 };
-static const uint32_t a32_words_75[1] = {
-    0xe1810002u,
+static const uint8_t a32_code_75[4] = {
+    0x02, 0x00, 0x81, 0xe1,
 };
-static const uint32_t a32_words_76[1] = {
-    0xe1810002u,
+static const uint8_t a32_code_76[4] = {
+    0x02, 0x00, 0x81, 0xe1,
 };
-static const uint32_t a32_words_77[1] = {
-    0xe1810002u,
+static const uint8_t a32_code_77[4] = {
+    0x02, 0x00, 0x81, 0xe1,
 };
-static const uint32_t a32_words_78[1] = {
-    0xe1810002u,
+static const uint8_t a32_code_78[4] = {
+    0x02, 0x00, 0x81, 0xe1,
 };
-static const uint32_t a32_words_79[1] = {
-    0xe1a00002u,
+static const uint8_t a32_code_79[4] = {
+    0x02, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_80[1] = {
-    0xe1a00002u,
+static const uint8_t a32_code_80[4] = {
+    0x02, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_81[1] = {
-    0xe1a00002u,
+static const uint8_t a32_code_81[4] = {
+    0x02, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_82[1] = {
-    0xe1a00002u,
+static const uint8_t a32_code_82[4] = {
+    0x02, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_83[1] = {
-    0xe1a00002u,
+static const uint8_t a32_code_83[4] = {
+    0x02, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_84[1] = {
-    0xe1a00002u,
+static const uint8_t a32_code_84[4] = {
+    0x02, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_85[1] = {
-    0xe1c10002u,
+static const uint8_t a32_code_85[4] = {
+    0x02, 0x00, 0xc1, 0xe1,
 };
-static const uint32_t a32_words_86[1] = {
-    0xe1c10002u,
+static const uint8_t a32_code_86[4] = {
+    0x02, 0x00, 0xc1, 0xe1,
 };
-static const uint32_t a32_words_87[1] = {
-    0xe1c10002u,
+static const uint8_t a32_code_87[4] = {
+    0x02, 0x00, 0xc1, 0xe1,
 };
-static const uint32_t a32_words_88[1] = {
-    0xe1c10002u,
+static const uint8_t a32_code_88[4] = {
+    0x02, 0x00, 0xc1, 0xe1,
 };
-static const uint32_t a32_words_89[1] = {
-    0xe1c10002u,
+static const uint8_t a32_code_89[4] = {
+    0x02, 0x00, 0xc1, 0xe1,
 };
-static const uint32_t a32_words_90[1] = {
-    0xe1c10002u,
+static const uint8_t a32_code_90[4] = {
+    0x02, 0x00, 0xc1, 0xe1,
 };
-static const uint32_t a32_words_91[1] = {
-    0xe1e00002u,
+static const uint8_t a32_code_91[4] = {
+    0x02, 0x00, 0xe0, 0xe1,
 };
-static const uint32_t a32_words_92[1] = {
-    0xe1e00002u,
+static const uint8_t a32_code_92[4] = {
+    0x02, 0x00, 0xe0, 0xe1,
 };
-static const uint32_t a32_words_93[1] = {
-    0xe1e00002u,
+static const uint8_t a32_code_93[4] = {
+    0x02, 0x00, 0xe0, 0xe1,
 };
-static const uint32_t a32_words_94[1] = {
-    0xe1e00002u,
+static const uint8_t a32_code_94[4] = {
+    0x02, 0x00, 0xe0, 0xe1,
 };
-static const uint32_t a32_words_95[1] = {
-    0xe1e00002u,
+static const uint8_t a32_code_95[4] = {
+    0x02, 0x00, 0xe0, 0xe1,
 };
-static const uint32_t a32_words_96[1] = {
-    0xe1e00002u,
+static const uint8_t a32_code_96[4] = {
+    0x02, 0x00, 0xe0, 0xe1,
 };
-static const uint32_t a32_words_97[1] = {
-    0xe0110002u,
+static const uint8_t a32_code_97[4] = {
+    0x02, 0x00, 0x11, 0xe0,
 };
-static const uint32_t a32_words_98[1] = {
-    0xe0110002u,
+static const uint8_t a32_code_98[4] = {
+    0x02, 0x00, 0x11, 0xe0,
 };
-static const uint32_t a32_words_99[1] = {
-    0xe0110002u,
+static const uint8_t a32_code_99[4] = {
+    0x02, 0x00, 0x11, 0xe0,
 };
-static const uint32_t a32_words_100[1] = {
-    0xe0310002u,
+static const uint8_t a32_code_100[4] = {
+    0x02, 0x00, 0x31, 0xe0,
 };
-static const uint32_t a32_words_101[1] = {
-    0xe0310002u,
+static const uint8_t a32_code_101[4] = {
+    0x02, 0x00, 0x31, 0xe0,
 };
-static const uint32_t a32_words_102[1] = {
-    0xe0310002u,
+static const uint8_t a32_code_102[4] = {
+    0x02, 0x00, 0x31, 0xe0,
 };
-static const uint32_t a32_words_103[1] = {
-    0xe0510002u,
+static const uint8_t a32_code_103[4] = {
+    0x02, 0x00, 0x51, 0xe0,
 };
-static const uint32_t a32_words_104[1] = {
-    0xe0510002u,
+static const uint8_t a32_code_104[4] = {
+    0x02, 0x00, 0x51, 0xe0,
 };
-static const uint32_t a32_words_105[1] = {
-    0xe0510002u,
+static const uint8_t a32_code_105[4] = {
+    0x02, 0x00, 0x51, 0xe0,
 };
-static const uint32_t a32_words_106[1] = {
-    0xe0710002u,
+static const uint8_t a32_code_106[4] = {
+    0x02, 0x00, 0x71, 0xe0,
 };
-static const uint32_t a32_words_107[1] = {
-    0xe0710002u,
+static const uint8_t a32_code_107[4] = {
+    0x02, 0x00, 0x71, 0xe0,
 };
-static const uint32_t a32_words_108[1] = {
-    0xe0710002u,
+static const uint8_t a32_code_108[4] = {
+    0x02, 0x00, 0x71, 0xe0,
 };
-static const uint32_t a32_words_109[1] = {
-    0xe0910002u,
+static const uint8_t a32_code_109[4] = {
+    0x02, 0x00, 0x91, 0xe0,
 };
-static const uint32_t a32_words_110[1] = {
-    0xe0910002u,
+static const uint8_t a32_code_110[4] = {
+    0x02, 0x00, 0x91, 0xe0,
 };
-static const uint32_t a32_words_111[1] = {
-    0xe0910002u,
+static const uint8_t a32_code_111[4] = {
+    0x02, 0x00, 0x91, 0xe0,
 };
-static const uint32_t a32_words_112[1] = {
-    0xe0b10002u,
+static const uint8_t a32_code_112[4] = {
+    0x02, 0x00, 0xb1, 0xe0,
 };
-static const uint32_t a32_words_113[1] = {
-    0xe0b10002u,
+static const uint8_t a32_code_113[4] = {
+    0x02, 0x00, 0xb1, 0xe0,
 };
-static const uint32_t a32_words_114[1] = {
-    0xe0b10002u,
+static const uint8_t a32_code_114[4] = {
+    0x02, 0x00, 0xb1, 0xe0,
 };
-static const uint32_t a32_words_115[1] = {
-    0xe0d10002u,
+static const uint8_t a32_code_115[4] = {
+    0x02, 0x00, 0xd1, 0xe0,
 };
-static const uint32_t a32_words_116[1] = {
-    0xe0d10002u,
+static const uint8_t a32_code_116[4] = {
+    0x02, 0x00, 0xd1, 0xe0,
 };
-static const uint32_t a32_words_117[1] = {
-    0xe0d10002u,
+static const uint8_t a32_code_117[4] = {
+    0x02, 0x00, 0xd1, 0xe0,
 };
-static const uint32_t a32_words_118[1] = {
-    0xe0f10002u,
+static const uint8_t a32_code_118[4] = {
+    0x02, 0x00, 0xf1, 0xe0,
 };
-static const uint32_t a32_words_119[1] = {
-    0xe0f10002u,
+static const uint8_t a32_code_119[4] = {
+    0x02, 0x00, 0xf1, 0xe0,
 };
-static const uint32_t a32_words_120[1] = {
-    0xe0f10002u,
+static const uint8_t a32_code_120[4] = {
+    0x02, 0x00, 0xf1, 0xe0,
 };
-static const uint32_t a32_words_121[1] = {
-    0xe1910002u,
+static const uint8_t a32_code_121[4] = {
+    0x02, 0x00, 0x91, 0xe1,
 };
-static const uint32_t a32_words_122[1] = {
-    0xe1910002u,
+static const uint8_t a32_code_122[4] = {
+    0x02, 0x00, 0x91, 0xe1,
 };
-static const uint32_t a32_words_123[1] = {
-    0xe1910002u,
+static const uint8_t a32_code_123[4] = {
+    0x02, 0x00, 0x91, 0xe1,
 };
-static const uint32_t a32_words_124[1] = {
-    0xe1b00002u,
+static const uint8_t a32_code_124[4] = {
+    0x02, 0x00, 0xb0, 0xe1,
 };
-static const uint32_t a32_words_125[1] = {
-    0xe1b00002u,
+static const uint8_t a32_code_125[4] = {
+    0x02, 0x00, 0xb0, 0xe1,
 };
-static const uint32_t a32_words_126[1] = {
-    0xe1b00002u,
+static const uint8_t a32_code_126[4] = {
+    0x02, 0x00, 0xb0, 0xe1,
 };
-static const uint32_t a32_words_127[1] = {
-    0xe1d10002u,
+static const uint8_t a32_code_127[4] = {
+    0x02, 0x00, 0xd1, 0xe1,
 };
-static const uint32_t a32_words_128[1] = {
-    0xe1d10002u,
+static const uint8_t a32_code_128[4] = {
+    0x02, 0x00, 0xd1, 0xe1,
 };
-static const uint32_t a32_words_129[1] = {
-    0xe1d10002u,
+static const uint8_t a32_code_129[4] = {
+    0x02, 0x00, 0xd1, 0xe1,
 };
-static const uint32_t a32_words_130[1] = {
-    0xe1f00002u,
+static const uint8_t a32_code_130[4] = {
+    0x02, 0x00, 0xf0, 0xe1,
 };
-static const uint32_t a32_words_131[1] = {
-    0xe1f00002u,
+static const uint8_t a32_code_131[4] = {
+    0x02, 0x00, 0xf0, 0xe1,
 };
-static const uint32_t a32_words_132[1] = {
-    0xe1f00002u,
+static const uint8_t a32_code_132[4] = {
+    0x02, 0x00, 0xf0, 0xe1,
 };
-static const uint32_t a32_words_133[1] = {
-    0xe2010000u,
+static const uint8_t a32_code_133[4] = {
+    0x00, 0x00, 0x01, 0xe2,
 };
-static const uint32_t a32_words_134[1] = {
-    0xe2010001u,
+static const uint8_t a32_code_134[4] = {
+    0x01, 0x00, 0x01, 0xe2,
 };
-static const uint32_t a32_words_135[1] = {
-    0xe20100ffu,
+static const uint8_t a32_code_135[4] = {
+    0xff, 0x00, 0x01, 0xe2,
 };
-static const uint32_t a32_words_136[1] = {
-    0xe2010c01u,
+static const uint8_t a32_code_136[4] = {
+    0x01, 0x0c, 0x01, 0xe2,
 };
-static const uint32_t a32_words_137[1] = {
-    0xe2010e3fu,
+static const uint8_t a32_code_137[4] = {
+    0x3f, 0x0e, 0x01, 0xe2,
 };
-static const uint32_t a32_words_138[1] = {
-    0xe2010102u,
+static const uint8_t a32_code_138[4] = {
+    0x02, 0x01, 0x01, 0xe2,
 };
-static const uint32_t a32_words_139[1] = {
-    0xe2210000u,
+static const uint8_t a32_code_139[4] = {
+    0x00, 0x00, 0x21, 0xe2,
 };
-static const uint32_t a32_words_140[1] = {
-    0xe2210001u,
+static const uint8_t a32_code_140[4] = {
+    0x01, 0x00, 0x21, 0xe2,
 };
-static const uint32_t a32_words_141[1] = {
-    0xe22100ffu,
+static const uint8_t a32_code_141[4] = {
+    0xff, 0x00, 0x21, 0xe2,
 };
-static const uint32_t a32_words_142[1] = {
-    0xe2210c01u,
+static const uint8_t a32_code_142[4] = {
+    0x01, 0x0c, 0x21, 0xe2,
 };
-static const uint32_t a32_words_143[1] = {
-    0xe2210e3fu,
+static const uint8_t a32_code_143[4] = {
+    0x3f, 0x0e, 0x21, 0xe2,
 };
-static const uint32_t a32_words_144[1] = {
-    0xe2210102u,
+static const uint8_t a32_code_144[4] = {
+    0x02, 0x01, 0x21, 0xe2,
 };
-static const uint32_t a32_words_145[1] = {
-    0xe2410000u,
+static const uint8_t a32_code_145[4] = {
+    0x00, 0x00, 0x41, 0xe2,
 };
-static const uint32_t a32_words_146[1] = {
-    0xe2410001u,
+static const uint8_t a32_code_146[4] = {
+    0x01, 0x00, 0x41, 0xe2,
 };
-static const uint32_t a32_words_147[1] = {
-    0xe24100ffu,
+static const uint8_t a32_code_147[4] = {
+    0xff, 0x00, 0x41, 0xe2,
 };
-static const uint32_t a32_words_148[1] = {
-    0xe2410c01u,
+static const uint8_t a32_code_148[4] = {
+    0x01, 0x0c, 0x41, 0xe2,
 };
-static const uint32_t a32_words_149[1] = {
-    0xe2410e3fu,
+static const uint8_t a32_code_149[4] = {
+    0x3f, 0x0e, 0x41, 0xe2,
 };
-static const uint32_t a32_words_150[1] = {
-    0xe2410102u,
+static const uint8_t a32_code_150[4] = {
+    0x02, 0x01, 0x41, 0xe2,
 };
-static const uint32_t a32_words_151[1] = {
-    0xe2610000u,
+static const uint8_t a32_code_151[4] = {
+    0x00, 0x00, 0x61, 0xe2,
 };
-static const uint32_t a32_words_152[1] = {
-    0xe2610001u,
+static const uint8_t a32_code_152[4] = {
+    0x01, 0x00, 0x61, 0xe2,
 };
-static const uint32_t a32_words_153[1] = {
-    0xe26100ffu,
+static const uint8_t a32_code_153[4] = {
+    0xff, 0x00, 0x61, 0xe2,
 };
-static const uint32_t a32_words_154[1] = {
-    0xe2610c01u,
+static const uint8_t a32_code_154[4] = {
+    0x01, 0x0c, 0x61, 0xe2,
 };
-static const uint32_t a32_words_155[1] = {
-    0xe2610e3fu,
+static const uint8_t a32_code_155[4] = {
+    0x3f, 0x0e, 0x61, 0xe2,
 };
-static const uint32_t a32_words_156[1] = {
-    0xe2610102u,
+static const uint8_t a32_code_156[4] = {
+    0x02, 0x01, 0x61, 0xe2,
 };
-static const uint32_t a32_words_157[1] = {
-    0xe2810000u,
+static const uint8_t a32_code_157[4] = {
+    0x00, 0x00, 0x81, 0xe2,
 };
-static const uint32_t a32_words_158[1] = {
-    0xe2810001u,
+static const uint8_t a32_code_158[4] = {
+    0x01, 0x00, 0x81, 0xe2,
 };
-static const uint32_t a32_words_159[1] = {
-    0xe28100ffu,
+static const uint8_t a32_code_159[4] = {
+    0xff, 0x00, 0x81, 0xe2,
 };
-static const uint32_t a32_words_160[1] = {
-    0xe2810c01u,
+static const uint8_t a32_code_160[4] = {
+    0x01, 0x0c, 0x81, 0xe2,
 };
-static const uint32_t a32_words_161[1] = {
-    0xe2810e3fu,
+static const uint8_t a32_code_161[4] = {
+    0x3f, 0x0e, 0x81, 0xe2,
 };
-static const uint32_t a32_words_162[1] = {
-    0xe2810102u,
+static const uint8_t a32_code_162[4] = {
+    0x02, 0x01, 0x81, 0xe2,
 };
-static const uint32_t a32_words_163[1] = {
-    0xe2a10000u,
+static const uint8_t a32_code_163[4] = {
+    0x00, 0x00, 0xa1, 0xe2,
 };
-static const uint32_t a32_words_164[1] = {
-    0xe2a10001u,
+static const uint8_t a32_code_164[4] = {
+    0x01, 0x00, 0xa1, 0xe2,
 };
-static const uint32_t a32_words_165[1] = {
-    0xe2a100ffu,
+static const uint8_t a32_code_165[4] = {
+    0xff, 0x00, 0xa1, 0xe2,
 };
-static const uint32_t a32_words_166[1] = {
-    0xe2a10c01u,
+static const uint8_t a32_code_166[4] = {
+    0x01, 0x0c, 0xa1, 0xe2,
 };
-static const uint32_t a32_words_167[1] = {
-    0xe2a10e3fu,
+static const uint8_t a32_code_167[4] = {
+    0x3f, 0x0e, 0xa1, 0xe2,
 };
-static const uint32_t a32_words_168[1] = {
-    0xe2a10102u,
+static const uint8_t a32_code_168[4] = {
+    0x02, 0x01, 0xa1, 0xe2,
 };
-static const uint32_t a32_words_169[1] = {
-    0xe2c10000u,
+static const uint8_t a32_code_169[4] = {
+    0x00, 0x00, 0xc1, 0xe2,
 };
-static const uint32_t a32_words_170[1] = {
-    0xe2c10001u,
+static const uint8_t a32_code_170[4] = {
+    0x01, 0x00, 0xc1, 0xe2,
 };
-static const uint32_t a32_words_171[1] = {
-    0xe2c100ffu,
+static const uint8_t a32_code_171[4] = {
+    0xff, 0x00, 0xc1, 0xe2,
 };
-static const uint32_t a32_words_172[1] = {
-    0xe2c10c01u,
+static const uint8_t a32_code_172[4] = {
+    0x01, 0x0c, 0xc1, 0xe2,
 };
-static const uint32_t a32_words_173[1] = {
-    0xe2c10e3fu,
+static const uint8_t a32_code_173[4] = {
+    0x3f, 0x0e, 0xc1, 0xe2,
 };
-static const uint32_t a32_words_174[1] = {
-    0xe2c10102u,
+static const uint8_t a32_code_174[4] = {
+    0x02, 0x01, 0xc1, 0xe2,
 };
-static const uint32_t a32_words_175[1] = {
-    0xe2e10000u,
+static const uint8_t a32_code_175[4] = {
+    0x00, 0x00, 0xe1, 0xe2,
 };
-static const uint32_t a32_words_176[1] = {
-    0xe2e10001u,
+static const uint8_t a32_code_176[4] = {
+    0x01, 0x00, 0xe1, 0xe2,
 };
-static const uint32_t a32_words_177[1] = {
-    0xe2e100ffu,
+static const uint8_t a32_code_177[4] = {
+    0xff, 0x00, 0xe1, 0xe2,
 };
-static const uint32_t a32_words_178[1] = {
-    0xe2e10c01u,
+static const uint8_t a32_code_178[4] = {
+    0x01, 0x0c, 0xe1, 0xe2,
 };
-static const uint32_t a32_words_179[1] = {
-    0xe2e10e3fu,
+static const uint8_t a32_code_179[4] = {
+    0x3f, 0x0e, 0xe1, 0xe2,
 };
-static const uint32_t a32_words_180[1] = {
-    0xe2e10102u,
+static const uint8_t a32_code_180[4] = {
+    0x02, 0x01, 0xe1, 0xe2,
 };
-static const uint32_t a32_words_181[1] = {
-    0xe3110000u,
+static const uint8_t a32_code_181[4] = {
+    0x00, 0x00, 0x11, 0xe3,
 };
-static const uint32_t a32_words_182[1] = {
-    0xe3110001u,
+static const uint8_t a32_code_182[4] = {
+    0x01, 0x00, 0x11, 0xe3,
 };
-static const uint32_t a32_words_183[1] = {
-    0xe31100ffu,
+static const uint8_t a32_code_183[4] = {
+    0xff, 0x00, 0x11, 0xe3,
 };
-static const uint32_t a32_words_184[1] = {
-    0xe3110c01u,
+static const uint8_t a32_code_184[4] = {
+    0x01, 0x0c, 0x11, 0xe3,
 };
-static const uint32_t a32_words_185[1] = {
-    0xe3110e3fu,
+static const uint8_t a32_code_185[4] = {
+    0x3f, 0x0e, 0x11, 0xe3,
 };
-static const uint32_t a32_words_186[1] = {
-    0xe3110102u,
+static const uint8_t a32_code_186[4] = {
+    0x02, 0x01, 0x11, 0xe3,
 };
-static const uint32_t a32_words_187[1] = {
-    0xe3310000u,
+static const uint8_t a32_code_187[4] = {
+    0x00, 0x00, 0x31, 0xe3,
 };
-static const uint32_t a32_words_188[1] = {
-    0xe3310001u,
+static const uint8_t a32_code_188[4] = {
+    0x01, 0x00, 0x31, 0xe3,
 };
-static const uint32_t a32_words_189[1] = {
-    0xe33100ffu,
+static const uint8_t a32_code_189[4] = {
+    0xff, 0x00, 0x31, 0xe3,
 };
-static const uint32_t a32_words_190[1] = {
-    0xe3310c01u,
+static const uint8_t a32_code_190[4] = {
+    0x01, 0x0c, 0x31, 0xe3,
 };
-static const uint32_t a32_words_191[1] = {
-    0xe3310e3fu,
+static const uint8_t a32_code_191[4] = {
+    0x3f, 0x0e, 0x31, 0xe3,
 };
-static const uint32_t a32_words_192[1] = {
-    0xe3310102u,
+static const uint8_t a32_code_192[4] = {
+    0x02, 0x01, 0x31, 0xe3,
 };
-static const uint32_t a32_words_193[1] = {
-    0xe3510000u,
+static const uint8_t a32_code_193[4] = {
+    0x00, 0x00, 0x51, 0xe3,
 };
-static const uint32_t a32_words_194[1] = {
-    0xe3510001u,
+static const uint8_t a32_code_194[4] = {
+    0x01, 0x00, 0x51, 0xe3,
 };
-static const uint32_t a32_words_195[1] = {
-    0xe35100ffu,
+static const uint8_t a32_code_195[4] = {
+    0xff, 0x00, 0x51, 0xe3,
 };
-static const uint32_t a32_words_196[1] = {
-    0xe3510c01u,
+static const uint8_t a32_code_196[4] = {
+    0x01, 0x0c, 0x51, 0xe3,
 };
-static const uint32_t a32_words_197[1] = {
-    0xe3510e3fu,
+static const uint8_t a32_code_197[4] = {
+    0x3f, 0x0e, 0x51, 0xe3,
 };
-static const uint32_t a32_words_198[1] = {
-    0xe3510102u,
+static const uint8_t a32_code_198[4] = {
+    0x02, 0x01, 0x51, 0xe3,
 };
-static const uint32_t a32_words_199[1] = {
-    0xe3710000u,
+static const uint8_t a32_code_199[4] = {
+    0x00, 0x00, 0x71, 0xe3,
 };
-static const uint32_t a32_words_200[1] = {
-    0xe3710001u,
+static const uint8_t a32_code_200[4] = {
+    0x01, 0x00, 0x71, 0xe3,
 };
-static const uint32_t a32_words_201[1] = {
-    0xe37100ffu,
+static const uint8_t a32_code_201[4] = {
+    0xff, 0x00, 0x71, 0xe3,
 };
-static const uint32_t a32_words_202[1] = {
-    0xe3710c01u,
+static const uint8_t a32_code_202[4] = {
+    0x01, 0x0c, 0x71, 0xe3,
 };
-static const uint32_t a32_words_203[1] = {
-    0xe3710e3fu,
+static const uint8_t a32_code_203[4] = {
+    0x3f, 0x0e, 0x71, 0xe3,
 };
-static const uint32_t a32_words_204[1] = {
-    0xe3710102u,
+static const uint8_t a32_code_204[4] = {
+    0x02, 0x01, 0x71, 0xe3,
 };
-static const uint32_t a32_words_205[1] = {
-    0xe3810000u,
+static const uint8_t a32_code_205[4] = {
+    0x00, 0x00, 0x81, 0xe3,
 };
-static const uint32_t a32_words_206[1] = {
-    0xe3810001u,
+static const uint8_t a32_code_206[4] = {
+    0x01, 0x00, 0x81, 0xe3,
 };
-static const uint32_t a32_words_207[1] = {
-    0xe38100ffu,
+static const uint8_t a32_code_207[4] = {
+    0xff, 0x00, 0x81, 0xe3,
 };
-static const uint32_t a32_words_208[1] = {
-    0xe3810c01u,
+static const uint8_t a32_code_208[4] = {
+    0x01, 0x0c, 0x81, 0xe3,
 };
-static const uint32_t a32_words_209[1] = {
-    0xe3810e3fu,
+static const uint8_t a32_code_209[4] = {
+    0x3f, 0x0e, 0x81, 0xe3,
 };
-static const uint32_t a32_words_210[1] = {
-    0xe3810102u,
+static const uint8_t a32_code_210[4] = {
+    0x02, 0x01, 0x81, 0xe3,
 };
-static const uint32_t a32_words_211[1] = {
-    0xe3a00000u,
+static const uint8_t a32_code_211[4] = {
+    0x00, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_212[1] = {
-    0xe3a00001u,
+static const uint8_t a32_code_212[4] = {
+    0x01, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_213[1] = {
-    0xe3a000ffu,
+static const uint8_t a32_code_213[4] = {
+    0xff, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_214[1] = {
-    0xe3a00c01u,
+static const uint8_t a32_code_214[4] = {
+    0x01, 0x0c, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_215[1] = {
-    0xe3a00e3fu,
+static const uint8_t a32_code_215[4] = {
+    0x3f, 0x0e, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_216[1] = {
-    0xe3a00102u,
+static const uint8_t a32_code_216[4] = {
+    0x02, 0x01, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_217[1] = {
-    0xe3c10000u,
+static const uint8_t a32_code_217[4] = {
+    0x00, 0x00, 0xc1, 0xe3,
 };
-static const uint32_t a32_words_218[1] = {
-    0xe3c10001u,
+static const uint8_t a32_code_218[4] = {
+    0x01, 0x00, 0xc1, 0xe3,
 };
-static const uint32_t a32_words_219[1] = {
-    0xe3c100ffu,
+static const uint8_t a32_code_219[4] = {
+    0xff, 0x00, 0xc1, 0xe3,
 };
-static const uint32_t a32_words_220[1] = {
-    0xe3c10c01u,
+static const uint8_t a32_code_220[4] = {
+    0x01, 0x0c, 0xc1, 0xe3,
 };
-static const uint32_t a32_words_221[1] = {
-    0xe3c10e3fu,
+static const uint8_t a32_code_221[4] = {
+    0x3f, 0x0e, 0xc1, 0xe3,
 };
-static const uint32_t a32_words_222[1] = {
-    0xe3c10102u,
+static const uint8_t a32_code_222[4] = {
+    0x02, 0x01, 0xc1, 0xe3,
 };
-static const uint32_t a32_words_223[1] = {
-    0xe3e00000u,
+static const uint8_t a32_code_223[4] = {
+    0x00, 0x00, 0xe0, 0xe3,
 };
-static const uint32_t a32_words_224[1] = {
-    0xe3e00001u,
+static const uint8_t a32_code_224[4] = {
+    0x01, 0x00, 0xe0, 0xe3,
 };
-static const uint32_t a32_words_225[1] = {
-    0xe3e000ffu,
+static const uint8_t a32_code_225[4] = {
+    0xff, 0x00, 0xe0, 0xe3,
 };
-static const uint32_t a32_words_226[1] = {
-    0xe3e00c01u,
+static const uint8_t a32_code_226[4] = {
+    0x01, 0x0c, 0xe0, 0xe3,
 };
-static const uint32_t a32_words_227[1] = {
-    0xe3e00e3fu,
+static const uint8_t a32_code_227[4] = {
+    0x3f, 0x0e, 0xe0, 0xe3,
 };
-static const uint32_t a32_words_228[1] = {
-    0xe3e00102u,
+static const uint8_t a32_code_228[4] = {
+    0x02, 0x01, 0xe0, 0xe3,
 };
-static const uint32_t a32_words_229[1] = {
-    0xe2110000u,
+static const uint8_t a32_code_229[4] = {
+    0x00, 0x00, 0x11, 0xe2,
 };
-static const uint32_t a32_words_230[1] = {
-    0xe2110001u,
+static const uint8_t a32_code_230[4] = {
+    0x01, 0x00, 0x11, 0xe2,
 };
-static const uint32_t a32_words_231[1] = {
-    0xe21100ffu,
+static const uint8_t a32_code_231[4] = {
+    0xff, 0x00, 0x11, 0xe2,
 };
-static const uint32_t a32_words_232[1] = {
-    0xe2310000u,
+static const uint8_t a32_code_232[4] = {
+    0x00, 0x00, 0x31, 0xe2,
 };
-static const uint32_t a32_words_233[1] = {
-    0xe2310001u,
+static const uint8_t a32_code_233[4] = {
+    0x01, 0x00, 0x31, 0xe2,
 };
-static const uint32_t a32_words_234[1] = {
-    0xe23100ffu,
+static const uint8_t a32_code_234[4] = {
+    0xff, 0x00, 0x31, 0xe2,
 };
-static const uint32_t a32_words_235[1] = {
-    0xe2510000u,
+static const uint8_t a32_code_235[4] = {
+    0x00, 0x00, 0x51, 0xe2,
 };
-static const uint32_t a32_words_236[1] = {
-    0xe2510001u,
+static const uint8_t a32_code_236[4] = {
+    0x01, 0x00, 0x51, 0xe2,
 };
-static const uint32_t a32_words_237[1] = {
-    0xe25100ffu,
+static const uint8_t a32_code_237[4] = {
+    0xff, 0x00, 0x51, 0xe2,
 };
-static const uint32_t a32_words_238[1] = {
-    0xe2710000u,
+static const uint8_t a32_code_238[4] = {
+    0x00, 0x00, 0x71, 0xe2,
 };
-static const uint32_t a32_words_239[1] = {
-    0xe2710001u,
+static const uint8_t a32_code_239[4] = {
+    0x01, 0x00, 0x71, 0xe2,
 };
-static const uint32_t a32_words_240[1] = {
-    0xe27100ffu,
+static const uint8_t a32_code_240[4] = {
+    0xff, 0x00, 0x71, 0xe2,
 };
-static const uint32_t a32_words_241[1] = {
-    0xe2910000u,
+static const uint8_t a32_code_241[4] = {
+    0x00, 0x00, 0x91, 0xe2,
 };
-static const uint32_t a32_words_242[1] = {
-    0xe2910001u,
+static const uint8_t a32_code_242[4] = {
+    0x01, 0x00, 0x91, 0xe2,
 };
-static const uint32_t a32_words_243[1] = {
-    0xe29100ffu,
+static const uint8_t a32_code_243[4] = {
+    0xff, 0x00, 0x91, 0xe2,
 };
-static const uint32_t a32_words_244[1] = {
-    0xe2b10000u,
+static const uint8_t a32_code_244[4] = {
+    0x00, 0x00, 0xb1, 0xe2,
 };
-static const uint32_t a32_words_245[1] = {
-    0xe2b10001u,
+static const uint8_t a32_code_245[4] = {
+    0x01, 0x00, 0xb1, 0xe2,
 };
-static const uint32_t a32_words_246[1] = {
-    0xe2b100ffu,
+static const uint8_t a32_code_246[4] = {
+    0xff, 0x00, 0xb1, 0xe2,
 };
-static const uint32_t a32_words_247[1] = {
-    0xe2d10000u,
+static const uint8_t a32_code_247[4] = {
+    0x00, 0x00, 0xd1, 0xe2,
 };
-static const uint32_t a32_words_248[1] = {
-    0xe2d10001u,
+static const uint8_t a32_code_248[4] = {
+    0x01, 0x00, 0xd1, 0xe2,
 };
-static const uint32_t a32_words_249[1] = {
-    0xe2d100ffu,
+static const uint8_t a32_code_249[4] = {
+    0xff, 0x00, 0xd1, 0xe2,
 };
-static const uint32_t a32_words_250[1] = {
-    0xe2f10000u,
+static const uint8_t a32_code_250[4] = {
+    0x00, 0x00, 0xf1, 0xe2,
 };
-static const uint32_t a32_words_251[1] = {
-    0xe2f10001u,
+static const uint8_t a32_code_251[4] = {
+    0x01, 0x00, 0xf1, 0xe2,
 };
-static const uint32_t a32_words_252[1] = {
-    0xe2f100ffu,
+static const uint8_t a32_code_252[4] = {
+    0xff, 0x00, 0xf1, 0xe2,
 };
-static const uint32_t a32_words_253[1] = {
-    0xe3910000u,
+static const uint8_t a32_code_253[4] = {
+    0x00, 0x00, 0x91, 0xe3,
 };
-static const uint32_t a32_words_254[1] = {
-    0xe3910001u,
+static const uint8_t a32_code_254[4] = {
+    0x01, 0x00, 0x91, 0xe3,
 };
-static const uint32_t a32_words_255[1] = {
-    0xe39100ffu,
+static const uint8_t a32_code_255[4] = {
+    0xff, 0x00, 0x91, 0xe3,
 };
-static const uint32_t a32_words_256[1] = {
-    0xe3b00000u,
+static const uint8_t a32_code_256[4] = {
+    0x00, 0x00, 0xb0, 0xe3,
 };
-static const uint32_t a32_words_257[1] = {
-    0xe3b00001u,
+static const uint8_t a32_code_257[4] = {
+    0x01, 0x00, 0xb0, 0xe3,
 };
-static const uint32_t a32_words_258[1] = {
-    0xe3b000ffu,
+static const uint8_t a32_code_258[4] = {
+    0xff, 0x00, 0xb0, 0xe3,
 };
-static const uint32_t a32_words_259[1] = {
-    0xe3d10000u,
+static const uint8_t a32_code_259[4] = {
+    0x00, 0x00, 0xd1, 0xe3,
 };
-static const uint32_t a32_words_260[1] = {
-    0xe3d10001u,
+static const uint8_t a32_code_260[4] = {
+    0x01, 0x00, 0xd1, 0xe3,
 };
-static const uint32_t a32_words_261[1] = {
-    0xe3d100ffu,
+static const uint8_t a32_code_261[4] = {
+    0xff, 0x00, 0xd1, 0xe3,
 };
-static const uint32_t a32_words_262[1] = {
-    0xe3f00000u,
+static const uint8_t a32_code_262[4] = {
+    0x00, 0x00, 0xf0, 0xe3,
 };
-static const uint32_t a32_words_263[1] = {
-    0xe3f00001u,
+static const uint8_t a32_code_263[4] = {
+    0x01, 0x00, 0xf0, 0xe3,
 };
-static const uint32_t a32_words_264[1] = {
-    0xe3f000ffu,
+static const uint8_t a32_code_264[4] = {
+    0xff, 0x00, 0xf0, 0xe3,
 };
-static const uint32_t a32_words_265[1] = {
-    0xe1a00001u,
+static const uint8_t a32_code_265[4] = {
+    0x01, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_266[1] = {
-    0xe1a00081u,
+static const uint8_t a32_code_266[4] = {
+    0x81, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_267[1] = {
-    0xe1a00281u,
+static const uint8_t a32_code_267[4] = {
+    0x81, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_268[1] = {
-    0xe1a00f81u,
+static const uint8_t a32_code_268[4] = {
+    0x81, 0x0f, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_269[1] = {
-    0xe1a00021u,
+static const uint8_t a32_code_269[4] = {
+    0x21, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_270[1] = {
-    0xe1a000a1u,
+static const uint8_t a32_code_270[4] = {
+    0xa1, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_271[1] = {
-    0xe1a002a1u,
+static const uint8_t a32_code_271[4] = {
+    0xa1, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_272[1] = {
-    0xe1a00fa1u,
+static const uint8_t a32_code_272[4] = {
+    0xa1, 0x0f, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_273[1] = {
-    0xe1a00041u,
+static const uint8_t a32_code_273[4] = {
+    0x41, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_274[1] = {
-    0xe1a000c1u,
+static const uint8_t a32_code_274[4] = {
+    0xc1, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_275[1] = {
-    0xe1a002c1u,
+static const uint8_t a32_code_275[4] = {
+    0xc1, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_276[1] = {
-    0xe1a00fc1u,
+static const uint8_t a32_code_276[4] = {
+    0xc1, 0x0f, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_277[1] = {
-    0xe1a00061u,
+static const uint8_t a32_code_277[4] = {
+    0x61, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_278[1] = {
-    0xe1a000e1u,
+static const uint8_t a32_code_278[4] = {
+    0xe1, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_279[1] = {
-    0xe1a002e1u,
+static const uint8_t a32_code_279[4] = {
+    0xe1, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_280[1] = {
-    0xe1a00fe1u,
+static const uint8_t a32_code_280[4] = {
+    0xe1, 0x0f, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_281[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_281[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_282[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_282[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_283[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_283[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_284[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_284[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_285[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_285[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_286[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_286[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_287[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_287[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_288[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_288[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_289[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_289[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_290[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_290[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_291[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_291[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_292[1] = {
-    0xe1a00211u,
+static const uint8_t a32_code_292[4] = {
+    0x11, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_293[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_293[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_294[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_294[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_295[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_295[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_296[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_296[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_297[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_297[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_298[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_298[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_299[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_299[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_300[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_300[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_301[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_301[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_302[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_302[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_303[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_303[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_304[1] = {
-    0xe1a00231u,
+static const uint8_t a32_code_304[4] = {
+    0x31, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_305[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_305[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_306[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_306[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_307[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_307[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_308[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_308[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_309[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_309[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_310[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_310[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_311[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_311[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_312[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_312[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_313[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_313[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_314[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_314[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_315[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_315[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_316[1] = {
-    0xe1a00251u,
+static const uint8_t a32_code_316[4] = {
+    0x51, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_317[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_317[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_318[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_318[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_319[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_319[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_320[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_320[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_321[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_321[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_322[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_322[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_323[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_323[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_324[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_324[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_325[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_325[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_326[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_326[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_327[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_327[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_328[1] = {
-    0xe1a00271u,
+static const uint8_t a32_code_328[4] = {
+    0x71, 0x02, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_329[1] = {
-    0xe0810002u,
+static const uint8_t a32_code_329[4] = {
+    0x02, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_330[1] = {
-    0xe0810182u,
+static const uint8_t a32_code_330[4] = {
+    0x82, 0x01, 0x81, 0xe0,
 };
-static const uint32_t a32_words_331[1] = {
-    0xe0810402u,
+static const uint8_t a32_code_331[4] = {
+    0x02, 0x04, 0x81, 0xe0,
 };
-static const uint32_t a32_words_332[1] = {
-    0xe0810802u,
+static const uint8_t a32_code_332[4] = {
+    0x02, 0x08, 0x81, 0xe0,
 };
-static const uint32_t a32_words_333[1] = {
-    0xe0810022u,
+static const uint8_t a32_code_333[4] = {
+    0x22, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_334[1] = {
-    0xe08101a2u,
+static const uint8_t a32_code_334[4] = {
+    0xa2, 0x01, 0x81, 0xe0,
 };
-static const uint32_t a32_words_335[1] = {
-    0xe0810422u,
+static const uint8_t a32_code_335[4] = {
+    0x22, 0x04, 0x81, 0xe0,
 };
-static const uint32_t a32_words_336[1] = {
-    0xe0810822u,
+static const uint8_t a32_code_336[4] = {
+    0x22, 0x08, 0x81, 0xe0,
 };
-static const uint32_t a32_words_337[1] = {
-    0xe0810042u,
+static const uint8_t a32_code_337[4] = {
+    0x42, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_338[1] = {
-    0xe08101c2u,
+static const uint8_t a32_code_338[4] = {
+    0xc2, 0x01, 0x81, 0xe0,
 };
-static const uint32_t a32_words_339[1] = {
-    0xe0810442u,
+static const uint8_t a32_code_339[4] = {
+    0x42, 0x04, 0x81, 0xe0,
 };
-static const uint32_t a32_words_340[1] = {
-    0xe0810842u,
+static const uint8_t a32_code_340[4] = {
+    0x42, 0x08, 0x81, 0xe0,
 };
-static const uint32_t a32_words_341[1] = {
-    0xe0810062u,
+static const uint8_t a32_code_341[4] = {
+    0x62, 0x00, 0x81, 0xe0,
 };
-static const uint32_t a32_words_342[1] = {
-    0xe08101e2u,
+static const uint8_t a32_code_342[4] = {
+    0xe2, 0x01, 0x81, 0xe0,
 };
-static const uint32_t a32_words_343[1] = {
-    0xe0810462u,
+static const uint8_t a32_code_343[4] = {
+    0x62, 0x04, 0x81, 0xe0,
 };
-static const uint32_t a32_words_344[1] = {
-    0xe0810862u,
+static const uint8_t a32_code_344[4] = {
+    0x62, 0x08, 0x81, 0xe0,
 };
-static const uint32_t a32_words_345[2] = {
-    0xe1120082u, 0xe1a00061u,
+static const uint8_t a32_code_345[8] = {
+    0x82, 0x00, 0x12, 0xe1, 0x61, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_346[2] = {
-    0xe1120082u, 0xe1a00061u,
+static const uint8_t a32_code_346[8] = {
+    0x82, 0x00, 0x12, 0xe1, 0x61, 0x00, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_347[1] = {
-    0xe0000291u,
+static const uint8_t a32_code_347[4] = {
+    0x91, 0x02, 0x00, 0xe0,
 };
-static const uint32_t a32_words_348[1] = {
-    0xe0000291u,
+static const uint8_t a32_code_348[4] = {
+    0x91, 0x02, 0x00, 0xe0,
 };
-static const uint32_t a32_words_349[1] = {
-    0xe0000291u,
+static const uint8_t a32_code_349[4] = {
+    0x91, 0x02, 0x00, 0xe0,
 };
-static const uint32_t a32_words_350[1] = {
-    0xe0000291u,
+static const uint8_t a32_code_350[4] = {
+    0x91, 0x02, 0x00, 0xe0,
 };
-static const uint32_t a32_words_351[1] = {
-    0xe0203291u,
+static const uint8_t a32_code_351[4] = {
+    0x91, 0x32, 0x20, 0xe0,
 };
-static const uint32_t a32_words_352[1] = {
-    0xe0203291u,
+static const uint8_t a32_code_352[4] = {
+    0x91, 0x32, 0x20, 0xe0,
 };
-static const uint32_t a32_words_353[1] = {
-    0xe0203291u,
+static const uint8_t a32_code_353[4] = {
+    0x91, 0x32, 0x20, 0xe0,
 };
-static const uint32_t a32_words_354[1] = {
-    0xe0603291u,
+static const uint8_t a32_code_354[4] = {
+    0x91, 0x32, 0x60, 0xe0,
 };
-static const uint32_t a32_words_355[1] = {
-    0xe0603291u,
+static const uint8_t a32_code_355[4] = {
+    0x91, 0x32, 0x60, 0xe0,
 };
-static const uint32_t a32_words_356[1] = {
-    0xe0603291u,
+static const uint8_t a32_code_356[4] = {
+    0x91, 0x32, 0x60, 0xe0,
 };
-static const uint32_t a32_words_357[1] = {
-    0xe0830291u,
+static const uint8_t a32_code_357[4] = {
+    0x91, 0x02, 0x83, 0xe0,
 };
-static const uint32_t a32_words_358[1] = {
-    0xe0830291u,
+static const uint8_t a32_code_358[4] = {
+    0x91, 0x02, 0x83, 0xe0,
 };
-static const uint32_t a32_words_359[1] = {
-    0xe0830291u,
+static const uint8_t a32_code_359[4] = {
+    0x91, 0x02, 0x83, 0xe0,
 };
-static const uint32_t a32_words_360[1] = {
-    0xe0a30291u,
+static const uint8_t a32_code_360[4] = {
+    0x91, 0x02, 0xa3, 0xe0,
 };
-static const uint32_t a32_words_361[1] = {
-    0xe0a30291u,
+static const uint8_t a32_code_361[4] = {
+    0x91, 0x02, 0xa3, 0xe0,
 };
-static const uint32_t a32_words_362[1] = {
-    0xe0c30291u,
+static const uint8_t a32_code_362[4] = {
+    0x91, 0x02, 0xc3, 0xe0,
 };
-static const uint32_t a32_words_363[1] = {
-    0xe0c30291u,
+static const uint8_t a32_code_363[4] = {
+    0x91, 0x02, 0xc3, 0xe0,
 };
-static const uint32_t a32_words_364[1] = {
-    0xe0c30291u,
+static const uint8_t a32_code_364[4] = {
+    0x91, 0x02, 0xc3, 0xe0,
 };
-static const uint32_t a32_words_365[1] = {
-    0xe0e30291u,
+static const uint8_t a32_code_365[4] = {
+    0x91, 0x02, 0xe3, 0xe0,
 };
-static const uint32_t a32_words_366[1] = {
-    0xe0e30291u,
+static const uint8_t a32_code_366[4] = {
+    0x91, 0x02, 0xe3, 0xe0,
 };
-static const uint32_t a32_words_367[1] = {
-    0xe0100291u,
+static const uint8_t a32_code_367[4] = {
+    0x91, 0x02, 0x10, 0xe0,
 };
-static const uint32_t a32_words_368[1] = {
-    0xe0100291u,
+static const uint8_t a32_code_368[4] = {
+    0x91, 0x02, 0x10, 0xe0,
 };
-static const uint32_t a32_words_369[1] = {
-    0xe0930291u,
+static const uint8_t a32_code_369[4] = {
+    0x91, 0x02, 0x93, 0xe0,
 };
-static const uint32_t a32_words_370[1] = {
-    0xe0930291u,
+static const uint8_t a32_code_370[4] = {
+    0x91, 0x02, 0x93, 0xe0,
 };
-static const uint32_t a32_words_371[2] = {
-    0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_371[8] = {
+    0x00, 0x00, 0x0f, 0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_372[2] = {
-    0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_372[8] = {
+    0x00, 0x00, 0x0f, 0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_373[2] = {
-    0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_373[8] = {
+    0x00, 0x00, 0x0f, 0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_374[5] = {
-    0xe3001000u, 0xe34f1000u, 0xe128f001u, 0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_374[20] = {
+    0x00, 0x10, 0x00, 0xe3, 0x00, 0x10, 0x4f, 0xe3, 0x01, 0xf0, 0x28, 0xe1, 0x00, 0x00, 0x0f,
+    0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_375[4] = {
-    0xe3001000u, 0xe128f001u, 0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_375[16] = {
+    0x00, 0x10, 0x00, 0xe3, 0x01, 0xf0, 0x28, 0xe1, 0x00, 0x00, 0x0f, 0xe1, 0x20, 0x0e, 0xa0,
+    0xe1,
 };
-static const uint32_t a32_words_376[5] = {
-    0xe3001000u, 0xe3421000u, 0xe128f001u, 0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_376[20] = {
+    0x00, 0x10, 0x00, 0xe3, 0x00, 0x10, 0x42, 0xe3, 0x01, 0xf0, 0x28, 0xe1, 0x00, 0x00, 0x0f,
+    0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_377[5] = {
-    0xe3001000u, 0xe34e1000u, 0xe128f001u, 0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_377[20] = {
+    0x00, 0x10, 0x00, 0xe3, 0x00, 0x10, 0x4e, 0xe3, 0x01, 0xf0, 0x28, 0xe1, 0x00, 0x00, 0x0f,
+    0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_378[3] = {
-    0xe328f102u, 0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_378[12] = {
+    0x02, 0xf1, 0x28, 0xe3, 0x00, 0x00, 0x0f, 0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_379[3] = {
-    0xe328f101u, 0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_379[12] = {
+    0x01, 0xf1, 0x28, 0xe3, 0x00, 0x00, 0x0f, 0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_380[3] = {
-    0xe328f20fu, 0xe10f0000u, 0xe1a00e20u,
+static const uint8_t a32_code_380[12] = {
+    0x0f, 0xf2, 0x28, 0xe3, 0x00, 0x00, 0x0f, 0xe1, 0x20, 0x0e, 0xa0, 0xe1,
 };
-static const uint32_t a32_words_381[1] = {
-    0xe16f0f11u,
+static const uint8_t a32_code_381[4] = {
+    0x11, 0x0f, 0x6f, 0xe1,
 };
-static const uint32_t a32_words_382[1] = {
-    0xe16f0f11u,
+static const uint8_t a32_code_382[4] = {
+    0x11, 0x0f, 0x6f, 0xe1,
 };
-static const uint32_t a32_words_383[1] = {
-    0xe16f0f11u,
+static const uint8_t a32_code_383[4] = {
+    0x11, 0x0f, 0x6f, 0xe1,
 };
-static const uint32_t a32_words_384[1] = {
-    0xe16f0f11u,
+static const uint8_t a32_code_384[4] = {
+    0x11, 0x0f, 0x6f, 0xe1,
 };
-static const uint32_t a32_words_385[2] = {
-    0xe5891000u, 0xe5990000u,
+static const uint8_t a32_code_385[8] = {
+    0x00, 0x10, 0x89, 0xe5, 0x00, 0x00, 0x99, 0xe5,
 };
-static const uint32_t a32_words_386[2] = {
-    0xe5891004u, 0xe5990004u,
+static const uint8_t a32_code_386[8] = {
+    0x04, 0x10, 0x89, 0xe5, 0x04, 0x00, 0x99, 0xe5,
 };
-static const uint32_t a32_words_387[2] = {
-    0xe5891008u, 0xe5990008u,
+static const uint8_t a32_code_387[8] = {
+    0x08, 0x10, 0x89, 0xe5, 0x08, 0x00, 0x99, 0xe5,
 };
-static const uint32_t a32_words_388[2] = {
-    0xe5891010u, 0xe5990010u,
+static const uint8_t a32_code_388[8] = {
+    0x10, 0x10, 0x89, 0xe5, 0x10, 0x00, 0x99, 0xe5,
 };
-static const uint32_t a32_words_389[2] = {
-    0xe5891020u, 0xe5990020u,
+static const uint8_t a32_code_389[8] = {
+    0x20, 0x10, 0x89, 0xe5, 0x20, 0x00, 0x99, 0xe5,
 };
-static const uint32_t a32_words_390[2] = {
-    0xe5891040u, 0xe5990040u,
+static const uint8_t a32_code_390[8] = {
+    0x40, 0x10, 0x89, 0xe5, 0x40, 0x00, 0x99, 0xe5,
 };
-static const uint32_t a32_words_391[2] = {
-    0xe5c91000u, 0xe5d90000u,
+static const uint8_t a32_code_391[8] = {
+    0x00, 0x10, 0xc9, 0xe5, 0x00, 0x00, 0xd9, 0xe5,
 };
-static const uint32_t a32_words_392[2] = {
-    0xe5c91003u, 0xe5d90003u,
+static const uint8_t a32_code_392[8] = {
+    0x03, 0x10, 0xc9, 0xe5, 0x03, 0x00, 0xd9, 0xe5,
 };
-static const uint32_t a32_words_393[2] = {
-    0xe5c91007u, 0xe5d90007u,
+static const uint8_t a32_code_393[8] = {
+    0x07, 0x10, 0xc9, 0xe5, 0x07, 0x00, 0xd9, 0xe5,
 };
-static const uint32_t a32_words_394[2] = {
-    0xe5c9100fu, 0xe5d9000fu,
+static const uint8_t a32_code_394[8] = {
+    0x0f, 0x10, 0xc9, 0xe5, 0x0f, 0x00, 0xd9, 0xe5,
 };
-static const uint32_t a32_words_395[2] = {
-    0xe1c910b0u, 0xe1d900b0u,
+static const uint8_t a32_code_395[8] = {
+    0xb0, 0x10, 0xc9, 0xe1, 0xb0, 0x00, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_396[2] = {
-    0xe1c910b2u, 0xe1d900b2u,
+static const uint8_t a32_code_396[8] = {
+    0xb2, 0x10, 0xc9, 0xe1, 0xb2, 0x00, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_397[2] = {
-    0xe1c910b6u, 0xe1d900b6u,
+static const uint8_t a32_code_397[8] = {
+    0xb6, 0x10, 0xc9, 0xe1, 0xb6, 0x00, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_398[2] = {
-    0xe1c910bau, 0xe1d900bau,
+static const uint8_t a32_code_398[8] = {
+    0xba, 0x10, 0xc9, 0xe1, 0xba, 0x00, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_399[2] = {
-    0xe1d900d0u, 0xe1d910f0u,
+static const uint8_t a32_code_399[8] = {
+    0xd0, 0x00, 0xd9, 0xe1, 0xf0, 0x10, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_400[2] = {
-    0xe1d900d4u, 0xe1d910f4u,
+static const uint8_t a32_code_400[8] = {
+    0xd4, 0x00, 0xd9, 0xe1, 0xf4, 0x10, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_401[2] = {
-    0xe1d900d8u, 0xe1d910f8u,
+static const uint8_t a32_code_401[8] = {
+    0xd8, 0x00, 0xd9, 0xe1, 0xf8, 0x10, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_402[2] = {
-    0xe1d900dcu, 0xe1d910fcu,
+static const uint8_t a32_code_402[8] = {
+    0xdc, 0x00, 0xd9, 0xe1, 0xfc, 0x10, 0xd9, 0xe1,
 };
-static const uint32_t a32_words_403[1] = {
-    0xe0d900b4u,
+static const uint8_t a32_code_403[4] = {
+    0xb4, 0x00, 0xd9, 0xe0,
 };
-static const uint32_t a32_words_404[1] = {
-    0xe0d900b8u,
+static const uint8_t a32_code_404[4] = {
+    0xb8, 0x00, 0xd9, 0xe0,
 };
-static const uint32_t a32_words_405[1] = {
-    0xe0d901b4u,
+static const uint8_t a32_code_405[4] = {
+    0xb4, 0x01, 0xd9, 0xe0,
 };
-static const uint32_t a32_words_406[1] = {
-    0xe0d902b8u,
+static const uint8_t a32_code_406[4] = {
+    0xb8, 0x02, 0xd9, 0xe0,
 };
-static const uint32_t a32_words_407[2] = {
-    0xe7891002u, 0xe7990002u,
+static const uint8_t a32_code_407[8] = {
+    0x02, 0x10, 0x89, 0xe7, 0x02, 0x00, 0x99, 0xe7,
 };
-static const uint32_t a32_words_408[2] = {
-    0xe7891002u, 0xe7990002u,
+static const uint8_t a32_code_408[8] = {
+    0x02, 0x10, 0x89, 0xe7, 0x02, 0x00, 0x99, 0xe7,
 };
-static const uint32_t a32_words_409[2] = {
-    0xe7891002u, 0xe7990002u,
+static const uint8_t a32_code_409[8] = {
+    0x02, 0x10, 0x89, 0xe7, 0x02, 0x00, 0x99, 0xe7,
 };
-static const uint32_t a32_words_410[2] = {
-    0xe7891002u, 0xe7990002u,
+static const uint8_t a32_code_410[8] = {
+    0x02, 0x10, 0x89, 0xe7, 0x02, 0x00, 0x99, 0xe7,
 };
-static const uint32_t a32_words_411[1] = {
-    0xe7990002u,
+static const uint8_t a32_code_411[4] = {
+    0x02, 0x00, 0x99, 0xe7,
 };
-static const uint32_t a32_words_412[1] = {
-    0xe7990102u,
+static const uint8_t a32_code_412[4] = {
+    0x02, 0x01, 0x99, 0xe7,
 };
-static const uint32_t a32_words_413[2] = {
-    0xe18910b4u, 0xe19900b4u,
+static const uint8_t a32_code_413[8] = {
+    0xb4, 0x10, 0x89, 0xe1, 0xb4, 0x00, 0x99, 0xe1,
 };
-static const uint32_t a32_words_414[2] = {
-    0xe18910b8u, 0xe19900b8u,
+static const uint8_t a32_code_414[8] = {
+    0xb8, 0x10, 0x89, 0xe1, 0xb8, 0x00, 0x99, 0xe1,
 };
-static const uint32_t a32_words_415[2] = {
-    0xe5a91004u, 0xe5b90004u,
+static const uint8_t a32_code_415[8] = {
+    0x04, 0x10, 0xa9, 0xe5, 0x04, 0x00, 0xb9, 0xe5,
 };
-static const uint32_t a32_words_416[2] = {
-    0xe5a91008u, 0xe5b90008u,
+static const uint8_t a32_code_416[8] = {
+    0x08, 0x10, 0xa9, 0xe5, 0x08, 0x00, 0xb9, 0xe5,
 };
-static const uint32_t a32_words_417[2] = {
-    0xe5a9100cu, 0xe5b9000cu,
+static const uint8_t a32_code_417[8] = {
+    0x0c, 0x10, 0xa9, 0xe5, 0x0c, 0x00, 0xb9, 0xe5,
 };
-static const uint32_t a32_words_418[2] = {
-    0xe4891004u, 0xe4990004u,
+static const uint8_t a32_code_418[8] = {
+    0x04, 0x10, 0x89, 0xe4, 0x04, 0x00, 0x99, 0xe4,
 };
-static const uint32_t a32_words_419[2] = {
-    0xe4891008u, 0xe4990008u,
+static const uint8_t a32_code_419[8] = {
+    0x08, 0x10, 0x89, 0xe4, 0x08, 0x00, 0x99, 0xe4,
 };
-static const uint32_t a32_words_420[4] = {
-    0xe1a01009u, 0xe2811040u, 0xe5110004u, 0xe3a01000u,
+static const uint8_t a32_code_420[16] = {
+    0x09, 0x10, 0xa0, 0xe1, 0x40, 0x10, 0x81, 0xe2, 0x04, 0x00, 0x11, 0xe5, 0x00, 0x10, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_421[4] = {
-    0xe1a01009u, 0xe2811040u, 0xe5110008u, 0xe3a01000u,
+static const uint8_t a32_code_421[16] = {
+    0x09, 0x10, 0xa0, 0xe1, 0x40, 0x10, 0x81, 0xe2, 0x08, 0x00, 0x11, 0xe5, 0x00, 0x10, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_422[2] = {
-    0xe1c920f0u, 0xe1c940d0u,
+static const uint8_t a32_code_422[8] = {
+    0xf0, 0x20, 0xc9, 0xe1, 0xd0, 0x40, 0xc9, 0xe1,
 };
-static const uint32_t a32_words_423[2] = {
-    0xe1c920f4u, 0xe1c940d4u,
+static const uint8_t a32_code_423[8] = {
+    0xf4, 0x20, 0xc9, 0xe1, 0xd4, 0x40, 0xc9, 0xe1,
 };
-static const uint32_t a32_words_424[2] = {
-    0xe1c920f8u, 0xe1c940d8u,
+static const uint8_t a32_code_424[8] = {
+    0xf8, 0x20, 0xc9, 0xe1, 0xd8, 0x40, 0xc9, 0xe1,
 };
-static const uint32_t a32_words_425[2] = {
-    0xe1c921f0u, 0xe1c941d0u,
+static const uint8_t a32_code_425[8] = {
+    0xf0, 0x21, 0xc9, 0xe1, 0xd0, 0x41, 0xc9, 0xe1,
 };
-static const uint32_t a32_words_426[4] = {
-    0xe1c920f0u, 0xe1c940d0u, 0xe1a02000u, 0xe1a03000u,
+static const uint8_t a32_code_426[16] = {
+    0xf0, 0x20, 0xc9, 0xe1, 0xd0, 0x40, 0xc9, 0xe1, 0x00, 0x20, 0xa0, 0xe1, 0x00, 0x30, 0xa0,
+    0xe1,
 };
-static const uint32_t a32_words_427[4] = {
-    0xe1c920f8u, 0xe1c940d8u, 0xe1a02000u, 0xe1a03000u,
+static const uint8_t a32_code_427[16] = {
+    0xf8, 0x20, 0xc9, 0xe1, 0xd8, 0x40, 0xc9, 0xe1, 0x00, 0x20, 0xa0, 0xe1, 0x00, 0x30, 0xa0,
+    0xe1,
 };
-static const uint32_t a32_words_428[2] = {
-    0xe5891008u, 0xe1090092u,
+static const uint8_t a32_code_428[8] = {
+    0x08, 0x10, 0x89, 0xe5, 0x92, 0x00, 0x09, 0xe1,
 };
-static const uint32_t a32_words_429[2] = {
-    0xe5c91008u, 0xe1490092u,
+static const uint8_t a32_code_429[8] = {
+    0x08, 0x10, 0xc9, 0xe5, 0x92, 0x00, 0x49, 0xe1,
 };
-static const uint32_t a32_words_430[1] = {
-    0xe889001cu,
+static const uint8_t a32_code_430[4] = {
+    0x1c, 0x00, 0x89, 0xe8,
 };
-static const uint32_t a32_words_431[1] = {
-    0xe8990007u,
+static const uint8_t a32_code_431[4] = {
+    0x07, 0x00, 0x99, 0xe8,
 };
-static const uint32_t a32_words_432[1] = {
-    0xe989001cu,
+static const uint8_t a32_code_432[4] = {
+    0x1c, 0x00, 0x89, 0xe9,
 };
-static const uint32_t a32_words_433[1] = {
-    0xe9990007u,
+static const uint8_t a32_code_433[4] = {
+    0x07, 0x00, 0x99, 0xe9,
 };
-static const uint32_t a32_words_434[1] = {
-    0xe809001cu,
+static const uint8_t a32_code_434[4] = {
+    0x1c, 0x00, 0x09, 0xe8,
 };
-static const uint32_t a32_words_435[1] = {
-    0xe8190007u,
+static const uint8_t a32_code_435[4] = {
+    0x07, 0x00, 0x19, 0xe8,
 };
-static const uint32_t a32_words_436[1] = {
-    0xe909001cu,
+static const uint8_t a32_code_436[4] = {
+    0x1c, 0x00, 0x09, 0xe9,
 };
-static const uint32_t a32_words_437[1] = {
-    0xe9190007u,
+static const uint8_t a32_code_437[4] = {
+    0x07, 0x00, 0x19, 0xe9,
 };
-static const uint32_t a32_words_438[4] = {
-    0xe1a01009u, 0xe8a9000cu, 0xe0490001u, 0xe3a01000u,
+static const uint8_t a32_code_438[16] = {
+    0x09, 0x10, 0xa0, 0xe1, 0x0c, 0x00, 0xa9, 0xe8, 0x01, 0x00, 0x49, 0xe0, 0x00, 0x10, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_439[4] = {
-    0xe1a01009u, 0xe9a9000cu, 0xe0490001u, 0xe3a01000u,
+static const uint8_t a32_code_439[16] = {
+    0x09, 0x10, 0xa0, 0xe1, 0x0c, 0x00, 0xa9, 0xe9, 0x01, 0x00, 0x49, 0xe0, 0x00, 0x10, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_440[4] = {
-    0xe1a01009u, 0xe829000cu, 0xe0490001u, 0xe3a01000u,
+static const uint8_t a32_code_440[16] = {
+    0x09, 0x10, 0xa0, 0xe1, 0x0c, 0x00, 0x29, 0xe8, 0x01, 0x00, 0x49, 0xe0, 0x00, 0x10, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_441[4] = {
-    0xe1a01009u, 0xe929000cu, 0xe0490001u, 0xe3a01000u,
+static const uint8_t a32_code_441[16] = {
+    0x09, 0x10, 0xa0, 0xe1, 0x0c, 0x00, 0x29, 0xe9, 0x01, 0x00, 0x49, 0xe0, 0x00, 0x10, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_442[1] = {
-    0xe8b9000cu,
+static const uint8_t a32_code_442[4] = {
+    0x0c, 0x00, 0xb9, 0xe8,
 };
-static const uint32_t a32_words_443[4] = {
-    0xe3a00000u, 0xea000000u, 0xe3a0007fu, 0xe3a0102au,
+static const uint8_t a32_code_443[16] = {
+    0x00, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00, 0xea, 0x7f, 0x00, 0xa0, 0xe3, 0x2a, 0x10, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_444[4] = {
-    0xe3a00000u, 0xe2800001u, 0xe3500004u, 0xbafffffcu,
+static const uint8_t a32_code_444[16] = {
+    0x00, 0x00, 0xa0, 0xe3, 0x01, 0x00, 0x80, 0xe2, 0x04, 0x00, 0x50, 0xe3, 0xfc, 0xff, 0xff,
+    0xba,
 };
-static const uint32_t a32_words_445[6] = {
-    0xe3a00000u, 0xeb000001u, 0xe3a03099u, 0xea000001u, 0xe3a00011u, 0xe12fff1eu,
+static const uint8_t a32_code_445[24] = {
+    0x00, 0x00, 0xa0, 0xe3, 0x01, 0x00, 0x00, 0xeb, 0x99, 0x30, 0xa0, 0xe3, 0x01, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3, 0x1e, 0xff, 0x2f, 0xe1,
 };
-static const uint32_t a32_words_446[5] = {
-    0xe28fe008u, 0xe12fff1eu, 0xe3a050abu, 0xea000000u, 0xe3a0505au,
+static const uint8_t a32_code_446[20] = {
+    0x08, 0xe0, 0x8f, 0xe2, 0x1e, 0xff, 0x2f, 0xe1, 0xab, 0x50, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x5a, 0x50, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_447[8] = {
-    0xe28f4000u, 0xe28f5008u, 0xe1a00000u, 0xe1a00000u, 0xe1a00000u, 0xe0450004u, 0xe3a04000u,
-    0xe3a05000u,
+static const uint8_t a32_code_447[32] = {
+    0x00, 0x40, 0x8f, 0xe2, 0x08, 0x50, 0x8f, 0xe2, 0x00, 0x00, 0xa0, 0xe1, 0x00, 0x00, 0xa0,
+    0xe1, 0x00, 0x00, 0xa0, 0xe1, 0x04, 0x00, 0x45, 0xe0, 0x00, 0x40, 0xa0, 0xe3, 0x00, 0x50,
+    0xa0, 0xe3,
 };
-static const uint32_t a32_words_448[7] = {
-    0xe28f200cu, 0xe12fff32u, 0xe3a03055u, 0xe3a02000u, 0xea000001u, 0xe3a00066u, 0xe12fff1eu,
+static const uint8_t a32_code_448[28] = {
+    0x0c, 0x20, 0x8f, 0xe2, 0x32, 0xff, 0x2f, 0xe1, 0x55, 0x30, 0xa0, 0xe3, 0x00, 0x20, 0xa0,
+    0xe3, 0x01, 0x00, 0x00, 0xea, 0x66, 0x00, 0xa0, 0xe3, 0x1e, 0xff, 0x2f, 0xe1,
 };
-static const uint32_t a32_words_449[5] = {
-    0xe3510000u, 0x0a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_449[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x0a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_450[5] = {
-    0xe3510000u, 0x1a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_450[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x1a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_451[5] = {
-    0xe3510000u, 0x2a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_451[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x2a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_452[5] = {
-    0xe3510000u, 0x3a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_452[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x3a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_453[5] = {
-    0xe3510000u, 0x4a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_453[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x4a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_454[5] = {
-    0xe3510000u, 0x5a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_454[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x5a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_455[5] = {
-    0xe3510000u, 0x6a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_455[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x6a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_456[5] = {
-    0xe3510000u, 0x7a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_456[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x7a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_457[5] = {
-    0xe3510000u, 0x8a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_457[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x8a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_458[5] = {
-    0xe3510000u, 0x9a000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_458[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0x9a, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_459[5] = {
-    0xe3510000u, 0xaa000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_459[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0xaa, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_460[5] = {
-    0xe3510000u, 0xba000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_460[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0xba, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_461[5] = {
-    0xe3510000u, 0xca000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_461[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0xca, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_462[5] = {
-    0xe3510000u, 0xda000001u, 0xe3a00022u, 0xea000000u, 0xe3a00011u,
+static const uint8_t a32_code_462[20] = {
+    0x00, 0x00, 0x51, 0xe3, 0x01, 0x00, 0x00, 0xda, 0x22, 0x00, 0xa0, 0xe3, 0x00, 0x00, 0x00,
+    0xea, 0x11, 0x00, 0xa0, 0xe3,
 };
-static const uint32_t a32_words_463[4] = {
-    0xe3a01000u, 0xe3510000u, 0x03a00011u, 0xe3a02022u,
+static const uint8_t a32_code_463[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x03, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_464[4] = {
-    0xe3a01000u, 0xe3510000u, 0x13a00011u, 0xe3a02022u,
+static const uint8_t a32_code_464[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x13, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_465[4] = {
-    0xe3a01000u, 0xe3510000u, 0x23a00011u, 0xe3a02022u,
+static const uint8_t a32_code_465[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x23, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_466[4] = {
-    0xe3a01000u, 0xe3510000u, 0x33a00011u, 0xe3a02022u,
+static const uint8_t a32_code_466[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x33, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_467[4] = {
-    0xe3a01000u, 0xe3510000u, 0x43a00011u, 0xe3a02022u,
+static const uint8_t a32_code_467[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x43, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_468[4] = {
-    0xe3a01000u, 0xe3510000u, 0x53a00011u, 0xe3a02022u,
+static const uint8_t a32_code_468[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x53, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_469[4] = {
-    0xe3a01000u, 0xe3510000u, 0x63a00011u, 0xe3a02022u,
+static const uint8_t a32_code_469[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x63, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_470[4] = {
-    0xe3a01000u, 0xe3510000u, 0x73a00011u, 0xe3a02022u,
+static const uint8_t a32_code_470[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x73, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_471[4] = {
-    0xe3a01000u, 0xe3510000u, 0x83a00011u, 0xe3a02022u,
+static const uint8_t a32_code_471[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x83, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_472[4] = {
-    0xe3a01000u, 0xe3510000u, 0x93a00011u, 0xe3a02022u,
+static const uint8_t a32_code_472[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0x93, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_473[4] = {
-    0xe3a01000u, 0xe3510000u, 0xa3a00011u, 0xe3a02022u,
+static const uint8_t a32_code_473[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0xa3, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_474[4] = {
-    0xe3a01000u, 0xe3510000u, 0xb3a00011u, 0xe3a02022u,
+static const uint8_t a32_code_474[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0xb3, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_475[4] = {
-    0xe3a01000u, 0xe3510000u, 0xc3a00011u, 0xe3a02022u,
+static const uint8_t a32_code_475[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0xc3, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_476[4] = {
-    0xe3a01000u, 0xe3510000u, 0xd3a00011u, 0xe3a02022u,
+static const uint8_t a32_code_476[16] = {
+    0x00, 0x10, 0xa0, 0xe3, 0x00, 0x00, 0x51, 0xe3, 0x11, 0x00, 0xa0, 0xd3, 0x22, 0x20, 0xa0,
+    0xe3,
 };
-static const uint32_t a32_words_477[4] = {
-    0xe3a01001u, 0xe0510001u, 0xe2510001u, 0x23a00033u,
+static const uint8_t a32_code_477[16] = {
+    0x01, 0x10, 0xa0, 0xe3, 0x01, 0x00, 0x51, 0xe0, 0x01, 0x00, 0x51, 0xe2, 0x33, 0x00, 0xa0,
+    0x23,
 };
-static const uint32_t a32_words_478[4] = {
-    0xe3a01001u, 0xe0510001u, 0xe2910000u, 0x23a00033u,
+static const uint8_t a32_code_478[16] = {
+    0x01, 0x10, 0xa0, 0xe3, 0x01, 0x00, 0x51, 0xe0, 0x00, 0x00, 0x91, 0xe2, 0x33, 0x00, 0xa0,
+    0x23,
 };
-static const uint32_t a32_words_479[4] = {
-    0xe3a01001u, 0xe0510001u, 0xe2510001u, 0x33a00033u,
+static const uint8_t a32_code_479[16] = {
+    0x01, 0x10, 0xa0, 0xe3, 0x01, 0x00, 0x51, 0xe0, 0x01, 0x00, 0x51, 0xe2, 0x33, 0x00, 0xa0,
+    0x33,
 };
-static const uint32_t a32_words_480[4] = {
-    0xe3a01001u, 0xe0510001u, 0xe2910000u, 0x33a00033u,
+static const uint8_t a32_code_480[16] = {
+    0x01, 0x10, 0xa0, 0xe3, 0x01, 0x00, 0x51, 0xe0, 0x00, 0x00, 0x91, 0xe2, 0x33, 0x00, 0xa0,
+    0x33,
 };
-static const uint32_t a32_words_481[5] = {
-    0xe0910002u, 0xe1a03080u, 0xe5893000u, 0xe5994000u, 0xe0245003u,
+static const uint8_t a32_code_481[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x80, 0x30, 0xa0, 0xe1, 0x00, 0x30, 0x89, 0xe5, 0x00, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_482[5] = {
-    0xe0910002u, 0xe1a03120u, 0xe5893004u, 0xe5994004u, 0xe0245003u,
+static const uint8_t a32_code_482[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x20, 0x31, 0xa0, 0xe1, 0x04, 0x30, 0x89, 0xe5, 0x04, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_483[5] = {
-    0xe0910002u, 0xe1a031c0u, 0xe5893008u, 0xe5994008u, 0xe0245003u,
+static const uint8_t a32_code_483[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xc0, 0x31, 0xa0, 0xe1, 0x08, 0x30, 0x89, 0xe5, 0x08, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_484[5] = {
-    0xe0910002u, 0xe1a03260u, 0xe589300cu, 0xe599400cu, 0xe0245003u,
+static const uint8_t a32_code_484[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x60, 0x32, 0xa0, 0xe1, 0x0c, 0x30, 0x89, 0xe5, 0x0c, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_485[5] = {
-    0xe0910002u, 0xe1a03280u, 0xe5893010u, 0xe5994010u, 0xe0245003u,
+static const uint8_t a32_code_485[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x80, 0x32, 0xa0, 0xe1, 0x10, 0x30, 0x89, 0xe5, 0x10, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_486[5] = {
-    0xe0910002u, 0xe1a03320u, 0xe5893014u, 0xe5994014u, 0xe0245003u,
+static const uint8_t a32_code_486[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x20, 0x33, 0xa0, 0xe1, 0x14, 0x30, 0x89, 0xe5, 0x14, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_487[5] = {
-    0xe0910002u, 0xe1a033c0u, 0xe5893018u, 0xe5994018u, 0xe0245003u,
+static const uint8_t a32_code_487[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xc0, 0x33, 0xa0, 0xe1, 0x18, 0x30, 0x89, 0xe5, 0x18, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_488[5] = {
-    0xe0910002u, 0xe1a030e0u, 0xe589301cu, 0xe599401cu, 0xe0245003u,
+static const uint8_t a32_code_488[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xe0, 0x30, 0xa0, 0xe1, 0x1c, 0x30, 0x89, 0xe5, 0x1c, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_489[5] = {
-    0xe0910002u, 0xe1a03100u, 0xe5893000u, 0xe5994000u, 0xe0245003u,
+static const uint8_t a32_code_489[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x00, 0x31, 0xa0, 0xe1, 0x00, 0x30, 0x89, 0xe5, 0x00, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_490[5] = {
-    0xe0910002u, 0xe1a031a0u, 0xe5893004u, 0xe5994004u, 0xe0245003u,
+static const uint8_t a32_code_490[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xa0, 0x31, 0xa0, 0xe1, 0x04, 0x30, 0x89, 0xe5, 0x04, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_491[5] = {
-    0xe0910002u, 0xe1a03240u, 0xe5893008u, 0xe5994008u, 0xe0245003u,
+static const uint8_t a32_code_491[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x40, 0x32, 0xa0, 0xe1, 0x08, 0x30, 0x89, 0xe5, 0x08, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_492[5] = {
-    0xe0910002u, 0xe1a032e0u, 0xe589300cu, 0xe599400cu, 0xe0245003u,
+static const uint8_t a32_code_492[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xe0, 0x32, 0xa0, 0xe1, 0x0c, 0x30, 0x89, 0xe5, 0x0c, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_493[5] = {
-    0xe0910002u, 0xe1a03300u, 0xe5893010u, 0xe5994010u, 0xe0245003u,
+static const uint8_t a32_code_493[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x00, 0x33, 0xa0, 0xe1, 0x10, 0x30, 0x89, 0xe5, 0x10, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_494[5] = {
-    0xe0910002u, 0xe1a033a0u, 0xe5893014u, 0xe5994014u, 0xe0245003u,
+static const uint8_t a32_code_494[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xa0, 0x33, 0xa0, 0xe1, 0x14, 0x30, 0x89, 0xe5, 0x14, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_495[5] = {
-    0xe0910002u, 0xe1a030c0u, 0xe5893018u, 0xe5994018u, 0xe0245003u,
+static const uint8_t a32_code_495[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xc0, 0x30, 0xa0, 0xe1, 0x18, 0x30, 0x89, 0xe5, 0x18, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_496[5] = {
-    0xe0910002u, 0xe1a03160u, 0xe589301cu, 0xe599401cu, 0xe0245003u,
+static const uint8_t a32_code_496[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x60, 0x31, 0xa0, 0xe1, 0x1c, 0x30, 0x89, 0xe5, 0x1c, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_497[5] = {
-    0xe0910002u, 0xe1a03180u, 0xe5893000u, 0xe5994000u, 0xe0245003u,
+static const uint8_t a32_code_497[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x80, 0x31, 0xa0, 0xe1, 0x00, 0x30, 0x89, 0xe5, 0x00, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_498[5] = {
-    0xe0910002u, 0xe1a03220u, 0xe5893004u, 0xe5994004u, 0xe0245003u,
+static const uint8_t a32_code_498[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x20, 0x32, 0xa0, 0xe1, 0x04, 0x30, 0x89, 0xe5, 0x04, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_499[5] = {
-    0xe0910002u, 0xe1a032c0u, 0xe5893008u, 0xe5994008u, 0xe0245003u,
+static const uint8_t a32_code_499[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0xc0, 0x32, 0xa0, 0xe1, 0x08, 0x30, 0x89, 0xe5, 0x08, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
 };
-static const uint32_t a32_words_500[5] = {
-    0xe0910002u, 0xe1a03360u, 0xe589300cu, 0xe599400cu, 0xe0245003u,
+static const uint8_t a32_code_500[20] = {
+    0x02, 0x00, 0x91, 0xe0, 0x60, 0x33, 0xa0, 0xe1, 0x0c, 0x30, 0x89, 0xe5, 0x0c, 0x40, 0x99,
+    0xe5, 0x03, 0x50, 0x24, 0xe0,
+};
+static const uint8_t a32_code_501[2] = {
+    0x08, 0x00,
+};
+static const uint8_t a32_code_502[2] = {
+    0x48, 0x00,
+};
+static const uint8_t a32_code_503[2] = {
+    0x48, 0x01,
+};
+static const uint8_t a32_code_504[2] = {
+    0xc8, 0x07,
+};
+static const uint8_t a32_code_505[2] = {
+    0x08, 0x08,
+};
+static const uint8_t a32_code_506[2] = {
+    0x48, 0x08,
+};
+static const uint8_t a32_code_507[2] = {
+    0x48, 0x09,
+};
+static const uint8_t a32_code_508[2] = {
+    0xc8, 0x0f,
+};
+static const uint8_t a32_code_509[2] = {
+    0x08, 0x10,
+};
+static const uint8_t a32_code_510[2] = {
+    0x48, 0x10,
+};
+static const uint8_t a32_code_511[2] = {
+    0x48, 0x11,
+};
+static const uint8_t a32_code_512[2] = {
+    0xc8, 0x17,
+};
+static const uint8_t a32_code_513[2] = {
+    0x08, 0x40,
+};
+static const uint8_t a32_code_514[2] = {
+    0x08, 0x40,
+};
+static const uint8_t a32_code_515[2] = {
+    0x08, 0x40,
+};
+static const uint8_t a32_code_516[2] = {
+    0x08, 0x40,
+};
+static const uint8_t a32_code_517[2] = {
+    0x48, 0x40,
+};
+static const uint8_t a32_code_518[2] = {
+    0x48, 0x40,
+};
+static const uint8_t a32_code_519[2] = {
+    0x48, 0x40,
+};
+static const uint8_t a32_code_520[2] = {
+    0x48, 0x40,
+};
+static const uint8_t a32_code_521[2] = {
+    0x88, 0x40,
+};
+static const uint8_t a32_code_522[2] = {
+    0x88, 0x40,
+};
+static const uint8_t a32_code_523[2] = {
+    0x88, 0x40,
+};
+static const uint8_t a32_code_524[2] = {
+    0x88, 0x40,
+};
+static const uint8_t a32_code_525[2] = {
+    0xc8, 0x40,
+};
+static const uint8_t a32_code_526[2] = {
+    0xc8, 0x40,
+};
+static const uint8_t a32_code_527[2] = {
+    0xc8, 0x40,
+};
+static const uint8_t a32_code_528[2] = {
+    0xc8, 0x40,
+};
+static const uint8_t a32_code_529[2] = {
+    0x08, 0x41,
+};
+static const uint8_t a32_code_530[2] = {
+    0x08, 0x41,
+};
+static const uint8_t a32_code_531[2] = {
+    0x08, 0x41,
+};
+static const uint8_t a32_code_532[2] = {
+    0x08, 0x41,
+};
+static const uint8_t a32_code_533[2] = {
+    0x48, 0x41,
+};
+static const uint8_t a32_code_534[2] = {
+    0x48, 0x41,
+};
+static const uint8_t a32_code_535[2] = {
+    0x48, 0x41,
+};
+static const uint8_t a32_code_536[2] = {
+    0x48, 0x41,
+};
+static const uint8_t a32_code_537[2] = {
+    0x88, 0x41,
+};
+static const uint8_t a32_code_538[2] = {
+    0x88, 0x41,
+};
+static const uint8_t a32_code_539[2] = {
+    0x88, 0x41,
+};
+static const uint8_t a32_code_540[2] = {
+    0x88, 0x41,
+};
+static const uint8_t a32_code_541[2] = {
+    0xc8, 0x41,
+};
+static const uint8_t a32_code_542[2] = {
+    0xc8, 0x41,
+};
+static const uint8_t a32_code_543[2] = {
+    0xc8, 0x41,
+};
+static const uint8_t a32_code_544[2] = {
+    0xc8, 0x41,
+};
+static const uint8_t a32_code_545[2] = {
+    0x08, 0x42,
+};
+static const uint8_t a32_code_546[2] = {
+    0x08, 0x42,
+};
+static const uint8_t a32_code_547[2] = {
+    0x08, 0x42,
+};
+static const uint8_t a32_code_548[2] = {
+    0x08, 0x42,
+};
+static const uint8_t a32_code_549[2] = {
+    0x48, 0x42,
+};
+static const uint8_t a32_code_550[2] = {
+    0x48, 0x42,
+};
+static const uint8_t a32_code_551[2] = {
+    0x48, 0x42,
+};
+static const uint8_t a32_code_552[2] = {
+    0x48, 0x42,
+};
+static const uint8_t a32_code_553[2] = {
+    0x88, 0x42,
+};
+static const uint8_t a32_code_554[2] = {
+    0x88, 0x42,
+};
+static const uint8_t a32_code_555[2] = {
+    0x88, 0x42,
+};
+static const uint8_t a32_code_556[2] = {
+    0x88, 0x42,
+};
+static const uint8_t a32_code_557[2] = {
+    0xc8, 0x42,
+};
+static const uint8_t a32_code_558[2] = {
+    0xc8, 0x42,
+};
+static const uint8_t a32_code_559[2] = {
+    0xc8, 0x42,
+};
+static const uint8_t a32_code_560[2] = {
+    0xc8, 0x42,
+};
+static const uint8_t a32_code_561[2] = {
+    0x08, 0x43,
+};
+static const uint8_t a32_code_562[2] = {
+    0x08, 0x43,
+};
+static const uint8_t a32_code_563[2] = {
+    0x08, 0x43,
+};
+static const uint8_t a32_code_564[2] = {
+    0x08, 0x43,
+};
+static const uint8_t a32_code_565[2] = {
+    0x48, 0x43,
+};
+static const uint8_t a32_code_566[2] = {
+    0x48, 0x43,
+};
+static const uint8_t a32_code_567[2] = {
+    0x48, 0x43,
+};
+static const uint8_t a32_code_568[2] = {
+    0x48, 0x43,
+};
+static const uint8_t a32_code_569[2] = {
+    0x88, 0x43,
+};
+static const uint8_t a32_code_570[2] = {
+    0x88, 0x43,
+};
+static const uint8_t a32_code_571[2] = {
+    0x88, 0x43,
+};
+static const uint8_t a32_code_572[2] = {
+    0x88, 0x43,
+};
+static const uint8_t a32_code_573[2] = {
+    0xc8, 0x43,
+};
+static const uint8_t a32_code_574[2] = {
+    0xc8, 0x43,
+};
+static const uint8_t a32_code_575[2] = {
+    0xc8, 0x43,
+};
+static const uint8_t a32_code_576[2] = {
+    0xc8, 0x43,
+};
+static const uint8_t a32_code_577[2] = {
+    0x00, 0x20,
+};
+static const uint8_t a32_code_578[2] = {
+    0x01, 0x20,
+};
+static const uint8_t a32_code_579[2] = {
+    0x7f, 0x20,
+};
+static const uint8_t a32_code_580[2] = {
+    0xff, 0x20,
+};
+static const uint8_t a32_code_581[2] = {
+    0x00, 0x28,
+};
+static const uint8_t a32_code_582[2] = {
+    0x01, 0x28,
+};
+static const uint8_t a32_code_583[2] = {
+    0x7f, 0x28,
+};
+static const uint8_t a32_code_584[2] = {
+    0xff, 0x28,
+};
+static const uint8_t a32_code_585[2] = {
+    0x00, 0x30,
+};
+static const uint8_t a32_code_586[2] = {
+    0x01, 0x30,
+};
+static const uint8_t a32_code_587[2] = {
+    0x7f, 0x30,
+};
+static const uint8_t a32_code_588[2] = {
+    0xff, 0x30,
+};
+static const uint8_t a32_code_589[2] = {
+    0x00, 0x38,
+};
+static const uint8_t a32_code_590[2] = {
+    0x01, 0x38,
+};
+static const uint8_t a32_code_591[2] = {
+    0x7f, 0x38,
+};
+static const uint8_t a32_code_592[2] = {
+    0xff, 0x38,
+};
+static const uint8_t a32_code_593[2] = {
+    0x50, 0x18,
+};
+static const uint8_t a32_code_594[2] = {
+    0x50, 0x1a,
+};
+static const uint8_t a32_code_595[2] = {
+    0x50, 0x18,
+};
+static const uint8_t a32_code_596[2] = {
+    0x50, 0x1a,
+};
+static const uint8_t a32_code_597[2] = {
+    0x50, 0x18,
+};
+static const uint8_t a32_code_598[2] = {
+    0x50, 0x1a,
+};
+static const uint8_t a32_code_599[2] = {
+    0x08, 0x1c,
+};
+static const uint8_t a32_code_600[2] = {
+    0x08, 0x1e,
+};
+static const uint8_t a32_code_601[2] = {
+    0x48, 0x1c,
+};
+static const uint8_t a32_code_602[2] = {
+    0x48, 0x1e,
+};
+static const uint8_t a32_code_603[2] = {
+    0xc8, 0x1c,
+};
+static const uint8_t a32_code_604[2] = {
+    0xc8, 0x1e,
+};
+static const uint8_t a32_code_605[2] = {
+    0xc8, 0x1d,
+};
+static const uint8_t a32_code_606[2] = {
+    0xc8, 0x1f,
+};
+static const uint8_t a32_code_607[2] = {
+    0x40, 0x44,
+};
+static const uint8_t a32_code_608[2] = {
+    0x93, 0x46,
+};
+static const uint8_t a32_code_609[4] = {
+    0x88, 0x45, 0x11, 0x20,
+};
+static const uint8_t a32_code_610[2] = {
+    0x40, 0x44,
+};
+static const uint8_t a32_code_611[2] = {
+    0x93, 0x46,
+};
+static const uint8_t a32_code_612[4] = {
+    0x88, 0x45, 0x11, 0x20,
+};
+static const uint8_t a32_code_613[2] = {
+    0x40, 0x44,
+};
+static const uint8_t a32_code_614[2] = {
+    0x93, 0x46,
+};
+static const uint8_t a32_code_615[4] = {
+    0x88, 0x45, 0x11, 0x20,
+};
+static const uint8_t a32_code_616[16] = {
+    0x00, 0x20, 0x02, 0xa3, 0x01, 0x33, 0x98, 0x47, 0x55, 0x21, 0x01, 0xe0, 0x66, 0x22, 0x70,
+    0x47,
+};
+static const uint8_t a32_code_617[16] = {
+    0x00, 0x20, 0x02, 0xa3, 0x01, 0x33, 0x98, 0x47, 0x55, 0x21, 0x01, 0xe0, 0x66, 0x22, 0x70,
+    0x47,
+};
+static const uint8_t a32_code_618[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x50, 0x00, 0x27,
+};
+static const uint8_t a32_code_619[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x51, 0x00, 0x27,
+};
+static const uint8_t a32_code_620[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x51, 0x00, 0x27,
+};
+static const uint8_t a32_code_621[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x52, 0x00, 0x27,
+};
+static const uint8_t a32_code_622[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x53, 0x00, 0x27,
+};
+static const uint8_t a32_code_623[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x53, 0x00, 0x27,
+};
+static const uint8_t a32_code_624[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x54, 0x00, 0x27,
+};
+static const uint8_t a32_code_625[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x55, 0x00, 0x27,
+};
+static const uint8_t a32_code_626[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x55, 0x00, 0x27,
+};
+static const uint8_t a32_code_627[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x56, 0x00, 0x27,
+};
+static const uint8_t a32_code_628[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x57, 0x00, 0x27,
+};
+static const uint8_t a32_code_629[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x57, 0x00, 0x27,
+};
+static const uint8_t a32_code_630[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x58, 0x00, 0x27,
+};
+static const uint8_t a32_code_631[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x59, 0x00, 0x27,
+};
+static const uint8_t a32_code_632[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x59, 0x00, 0x27,
+};
+static const uint8_t a32_code_633[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x5a, 0x00, 0x27,
+};
+static const uint8_t a32_code_634[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x5b, 0x00, 0x27,
+};
+static const uint8_t a32_code_635[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x5b, 0x00, 0x27,
+};
+static const uint8_t a32_code_636[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x5c, 0x00, 0x27,
+};
+static const uint8_t a32_code_637[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x5d, 0x00, 0x27,
+};
+static const uint8_t a32_code_638[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x5d, 0x00, 0x27,
+};
+static const uint8_t a32_code_639[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x5e, 0x00, 0x27,
+};
+static const uint8_t a32_code_640[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0x38, 0x5f, 0x00, 0x27,
+};
+static const uint8_t a32_code_641[8] = {
+    0x4f, 0x46, 0x39, 0x61, 0xb8, 0x5f, 0x00, 0x27,
+};
+static const uint8_t a32_code_642[8] = {
+    0x4f, 0x46, 0x39, 0x60, 0x38, 0x68, 0x00, 0x27,
+};
+static const uint8_t a32_code_643[8] = {
+    0x4f, 0x46, 0x79, 0x60, 0x78, 0x68, 0x00, 0x27,
+};
+static const uint8_t a32_code_644[8] = {
+    0x4f, 0x46, 0x79, 0x61, 0x78, 0x69, 0x00, 0x27,
+};
+static const uint8_t a32_code_645[8] = {
+    0x4f, 0x46, 0xf9, 0x63, 0xf8, 0x6b, 0x00, 0x27,
+};
+static const uint8_t a32_code_646[8] = {
+    0x4f, 0x46, 0x39, 0x80, 0x38, 0x88, 0x00, 0x27,
+};
+static const uint8_t a32_code_647[8] = {
+    0x4f, 0x46, 0x79, 0x80, 0x78, 0x88, 0x00, 0x27,
+};
+static const uint8_t a32_code_648[8] = {
+    0x4f, 0x46, 0xf9, 0x83, 0xf8, 0x8b, 0x00, 0x27,
+};
+static const uint8_t a32_code_649[8] = {
+    0x4f, 0x46, 0x39, 0x70, 0x38, 0x78, 0x00, 0x27,
+};
+static const uint8_t a32_code_650[8] = {
+    0x4f, 0x46, 0x79, 0x70, 0x78, 0x78, 0x00, 0x27,
+};
+static const uint8_t a32_code_651[8] = {
+    0x4f, 0x46, 0xf9, 0x71, 0xf8, 0x79, 0x00, 0x27,
+};
+static const uint8_t a32_code_652[4] = {
+    0x01, 0x48, 0x00, 0xbf,
+};
+static const uint8_t a32_code_653[8] = {
+    0x02, 0x48, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf,
+};
+static const uint8_t a32_code_654[12] = {
+    0x03, 0x48, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf,
+};
+static const uint8_t a32_code_655[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x00, 0x91, 0x00, 0x98,
+};
+static const uint8_t a32_code_656[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x01, 0x91, 0x01, 0x98,
+};
+static const uint8_t a32_code_657[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x04, 0x91, 0x04, 0x98,
+};
+static const uint8_t a32_code_658[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x0f, 0x91, 0x0f, 0x98,
+};
+static const uint8_t a32_code_659[8] = {
+    0xcd, 0x46, 0x00, 0xa8, 0x02, 0xa9, 0x40, 0x1a,
+};
+static const uint8_t a32_code_660[8] = {
+    0xcd, 0x46, 0x00, 0xa8, 0x03, 0xa9, 0x40, 0x1a,
+};
+static const uint8_t a32_code_661[8] = {
+    0xcd, 0x46, 0x00, 0xa8, 0x06, 0xa9, 0x40, 0x1a,
+};
+static const uint8_t a32_code_662[8] = {
+    0xcd, 0x46, 0x00, 0xa8, 0x11, 0xa9, 0x40, 0x1a,
+};
+static const uint8_t a32_code_663[14] = {
+    0x01, 0xa0, 0x02, 0xa1, 0x40, 0x1a, 0x02, 0xe0, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf,
+};
+static const uint8_t a32_code_664[14] = {
+    0x01, 0xa0, 0x02, 0xa1, 0x40, 0x1a, 0x02, 0xe0, 0x00, 0xbf, 0x00, 0xbf, 0x00, 0xbf,
+};
+static const uint8_t a32_code_665[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x03, 0xb4, 0x03, 0xbc,
+};
+static const uint8_t a32_code_666[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x0f, 0xb4, 0x0f, 0xbc,
+};
+static const uint8_t a32_code_667[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x81, 0xb4, 0x81, 0xbc,
+};
+static const uint8_t a32_code_668[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x01, 0xb5, 0x02, 0xbc,
+};
+static const uint8_t a32_code_669[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x01, 0xb5, 0x02, 0xbc,
+};
+static const uint8_t a32_code_670[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x01, 0xb5, 0x03, 0xbc,
+};
+static const uint8_t a32_code_671[8] = {
+    0xcd, 0x46, 0x10, 0xb0, 0x01, 0xb5, 0x03, 0xbc,
+};
+static const uint8_t a32_code_672[8] = {
+    0x4f, 0x46, 0x0c, 0xc7, 0x0c, 0xcf, 0x00, 0x27,
+};
+static const uint8_t a32_code_673[8] = {
+    0x4f, 0x46, 0x06, 0xc7, 0x06, 0xcf, 0x00, 0x27,
+};
+static const uint8_t a32_code_674[6] = {
+    0x4f, 0x46, 0x0c, 0xc7, 0x00, 0x27,
+};
+static const uint8_t a32_code_675[6] = {
+    0x4f, 0x46, 0x0c, 0xc7, 0x00, 0x27,
+};
+static const uint8_t a32_code_676[8] = {
+    0x00, 0x20, 0x00, 0xe0, 0x7f, 0x20, 0x2a, 0x21,
+};
+static const uint8_t a32_code_677[8] = {
+    0x00, 0x20, 0x01, 0x30, 0x04, 0x28, 0xfc, 0xdb,
+};
+static const uint8_t a32_code_678[10] = {
+    0x00, 0x29, 0x01, 0xd0, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_679[10] = {
+    0x00, 0x29, 0x01, 0xd1, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_680[10] = {
+    0x00, 0x29, 0x01, 0xd2, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_681[10] = {
+    0x00, 0x29, 0x01, 0xd3, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_682[10] = {
+    0x00, 0x29, 0x01, 0xd4, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_683[10] = {
+    0x00, 0x29, 0x01, 0xd5, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_684[10] = {
+    0x00, 0x29, 0x01, 0xd6, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_685[10] = {
+    0x00, 0x29, 0x01, 0xd7, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_686[10] = {
+    0x00, 0x29, 0x01, 0xd8, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_687[10] = {
+    0x00, 0x29, 0x01, 0xd9, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_688[10] = {
+    0x00, 0x29, 0x01, 0xda, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_689[10] = {
+    0x00, 0x29, 0x01, 0xdb, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_690[10] = {
+    0x00, 0x29, 0x01, 0xdc, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_691[10] = {
+    0x00, 0x29, 0x01, 0xdd, 0x22, 0x20, 0x00, 0xe0, 0x11, 0x20,
+};
+static const uint8_t a32_code_692[8] = {
+    0x09, 0xb1, 0x11, 0x20, 0x00, 0xe0, 0x22, 0x20,
+};
+static const uint8_t a32_code_693[8] = {
+    0x09, 0xb1, 0x11, 0x20, 0x00, 0xe0, 0x22, 0x20,
+};
+static const uint8_t a32_code_694[8] = {
+    0x09, 0xb1, 0x11, 0x20, 0x00, 0xe0, 0x22, 0x20,
+};
+static const uint8_t a32_code_695[8] = {
+    0x09, 0xb1, 0x11, 0x20, 0x00, 0xe0, 0x22, 0x20,
+};
+static const uint8_t a32_code_696[8] = {
+    0x09, 0xb9, 0x33, 0x20, 0x00, 0xe0, 0x44, 0x20,
+};
+static const uint8_t a32_code_697[8] = {
+    0x09, 0xb9, 0x33, 0x20, 0x00, 0xe0, 0x44, 0x20,
+};
+static const uint8_t a32_code_698[14] = {
+    0x00, 0x20, 0x00, 0xf0, 0x02, 0xf8, 0x99, 0x23, 0x01, 0xe0, 0x11, 0x20, 0x70, 0x47,
+};
+static const uint8_t a32_code_699[10] = {
+    0x00, 0x21, 0x00, 0x29, 0x08, 0xbf, 0x11, 0x20, 0x22, 0x22,
+};
+static const uint8_t a32_code_700[10] = {
+    0x01, 0x21, 0x00, 0x29, 0x08, 0xbf, 0x11, 0x20, 0x22, 0x22,
+};
+static const uint8_t a32_code_701[10] = {
+    0x00, 0x21, 0x00, 0x29, 0x0c, 0xbf, 0xaa, 0x20, 0xbb, 0x20,
+};
+static const uint8_t a32_code_702[10] = {
+    0x01, 0x21, 0x00, 0x29, 0x0c, 0xbf, 0xaa, 0x20, 0xbb, 0x20,
+};
+static const uint8_t a32_code_703[10] = {
+    0x00, 0x21, 0x00, 0x29, 0x04, 0xbf, 0x11, 0x20, 0x22, 0x22,
+};
+static const uint8_t a32_code_704[10] = {
+    0x01, 0x21, 0x00, 0x29, 0x04, 0xbf, 0x11, 0x20, 0x22, 0x22,
+};
+static const uint8_t a32_code_705[14] = {
+    0x00, 0x21, 0x00, 0x29, 0x11, 0xbf, 0x01, 0x20, 0x02, 0x22, 0x03, 0x23, 0x04, 0x24,
+};
+static const uint8_t a32_code_706[14] = {
+    0x01, 0x21, 0x00, 0x29, 0x11, 0xbf, 0x01, 0x20, 0x02, 0x22, 0x03, 0x23, 0x04, 0x24,
+};
+static const uint8_t a32_code_707[10] = {
+    0x10, 0x21, 0x10, 0x29, 0x08, 0xbf, 0x55, 0x20, 0x66, 0x22,
+};
+static const uint8_t a32_code_708[10] = {
+    0x10, 0x21, 0x10, 0x29, 0x18, 0xbf, 0x55, 0x20, 0x66, 0x22,
+};
+static const uint8_t a32_code_709[10] = {
+    0x10, 0x21, 0x10, 0x29, 0x38, 0xbf, 0x55, 0x20, 0x66, 0x22,
+};
+static const uint8_t a32_code_710[10] = {
+    0x10, 0x21, 0x10, 0x29, 0x28, 0xbf, 0x55, 0x20, 0x66, 0x22,
+};
+static const uint8_t a32_code_711[4] = {
+    0x01, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_712[4] = {
+    0x01, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_713[4] = {
+    0x01, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_714[4] = {
+    0x01, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_715[4] = {
+    0x01, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_716[4] = {
+    0x01, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_717[4] = {
+    0x21, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_718[4] = {
+    0x21, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_719[4] = {
+    0x21, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_720[4] = {
+    0x21, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_721[4] = {
+    0x21, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_722[4] = {
+    0x21, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_723[4] = {
+    0x41, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_724[4] = {
+    0x41, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_725[4] = {
+    0x41, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_726[4] = {
+    0x41, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_727[4] = {
+    0x41, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_728[4] = {
+    0x41, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_729[4] = {
+    0x61, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_730[4] = {
+    0x61, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_731[4] = {
+    0x61, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_732[4] = {
+    0x61, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_733[4] = {
+    0x61, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_734[4] = {
+    0x61, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_735[4] = {
+    0x81, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_736[4] = {
+    0x81, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_737[4] = {
+    0x81, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_738[4] = {
+    0x81, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_739[4] = {
+    0x81, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_740[4] = {
+    0x81, 0xea, 0x82, 0x00,
+};
+static const uint8_t a32_code_741[4] = {
+    0x01, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_742[4] = {
+    0x01, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_743[4] = {
+    0x01, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_744[4] = {
+    0x01, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_745[4] = {
+    0x01, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_746[4] = {
+    0x01, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_747[4] = {
+    0x41, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_748[4] = {
+    0x41, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_749[4] = {
+    0x41, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_750[4] = {
+    0x41, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_751[4] = {
+    0x41, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_752[4] = {
+    0x41, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_753[4] = {
+    0x61, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_754[4] = {
+    0x61, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_755[4] = {
+    0x61, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_756[4] = {
+    0x61, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_757[4] = {
+    0x61, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_758[4] = {
+    0x61, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_759[4] = {
+    0xa1, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_760[4] = {
+    0xa1, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_761[4] = {
+    0xa1, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_762[4] = {
+    0xa1, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_763[4] = {
+    0xa1, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_764[4] = {
+    0xa1, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_765[4] = {
+    0xc1, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_766[4] = {
+    0xc1, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_767[4] = {
+    0xc1, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_768[4] = {
+    0xc1, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_769[4] = {
+    0xc1, 0xeb, 0x02, 0x00,
+};
+static const uint8_t a32_code_770[4] = {
+    0xc1, 0xeb, 0x82, 0x00,
+};
+static const uint8_t a32_code_771[4] = {
+    0x4f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_772[4] = {
+    0x6f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_773[4] = {
+    0x4f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_774[4] = {
+    0x6f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_775[4] = {
+    0x4f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_776[4] = {
+    0x6f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_777[4] = {
+    0x4f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_778[4] = {
+    0x6f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_779[4] = {
+    0x4f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_780[4] = {
+    0x6f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_781[4] = {
+    0x4f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_782[4] = {
+    0x6f, 0xea, 0x02, 0x00,
+};
+static const uint8_t a32_code_783[4] = {
+    0x01, 0xf0, 0x01, 0x00,
+};
+static const uint8_t a32_code_784[4] = {
+    0x01, 0xf0, 0xff, 0x00,
+};
+static const uint8_t a32_code_785[4] = {
+    0x01, 0xf4, 0x80, 0x70,
+};
+static const uint8_t a32_code_786[4] = {
+    0x01, 0xf0, 0x00, 0x40,
+};
+static const uint8_t a32_code_787[4] = {
+    0x01, 0xf4, 0x7f, 0x40,
+};
+static const uint8_t a32_code_788[4] = {
+    0x01, 0xf0, 0x0f, 0x00,
+};
+static const uint8_t a32_code_789[4] = {
+    0x21, 0xf0, 0x01, 0x00,
+};
+static const uint8_t a32_code_790[4] = {
+    0x21, 0xf0, 0xff, 0x00,
+};
+static const uint8_t a32_code_791[4] = {
+    0x21, 0xf4, 0x80, 0x70,
+};
+static const uint8_t a32_code_792[4] = {
+    0x21, 0xf0, 0x00, 0x40,
+};
+static const uint8_t a32_code_793[4] = {
+    0x21, 0xf4, 0x7f, 0x40,
+};
+static const uint8_t a32_code_794[4] = {
+    0x21, 0xf0, 0x0f, 0x00,
+};
+static const uint8_t a32_code_795[4] = {
+    0x41, 0xf0, 0x01, 0x00,
+};
+static const uint8_t a32_code_796[4] = {
+    0x41, 0xf0, 0xff, 0x00,
+};
+static const uint8_t a32_code_797[4] = {
+    0x41, 0xf4, 0x80, 0x70,
+};
+static const uint8_t a32_code_798[4] = {
+    0x41, 0xf0, 0x00, 0x40,
+};
+static const uint8_t a32_code_799[4] = {
+    0x41, 0xf4, 0x7f, 0x40,
+};
+static const uint8_t a32_code_800[4] = {
+    0x41, 0xf0, 0x0f, 0x00,
+};
+static const uint8_t a32_code_801[4] = {
+    0x61, 0xf0, 0x01, 0x00,
+};
+static const uint8_t a32_code_802[4] = {
+    0x61, 0xf0, 0xff, 0x00,
+};
+static const uint8_t a32_code_803[4] = {
+    0x61, 0xf4, 0x80, 0x70,
+};
+static const uint8_t a32_code_804[4] = {
+    0x61, 0xf0, 0x00, 0x40,
+};
+static const uint8_t a32_code_805[4] = {
+    0x61, 0xf4, 0x7f, 0x40,
+};
+static const uint8_t a32_code_806[4] = {
+    0x61, 0xf0, 0x0f, 0x00,
+};
+static const uint8_t a32_code_807[4] = {
+    0x81, 0xf0, 0x01, 0x00,
+};
+static const uint8_t a32_code_808[4] = {
+    0x81, 0xf0, 0xff, 0x00,
+};
+static const uint8_t a32_code_809[4] = {
+    0x81, 0xf4, 0x80, 0x70,
+};
+static const uint8_t a32_code_810[4] = {
+    0x81, 0xf0, 0x00, 0x40,
+};
+static const uint8_t a32_code_811[4] = {
+    0x81, 0xf4, 0x7f, 0x40,
+};
+static const uint8_t a32_code_812[4] = {
+    0x81, 0xf0, 0x0f, 0x00,
+};
+static const uint8_t a32_code_813[4] = {
+    0x01, 0xf1, 0x01, 0x00,
+};
+static const uint8_t a32_code_814[4] = {
+    0x01, 0xf1, 0xff, 0x00,
+};
+static const uint8_t a32_code_815[4] = {
+    0x01, 0xf5, 0x80, 0x70,
+};
+static const uint8_t a32_code_816[4] = {
+    0x01, 0xf1, 0x00, 0x40,
+};
+static const uint8_t a32_code_817[4] = {
+    0x01, 0xf5, 0x7f, 0x40,
+};
+static const uint8_t a32_code_818[4] = {
+    0x01, 0xf1, 0x0f, 0x00,
+};
+static const uint8_t a32_code_819[4] = {
+    0x41, 0xf1, 0x01, 0x00,
+};
+static const uint8_t a32_code_820[4] = {
+    0x41, 0xf1, 0xff, 0x00,
+};
+static const uint8_t a32_code_821[4] = {
+    0x41, 0xf5, 0x80, 0x70,
+};
+static const uint8_t a32_code_822[4] = {
+    0x41, 0xf1, 0x00, 0x40,
+};
+static const uint8_t a32_code_823[4] = {
+    0x41, 0xf5, 0x7f, 0x40,
+};
+static const uint8_t a32_code_824[4] = {
+    0x41, 0xf1, 0x0f, 0x00,
+};
+static const uint8_t a32_code_825[4] = {
+    0x61, 0xf1, 0x01, 0x00,
+};
+static const uint8_t a32_code_826[4] = {
+    0x61, 0xf1, 0xff, 0x00,
+};
+static const uint8_t a32_code_827[4] = {
+    0x61, 0xf5, 0x80, 0x70,
+};
+static const uint8_t a32_code_828[4] = {
+    0x61, 0xf1, 0x00, 0x40,
+};
+static const uint8_t a32_code_829[4] = {
+    0x61, 0xf5, 0x7f, 0x40,
+};
+static const uint8_t a32_code_830[4] = {
+    0x61, 0xf1, 0x0f, 0x00,
+};
+static const uint8_t a32_code_831[4] = {
+    0xa1, 0xf1, 0x01, 0x00,
+};
+static const uint8_t a32_code_832[4] = {
+    0xa1, 0xf1, 0xff, 0x00,
+};
+static const uint8_t a32_code_833[4] = {
+    0xa1, 0xf5, 0x80, 0x70,
+};
+static const uint8_t a32_code_834[4] = {
+    0xa1, 0xf1, 0x00, 0x40,
+};
+static const uint8_t a32_code_835[4] = {
+    0xa1, 0xf5, 0x7f, 0x40,
+};
+static const uint8_t a32_code_836[4] = {
+    0xa1, 0xf1, 0x0f, 0x00,
+};
+static const uint8_t a32_code_837[4] = {
+    0xc1, 0xf1, 0x01, 0x00,
+};
+static const uint8_t a32_code_838[4] = {
+    0xc1, 0xf1, 0xff, 0x00,
+};
+static const uint8_t a32_code_839[4] = {
+    0xc1, 0xf5, 0x80, 0x70,
+};
+static const uint8_t a32_code_840[4] = {
+    0xc1, 0xf1, 0x00, 0x40,
+};
+static const uint8_t a32_code_841[4] = {
+    0xc1, 0xf5, 0x7f, 0x40,
+};
+static const uint8_t a32_code_842[4] = {
+    0xc1, 0xf1, 0x0f, 0x00,
+};
+static const uint8_t a32_code_843[4] = {
+    0x41, 0xf2, 0x34, 0x20,
+};
+static const uint8_t a32_code_844[6] = {
+    0xaa, 0x20, 0xc1, 0xf2, 0x34, 0x20,
+};
+static const uint8_t a32_code_845[4] = {
+    0x4b, 0xf6, 0xef, 0x60,
+};
+static const uint8_t a32_code_846[6] = {
+    0xaa, 0x20, 0xcb, 0xf6, 0xef, 0x60,
+};
+static const uint8_t a32_code_847[4] = {
+    0x40, 0xf2, 0x00, 0x00,
+};
+static const uint8_t a32_code_848[6] = {
+    0xaa, 0x20, 0xc0, 0xf2, 0x00, 0x00,
+};
+static const uint8_t a32_code_849[4] = {
+    0x4f, 0xf6, 0xff, 0x70,
+};
+static const uint8_t a32_code_850[6] = {
+    0xaa, 0x20, 0xcf, 0xf6, 0xff, 0x70,
+};
+static const uint8_t a32_code_851[4] = {
+    0x01, 0xf2, 0x23, 0x10,
+};
+static const uint8_t a32_code_852[4] = {
+    0xa1, 0xf2, 0x23, 0x10,
+};
+static const uint8_t a32_code_853[4] = {
+    0x01, 0xf6, 0xff, 0x70,
+};
+static const uint8_t a32_code_854[4] = {
+    0xa1, 0xf6, 0xff, 0x70,
+};
+static const uint8_t a32_code_855[4] = {
+    0x01, 0xf2, 0x10, 0x00,
+};
+static const uint8_t a32_code_856[4] = {
+    0xa1, 0xf2, 0x10, 0x00,
+};
+static const uint8_t a32_code_857[8] = {
+    0xc9, 0xf8, 0x00, 0x00, 0xd9, 0xf8, 0x00, 0x10,
+};
+static const uint8_t a32_code_858[8] = {
+    0xc9, 0xf8, 0x04, 0x00, 0xd9, 0xf8, 0x04, 0x10,
+};
+static const uint8_t a32_code_859[8] = {
+    0xc9, 0xf8, 0x40, 0x00, 0xd9, 0xf8, 0x40, 0x10,
+};
+static const uint8_t a32_code_860[8] = {
+    0xc9, 0xf8, 0x00, 0x01, 0xd9, 0xf8, 0x00, 0x11,
+};
+static const uint8_t a32_code_861[12] = {
+    0x49, 0xf8, 0x04, 0x0c, 0x59, 0xf8, 0x04, 0x1c, 0xcd, 0x46, 0x10, 0xb0,
+};
+static const uint8_t a32_code_862[12] = {
+    0x49, 0xf8, 0x40, 0x0c, 0x59, 0xf8, 0x40, 0x1c, 0xcd, 0x46, 0x10, 0xb0,
+};
+static const uint8_t a32_code_863[8] = {
+    0x49, 0xf8, 0x02, 0x00, 0x59, 0xf8, 0x02, 0x10,
+};
+static const uint8_t a32_code_864[8] = {
+    0x49, 0xf8, 0x03, 0x00, 0x59, 0xf8, 0x03, 0x10,
+};
+static const uint8_t a32_code_865[8] = {
+    0x89, 0xf8, 0x00, 0x00, 0x99, 0xf8, 0x00, 0x10,
+};
+static const uint8_t a32_code_866[8] = {
+    0x89, 0xf8, 0x04, 0x00, 0x99, 0xf8, 0x04, 0x10,
+};
+static const uint8_t a32_code_867[8] = {
+    0x89, 0xf8, 0x14, 0x00, 0x99, 0xf8, 0x14, 0x10,
+};
+static const uint8_t a32_code_868[8] = {
+    0xa9, 0xf8, 0x00, 0x00, 0xb9, 0xf8, 0x00, 0x10,
+};
+static const uint8_t a32_code_869[8] = {
+    0xa9, 0xf8, 0x02, 0x00, 0xb9, 0xf8, 0x02, 0x10,
+};
+static const uint8_t a32_code_870[8] = {
+    0xa9, 0xf8, 0x0a, 0x00, 0xb9, 0xf8, 0x0a, 0x10,
+};
+static const uint8_t a32_code_871[8] = {
+    0xa9, 0xf8, 0x00, 0x00, 0x99, 0xf9, 0x00, 0x10,
+};
+static const uint8_t a32_code_872[8] = {
+    0xa9, 0xf8, 0x02, 0x00, 0x99, 0xf9, 0x02, 0x10,
+};
+static const uint8_t a32_code_873[8] = {
+    0xa9, 0xf8, 0x00, 0x00, 0xb9, 0xf9, 0x00, 0x10,
+};
+static const uint8_t a32_code_874[8] = {
+    0xa9, 0xf8, 0x04, 0x00, 0xb9, 0xf9, 0x04, 0x10,
+};
+static const uint8_t a32_code_875[8] = {
+    0xc9, 0xe9, 0x00, 0x01, 0xd9, 0xe9, 0x00, 0x23,
+};
+static const uint8_t a32_code_876[8] = {
+    0xc9, 0xe9, 0x01, 0x01, 0xd9, 0xe9, 0x01, 0x23,
+};
+static const uint8_t a32_code_877[8] = {
+    0xc9, 0xe9, 0x02, 0x01, 0xd9, 0xe9, 0x02, 0x23,
+};
+static const uint8_t a32_code_878[8] = {
+    0xc9, 0xe9, 0x00, 0x01, 0xf9, 0xe9, 0x01, 0x23,
+};
+static const uint8_t a32_code_879[8] = {
+    0xc9, 0xe9, 0x00, 0x01, 0x59, 0xe9, 0x00, 0x23,
+};
+static const uint8_t a32_code_880[8] = {
+    0xc9, 0xe9, 0x00, 0x01, 0x59, 0xe9, 0x01, 0x23,
+};
+static const uint8_t a32_code_881[18] = {
+    0x4f, 0x46, 0x3b, 0x70, 0x00, 0x22, 0xd7, 0xe8, 0x02, 0xf0, 0x11, 0x20, 0x01, 0xe0, 0x22,
+    0x20, 0x00, 0x27,
+};
+static const uint8_t a32_code_882[18] = {
+    0x4f, 0x46, 0x3b, 0x70, 0x00, 0x22, 0xd7, 0xe8, 0x02, 0xf0, 0x11, 0x20, 0x01, 0xe0, 0x22,
+    0x20, 0x00, 0x27,
+};
+static const uint8_t a32_code_883[18] = {
+    0x4f, 0x46, 0x3b, 0x80, 0x00, 0x22, 0xd7, 0xe8, 0x12, 0xf0, 0x33, 0x20, 0x01, 0xe0, 0x44,
+    0x20, 0x00, 0x27,
+};
+static const uint8_t a32_code_884[18] = {
+    0x4f, 0x46, 0x3b, 0x80, 0x00, 0x22, 0xd7, 0xe8, 0x12, 0xf0, 0x33, 0x20, 0x01, 0xe0, 0x44,
+    0x20, 0x00, 0x27,
+};
+static const uint8_t a32_code_885[4] = {
+    0x4f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_886[4] = {
+    0x4f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_887[4] = {
+    0x4f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_888[4] = {
+    0x4f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_889[4] = {
+    0x0f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_890[4] = {
+    0x0f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_891[4] = {
+    0x0f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_892[4] = {
+    0x0f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_893[4] = {
+    0x5f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_894[4] = {
+    0x5f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_895[4] = {
+    0x5f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_896[4] = {
+    0x5f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_897[4] = {
+    0x1f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_898[4] = {
+    0x1f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_899[4] = {
+    0x1f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_900[4] = {
+    0x1f, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_901[4] = {
+    0x91, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_902[4] = {
+    0x91, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_903[4] = {
+    0x91, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_904[4] = {
+    0x91, 0xfa, 0x91, 0xf0,
+};
+static const uint8_t a32_code_905[4] = {
+    0x91, 0xfa, 0x91, 0xf0,
+};
+static const uint8_t a32_code_906[4] = {
+    0x91, 0xfa, 0x91, 0xf0,
+};
+static const uint8_t a32_code_907[4] = {
+    0x91, 0xfa, 0xb1, 0xf0,
+};
+static const uint8_t a32_code_908[4] = {
+    0x91, 0xfa, 0xb1, 0xf0,
+};
+static const uint8_t a32_code_909[4] = {
+    0x91, 0xfa, 0xb1, 0xf0,
+};
+static const uint8_t a32_code_910[4] = {
+    0xb1, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_911[4] = {
+    0xb1, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_912[4] = {
+    0xb1, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_913[4] = {
+    0xb1, 0xfa, 0x81, 0xf0,
+};
+static const uint8_t a32_code_914[4] = {
+    0xc1, 0xf3, 0x03, 0x00,
+};
+static const uint8_t a32_code_915[4] = {
+    0x41, 0xf3, 0x03, 0x00,
+};
+static const uint8_t a32_code_916[4] = {
+    0xc1, 0xf3, 0x03, 0x10,
+};
+static const uint8_t a32_code_917[4] = {
+    0x41, 0xf3, 0x03, 0x10,
+};
+static const uint8_t a32_code_918[4] = {
+    0xc1, 0xf3, 0x07, 0x20,
+};
+static const uint8_t a32_code_919[4] = {
+    0x41, 0xf3, 0x07, 0x20,
+};
+static const uint8_t a32_code_920[4] = {
+    0xc1, 0xf3, 0x0f, 0x00,
+};
+static const uint8_t a32_code_921[4] = {
+    0x41, 0xf3, 0x0f, 0x00,
+};
+static const uint8_t a32_code_922[4] = {
+    0x61, 0xf3, 0x03, 0x00,
+};
+static const uint8_t a32_code_923[4] = {
+    0x6f, 0xf3, 0x03, 0x00,
+};
+static const uint8_t a32_code_924[4] = {
+    0x61, 0xf3, 0x07, 0x10,
+};
+static const uint8_t a32_code_925[4] = {
+    0x6f, 0xf3, 0x07, 0x10,
+};
+static const uint8_t a32_code_926[4] = {
+    0x61, 0xf3, 0x0f, 0x20,
+};
+static const uint8_t a32_code_927[4] = {
+    0x6f, 0xf3, 0x0f, 0x20,
+};
+static const uint8_t a32_code_928[4] = {
+    0x01, 0xf3, 0x07, 0x00,
+};
+static const uint8_t a32_code_929[4] = {
+    0x81, 0xf3, 0x08, 0x00,
+};
+static const uint8_t a32_code_930[4] = {
+    0x01, 0xf3, 0x07, 0x10,
+};
+static const uint8_t a32_code_931[4] = {
+    0x81, 0xf3, 0x08, 0x10,
+};
+static const uint8_t a32_code_932[4] = {
+    0x01, 0xf3, 0x0f, 0x00,
+};
+static const uint8_t a32_code_933[4] = {
+    0x81, 0xf3, 0x10, 0x00,
+};
+static const uint8_t a32_code_934[4] = {
+    0x01, 0xf3, 0x03, 0x00,
+};
+static const uint8_t a32_code_935[4] = {
+    0x81, 0xf3, 0x04, 0x00,
+};
+static const uint8_t a32_code_936[8] = {
+    0xef, 0xf3, 0x00, 0x80, 0x1c, 0x21, 0xc8, 0x40,
+};
+static const uint8_t a32_code_937[8] = {
+    0xef, 0xf3, 0x00, 0x80, 0x1c, 0x21, 0xc8, 0x40,
+};
+static const uint8_t a32_code_938[8] = {
+    0xef, 0xf3, 0x00, 0x80, 0x1c, 0x21, 0xc8, 0x40,
+};
+static const uint8_t a32_code_939[16] = {
+    0xf0, 0x21, 0x09, 0x06, 0x81, 0xf3, 0x00, 0x88, 0xef, 0xf3, 0x00, 0x80, 0x1c, 0x22, 0xd0,
+    0x40,
+};
+static const uint8_t a32_code_940[14] = {
+    0x00, 0x21, 0x81, 0xf3, 0x00, 0x88, 0xef, 0xf3, 0x00, 0x80, 0x1c, 0x22, 0xd0, 0x40,
+};
+static const uint8_t a32_code_941[16] = {
+    0x80, 0x21, 0x09, 0x06, 0x81, 0xf3, 0x00, 0x88, 0xef, 0xf3, 0x00, 0x80, 0x1c, 0x22, 0xd0,
+    0x40,
+};
+static const uint8_t a32_code_942[14] = {
+    0x00, 0x20, 0x00, 0xf0, 0x02, 0xf8, 0x99, 0x23, 0x01, 0xe0, 0x11, 0x20, 0x70, 0x47,
+};
+static const uint8_t a32_code_943[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x43, 0x00, 0x3b, 0x60, 0x3c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_944[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x83, 0x00, 0x7b, 0x60, 0x7c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_945[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0xc3, 0x00, 0xbb, 0x60, 0xbc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_946[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x03, 0x01, 0xfb, 0x60, 0xfc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_947[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x43, 0x01, 0x3b, 0x60, 0x3c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_948[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x83, 0x01, 0x7b, 0x60, 0x7c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_949[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0xc3, 0x01, 0xbb, 0x60, 0xbc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_950[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x43, 0x00, 0xfb, 0x60, 0xfc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_951[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x83, 0x00, 0x3b, 0x60, 0x3c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_952[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0xc3, 0x00, 0x7b, 0x60, 0x7c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_953[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x03, 0x01, 0xbb, 0x60, 0xbc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_954[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x43, 0x01, 0xfb, 0x60, 0xfc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_955[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x83, 0x01, 0x3b, 0x60, 0x3c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_956[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0xc3, 0x01, 0x7b, 0x60, 0x7c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_957[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x43, 0x00, 0xbb, 0x60, 0xbc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_958[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x83, 0x00, 0xfb, 0x60, 0xfc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_959[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0xc3, 0x00, 0x3b, 0x60, 0x3c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_960[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x03, 0x01, 0x7b, 0x60, 0x7c, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_961[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x43, 0x01, 0xbb, 0x60, 0xbc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_962[14] = {
+    0x4f, 0x46, 0x50, 0x18, 0x83, 0x01, 0xfb, 0x60, 0xfc, 0x68, 0x65, 0x40, 0x00, 0x27,
+};
+static const uint8_t a32_code_963[26] = {
+    0x11, 0x20, 0x05, 0xa2, 0x01, 0x32, 0x96, 0x46, 0x01, 0xa3, 0x18, 0x47, 0x00, 0xbf, 0x00,
+    0xbf, 0x22, 0x10, 0xa0, 0xe3, 0x1e, 0xff, 0x2f, 0xe1, 0x33, 0x22,
+};
+static const uint8_t a32_code_964[26] = {
+    0x11, 0x20, 0x05, 0xa2, 0x01, 0x32, 0x96, 0x46, 0x01, 0xa3, 0x18, 0x47, 0x00, 0xbf, 0x00,
+    0xbf, 0x22, 0x10, 0xa0, 0xe3, 0x1e, 0xff, 0x2f, 0xe1, 0x33, 0x22,
+};
+static const uint8_t a32_code_965[26] = {
+    0x11, 0x20, 0x05, 0xa2, 0x01, 0x32, 0x96, 0x46, 0x01, 0xa3, 0x18, 0x47, 0x00, 0xbf, 0x00,
+    0xbf, 0x22, 0x10, 0xa0, 0xe3, 0x1e, 0xff, 0x2f, 0xe1, 0x33, 0x22,
+};
+static const uint8_t a32_code_966[28] = {
+    0x10, 0x30, 0x8f, 0xe2, 0x01, 0x30, 0x83, 0xe2, 0x33, 0xff, 0x2f, 0xe1, 0x44, 0x10, 0xa0,
+    0xe3, 0x01, 0x00, 0x00, 0xea, 0x00, 0x00, 0xa0, 0xe1, 0x55, 0x20, 0x70, 0x47,
+};
+static const uint8_t a32_code_967[28] = {
+    0x10, 0x30, 0x8f, 0xe2, 0x01, 0x30, 0x83, 0xe2, 0x33, 0xff, 0x2f, 0xe1, 0x44, 0x10, 0xa0,
+    0xe3, 0x01, 0x00, 0x00, 0xea, 0x00, 0x00, 0xa0, 0xe1, 0x55, 0x20, 0x70, 0x47,
+};
+static const uint8_t a32_code_968[28] = {
+    0x10, 0x30, 0x8f, 0xe2, 0x01, 0x30, 0x83, 0xe2, 0x33, 0xff, 0x2f, 0xe1, 0x44, 0x10, 0xa0,
+    0xe3, 0x01, 0x00, 0x00, 0xea, 0x00, 0x00, 0xa0, 0xe1, 0x55, 0x20, 0x70, 0x47,
+};
+static const uint8_t a32_code_969[20] = {
+    0x66, 0x20, 0x00, 0xf0, 0x04, 0xe8, 0x77, 0x21, 0x04, 0xe0, 0x00, 0xbf, 0x88, 0x20, 0xa0,
+    0xe3, 0x1e, 0xff, 0x2f, 0xe1,
+};
+static const uint8_t a32_code_970[20] = {
+    0x66, 0x20, 0x00, 0xf0, 0x04, 0xe8, 0x77, 0x21, 0x04, 0xe0, 0x00, 0xbf, 0x88, 0x20, 0xa0,
+    0xe3, 0x1e, 0xff, 0x2f, 0xe1,
 };
 
 static const struct a32_case_words a32_case_words[] = {
-    { 1, "dp_reg_and_0", "dp-reg", "AND r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_1 },
-    { 2, "dp_reg_and_1", "dp-reg", "AND r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_2 },
-    { 3, "dp_reg_and_2", "dp-reg", "AND r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_3 },
-    { 4, "dp_reg_and_3", "dp-reg", "AND r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_4 },
-    { 5, "dp_reg_and_4", "dp-reg", "AND r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_5 },
-    { 6, "dp_reg_and_5", "dp-reg", "AND r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_6 },
-    { 7, "dp_reg_eor_0", "dp-reg", "EOR r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_7 },
-    { 8, "dp_reg_eor_1", "dp-reg", "EOR r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_8 },
-    { 9, "dp_reg_eor_2", "dp-reg", "EOR r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_9 },
-    { 10, "dp_reg_eor_3", "dp-reg", "EOR r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_10 },
-    { 11, "dp_reg_eor_4", "dp-reg", "EOR r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_11 },
-    { 12, "dp_reg_eor_5", "dp-reg", "EOR r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_12 },
-    { 13, "dp_reg_sub_0", "dp-reg", "SUB r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_13 },
-    { 14, "dp_reg_sub_1", "dp-reg", "SUB r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_14 },
-    { 15, "dp_reg_sub_2", "dp-reg", "SUB r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_15 },
-    { 16, "dp_reg_sub_3", "dp-reg", "SUB r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_16 },
-    { 17, "dp_reg_sub_4", "dp-reg", "SUB r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_17 },
-    { 18, "dp_reg_sub_5", "dp-reg", "SUB r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_18 },
-    { 19, "dp_reg_rsb_0", "dp-reg", "RSB r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_19 },
-    { 20, "dp_reg_rsb_1", "dp-reg", "RSB r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_20 },
-    { 21, "dp_reg_rsb_2", "dp-reg", "RSB r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_21 },
-    { 22, "dp_reg_rsb_3", "dp-reg", "RSB r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_22 },
-    { 23, "dp_reg_rsb_4", "dp-reg", "RSB r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_23 },
-    { 24, "dp_reg_rsb_5", "dp-reg", "RSB r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_24 },
-    { 25, "dp_reg_add_0", "dp-reg", "ADD r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_25 },
-    { 26, "dp_reg_add_1", "dp-reg", "ADD r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_26 },
-    { 27, "dp_reg_add_2", "dp-reg", "ADD r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_27 },
-    { 28, "dp_reg_add_3", "dp-reg", "ADD r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_28 },
-    { 29, "dp_reg_add_4", "dp-reg", "ADD r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_29 },
-    { 30, "dp_reg_add_5", "dp-reg", "ADD r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_30 },
-    { 31, "dp_reg_adc_0", "dp-reg", "ADC r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_31 },
-    { 32, "dp_reg_adc_1", "dp-reg", "ADC r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_32 },
-    { 33, "dp_reg_adc_2", "dp-reg", "ADC r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_33 },
-    { 34, "dp_reg_adc_3", "dp-reg", "ADC r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_34 },
-    { 35, "dp_reg_adc_4", "dp-reg", "ADC r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_35 },
-    { 36, "dp_reg_adc_5", "dp-reg", "ADC r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_36 },
-    { 37, "dp_reg_sbc_0", "dp-reg", "SBC r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_37 },
-    { 38, "dp_reg_sbc_1", "dp-reg", "SBC r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_38 },
-    { 39, "dp_reg_sbc_2", "dp-reg", "SBC r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_39 },
-    { 40, "dp_reg_sbc_3", "dp-reg", "SBC r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_40 },
-    { 41, "dp_reg_sbc_4", "dp-reg", "SBC r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_41 },
-    { 42, "dp_reg_sbc_5", "dp-reg", "SBC r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_42 },
-    { 43, "dp_reg_rsc_0", "dp-reg", "RSC r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_43 },
-    { 44, "dp_reg_rsc_1", "dp-reg", "RSC r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_44 },
-    { 45, "dp_reg_rsc_2", "dp-reg", "RSC r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_45 },
-    { 46, "dp_reg_rsc_3", "dp-reg", "RSC r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_46 },
-    { 47, "dp_reg_rsc_4", "dp-reg", "RSC r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_47 },
-    { 48, "dp_reg_rsc_5", "dp-reg", "RSC r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_48 },
-    { 49, "dp_reg_tst_0", "dp-reg", "TST r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_49 },
-    { 50, "dp_reg_tst_1", "dp-reg", "TST r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_50 },
-    { 51, "dp_reg_tst_2", "dp-reg", "TST r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_51 },
-    { 52, "dp_reg_tst_3", "dp-reg", "TST r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_52 },
-    { 53, "dp_reg_tst_4", "dp-reg", "TST r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_53 },
-    { 54, "dp_reg_tst_5", "dp-reg", "TST r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_54 },
-    { 55, "dp_reg_teq_0", "dp-reg", "TEQ r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_55 },
-    { 56, "dp_reg_teq_1", "dp-reg", "TEQ r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_56 },
-    { 57, "dp_reg_teq_2", "dp-reg", "TEQ r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_57 },
-    { 58, "dp_reg_teq_3", "dp-reg", "TEQ r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_58 },
-    { 59, "dp_reg_teq_4", "dp-reg", "TEQ r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_59 },
-    { 60, "dp_reg_teq_5", "dp-reg", "TEQ r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_60 },
-    { 61, "dp_reg_cmp_0", "dp-reg", "CMP r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_61 },
-    { 62, "dp_reg_cmp_1", "dp-reg", "CMP r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_62 },
-    { 63, "dp_reg_cmp_2", "dp-reg", "CMP r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_63 },
-    { 64, "dp_reg_cmp_3", "dp-reg", "CMP r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_64 },
-    { 65, "dp_reg_cmp_4", "dp-reg", "CMP r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_65 },
-    { 66, "dp_reg_cmp_5", "dp-reg", "CMP r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_66 },
-    { 67, "dp_reg_cmn_0", "dp-reg", "CMN r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_67 },
-    { 68, "dp_reg_cmn_1", "dp-reg", "CMN r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_68 },
-    { 69, "dp_reg_cmn_2", "dp-reg", "CMN r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_69 },
-    { 70, "dp_reg_cmn_3", "dp-reg", "CMN r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_70 },
-    { 71, "dp_reg_cmn_4", "dp-reg", "CMN r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_71 },
-    { 72, "dp_reg_cmn_5", "dp-reg", "CMN r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_72 },
-    { 73, "dp_reg_orr_0", "dp-reg", "ORR r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_73 },
-    { 74, "dp_reg_orr_1", "dp-reg", "ORR r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_74 },
-    { 75, "dp_reg_orr_2", "dp-reg", "ORR r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_75 },
-    { 76, "dp_reg_orr_3", "dp-reg", "ORR r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_76 },
-    { 77, "dp_reg_orr_4", "dp-reg", "ORR r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_77 },
-    { 78, "dp_reg_orr_5", "dp-reg", "ORR r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_78 },
-    { 79, "dp_reg_mov_0", "dp-reg", "MOV r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_79 },
-    { 80, "dp_reg_mov_1", "dp-reg", "MOV r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_80 },
-    { 81, "dp_reg_mov_2", "dp-reg", "MOV r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_81 },
-    { 82, "dp_reg_mov_3", "dp-reg", "MOV r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_82 },
-    { 83, "dp_reg_mov_4", "dp-reg", "MOV r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_83 },
-    { 84, "dp_reg_mov_5", "dp-reg", "MOV r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_84 },
-    { 85, "dp_reg_bic_0", "dp-reg", "BIC r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_85 },
-    { 86, "dp_reg_bic_1", "dp-reg", "BIC r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_86 },
-    { 87, "dp_reg_bic_2", "dp-reg", "BIC r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_87 },
-    { 88, "dp_reg_bic_3", "dp-reg", "BIC r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_88 },
-    { 89, "dp_reg_bic_4", "dp-reg", "BIC r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_89 },
-    { 90, "dp_reg_bic_5", "dp-reg", "BIC r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_90 },
-    { 91, "dp_reg_mvn_0", "dp-reg", "MVN r0,r1,r2 (reg form)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_91 },
-    { 92, "dp_reg_mvn_1", "dp-reg", "MVN r0,r1,r2 (reg form)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_92 },
-    { 93, "dp_reg_mvn_2", "dp-reg", "MVN r0,r1,r2 (reg form)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_93 },
-    { 94, "dp_reg_mvn_3", "dp-reg", "MVN r0,r1,r2 (reg form)", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_94 },
-    { 95, "dp_reg_mvn_4", "dp-reg", "MVN r0,r1,r2 (reg form)", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_95 },
-    { 96, "dp_reg_mvn_5", "dp-reg", "MVN r0,r1,r2 (reg form)", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_96 },
-    { 97, "dp_reg_s_and_0", "dp-reg-s", "ANDs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_97 },
-    { 98, "dp_reg_s_and_1", "dp-reg-s", "ANDs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_98 },
-    { 99, "dp_reg_s_and_2", "dp-reg-s", "ANDs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_99 },
-    { 100, "dp_reg_s_eor_0", "dp-reg-s", "EORs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_100 },
-    { 101, "dp_reg_s_eor_1", "dp-reg-s", "EORs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_101 },
-    { 102, "dp_reg_s_eor_2", "dp-reg-s", "EORs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_102 },
-    { 103, "dp_reg_s_sub_0", "dp-reg-s", "SUBs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_103 },
-    { 104, "dp_reg_s_sub_1", "dp-reg-s", "SUBs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_104 },
-    { 105, "dp_reg_s_sub_2", "dp-reg-s", "SUBs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_105 },
-    { 106, "dp_reg_s_rsb_0", "dp-reg-s", "RSBs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_106 },
-    { 107, "dp_reg_s_rsb_1", "dp-reg-s", "RSBs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_107 },
-    { 108, "dp_reg_s_rsb_2", "dp-reg-s", "RSBs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_108 },
-    { 109, "dp_reg_s_add_0", "dp-reg-s", "ADDs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_109 },
-    { 110, "dp_reg_s_add_1", "dp-reg-s", "ADDs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_110 },
-    { 111, "dp_reg_s_add_2", "dp-reg-s", "ADDs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_111 },
-    { 112, "dp_reg_s_adc_0", "dp-reg-s", "ADCs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_112 },
-    { 113, "dp_reg_s_adc_1", "dp-reg-s", "ADCs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_113 },
-    { 114, "dp_reg_s_adc_2", "dp-reg-s", "ADCs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_114 },
-    { 115, "dp_reg_s_sbc_0", "dp-reg-s", "SBCs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_115 },
-    { 116, "dp_reg_s_sbc_1", "dp-reg-s", "SBCs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_116 },
-    { 117, "dp_reg_s_sbc_2", "dp-reg-s", "SBCs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_117 },
-    { 118, "dp_reg_s_rsc_0", "dp-reg-s", "RSCs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_118 },
-    { 119, "dp_reg_s_rsc_1", "dp-reg-s", "RSCs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_119 },
-    { 120, "dp_reg_s_rsc_2", "dp-reg-s", "RSCs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_120 },
-    { 121, "dp_reg_s_orr_0", "dp-reg-s", "ORRs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_121 },
-    { 122, "dp_reg_s_orr_1", "dp-reg-s", "ORRs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_122 },
-    { 123, "dp_reg_s_orr_2", "dp-reg-s", "ORRs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_123 },
-    { 124, "dp_reg_s_mov_0", "dp-reg-s", "MOVs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_124 },
-    { 125, "dp_reg_s_mov_1", "dp-reg-s", "MOVs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_125 },
-    { 126, "dp_reg_s_mov_2", "dp-reg-s", "MOVs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_126 },
-    { 127, "dp_reg_s_bic_0", "dp-reg-s", "BICs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_127 },
-    { 128, "dp_reg_s_bic_1", "dp-reg-s", "BICs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_128 },
-    { 129, "dp_reg_s_bic_2", "dp-reg-s", "BICs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_129 },
-    { 130, "dp_reg_s_mvn_0", "dp-reg-s", "MVNs r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_130 },
-    { 131, "dp_reg_s_mvn_1", "dp-reg-s", "MVNs r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_131 },
-    { 132, "dp_reg_s_mvn_2", "dp-reg-s", "MVNs r0,r1,r2 (flags)", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_132 },
-    { 133, "dp_imm_and_0", "dp-imm", "AND r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_133 },
-    { 134, "dp_imm_and_1", "dp-imm", "AND r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_134 },
-    { 135, "dp_imm_and_2", "dp-imm", "AND r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_135 },
-    { 136, "dp_imm_and_3", "dp-imm", "AND r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_136 },
-    { 137, "dp_imm_and_4", "dp-imm", "AND r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_137 },
-    { 138, "dp_imm_and_5", "dp-imm", "AND r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_138 },
-    { 139, "dp_imm_eor_0", "dp-imm", "EOR r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_139 },
-    { 140, "dp_imm_eor_1", "dp-imm", "EOR r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_140 },
-    { 141, "dp_imm_eor_2", "dp-imm", "EOR r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_141 },
-    { 142, "dp_imm_eor_3", "dp-imm", "EOR r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_142 },
-    { 143, "dp_imm_eor_4", "dp-imm", "EOR r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_143 },
-    { 144, "dp_imm_eor_5", "dp-imm", "EOR r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_144 },
-    { 145, "dp_imm_sub_0", "dp-imm", "SUB r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_145 },
-    { 146, "dp_imm_sub_1", "dp-imm", "SUB r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_146 },
-    { 147, "dp_imm_sub_2", "dp-imm", "SUB r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_147 },
-    { 148, "dp_imm_sub_3", "dp-imm", "SUB r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_148 },
-    { 149, "dp_imm_sub_4", "dp-imm", "SUB r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_149 },
-    { 150, "dp_imm_sub_5", "dp-imm", "SUB r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_150 },
-    { 151, "dp_imm_rsb_0", "dp-imm", "RSB r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_151 },
-    { 152, "dp_imm_rsb_1", "dp-imm", "RSB r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_152 },
-    { 153, "dp_imm_rsb_2", "dp-imm", "RSB r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_153 },
-    { 154, "dp_imm_rsb_3", "dp-imm", "RSB r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_154 },
-    { 155, "dp_imm_rsb_4", "dp-imm", "RSB r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_155 },
-    { 156, "dp_imm_rsb_5", "dp-imm", "RSB r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_156 },
-    { 157, "dp_imm_add_0", "dp-imm", "ADD r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_157 },
-    { 158, "dp_imm_add_1", "dp-imm", "ADD r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_158 },
-    { 159, "dp_imm_add_2", "dp-imm", "ADD r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_159 },
-    { 160, "dp_imm_add_3", "dp-imm", "ADD r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_160 },
-    { 161, "dp_imm_add_4", "dp-imm", "ADD r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_161 },
-    { 162, "dp_imm_add_5", "dp-imm", "ADD r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_162 },
-    { 163, "dp_imm_adc_0", "dp-imm", "ADC r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_163 },
-    { 164, "dp_imm_adc_1", "dp-imm", "ADC r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_164 },
-    { 165, "dp_imm_adc_2", "dp-imm", "ADC r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_165 },
-    { 166, "dp_imm_adc_3", "dp-imm", "ADC r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_166 },
-    { 167, "dp_imm_adc_4", "dp-imm", "ADC r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_167 },
-    { 168, "dp_imm_adc_5", "dp-imm", "ADC r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_168 },
-    { 169, "dp_imm_sbc_0", "dp-imm", "SBC r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_169 },
-    { 170, "dp_imm_sbc_1", "dp-imm", "SBC r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_170 },
-    { 171, "dp_imm_sbc_2", "dp-imm", "SBC r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_171 },
-    { 172, "dp_imm_sbc_3", "dp-imm", "SBC r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_172 },
-    { 173, "dp_imm_sbc_4", "dp-imm", "SBC r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_173 },
-    { 174, "dp_imm_sbc_5", "dp-imm", "SBC r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_174 },
-    { 175, "dp_imm_rsc_0", "dp-imm", "RSC r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_175 },
-    { 176, "dp_imm_rsc_1", "dp-imm", "RSC r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_176 },
-    { 177, "dp_imm_rsc_2", "dp-imm", "RSC r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_177 },
-    { 178, "dp_imm_rsc_3", "dp-imm", "RSC r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_178 },
-    { 179, "dp_imm_rsc_4", "dp-imm", "RSC r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_179 },
-    { 180, "dp_imm_rsc_5", "dp-imm", "RSC r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_180 },
-    { 181, "dp_imm_tst_0", "dp-imm", "TST r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_181 },
-    { 182, "dp_imm_tst_1", "dp-imm", "TST r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_182 },
-    { 183, "dp_imm_tst_2", "dp-imm", "TST r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_183 },
-    { 184, "dp_imm_tst_3", "dp-imm", "TST r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_184 },
-    { 185, "dp_imm_tst_4", "dp-imm", "TST r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_185 },
-    { 186, "dp_imm_tst_5", "dp-imm", "TST r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_186 },
-    { 187, "dp_imm_teq_0", "dp-imm", "TEQ r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_187 },
-    { 188, "dp_imm_teq_1", "dp-imm", "TEQ r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_188 },
-    { 189, "dp_imm_teq_2", "dp-imm", "TEQ r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_189 },
-    { 190, "dp_imm_teq_3", "dp-imm", "TEQ r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_190 },
-    { 191, "dp_imm_teq_4", "dp-imm", "TEQ r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_191 },
-    { 192, "dp_imm_teq_5", "dp-imm", "TEQ r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_192 },
-    { 193, "dp_imm_cmp_0", "dp-imm", "CMP r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_193 },
-    { 194, "dp_imm_cmp_1", "dp-imm", "CMP r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_194 },
-    { 195, "dp_imm_cmp_2", "dp-imm", "CMP r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_195 },
-    { 196, "dp_imm_cmp_3", "dp-imm", "CMP r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_196 },
-    { 197, "dp_imm_cmp_4", "dp-imm", "CMP r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_197 },
-    { 198, "dp_imm_cmp_5", "dp-imm", "CMP r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_198 },
-    { 199, "dp_imm_cmn_0", "dp-imm", "CMN r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_199 },
-    { 200, "dp_imm_cmn_1", "dp-imm", "CMN r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_200 },
-    { 201, "dp_imm_cmn_2", "dp-imm", "CMN r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_201 },
-    { 202, "dp_imm_cmn_3", "dp-imm", "CMN r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_202 },
-    { 203, "dp_imm_cmn_4", "dp-imm", "CMN r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_203 },
-    { 204, "dp_imm_cmn_5", "dp-imm", "CMN r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_204 },
-    { 205, "dp_imm_orr_0", "dp-imm", "ORR r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_205 },
-    { 206, "dp_imm_orr_1", "dp-imm", "ORR r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_206 },
-    { 207, "dp_imm_orr_2", "dp-imm", "ORR r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_207 },
-    { 208, "dp_imm_orr_3", "dp-imm", "ORR r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_208 },
-    { 209, "dp_imm_orr_4", "dp-imm", "ORR r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_209 },
-    { 210, "dp_imm_orr_5", "dp-imm", "ORR r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_210 },
-    { 211, "dp_imm_mov_0", "dp-imm", "MOV r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_211 },
-    { 212, "dp_imm_mov_1", "dp-imm", "MOV r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_212 },
-    { 213, "dp_imm_mov_2", "dp-imm", "MOV r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_213 },
-    { 214, "dp_imm_mov_3", "dp-imm", "MOV r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_214 },
-    { 215, "dp_imm_mov_4", "dp-imm", "MOV r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_215 },
-    { 216, "dp_imm_mov_5", "dp-imm", "MOV r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_216 },
-    { 217, "dp_imm_bic_0", "dp-imm", "BIC r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_217 },
-    { 218, "dp_imm_bic_1", "dp-imm", "BIC r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_218 },
-    { 219, "dp_imm_bic_2", "dp-imm", "BIC r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_219 },
-    { 220, "dp_imm_bic_3", "dp-imm", "BIC r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_220 },
-    { 221, "dp_imm_bic_4", "dp-imm", "BIC r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_221 },
-    { 222, "dp_imm_bic_5", "dp-imm", "BIC r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_222 },
-    { 223, "dp_imm_mvn_0", "dp-imm", "MVN r0,r1,#0x0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_223 },
-    { 224, "dp_imm_mvn_1", "dp-imm", "MVN r0,r1,#0x1", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_224 },
-    { 225, "dp_imm_mvn_2", "dp-imm", "MVN r0,r1,#0xff", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_225 },
-    { 226, "dp_imm_mvn_3", "dp-imm", "MVN r0,r1,#0x100", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_226 },
-    { 227, "dp_imm_mvn_4", "dp-imm", "MVN r0,r1,#0x3f0", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_227 },
-    { 228, "dp_imm_mvn_5", "dp-imm", "MVN r0,r1,#0x80000000", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_228 },
-    { 229, "dp_imm_s_and_0", "dp-imm-s", "ANDs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_229 },
-    { 230, "dp_imm_s_and_1", "dp-imm-s", "ANDs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_230 },
-    { 231, "dp_imm_s_and_2", "dp-imm-s", "ANDs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_231 },
-    { 232, "dp_imm_s_eor_0", "dp-imm-s", "EORs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_232 },
-    { 233, "dp_imm_s_eor_1", "dp-imm-s", "EORs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_233 },
-    { 234, "dp_imm_s_eor_2", "dp-imm-s", "EORs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_234 },
-    { 235, "dp_imm_s_sub_0", "dp-imm-s", "SUBs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_235 },
-    { 236, "dp_imm_s_sub_1", "dp-imm-s", "SUBs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_236 },
-    { 237, "dp_imm_s_sub_2", "dp-imm-s", "SUBs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_237 },
-    { 238, "dp_imm_s_rsb_0", "dp-imm-s", "RSBs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_238 },
-    { 239, "dp_imm_s_rsb_1", "dp-imm-s", "RSBs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_239 },
-    { 240, "dp_imm_s_rsb_2", "dp-imm-s", "RSBs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_240 },
-    { 241, "dp_imm_s_add_0", "dp-imm-s", "ADDs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_241 },
-    { 242, "dp_imm_s_add_1", "dp-imm-s", "ADDs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_242 },
-    { 243, "dp_imm_s_add_2", "dp-imm-s", "ADDs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_243 },
-    { 244, "dp_imm_s_adc_0", "dp-imm-s", "ADCs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_244 },
-    { 245, "dp_imm_s_adc_1", "dp-imm-s", "ADCs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_245 },
-    { 246, "dp_imm_s_adc_2", "dp-imm-s", "ADCs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_246 },
-    { 247, "dp_imm_s_sbc_0", "dp-imm-s", "SBCs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_247 },
-    { 248, "dp_imm_s_sbc_1", "dp-imm-s", "SBCs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_248 },
-    { 249, "dp_imm_s_sbc_2", "dp-imm-s", "SBCs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_249 },
-    { 250, "dp_imm_s_rsc_0", "dp-imm-s", "RSCs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_250 },
-    { 251, "dp_imm_s_rsc_1", "dp-imm-s", "RSCs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_251 },
-    { 252, "dp_imm_s_rsc_2", "dp-imm-s", "RSCs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_252 },
-    { 253, "dp_imm_s_orr_0", "dp-imm-s", "ORRs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_253 },
-    { 254, "dp_imm_s_orr_1", "dp-imm-s", "ORRs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_254 },
-    { 255, "dp_imm_s_orr_2", "dp-imm-s", "ORRs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_255 },
-    { 256, "dp_imm_s_mov_0", "dp-imm-s", "MOVs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_256 },
-    { 257, "dp_imm_s_mov_1", "dp-imm-s", "MOVs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_257 },
-    { 258, "dp_imm_s_mov_2", "dp-imm-s", "MOVs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_258 },
-    { 259, "dp_imm_s_bic_0", "dp-imm-s", "BICs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_259 },
-    { 260, "dp_imm_s_bic_1", "dp-imm-s", "BICs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_260 },
-    { 261, "dp_imm_s_bic_2", "dp-imm-s", "BICs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_261 },
-    { 262, "dp_imm_s_mvn_0", "dp-imm-s", "MVNs r0,r1,#0x0 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_262 },
-    { 263, "dp_imm_s_mvn_1", "dp-imm-s", "MVNs r0,r1,#0x1 (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_263 },
-    { 264, "dp_imm_s_mvn_2", "dp-imm-s", "MVNs r0,r1,#0xff (flags)", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_264 },
-    { 265, "shift_imm_lsl_0", "shift", "MOV r0,r1,LSL #0", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_265 },
-    { 266, "shift_imm_lsl_1", "shift", "MOV r0,r1,LSL #1", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_266 },
-    { 267, "shift_imm_lsl_5", "shift", "MOV r0,r1,LSL #5", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_267 },
-    { 268, "shift_imm_lsl_31", "shift", "MOV r0,r1,LSL #31", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_268 },
-    { 269, "shift_imm_lsr_0", "shift", "MOV r0,r1,LSR #0", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_269 },
-    { 270, "shift_imm_lsr_1", "shift", "MOV r0,r1,LSR #1", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_270 },
-    { 271, "shift_imm_lsr_5", "shift", "MOV r0,r1,LSR #5", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_271 },
-    { 272, "shift_imm_lsr_31", "shift", "MOV r0,r1,LSR #31", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_272 },
-    { 273, "shift_imm_asr_0", "shift", "MOV r0,r1,ASR #0", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_273 },
-    { 274, "shift_imm_asr_1", "shift", "MOV r0,r1,ASR #1", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_274 },
-    { 275, "shift_imm_asr_5", "shift", "MOV r0,r1,ASR #5", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_275 },
-    { 276, "shift_imm_asr_31", "shift", "MOV r0,r1,ASR #31", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_276 },
-    { 277, "shift_imm_ror_0", "shift", "MOV r0,r1,ROR #0", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_277 },
-    { 278, "shift_imm_ror_1", "shift", "MOV r0,r1,ROR #1", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_278 },
-    { 279, "shift_imm_ror_5", "shift", "MOV r0,r1,ROR #5", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_279 },
-    { 280, "shift_imm_ror_31", "shift", "MOV r0,r1,ROR #31", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_280 },
-    { 281, "shift_reg_lsl_0", "shift", "MOV r0,r1,LSL r2 (r2=0)", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_281 },
-    { 282, "shift_reg_lsl_1", "shift", "MOV r0,r1,LSL r2 (r2=1)", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_282 },
-    { 283, "shift_reg_lsl_4", "shift", "MOV r0,r1,LSL r2 (r2=4)", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_283 },
-    { 284, "shift_reg_lsl_8", "shift", "MOV r0,r1,LSL r2 (r2=8)", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_284 },
-    { 285, "shift_reg_lsl_16", "shift", "MOV r0,r1,LSL r2 (r2=16)", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_285 },
-    { 286, "shift_reg_lsl_30", "shift", "MOV r0,r1,LSL r2 (r2=30)", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_286 },
-    { 287, "shift_reg_lsl_31", "shift", "MOV r0,r1,LSL r2 (r2=31)", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_287 },
-    { 288, "shift_reg_lsl_32", "shift", "MOV r0,r1,LSL r2 (r2=32)", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_288 },
-    { 289, "shift_reg_lsl_33", "shift", "MOV r0,r1,LSL r2 (r2=33)", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_289 },
-    { 290, "shift_reg_lsl_63", "shift", "MOV r0,r1,LSL r2 (r2=63)", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_290 },
-    { 291, "shift_reg_lsl_64", "shift", "MOV r0,r1,LSL r2 (r2=64)", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_291 },
-    { 292, "shift_reg_lsl_255", "shift", "MOV r0,r1,LSL r2 (r2=255)", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_292 },
-    { 293, "shift_reg_lsr_0", "shift", "MOV r0,r1,LSR r2 (r2=0)", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_293 },
-    { 294, "shift_reg_lsr_1", "shift", "MOV r0,r1,LSR r2 (r2=1)", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_294 },
-    { 295, "shift_reg_lsr_4", "shift", "MOV r0,r1,LSR r2 (r2=4)", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_295 },
-    { 296, "shift_reg_lsr_8", "shift", "MOV r0,r1,LSR r2 (r2=8)", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_296 },
-    { 297, "shift_reg_lsr_16", "shift", "MOV r0,r1,LSR r2 (r2=16)", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_297 },
-    { 298, "shift_reg_lsr_30", "shift", "MOV r0,r1,LSR r2 (r2=30)", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_298 },
-    { 299, "shift_reg_lsr_31", "shift", "MOV r0,r1,LSR r2 (r2=31)", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_299 },
-    { 300, "shift_reg_lsr_32", "shift", "MOV r0,r1,LSR r2 (r2=32)", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_300 },
-    { 301, "shift_reg_lsr_33", "shift", "MOV r0,r1,LSR r2 (r2=33)", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_301 },
-    { 302, "shift_reg_lsr_63", "shift", "MOV r0,r1,LSR r2 (r2=63)", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_302 },
-    { 303, "shift_reg_lsr_64", "shift", "MOV r0,r1,LSR r2 (r2=64)", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_303 },
-    { 304, "shift_reg_lsr_255", "shift", "MOV r0,r1,LSR r2 (r2=255)", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_304 },
-    { 305, "shift_reg_asr_0", "shift", "MOV r0,r1,ASR r2 (r2=0)", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_305 },
-    { 306, "shift_reg_asr_1", "shift", "MOV r0,r1,ASR r2 (r2=1)", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_306 },
-    { 307, "shift_reg_asr_4", "shift", "MOV r0,r1,ASR r2 (r2=4)", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_307 },
-    { 308, "shift_reg_asr_8", "shift", "MOV r0,r1,ASR r2 (r2=8)", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_308 },
-    { 309, "shift_reg_asr_16", "shift", "MOV r0,r1,ASR r2 (r2=16)", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_309 },
-    { 310, "shift_reg_asr_30", "shift", "MOV r0,r1,ASR r2 (r2=30)", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_310 },
-    { 311, "shift_reg_asr_31", "shift", "MOV r0,r1,ASR r2 (r2=31)", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_311 },
-    { 312, "shift_reg_asr_32", "shift", "MOV r0,r1,ASR r2 (r2=32)", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_312 },
-    { 313, "shift_reg_asr_33", "shift", "MOV r0,r1,ASR r2 (r2=33)", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_313 },
-    { 314, "shift_reg_asr_63", "shift", "MOV r0,r1,ASR r2 (r2=63)", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_314 },
-    { 315, "shift_reg_asr_64", "shift", "MOV r0,r1,ASR r2 (r2=64)", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_315 },
-    { 316, "shift_reg_asr_255", "shift", "MOV r0,r1,ASR r2 (r2=255)", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_316 },
-    { 317, "shift_reg_ror_0", "shift", "MOV r0,r1,ROR r2 (r2=0)", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_317 },
-    { 318, "shift_reg_ror_1", "shift", "MOV r0,r1,ROR r2 (r2=1)", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_318 },
-    { 319, "shift_reg_ror_4", "shift", "MOV r0,r1,ROR r2 (r2=4)", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_319 },
-    { 320, "shift_reg_ror_8", "shift", "MOV r0,r1,ROR r2 (r2=8)", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_320 },
-    { 321, "shift_reg_ror_16", "shift", "MOV r0,r1,ROR r2 (r2=16)", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_321 },
-    { 322, "shift_reg_ror_30", "shift", "MOV r0,r1,ROR r2 (r2=30)", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_322 },
-    { 323, "shift_reg_ror_31", "shift", "MOV r0,r1,ROR r2 (r2=31)", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_323 },
-    { 324, "shift_reg_ror_32", "shift", "MOV r0,r1,ROR r2 (r2=32)", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_324 },
-    { 325, "shift_reg_ror_33", "shift", "MOV r0,r1,ROR r2 (r2=33)", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_325 },
-    { 326, "shift_reg_ror_63", "shift", "MOV r0,r1,ROR r2 (r2=63)", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_326 },
-    { 327, "shift_reg_ror_64", "shift", "MOV r0,r1,ROR r2 (r2=64)", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_327 },
-    { 328, "shift_reg_ror_255", "shift", "MOV r0,r1,ROR r2 (r2=255)", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_328 },
-    { 329, "add_shifted_lsl_0", "shift", "ADD r0,r1,r2,LSL #0", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_329 },
-    { 330, "add_shifted_lsl_3", "shift", "ADD r0,r1,r2,LSL #3", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_330 },
-    { 331, "add_shifted_lsl_8", "shift", "ADD r0,r1,r2,LSL #8", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_331 },
-    { 332, "add_shifted_lsl_16", "shift", "ADD r0,r1,r2,LSL #16", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_332 },
-    { 333, "add_shifted_lsr_0", "shift", "ADD r0,r1,r2,LSR #0", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_333 },
-    { 334, "add_shifted_lsr_3", "shift", "ADD r0,r1,r2,LSR #3", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_334 },
-    { 335, "add_shifted_lsr_8", "shift", "ADD r0,r1,r2,LSR #8", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_335 },
-    { 336, "add_shifted_lsr_16", "shift", "ADD r0,r1,r2,LSR #16", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_336 },
-    { 337, "add_shifted_asr_0", "shift", "ADD r0,r1,r2,ASR #0", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_337 },
-    { 338, "add_shifted_asr_3", "shift", "ADD r0,r1,r2,ASR #3", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_338 },
-    { 339, "add_shifted_asr_8", "shift", "ADD r0,r1,r2,ASR #8", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_339 },
-    { 340, "add_shifted_asr_16", "shift", "ADD r0,r1,r2,ASR #16", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_340 },
-    { 341, "add_shifted_ror_0", "shift", "ADD r0,r1,r2,ROR #0", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_341 },
-    { 342, "add_shifted_ror_3", "shift", "ADD r0,r1,r2,ROR #3", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_342 },
-    { 343, "add_shifted_ror_8", "shift", "ADD r0,r1,r2,ROR #8", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_343 },
-    { 344, "add_shifted_ror_16", "shift", "ADD r0,r1,r2,ROR #16", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_344 },
-    { 345, "rrx_c0", "shift", "MOV r0,r1,RRX (carry=0)", { 0, 0x80000001u, 0x40000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_345 },
-    { 346, "rrx_c1", "shift", "MOV r0,r1,RRX (carry=1)", { 0, 0x80000001u, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_346 },
-    { 347, "mul_0", "mul", "MUL r0,r1,r2", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_347 },
-    { 348, "mul_1", "mul", "MUL r0,r1,r2", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_348 },
-    { 349, "mul_2", "mul", "MUL r0,r1,r2", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_349 },
-    { 350, "mul_3", "mul", "MUL r0,r1,r2", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_350 },
-    { 351, "mla_0", "mul", "MLA r0,r3,r1,r2", { 0, 0x00000000u, 0x00000001u, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_351 },
-    { 352, "mla_1", "mul", "MLA r0,r3,r1,r2", { 0, 0x00000001u, 0xffffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_352 },
-    { 353, "mla_2", "mul", "MLA r0,r3,r1,r2", { 0, 0xffffffffu, 0x7fffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_353 },
-    { 354, "mls_0", "mul", "MLS r0,r3,r1,r2", { 0, 0x00000000u, 0x00000001u, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_354 },
-    { 355, "mls_1", "mul", "MLS r0,r3,r1,r2", { 0, 0x00000001u, 0xffffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_355 },
-    { 356, "mls_2", "mul", "MLS r0,r3,r1,r2", { 0, 0xffffffffu, 0x7fffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_356 },
-    { 357, "umull_0", "mul", "UMULL r0,r3,r1,r2", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_357 },
-    { 358, "umull_1", "mul", "UMULL r0,r3,r1,r2", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_358 },
-    { 359, "umull_2", "mul", "UMULL r0,r3,r1,r2", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_359 },
-    { 360, "umlal_0", "mul", "UMLAL r0,r3,r1,r2", { 0, 0x00000000u, 0x00000001u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_360 },
-    { 361, "umlal_1", "mul", "UMLAL r0,r3,r1,r2", { 0, 0x00000001u, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_361 },
-    { 362, "smull_0", "mul", "SMULL r0,r3,r1,r2", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_362 },
-    { 363, "smull_1", "mul", "SMULL r0,r3,r1,r2", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_363 },
-    { 364, "smull_2", "mul", "SMULL r0,r3,r1,r2", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_364 },
-    { 365, "smlal_0", "mul", "SMLAL r0,r3,r1,r2", { 0, 0x00000000u, 0x00000001u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_365 },
-    { 366, "smlal_1", "mul", "SMLAL r0,r3,r1,r2", { 0, 0x00000001u, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_366 },
-    { 367, "muls_0", "mul", "MULS r0,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_367 },
-    { 368, "muls_1", "mul", "MULS r0,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_368 },
-    { 369, "umulls_0", "mul", "UMULLS r0,r3,r1,r2 (flags)", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_369 },
-    { 370, "umulls_1", "mul", "UMULLS r0,r3,r1,r2 (flags)", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_370 },
-    { 371, "mrs_flag_0", "psr", "MRS r0,cpsr; LSR r0,#28", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_371 },
-    { 372, "mrs_flag_1", "psr", "MRS r0,cpsr; LSR r0,#28", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_372 },
-    { 373, "mrs_flag_2", "psr", "MRS r0,cpsr; LSR r0,#28", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_373 },
-    { 374, "msr_flag_0", "psr", "MSR cpsr_f then read the flags back", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_374 },
-    { 375, "msr_flag_1", "psr", "MSR cpsr_f then read the flags back", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_375 },
-    { 376, "msr_flag_2", "psr", "MSR cpsr_f then read the flags back", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_376 },
-    { 377, "msr_flag_3", "psr", "MSR cpsr_f then read the flags back", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_377 },
-    { 378, "msr_imm_flag_0", "psr", "MSR immediate flags + read back", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 3, a32_words_378 },
-    { 379, "msr_imm_flag_1", "psr", "MSR immediate flags + read back", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 3, a32_words_379 },
-    { 380, "msr_imm_flag_2", "psr", "MSR immediate flags + read back", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 3, a32_words_380 },
-    { 381, "clz_0", "misc", "CLZ r0,r1", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_381 },
-    { 382, "clz_1", "misc", "CLZ r0,r1", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_382 },
-    { 383, "clz_2", "misc", "CLZ r0,r1", { 0, 0x08000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_383 },
-    { 384, "clz_3", "misc", "CLZ r0,r1", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_384 },
-    { 385, "str_ldr_imm_0", "mem", "STR/LDR word immediate offset", { 0, 0x11223344u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_385 },
-    { 386, "str_ldr_imm_1", "mem", "STR/LDR word immediate offset", { 0, 0x11223345u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_386 },
-    { 387, "str_ldr_imm_2", "mem", "STR/LDR word immediate offset", { 0, 0x11223346u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_387 },
-    { 388, "str_ldr_imm_3", "mem", "STR/LDR word immediate offset", { 0, 0x11223347u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_388 },
-    { 389, "str_ldr_imm_4", "mem", "STR/LDR word immediate offset", { 0, 0x11223348u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_389 },
-    { 390, "str_ldr_imm_5", "mem", "STR/LDR word immediate offset", { 0, 0x11223349u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_390 },
-    { 391, "strb_ldrb_imm_0", "mem", "STRB/LDRB immediate offset", { 0, 0x000000abu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_391 },
-    { 392, "strb_ldrb_imm_1", "mem", "STRB/LDRB immediate offset", { 0, 0x000000acu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_392 },
-    { 393, "strb_ldrb_imm_2", "mem", "STRB/LDRB immediate offset", { 0, 0x000000adu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_393 },
-    { 394, "strb_ldrb_imm_3", "mem", "STRB/LDRB immediate offset", { 0, 0x000000aeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_394 },
-    { 395, "strh_ldrh_imm_0", "mem", "STRH/LDRH immediate offset", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_395 },
-    { 396, "strh_ldrh_imm_1", "mem", "STRH/LDRH immediate offset", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_396 },
-    { 397, "strh_ldrh_imm_2", "mem", "STRH/LDRH immediate offset", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_397 },
-    { 398, "strh_ldrh_imm_3", "mem", "STRH/LDRH immediate offset", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_398 },
-    { 399, "ldrs_imm_0", "mem", "LDRSB/LDRSH immediate offset", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_399 },
-    { 400, "ldrs_imm_1", "mem", "LDRSB/LDRSH immediate offset", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_400 },
-    { 401, "ldrs_imm_2", "mem", "LDRSB/LDRSH immediate offset", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_401 },
-    { 402, "ldrs_imm_3", "mem", "LDRSB/LDRSH immediate offset", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_402 },
-    { 403, "ldrh_post_0", "mem", "LDRH post-indexed", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_403 },
-    { 404, "ldrh_post_1", "mem", "LDRH post-indexed", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_404 },
-    { 405, "ldrh_post_2", "mem", "LDRH post-indexed", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_405 },
-    { 406, "ldrh_post_3", "mem", "LDRH post-indexed", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_406 },
-    { 407, "ldr_str_reg_0", "mem", "LDR/STR register offset", { 0, 0x55667788u, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_407 },
-    { 408, "ldr_str_reg_1", "mem", "LDR/STR register offset", { 0, 0x55667788u, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_408 },
-    { 409, "ldr_str_reg_2", "mem", "LDR/STR register offset", { 0, 0x55667788u, 0x0000000cu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_409 },
-    { 410, "ldr_str_reg_3", "mem", "LDR/STR register offset", { 0, 0x55667788u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_410 },
-    { 411, "ldr_shifted_reg_0", "mem", "LDR shifted register offset", { 0, 0, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_411 },
-    { 412, "ldr_shifted_reg_1", "mem", "LDR shifted register offset", { 0, 0, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_412 },
-    { 413, "strh_ldrh_reg_0", "mem", "STRH/LDRH register offset", { 0, 0x0000cafeu, 0, 0, 0x00000006u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_413 },
-    { 414, "strh_ldrh_reg_1", "mem", "STRH/LDRH register offset", { 0, 0x0000cafeu, 0, 0, 0, 0, 0, 0, 0x00000006u, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_414 },
-    { 415, "str_ldr_pre_wb_0", "mem", "STR/LDR pre-indexed writeback", { 0, 0x99aabbccu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_415 },
-    { 416, "str_ldr_pre_wb_1", "mem", "STR/LDR pre-indexed writeback", { 0, 0x99aabbccu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_416 },
-    { 417, "str_ldr_pre_wb_2", "mem", "STR/LDR pre-indexed writeback", { 0, 0x99aabbccu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_417 },
-    { 418, "str_ldr_post_0", "mem", "STR/LDR post-indexed", { 0, 0xdead1234u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_418 },
-    { 419, "str_ldr_post_1", "mem", "STR/LDR post-indexed", { 0, 0xdead1234u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_419 },
-    { 420, "ldr_neg_0", "mem", "LDR negative immediate offset (still inside the window)", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_420 },
-    { 421, "ldr_neg_1", "mem", "LDR negative immediate offset (still inside the window)", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_421 },
-    { 422, "strd_ldrd_0", "mem", "STRD/LDRD immediate", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_422 },
-    { 423, "strd_ldrd_1", "mem", "STRD/LDRD immediate", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_423 },
-    { 424, "strd_ldrd_2", "mem", "STRD/LDRD immediate", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_424 },
-    { 425, "strd_ldrd_3", "mem", "STRD/LDRD immediate", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_425 },
-    { 426, "strd_ldrd_zero_0", "mem", "STRD/LDRD then zero the sources", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_426 },
-    { 427, "strd_ldrd_zero_1", "mem", "STRD/LDRD then zero the sources", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_427 },
-    { 428, "swpb_0", "mem", "SWP/SWPB", { 0, 0x01020304u, 0xfeedfaceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_428 },
-    { 429, "swpb_1", "mem", "SWP/SWPB", { 0, 0x01020304u, 0xfeedfaceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_words_429 },
-    { 430, "stm_ia", "block", "STMIA r9,{r2,r3,r4}", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_430 },
-    { 431, "ldm_ia", "block", "LDMIA r9,{r0,r1,r2}", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_431 },
-    { 432, "stm_ib", "block", "STMIB r9,{r2,r3,r4}", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_432 },
-    { 433, "ldm_ib", "block", "LDMIB r9,{r0,r1,r2}", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_433 },
-    { 434, "stm_da", "block", "STMDA r9,{r2,r3,r4}", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_434 },
-    { 435, "ldm_da", "block", "LDMDA r9,{r0,r1,r2}", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_435 },
-    { 436, "stm_db", "block", "STMDB r9,{r2,r3,r4}", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_436 },
-    { 437, "ldm_db", "block", "LDMDB r9,{r0,r1,r2}", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_437 },
-    { 438, "stm_wb_ia", "block", "STMIA r9!,{r2,r3}; delta of the writeback", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_438 },
-    { 439, "stm_wb_ib", "block", "STMIB r9!,{r2,r3}; delta of the writeback", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_439 },
-    { 440, "stm_wb_da", "block", "STMDA r9!,{r2,r3}; delta of the writeback", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_440 },
-    { 441, "stm_wb_db", "block", "STMDB r9!,{r2,r3}; delta of the writeback", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_441 },
-    { 442, "ldm_wb_ia", "block", "LDMIA r9!,{r2,r3}", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 1, a32_words_442 },
-    { 443, "b_forward", "branch", "B forward skips a write", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_443 },
-    { 444, "b_backward", "branch", "B backward: a real loop that terminates at r0=4", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_444 },
-    { 445, "bl_bx_lr", "branch", "BL into a subroutine and BX lr back", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 6, a32_words_445 },
-    { 446, "adr_bx_lr", "branch", "ADR lr then BX lr to a label", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_446 },
-    { 447, "adr_delta", "branch", "ADR of two labels; the difference is architectural", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_words_447 },
-    { 448, "blx_reg", "branch", "BLX register to an ARM label", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 7, a32_words_448 },
-    { 449, "cond_b_eq", "branch", "Beq after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_449 },
-    { 450, "cond_b_ne", "branch", "Bne after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_450 },
-    { 451, "cond_b_cs", "branch", "Bcs after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_451 },
-    { 452, "cond_b_cc", "branch", "Bcc after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_452 },
-    { 453, "cond_b_mi", "branch", "Bmi after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_453 },
-    { 454, "cond_b_pl", "branch", "Bpl after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_454 },
-    { 455, "cond_b_vs", "branch", "Bvs after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_455 },
-    { 456, "cond_b_vc", "branch", "Bvc after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_456 },
-    { 457, "cond_b_hi", "branch", "Bhi after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_457 },
-    { 458, "cond_b_ls", "branch", "Bls after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_458 },
-    { 459, "cond_b_ge", "branch", "Bge after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_459 },
-    { 460, "cond_b_lt", "branch", "Blt after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_460 },
-    { 461, "cond_b_gt", "branch", "Bgt after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_461 },
-    { 462, "cond_b_le", "branch", "Ble after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_462 },
-    { 463, "cond_mov_eq", "cond", "MOVeq r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_463 },
-    { 464, "cond_mov_ne", "cond", "MOVne r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_464 },
-    { 465, "cond_mov_cs", "cond", "MOVcs r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_465 },
-    { 466, "cond_mov_cc", "cond", "MOVcc r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_466 },
-    { 467, "cond_mov_mi", "cond", "MOVmi r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_467 },
-    { 468, "cond_mov_pl", "cond", "MOVpl r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_468 },
-    { 469, "cond_mov_vs", "cond", "MOVvs r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_469 },
-    { 470, "cond_mov_vc", "cond", "MOVvc r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_470 },
-    { 471, "cond_mov_hi", "cond", "MOVhi r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_471 },
-    { 472, "cond_mov_ls", "cond", "MOVls r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_472 },
-    { 473, "cond_mov_ge", "cond", "MOVge r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_473 },
-    { 474, "cond_mov_lt", "cond", "MOVlt r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_474 },
-    { 475, "cond_mov_gt", "cond", "MOVgt r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_475 },
-    { 476, "cond_mov_le", "cond", "MOVle r0,#0x11 after CMP r1,#0", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_476 },
-    { 477, "cond_dp_cs_0", "cond", "conditional data-processing on C=0", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_477 },
-    { 478, "cond_dp_cs_1", "cond", "conditional data-processing on C=1", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_478 },
-    { 479, "cond_dp_cc_0", "cond", "conditional data-processing on C=0", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_479 },
-    { 480, "cond_dp_cc_1", "cond", "conditional data-processing on C=1", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_words_480 },
-    { 481, "mixed_0", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0xd62c9ad2u, 0x7ef0ffdfu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_481 },
-    { 482, "mixed_1", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x6082f05fu, 0x1dcdabceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_482 },
-    { 483, "mixed_2", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0xa80a08d5u, 0xa64fa482u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_483 },
-    { 484, "mixed_3", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x6bdd093cu, 0xc368b428u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_484 },
-    { 485, "mixed_4", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x19bcb720u, 0xfd6bb763u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_485 },
-    { 486, "mixed_5", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x8340230du, 0x5f1b33e6u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_486 },
-    { 487, "mixed_6", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x0eb9adeeu, 0xca140afau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_487 },
-    { 488, "mixed_7", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x2a63724bu, 0x1062d2d0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_488 },
-    { 489, "mixed_8", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x245501b1u, 0xeda134aau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_489 },
-    { 490, "mixed_9", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x19677658u, 0xb5e654fau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_490 },
-    { 491, "mixed_10", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0xbec4cd6eu, 0x3cfc09adu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_491 },
-    { 492, "mixed_11", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x26860242u, 0x01e0e14au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_492 },
-    { 493, "mixed_12", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x3692df83u, 0xbcff69feu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_493 },
-    { 494, "mixed_13", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x25d8fa09u, 0xb3eb1a10u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_494 },
-    { 495, "mixed_14", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0xe0fa69c9u, 0xf940bb43u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_495 },
-    { 496, "mixed_15", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0xaf6e1e70u, 0xa6c79717u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_496 },
-    { 497, "mixed_16", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x7fbb1f5fu, 0x71ba3c82u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_497 },
-    { 498, "mixed_17", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0xc5d52df6u, 0x594aaf0eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_498 },
-    { 499, "mixed_18", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0x9465a50bu, 0xc6f52fc7u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_499 },
-    { 500, "mixed_19", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", { 0, 0xf847bbecu, 0x048f2e33u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 5, a32_words_500 },
+    { 1, "dp_reg_and_0", "dp-reg", "AND r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_1 },
+    { 2, "dp_reg_and_1", "dp-reg", "AND r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_2 },
+    { 3, "dp_reg_and_2", "dp-reg", "AND r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_3 },
+    { 4, "dp_reg_and_3", "dp-reg", "AND r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_4 },
+    { 5, "dp_reg_and_4", "dp-reg", "AND r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_5 },
+    { 6, "dp_reg_and_5", "dp-reg", "AND r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_6 },
+    { 7, "dp_reg_eor_0", "dp-reg", "EOR r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_7 },
+    { 8, "dp_reg_eor_1", "dp-reg", "EOR r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_8 },
+    { 9, "dp_reg_eor_2", "dp-reg", "EOR r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_9 },
+    { 10, "dp_reg_eor_3", "dp-reg", "EOR r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_10 },
+    { 11, "dp_reg_eor_4", "dp-reg", "EOR r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_11 },
+    { 12, "dp_reg_eor_5", "dp-reg", "EOR r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_12 },
+    { 13, "dp_reg_sub_0", "dp-reg", "SUB r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_13 },
+    { 14, "dp_reg_sub_1", "dp-reg", "SUB r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_14 },
+    { 15, "dp_reg_sub_2", "dp-reg", "SUB r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_15 },
+    { 16, "dp_reg_sub_3", "dp-reg", "SUB r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_16 },
+    { 17, "dp_reg_sub_4", "dp-reg", "SUB r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_17 },
+    { 18, "dp_reg_sub_5", "dp-reg", "SUB r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_18 },
+    { 19, "dp_reg_rsb_0", "dp-reg", "RSB r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_19 },
+    { 20, "dp_reg_rsb_1", "dp-reg", "RSB r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_20 },
+    { 21, "dp_reg_rsb_2", "dp-reg", "RSB r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_21 },
+    { 22, "dp_reg_rsb_3", "dp-reg", "RSB r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_22 },
+    { 23, "dp_reg_rsb_4", "dp-reg", "RSB r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_23 },
+    { 24, "dp_reg_rsb_5", "dp-reg", "RSB r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_24 },
+    { 25, "dp_reg_add_0", "dp-reg", "ADD r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_25 },
+    { 26, "dp_reg_add_1", "dp-reg", "ADD r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_26 },
+    { 27, "dp_reg_add_2", "dp-reg", "ADD r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_27 },
+    { 28, "dp_reg_add_3", "dp-reg", "ADD r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_28 },
+    { 29, "dp_reg_add_4", "dp-reg", "ADD r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_29 },
+    { 30, "dp_reg_add_5", "dp-reg", "ADD r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_30 },
+    { 31, "dp_reg_adc_0", "dp-reg", "ADC r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_31 },
+    { 32, "dp_reg_adc_1", "dp-reg", "ADC r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_32 },
+    { 33, "dp_reg_adc_2", "dp-reg", "ADC r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_33 },
+    { 34, "dp_reg_adc_3", "dp-reg", "ADC r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_34 },
+    { 35, "dp_reg_adc_4", "dp-reg", "ADC r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_35 },
+    { 36, "dp_reg_adc_5", "dp-reg", "ADC r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_36 },
+    { 37, "dp_reg_sbc_0", "dp-reg", "SBC r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_37 },
+    { 38, "dp_reg_sbc_1", "dp-reg", "SBC r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_38 },
+    { 39, "dp_reg_sbc_2", "dp-reg", "SBC r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_39 },
+    { 40, "dp_reg_sbc_3", "dp-reg", "SBC r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_40 },
+    { 41, "dp_reg_sbc_4", "dp-reg", "SBC r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_41 },
+    { 42, "dp_reg_sbc_5", "dp-reg", "SBC r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_42 },
+    { 43, "dp_reg_rsc_0", "dp-reg", "RSC r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_43 },
+    { 44, "dp_reg_rsc_1", "dp-reg", "RSC r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_44 },
+    { 45, "dp_reg_rsc_2", "dp-reg", "RSC r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_45 },
+    { 46, "dp_reg_rsc_3", "dp-reg", "RSC r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_46 },
+    { 47, "dp_reg_rsc_4", "dp-reg", "RSC r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_47 },
+    { 48, "dp_reg_rsc_5", "dp-reg", "RSC r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_48 },
+    { 49, "dp_reg_tst_0", "dp-reg", "TST r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_49 },
+    { 50, "dp_reg_tst_1", "dp-reg", "TST r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_50 },
+    { 51, "dp_reg_tst_2", "dp-reg", "TST r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_51 },
+    { 52, "dp_reg_tst_3", "dp-reg", "TST r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_52 },
+    { 53, "dp_reg_tst_4", "dp-reg", "TST r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_53 },
+    { 54, "dp_reg_tst_5", "dp-reg", "TST r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_54 },
+    { 55, "dp_reg_teq_0", "dp-reg", "TEQ r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_55 },
+    { 56, "dp_reg_teq_1", "dp-reg", "TEQ r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_56 },
+    { 57, "dp_reg_teq_2", "dp-reg", "TEQ r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_57 },
+    { 58, "dp_reg_teq_3", "dp-reg", "TEQ r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_58 },
+    { 59, "dp_reg_teq_4", "dp-reg", "TEQ r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_59 },
+    { 60, "dp_reg_teq_5", "dp-reg", "TEQ r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_60 },
+    { 61, "dp_reg_cmp_0", "dp-reg", "CMP r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_61 },
+    { 62, "dp_reg_cmp_1", "dp-reg", "CMP r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_62 },
+    { 63, "dp_reg_cmp_2", "dp-reg", "CMP r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_63 },
+    { 64, "dp_reg_cmp_3", "dp-reg", "CMP r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_64 },
+    { 65, "dp_reg_cmp_4", "dp-reg", "CMP r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_65 },
+    { 66, "dp_reg_cmp_5", "dp-reg", "CMP r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_66 },
+    { 67, "dp_reg_cmn_0", "dp-reg", "CMN r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_67 },
+    { 68, "dp_reg_cmn_1", "dp-reg", "CMN r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_68 },
+    { 69, "dp_reg_cmn_2", "dp-reg", "CMN r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_69 },
+    { 70, "dp_reg_cmn_3", "dp-reg", "CMN r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_70 },
+    { 71, "dp_reg_cmn_4", "dp-reg", "CMN r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_71 },
+    { 72, "dp_reg_cmn_5", "dp-reg", "CMN r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_72 },
+    { 73, "dp_reg_orr_0", "dp-reg", "ORR r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_73 },
+    { 74, "dp_reg_orr_1", "dp-reg", "ORR r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_74 },
+    { 75, "dp_reg_orr_2", "dp-reg", "ORR r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_75 },
+    { 76, "dp_reg_orr_3", "dp-reg", "ORR r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_76 },
+    { 77, "dp_reg_orr_4", "dp-reg", "ORR r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_77 },
+    { 78, "dp_reg_orr_5", "dp-reg", "ORR r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_78 },
+    { 79, "dp_reg_mov_0", "dp-reg", "MOV r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_79 },
+    { 80, "dp_reg_mov_1", "dp-reg", "MOV r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_80 },
+    { 81, "dp_reg_mov_2", "dp-reg", "MOV r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_81 },
+    { 82, "dp_reg_mov_3", "dp-reg", "MOV r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_82 },
+    { 83, "dp_reg_mov_4", "dp-reg", "MOV r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_83 },
+    { 84, "dp_reg_mov_5", "dp-reg", "MOV r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_84 },
+    { 85, "dp_reg_bic_0", "dp-reg", "BIC r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_85 },
+    { 86, "dp_reg_bic_1", "dp-reg", "BIC r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_86 },
+    { 87, "dp_reg_bic_2", "dp-reg", "BIC r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_87 },
+    { 88, "dp_reg_bic_3", "dp-reg", "BIC r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_88 },
+    { 89, "dp_reg_bic_4", "dp-reg", "BIC r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_89 },
+    { 90, "dp_reg_bic_5", "dp-reg", "BIC r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_90 },
+    { 91, "dp_reg_mvn_0", "dp-reg", "MVN r0,r1,r2 (reg form)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_91 },
+    { 92, "dp_reg_mvn_1", "dp-reg", "MVN r0,r1,r2 (reg form)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_92 },
+    { 93, "dp_reg_mvn_2", "dp-reg", "MVN r0,r1,r2 (reg form)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_93 },
+    { 94, "dp_reg_mvn_3", "dp-reg", "MVN r0,r1,r2 (reg form)", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_94 },
+    { 95, "dp_reg_mvn_4", "dp-reg", "MVN r0,r1,r2 (reg form)", "arm", { 0, 0x80000000u, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_95 },
+    { 96, "dp_reg_mvn_5", "dp-reg", "MVN r0,r1,r2 (reg form)", "arm", { 0, 0x0000ffffu, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_96 },
+    { 97, "dp_reg_s_and_0", "dp-reg-s", "ANDs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_97 },
+    { 98, "dp_reg_s_and_1", "dp-reg-s", "ANDs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_98 },
+    { 99, "dp_reg_s_and_2", "dp-reg-s", "ANDs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_99 },
+    { 100, "dp_reg_s_eor_0", "dp-reg-s", "EORs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_100 },
+    { 101, "dp_reg_s_eor_1", "dp-reg-s", "EORs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_101 },
+    { 102, "dp_reg_s_eor_2", "dp-reg-s", "EORs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_102 },
+    { 103, "dp_reg_s_sub_0", "dp-reg-s", "SUBs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_103 },
+    { 104, "dp_reg_s_sub_1", "dp-reg-s", "SUBs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_104 },
+    { 105, "dp_reg_s_sub_2", "dp-reg-s", "SUBs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_105 },
+    { 106, "dp_reg_s_rsb_0", "dp-reg-s", "RSBs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_106 },
+    { 107, "dp_reg_s_rsb_1", "dp-reg-s", "RSBs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_107 },
+    { 108, "dp_reg_s_rsb_2", "dp-reg-s", "RSBs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_108 },
+    { 109, "dp_reg_s_add_0", "dp-reg-s", "ADDs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_109 },
+    { 110, "dp_reg_s_add_1", "dp-reg-s", "ADDs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_110 },
+    { 111, "dp_reg_s_add_2", "dp-reg-s", "ADDs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_111 },
+    { 112, "dp_reg_s_adc_0", "dp-reg-s", "ADCs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_112 },
+    { 113, "dp_reg_s_adc_1", "dp-reg-s", "ADCs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_113 },
+    { 114, "dp_reg_s_adc_2", "dp-reg-s", "ADCs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_114 },
+    { 115, "dp_reg_s_sbc_0", "dp-reg-s", "SBCs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_115 },
+    { 116, "dp_reg_s_sbc_1", "dp-reg-s", "SBCs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_116 },
+    { 117, "dp_reg_s_sbc_2", "dp-reg-s", "SBCs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_117 },
+    { 118, "dp_reg_s_rsc_0", "dp-reg-s", "RSCs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_118 },
+    { 119, "dp_reg_s_rsc_1", "dp-reg-s", "RSCs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_119 },
+    { 120, "dp_reg_s_rsc_2", "dp-reg-s", "RSCs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_120 },
+    { 121, "dp_reg_s_orr_0", "dp-reg-s", "ORRs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_121 },
+    { 122, "dp_reg_s_orr_1", "dp-reg-s", "ORRs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_122 },
+    { 123, "dp_reg_s_orr_2", "dp-reg-s", "ORRs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_123 },
+    { 124, "dp_reg_s_mov_0", "dp-reg-s", "MOVs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_124 },
+    { 125, "dp_reg_s_mov_1", "dp-reg-s", "MOVs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_125 },
+    { 126, "dp_reg_s_mov_2", "dp-reg-s", "MOVs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_126 },
+    { 127, "dp_reg_s_bic_0", "dp-reg-s", "BICs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_127 },
+    { 128, "dp_reg_s_bic_1", "dp-reg-s", "BICs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_128 },
+    { 129, "dp_reg_s_bic_2", "dp-reg-s", "BICs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_129 },
+    { 130, "dp_reg_s_mvn_0", "dp-reg-s", "MVNs r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_130 },
+    { 131, "dp_reg_s_mvn_1", "dp-reg-s", "MVNs r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_131 },
+    { 132, "dp_reg_s_mvn_2", "dp-reg-s", "MVNs r0,r1,r2 (flags)", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_132 },
+    { 133, "dp_imm_and_0", "dp-imm", "AND r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_133 },
+    { 134, "dp_imm_and_1", "dp-imm", "AND r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_134 },
+    { 135, "dp_imm_and_2", "dp-imm", "AND r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_135 },
+    { 136, "dp_imm_and_3", "dp-imm", "AND r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_136 },
+    { 137, "dp_imm_and_4", "dp-imm", "AND r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_137 },
+    { 138, "dp_imm_and_5", "dp-imm", "AND r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_138 },
+    { 139, "dp_imm_eor_0", "dp-imm", "EOR r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_139 },
+    { 140, "dp_imm_eor_1", "dp-imm", "EOR r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_140 },
+    { 141, "dp_imm_eor_2", "dp-imm", "EOR r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_141 },
+    { 142, "dp_imm_eor_3", "dp-imm", "EOR r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_142 },
+    { 143, "dp_imm_eor_4", "dp-imm", "EOR r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_143 },
+    { 144, "dp_imm_eor_5", "dp-imm", "EOR r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_144 },
+    { 145, "dp_imm_sub_0", "dp-imm", "SUB r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_145 },
+    { 146, "dp_imm_sub_1", "dp-imm", "SUB r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_146 },
+    { 147, "dp_imm_sub_2", "dp-imm", "SUB r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_147 },
+    { 148, "dp_imm_sub_3", "dp-imm", "SUB r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_148 },
+    { 149, "dp_imm_sub_4", "dp-imm", "SUB r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_149 },
+    { 150, "dp_imm_sub_5", "dp-imm", "SUB r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_150 },
+    { 151, "dp_imm_rsb_0", "dp-imm", "RSB r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_151 },
+    { 152, "dp_imm_rsb_1", "dp-imm", "RSB r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_152 },
+    { 153, "dp_imm_rsb_2", "dp-imm", "RSB r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_153 },
+    { 154, "dp_imm_rsb_3", "dp-imm", "RSB r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_154 },
+    { 155, "dp_imm_rsb_4", "dp-imm", "RSB r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_155 },
+    { 156, "dp_imm_rsb_5", "dp-imm", "RSB r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_156 },
+    { 157, "dp_imm_add_0", "dp-imm", "ADD r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_157 },
+    { 158, "dp_imm_add_1", "dp-imm", "ADD r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_158 },
+    { 159, "dp_imm_add_2", "dp-imm", "ADD r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_159 },
+    { 160, "dp_imm_add_3", "dp-imm", "ADD r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_160 },
+    { 161, "dp_imm_add_4", "dp-imm", "ADD r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_161 },
+    { 162, "dp_imm_add_5", "dp-imm", "ADD r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_162 },
+    { 163, "dp_imm_adc_0", "dp-imm", "ADC r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_163 },
+    { 164, "dp_imm_adc_1", "dp-imm", "ADC r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_164 },
+    { 165, "dp_imm_adc_2", "dp-imm", "ADC r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_165 },
+    { 166, "dp_imm_adc_3", "dp-imm", "ADC r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_166 },
+    { 167, "dp_imm_adc_4", "dp-imm", "ADC r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_167 },
+    { 168, "dp_imm_adc_5", "dp-imm", "ADC r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_168 },
+    { 169, "dp_imm_sbc_0", "dp-imm", "SBC r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_169 },
+    { 170, "dp_imm_sbc_1", "dp-imm", "SBC r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_170 },
+    { 171, "dp_imm_sbc_2", "dp-imm", "SBC r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_171 },
+    { 172, "dp_imm_sbc_3", "dp-imm", "SBC r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_172 },
+    { 173, "dp_imm_sbc_4", "dp-imm", "SBC r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_173 },
+    { 174, "dp_imm_sbc_5", "dp-imm", "SBC r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_174 },
+    { 175, "dp_imm_rsc_0", "dp-imm", "RSC r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_175 },
+    { 176, "dp_imm_rsc_1", "dp-imm", "RSC r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_176 },
+    { 177, "dp_imm_rsc_2", "dp-imm", "RSC r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_177 },
+    { 178, "dp_imm_rsc_3", "dp-imm", "RSC r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_178 },
+    { 179, "dp_imm_rsc_4", "dp-imm", "RSC r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_179 },
+    { 180, "dp_imm_rsc_5", "dp-imm", "RSC r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_180 },
+    { 181, "dp_imm_tst_0", "dp-imm", "TST r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_181 },
+    { 182, "dp_imm_tst_1", "dp-imm", "TST r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_182 },
+    { 183, "dp_imm_tst_2", "dp-imm", "TST r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_183 },
+    { 184, "dp_imm_tst_3", "dp-imm", "TST r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_184 },
+    { 185, "dp_imm_tst_4", "dp-imm", "TST r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_185 },
+    { 186, "dp_imm_tst_5", "dp-imm", "TST r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_186 },
+    { 187, "dp_imm_teq_0", "dp-imm", "TEQ r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_187 },
+    { 188, "dp_imm_teq_1", "dp-imm", "TEQ r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_188 },
+    { 189, "dp_imm_teq_2", "dp-imm", "TEQ r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_189 },
+    { 190, "dp_imm_teq_3", "dp-imm", "TEQ r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_190 },
+    { 191, "dp_imm_teq_4", "dp-imm", "TEQ r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_191 },
+    { 192, "dp_imm_teq_5", "dp-imm", "TEQ r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_192 },
+    { 193, "dp_imm_cmp_0", "dp-imm", "CMP r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_193 },
+    { 194, "dp_imm_cmp_1", "dp-imm", "CMP r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_194 },
+    { 195, "dp_imm_cmp_2", "dp-imm", "CMP r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_195 },
+    { 196, "dp_imm_cmp_3", "dp-imm", "CMP r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_196 },
+    { 197, "dp_imm_cmp_4", "dp-imm", "CMP r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_197 },
+    { 198, "dp_imm_cmp_5", "dp-imm", "CMP r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_198 },
+    { 199, "dp_imm_cmn_0", "dp-imm", "CMN r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_199 },
+    { 200, "dp_imm_cmn_1", "dp-imm", "CMN r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_200 },
+    { 201, "dp_imm_cmn_2", "dp-imm", "CMN r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_201 },
+    { 202, "dp_imm_cmn_3", "dp-imm", "CMN r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_202 },
+    { 203, "dp_imm_cmn_4", "dp-imm", "CMN r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_203 },
+    { 204, "dp_imm_cmn_5", "dp-imm", "CMN r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_204 },
+    { 205, "dp_imm_orr_0", "dp-imm", "ORR r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_205 },
+    { 206, "dp_imm_orr_1", "dp-imm", "ORR r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_206 },
+    { 207, "dp_imm_orr_2", "dp-imm", "ORR r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_207 },
+    { 208, "dp_imm_orr_3", "dp-imm", "ORR r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_208 },
+    { 209, "dp_imm_orr_4", "dp-imm", "ORR r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_209 },
+    { 210, "dp_imm_orr_5", "dp-imm", "ORR r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_210 },
+    { 211, "dp_imm_mov_0", "dp-imm", "MOV r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_211 },
+    { 212, "dp_imm_mov_1", "dp-imm", "MOV r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_212 },
+    { 213, "dp_imm_mov_2", "dp-imm", "MOV r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_213 },
+    { 214, "dp_imm_mov_3", "dp-imm", "MOV r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_214 },
+    { 215, "dp_imm_mov_4", "dp-imm", "MOV r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_215 },
+    { 216, "dp_imm_mov_5", "dp-imm", "MOV r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_216 },
+    { 217, "dp_imm_bic_0", "dp-imm", "BIC r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_217 },
+    { 218, "dp_imm_bic_1", "dp-imm", "BIC r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_218 },
+    { 219, "dp_imm_bic_2", "dp-imm", "BIC r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_219 },
+    { 220, "dp_imm_bic_3", "dp-imm", "BIC r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_220 },
+    { 221, "dp_imm_bic_4", "dp-imm", "BIC r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_221 },
+    { 222, "dp_imm_bic_5", "dp-imm", "BIC r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_222 },
+    { 223, "dp_imm_mvn_0", "dp-imm", "MVN r0,r1,#0x0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_223 },
+    { 224, "dp_imm_mvn_1", "dp-imm", "MVN r0,r1,#0x1", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_224 },
+    { 225, "dp_imm_mvn_2", "dp-imm", "MVN r0,r1,#0xff", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_225 },
+    { 226, "dp_imm_mvn_3", "dp-imm", "MVN r0,r1,#0x100", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_226 },
+    { 227, "dp_imm_mvn_4", "dp-imm", "MVN r0,r1,#0x3f0", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_227 },
+    { 228, "dp_imm_mvn_5", "dp-imm", "MVN r0,r1,#0x80000000", "arm", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_228 },
+    { 229, "dp_imm_s_and_0", "dp-imm-s", "ANDs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_229 },
+    { 230, "dp_imm_s_and_1", "dp-imm-s", "ANDs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_230 },
+    { 231, "dp_imm_s_and_2", "dp-imm-s", "ANDs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_231 },
+    { 232, "dp_imm_s_eor_0", "dp-imm-s", "EORs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_232 },
+    { 233, "dp_imm_s_eor_1", "dp-imm-s", "EORs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_233 },
+    { 234, "dp_imm_s_eor_2", "dp-imm-s", "EORs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_234 },
+    { 235, "dp_imm_s_sub_0", "dp-imm-s", "SUBs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_235 },
+    { 236, "dp_imm_s_sub_1", "dp-imm-s", "SUBs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_236 },
+    { 237, "dp_imm_s_sub_2", "dp-imm-s", "SUBs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_237 },
+    { 238, "dp_imm_s_rsb_0", "dp-imm-s", "RSBs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_238 },
+    { 239, "dp_imm_s_rsb_1", "dp-imm-s", "RSBs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_239 },
+    { 240, "dp_imm_s_rsb_2", "dp-imm-s", "RSBs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_240 },
+    { 241, "dp_imm_s_add_0", "dp-imm-s", "ADDs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_241 },
+    { 242, "dp_imm_s_add_1", "dp-imm-s", "ADDs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_242 },
+    { 243, "dp_imm_s_add_2", "dp-imm-s", "ADDs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_243 },
+    { 244, "dp_imm_s_adc_0", "dp-imm-s", "ADCs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_244 },
+    { 245, "dp_imm_s_adc_1", "dp-imm-s", "ADCs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_245 },
+    { 246, "dp_imm_s_adc_2", "dp-imm-s", "ADCs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_246 },
+    { 247, "dp_imm_s_sbc_0", "dp-imm-s", "SBCs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_247 },
+    { 248, "dp_imm_s_sbc_1", "dp-imm-s", "SBCs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_248 },
+    { 249, "dp_imm_s_sbc_2", "dp-imm-s", "SBCs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_249 },
+    { 250, "dp_imm_s_rsc_0", "dp-imm-s", "RSCs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_250 },
+    { 251, "dp_imm_s_rsc_1", "dp-imm-s", "RSCs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_251 },
+    { 252, "dp_imm_s_rsc_2", "dp-imm-s", "RSCs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_252 },
+    { 253, "dp_imm_s_orr_0", "dp-imm-s", "ORRs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_253 },
+    { 254, "dp_imm_s_orr_1", "dp-imm-s", "ORRs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_254 },
+    { 255, "dp_imm_s_orr_2", "dp-imm-s", "ORRs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_255 },
+    { 256, "dp_imm_s_mov_0", "dp-imm-s", "MOVs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_256 },
+    { 257, "dp_imm_s_mov_1", "dp-imm-s", "MOVs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_257 },
+    { 258, "dp_imm_s_mov_2", "dp-imm-s", "MOVs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_258 },
+    { 259, "dp_imm_s_bic_0", "dp-imm-s", "BICs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_259 },
+    { 260, "dp_imm_s_bic_1", "dp-imm-s", "BICs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_260 },
+    { 261, "dp_imm_s_bic_2", "dp-imm-s", "BICs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_261 },
+    { 262, "dp_imm_s_mvn_0", "dp-imm-s", "MVNs r0,r1,#0x0 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_262 },
+    { 263, "dp_imm_s_mvn_1", "dp-imm-s", "MVNs r0,r1,#0x1 (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_263 },
+    { 264, "dp_imm_s_mvn_2", "dp-imm-s", "MVNs r0,r1,#0xff (flags)", "arm", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_264 },
+    { 265, "shift_imm_lsl_0", "shift", "MOV r0,r1,LSL #0", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_265 },
+    { 266, "shift_imm_lsl_1", "shift", "MOV r0,r1,LSL #1", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_266 },
+    { 267, "shift_imm_lsl_5", "shift", "MOV r0,r1,LSL #5", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_267 },
+    { 268, "shift_imm_lsl_31", "shift", "MOV r0,r1,LSL #31", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_268 },
+    { 269, "shift_imm_lsr_0", "shift", "MOV r0,r1,LSR #0", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_269 },
+    { 270, "shift_imm_lsr_1", "shift", "MOV r0,r1,LSR #1", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_270 },
+    { 271, "shift_imm_lsr_5", "shift", "MOV r0,r1,LSR #5", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_271 },
+    { 272, "shift_imm_lsr_31", "shift", "MOV r0,r1,LSR #31", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_272 },
+    { 273, "shift_imm_asr_0", "shift", "MOV r0,r1,ASR #0", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_273 },
+    { 274, "shift_imm_asr_1", "shift", "MOV r0,r1,ASR #1", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_274 },
+    { 275, "shift_imm_asr_5", "shift", "MOV r0,r1,ASR #5", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_275 },
+    { 276, "shift_imm_asr_31", "shift", "MOV r0,r1,ASR #31", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_276 },
+    { 277, "shift_imm_ror_0", "shift", "MOV r0,r1,ROR #0", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_277 },
+    { 278, "shift_imm_ror_1", "shift", "MOV r0,r1,ROR #1", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_278 },
+    { 279, "shift_imm_ror_5", "shift", "MOV r0,r1,ROR #5", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_279 },
+    { 280, "shift_imm_ror_31", "shift", "MOV r0,r1,ROR #31", "arm", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_280 },
+    { 281, "shift_reg_lsl_0", "shift", "MOV r0,r1,LSL r2 (r2=0)", "arm", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_281 },
+    { 282, "shift_reg_lsl_1", "shift", "MOV r0,r1,LSL r2 (r2=1)", "arm", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_282 },
+    { 283, "shift_reg_lsl_4", "shift", "MOV r0,r1,LSL r2 (r2=4)", "arm", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_283 },
+    { 284, "shift_reg_lsl_8", "shift", "MOV r0,r1,LSL r2 (r2=8)", "arm", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_284 },
+    { 285, "shift_reg_lsl_16", "shift", "MOV r0,r1,LSL r2 (r2=16)", "arm", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_285 },
+    { 286, "shift_reg_lsl_30", "shift", "MOV r0,r1,LSL r2 (r2=30)", "arm", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_286 },
+    { 287, "shift_reg_lsl_31", "shift", "MOV r0,r1,LSL r2 (r2=31)", "arm", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_287 },
+    { 288, "shift_reg_lsl_32", "shift", "MOV r0,r1,LSL r2 (r2=32)", "arm", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_288 },
+    { 289, "shift_reg_lsl_33", "shift", "MOV r0,r1,LSL r2 (r2=33)", "arm", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_289 },
+    { 290, "shift_reg_lsl_63", "shift", "MOV r0,r1,LSL r2 (r2=63)", "arm", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_290 },
+    { 291, "shift_reg_lsl_64", "shift", "MOV r0,r1,LSL r2 (r2=64)", "arm", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_291 },
+    { 292, "shift_reg_lsl_255", "shift", "MOV r0,r1,LSL r2 (r2=255)", "arm", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_292 },
+    { 293, "shift_reg_lsr_0", "shift", "MOV r0,r1,LSR r2 (r2=0)", "arm", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_293 },
+    { 294, "shift_reg_lsr_1", "shift", "MOV r0,r1,LSR r2 (r2=1)", "arm", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_294 },
+    { 295, "shift_reg_lsr_4", "shift", "MOV r0,r1,LSR r2 (r2=4)", "arm", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_295 },
+    { 296, "shift_reg_lsr_8", "shift", "MOV r0,r1,LSR r2 (r2=8)", "arm", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_296 },
+    { 297, "shift_reg_lsr_16", "shift", "MOV r0,r1,LSR r2 (r2=16)", "arm", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_297 },
+    { 298, "shift_reg_lsr_30", "shift", "MOV r0,r1,LSR r2 (r2=30)", "arm", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_298 },
+    { 299, "shift_reg_lsr_31", "shift", "MOV r0,r1,LSR r2 (r2=31)", "arm", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_299 },
+    { 300, "shift_reg_lsr_32", "shift", "MOV r0,r1,LSR r2 (r2=32)", "arm", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_300 },
+    { 301, "shift_reg_lsr_33", "shift", "MOV r0,r1,LSR r2 (r2=33)", "arm", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_301 },
+    { 302, "shift_reg_lsr_63", "shift", "MOV r0,r1,LSR r2 (r2=63)", "arm", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_302 },
+    { 303, "shift_reg_lsr_64", "shift", "MOV r0,r1,LSR r2 (r2=64)", "arm", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_303 },
+    { 304, "shift_reg_lsr_255", "shift", "MOV r0,r1,LSR r2 (r2=255)", "arm", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_304 },
+    { 305, "shift_reg_asr_0", "shift", "MOV r0,r1,ASR r2 (r2=0)", "arm", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_305 },
+    { 306, "shift_reg_asr_1", "shift", "MOV r0,r1,ASR r2 (r2=1)", "arm", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_306 },
+    { 307, "shift_reg_asr_4", "shift", "MOV r0,r1,ASR r2 (r2=4)", "arm", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_307 },
+    { 308, "shift_reg_asr_8", "shift", "MOV r0,r1,ASR r2 (r2=8)", "arm", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_308 },
+    { 309, "shift_reg_asr_16", "shift", "MOV r0,r1,ASR r2 (r2=16)", "arm", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_309 },
+    { 310, "shift_reg_asr_30", "shift", "MOV r0,r1,ASR r2 (r2=30)", "arm", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_310 },
+    { 311, "shift_reg_asr_31", "shift", "MOV r0,r1,ASR r2 (r2=31)", "arm", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_311 },
+    { 312, "shift_reg_asr_32", "shift", "MOV r0,r1,ASR r2 (r2=32)", "arm", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_312 },
+    { 313, "shift_reg_asr_33", "shift", "MOV r0,r1,ASR r2 (r2=33)", "arm", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_313 },
+    { 314, "shift_reg_asr_63", "shift", "MOV r0,r1,ASR r2 (r2=63)", "arm", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_314 },
+    { 315, "shift_reg_asr_64", "shift", "MOV r0,r1,ASR r2 (r2=64)", "arm", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_315 },
+    { 316, "shift_reg_asr_255", "shift", "MOV r0,r1,ASR r2 (r2=255)", "arm", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_316 },
+    { 317, "shift_reg_ror_0", "shift", "MOV r0,r1,ROR r2 (r2=0)", "arm", { 0, 0xffffffffu, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_317 },
+    { 318, "shift_reg_ror_1", "shift", "MOV r0,r1,ROR r2 (r2=1)", "arm", { 0, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_318 },
+    { 319, "shift_reg_ror_4", "shift", "MOV r0,r1,ROR r2 (r2=4)", "arm", { 0, 0xffffffffu, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_319 },
+    { 320, "shift_reg_ror_8", "shift", "MOV r0,r1,ROR r2 (r2=8)", "arm", { 0, 0xffffffffu, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_320 },
+    { 321, "shift_reg_ror_16", "shift", "MOV r0,r1,ROR r2 (r2=16)", "arm", { 0, 0xffffffffu, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_321 },
+    { 322, "shift_reg_ror_30", "shift", "MOV r0,r1,ROR r2 (r2=30)", "arm", { 0, 0xffffffffu, 0x0000001eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_322 },
+    { 323, "shift_reg_ror_31", "shift", "MOV r0,r1,ROR r2 (r2=31)", "arm", { 0, 0xffffffffu, 0x0000001fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_323 },
+    { 324, "shift_reg_ror_32", "shift", "MOV r0,r1,ROR r2 (r2=32)", "arm", { 0, 0xffffffffu, 0x00000020u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_324 },
+    { 325, "shift_reg_ror_33", "shift", "MOV r0,r1,ROR r2 (r2=33)", "arm", { 0, 0xffffffffu, 0x00000021u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_325 },
+    { 326, "shift_reg_ror_63", "shift", "MOV r0,r1,ROR r2 (r2=63)", "arm", { 0, 0xffffffffu, 0x0000003fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_326 },
+    { 327, "shift_reg_ror_64", "shift", "MOV r0,r1,ROR r2 (r2=64)", "arm", { 0, 0xffffffffu, 0x00000040u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_327 },
+    { 328, "shift_reg_ror_255", "shift", "MOV r0,r1,ROR r2 (r2=255)", "arm", { 0, 0xffffffffu, 0x000000ffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_328 },
+    { 329, "add_shifted_lsl_0", "shift", "ADD r0,r1,r2,LSL #0", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_329 },
+    { 330, "add_shifted_lsl_3", "shift", "ADD r0,r1,r2,LSL #3", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_330 },
+    { 331, "add_shifted_lsl_8", "shift", "ADD r0,r1,r2,LSL #8", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_331 },
+    { 332, "add_shifted_lsl_16", "shift", "ADD r0,r1,r2,LSL #16", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_332 },
+    { 333, "add_shifted_lsr_0", "shift", "ADD r0,r1,r2,LSR #0", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_333 },
+    { 334, "add_shifted_lsr_3", "shift", "ADD r0,r1,r2,LSR #3", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_334 },
+    { 335, "add_shifted_lsr_8", "shift", "ADD r0,r1,r2,LSR #8", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_335 },
+    { 336, "add_shifted_lsr_16", "shift", "ADD r0,r1,r2,LSR #16", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_336 },
+    { 337, "add_shifted_asr_0", "shift", "ADD r0,r1,r2,ASR #0", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_337 },
+    { 338, "add_shifted_asr_3", "shift", "ADD r0,r1,r2,ASR #3", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_338 },
+    { 339, "add_shifted_asr_8", "shift", "ADD r0,r1,r2,ASR #8", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_339 },
+    { 340, "add_shifted_asr_16", "shift", "ADD r0,r1,r2,ASR #16", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_340 },
+    { 341, "add_shifted_ror_0", "shift", "ADD r0,r1,r2,ROR #0", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_341 },
+    { 342, "add_shifted_ror_3", "shift", "ADD r0,r1,r2,ROR #3", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_342 },
+    { 343, "add_shifted_ror_8", "shift", "ADD r0,r1,r2,ROR #8", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_343 },
+    { 344, "add_shifted_ror_16", "shift", "ADD r0,r1,r2,ROR #16", "arm", { 0, 0x00000001u, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_344 },
+    { 345, "rrx_c0", "shift", "MOV r0,r1,RRX (carry=0)", "arm", { 0, 0x80000001u, 0x40000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_345 },
+    { 346, "rrx_c1", "shift", "MOV r0,r1,RRX (carry=1)", "arm", { 0, 0x80000001u, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_346 },
+    { 347, "mul_0", "mul", "MUL r0,r1,r2", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_347 },
+    { 348, "mul_1", "mul", "MUL r0,r1,r2", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_348 },
+    { 349, "mul_2", "mul", "MUL r0,r1,r2", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_349 },
+    { 350, "mul_3", "mul", "MUL r0,r1,r2", "arm", { 0, 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_350 },
+    { 351, "mla_0", "mul", "MLA r0,r3,r1,r2", "arm", { 0, 0x00000000u, 0x00000001u, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_351 },
+    { 352, "mla_1", "mul", "MLA r0,r3,r1,r2", "arm", { 0, 0x00000001u, 0xffffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_352 },
+    { 353, "mla_2", "mul", "MLA r0,r3,r1,r2", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_353 },
+    { 354, "mls_0", "mul", "MLS r0,r3,r1,r2", "arm", { 0, 0x00000000u, 0x00000001u, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_354 },
+    { 355, "mls_1", "mul", "MLS r0,r3,r1,r2", "arm", { 0, 0x00000001u, 0xffffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_355 },
+    { 356, "mls_2", "mul", "MLS r0,r3,r1,r2", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0x11111111u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_356 },
+    { 357, "umull_0", "mul", "UMULL r0,r3,r1,r2", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_357 },
+    { 358, "umull_1", "mul", "UMULL r0,r3,r1,r2", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_358 },
+    { 359, "umull_2", "mul", "UMULL r0,r3,r1,r2", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_359 },
+    { 360, "umlal_0", "mul", "UMLAL r0,r3,r1,r2", "arm", { 0, 0x00000000u, 0x00000001u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_360 },
+    { 361, "umlal_1", "mul", "UMLAL r0,r3,r1,r2", "arm", { 0, 0x00000001u, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_361 },
+    { 362, "smull_0", "mul", "SMULL r0,r3,r1,r2", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_362 },
+    { 363, "smull_1", "mul", "SMULL r0,r3,r1,r2", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_363 },
+    { 364, "smull_2", "mul", "SMULL r0,r3,r1,r2", "arm", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_364 },
+    { 365, "smlal_0", "mul", "SMLAL r0,r3,r1,r2", "arm", { 0, 0x00000000u, 0x00000001u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_365 },
+    { 366, "smlal_1", "mul", "SMLAL r0,r3,r1,r2", "arm", { 0, 0x00000001u, 0xffffffffu, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_366 },
+    { 367, "muls_0", "mul", "MULS r0,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_367 },
+    { 368, "muls_1", "mul", "MULS r0,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_368 },
+    { 369, "umulls_0", "mul", "UMULLS r0,r3,r1,r2 (flags)", "arm", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_369 },
+    { 370, "umulls_1", "mul", "UMULLS r0,r3,r1,r2 (flags)", "arm", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_370 },
+    { 371, "mrs_flag_0", "psr", "MRS r0,cpsr; LSR r0,#28", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_371 },
+    { 372, "mrs_flag_1", "psr", "MRS r0,cpsr; LSR r0,#28", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_372 },
+    { 373, "mrs_flag_2", "psr", "MRS r0,cpsr; LSR r0,#28", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_373 },
+    { 374, "msr_flag_0", "psr", "MSR cpsr_f then read the flags back", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_374 },
+    { 375, "msr_flag_1", "psr", "MSR cpsr_f then read the flags back", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_375 },
+    { 376, "msr_flag_2", "psr", "MSR cpsr_f then read the flags back", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_376 },
+    { 377, "msr_flag_3", "psr", "MSR cpsr_f then read the flags back", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_377 },
+    { 378, "msr_imm_flag_0", "psr", "MSR immediate flags + read back", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_378 },
+    { 379, "msr_imm_flag_1", "psr", "MSR immediate flags + read back", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_379 },
+    { 380, "msr_imm_flag_2", "psr", "MSR immediate flags + read back", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_380 },
+    { 381, "clz_0", "misc", "CLZ r0,r1", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_381 },
+    { 382, "clz_1", "misc", "CLZ r0,r1", "arm", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_382 },
+    { 383, "clz_2", "misc", "CLZ r0,r1", "arm", { 0, 0x08000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_383 },
+    { 384, "clz_3", "misc", "CLZ r0,r1", "arm", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_384 },
+    { 385, "str_ldr_imm_0", "mem", "STR/LDR word immediate offset", "arm", { 0, 0x11223344u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_385 },
+    { 386, "str_ldr_imm_1", "mem", "STR/LDR word immediate offset", "arm", { 0, 0x11223345u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_386 },
+    { 387, "str_ldr_imm_2", "mem", "STR/LDR word immediate offset", "arm", { 0, 0x11223346u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_387 },
+    { 388, "str_ldr_imm_3", "mem", "STR/LDR word immediate offset", "arm", { 0, 0x11223347u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_388 },
+    { 389, "str_ldr_imm_4", "mem", "STR/LDR word immediate offset", "arm", { 0, 0x11223348u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_389 },
+    { 390, "str_ldr_imm_5", "mem", "STR/LDR word immediate offset", "arm", { 0, 0x11223349u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_390 },
+    { 391, "strb_ldrb_imm_0", "mem", "STRB/LDRB immediate offset", "arm", { 0, 0x000000abu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_391 },
+    { 392, "strb_ldrb_imm_1", "mem", "STRB/LDRB immediate offset", "arm", { 0, 0x000000acu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_392 },
+    { 393, "strb_ldrb_imm_2", "mem", "STRB/LDRB immediate offset", "arm", { 0, 0x000000adu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_393 },
+    { 394, "strb_ldrb_imm_3", "mem", "STRB/LDRB immediate offset", "arm", { 0, 0x000000aeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_394 },
+    { 395, "strh_ldrh_imm_0", "mem", "STRH/LDRH immediate offset", "arm", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_395 },
+    { 396, "strh_ldrh_imm_1", "mem", "STRH/LDRH immediate offset", "arm", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_396 },
+    { 397, "strh_ldrh_imm_2", "mem", "STRH/LDRH immediate offset", "arm", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_397 },
+    { 398, "strh_ldrh_imm_3", "mem", "STRH/LDRH immediate offset", "arm", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_398 },
+    { 399, "ldrs_imm_0", "mem", "LDRSB/LDRSH immediate offset", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_399 },
+    { 400, "ldrs_imm_1", "mem", "LDRSB/LDRSH immediate offset", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_400 },
+    { 401, "ldrs_imm_2", "mem", "LDRSB/LDRSH immediate offset", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_401 },
+    { 402, "ldrs_imm_3", "mem", "LDRSB/LDRSH immediate offset", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_402 },
+    { 403, "ldrh_post_0", "mem", "LDRH post-indexed", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_403 },
+    { 404, "ldrh_post_1", "mem", "LDRH post-indexed", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_404 },
+    { 405, "ldrh_post_2", "mem", "LDRH post-indexed", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_405 },
+    { 406, "ldrh_post_3", "mem", "LDRH post-indexed", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_406 },
+    { 407, "ldr_str_reg_0", "mem", "LDR/STR register offset", "arm", { 0, 0x55667788u, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_407 },
+    { 408, "ldr_str_reg_1", "mem", "LDR/STR register offset", "arm", { 0, 0x55667788u, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_408 },
+    { 409, "ldr_str_reg_2", "mem", "LDR/STR register offset", "arm", { 0, 0x55667788u, 0x0000000cu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_409 },
+    { 410, "ldr_str_reg_3", "mem", "LDR/STR register offset", "arm", { 0, 0x55667788u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_410 },
+    { 411, "ldr_shifted_reg_0", "mem", "LDR shifted register offset", "arm", { 0, 0, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_411 },
+    { 412, "ldr_shifted_reg_1", "mem", "LDR shifted register offset", "arm", { 0, 0, 0x00000004u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_412 },
+    { 413, "strh_ldrh_reg_0", "mem", "STRH/LDRH register offset", "arm", { 0, 0x0000cafeu, 0, 0, 0x00000006u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_413 },
+    { 414, "strh_ldrh_reg_1", "mem", "STRH/LDRH register offset", "arm", { 0, 0x0000cafeu, 0, 0, 0, 0, 0, 0, 0x00000006u, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_414 },
+    { 415, "str_ldr_pre_wb_0", "mem", "STR/LDR pre-indexed writeback", "arm", { 0, 0x99aabbccu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_415 },
+    { 416, "str_ldr_pre_wb_1", "mem", "STR/LDR pre-indexed writeback", "arm", { 0, 0x99aabbccu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_416 },
+    { 417, "str_ldr_pre_wb_2", "mem", "STR/LDR pre-indexed writeback", "arm", { 0, 0x99aabbccu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_417 },
+    { 418, "str_ldr_post_0", "mem", "STR/LDR post-indexed", "arm", { 0, 0xdead1234u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_418 },
+    { 419, "str_ldr_post_1", "mem", "STR/LDR post-indexed", "arm", { 0, 0xdead1234u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_419 },
+    { 420, "ldr_neg_0", "mem", "LDR negative immediate offset (still inside the window)", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_420 },
+    { 421, "ldr_neg_1", "mem", "LDR negative immediate offset (still inside the window)", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_421 },
+    { 422, "strd_ldrd_0", "mem", "STRD/LDRD immediate", "arm", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_422 },
+    { 423, "strd_ldrd_1", "mem", "STRD/LDRD immediate", "arm", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_423 },
+    { 424, "strd_ldrd_2", "mem", "STRD/LDRD immediate", "arm", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_424 },
+    { 425, "strd_ldrd_3", "mem", "STRD/LDRD immediate", "arm", { 0, 0, 0xaaaabbbbu, 0xccccddddu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_425 },
+    { 426, "strd_ldrd_zero_0", "mem", "STRD/LDRD then zero the sources", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_426 },
+    { 427, "strd_ldrd_zero_1", "mem", "STRD/LDRD then zero the sources", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_427 },
+    { 428, "swpb_0", "mem", "SWP/SWPB", "arm", { 0, 0x01020304u, 0xfeedfaceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_428 },
+    { 429, "swpb_1", "mem", "SWP/SWPB", "arm", { 0, 0x01020304u, 0xfeedfaceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_429 },
+    { 430, "stm_ia", "block", "STMIA r9,{r2,r3,r4}", "arm", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_430 },
+    { 431, "ldm_ia", "block", "LDMIA r9,{r0,r1,r2}", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_431 },
+    { 432, "stm_ib", "block", "STMIB r9,{r2,r3,r4}", "arm", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_432 },
+    { 433, "ldm_ib", "block", "LDMIB r9,{r0,r1,r2}", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_433 },
+    { 434, "stm_da", "block", "STMDA r9,{r2,r3,r4}", "arm", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_434 },
+    { 435, "ldm_da", "block", "LDMDA r9,{r0,r1,r2}", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_435 },
+    { 436, "stm_db", "block", "STMDB r9,{r2,r3,r4}", "arm", { 0, 0, 0x11111111u, 0x22222222u, 0x33333333u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_436 },
+    { 437, "ldm_db", "block", "LDMDB r9,{r0,r1,r2}", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_437 },
+    { 438, "stm_wb_ia", "block", "STMIA r9!,{r2,r3}; delta of the writeback", "arm", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_438 },
+    { 439, "stm_wb_ib", "block", "STMIB r9!,{r2,r3}; delta of the writeback", "arm", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_439 },
+    { 440, "stm_wb_da", "block", "STMDA r9!,{r2,r3}; delta of the writeback", "arm", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_440 },
+    { 441, "stm_wb_db", "block", "STMDB r9!,{r2,r3}; delta of the writeback", "arm", { 0, 0, 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_441 },
+    { 442, "ldm_wb_ia", "block", "LDMIA r9!,{r2,r3}", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_442 },
+    { 443, "b_forward", "branch", "B forward skips a write", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_443 },
+    { 444, "b_backward", "branch", "B backward: a real loop that terminates at r0=4", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_444 },
+    { 445, "bl_bx_lr", "branch", "BL into a subroutine and BX lr back", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 24, a32_code_445 },
+    { 446, "adr_bx_lr", "branch", "ADR lr then BX lr to a label", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_446 },
+    { 447, "adr_delta", "branch", "ADR of two labels; the difference is architectural", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 32, a32_code_447 },
+    { 448, "blx_reg", "branch", "BLX register to an ARM label", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 28, a32_code_448 },
+    { 449, "cond_b_eq", "branch", "Beq after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_449 },
+    { 450, "cond_b_ne", "branch", "Bne after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_450 },
+    { 451, "cond_b_cs", "branch", "Bcs after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_451 },
+    { 452, "cond_b_cc", "branch", "Bcc after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_452 },
+    { 453, "cond_b_mi", "branch", "Bmi after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_453 },
+    { 454, "cond_b_pl", "branch", "Bpl after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_454 },
+    { 455, "cond_b_vs", "branch", "Bvs after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_455 },
+    { 456, "cond_b_vc", "branch", "Bvc after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_456 },
+    { 457, "cond_b_hi", "branch", "Bhi after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_457 },
+    { 458, "cond_b_ls", "branch", "Bls after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_458 },
+    { 459, "cond_b_ge", "branch", "Bge after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_459 },
+    { 460, "cond_b_lt", "branch", "Blt after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_460 },
+    { 461, "cond_b_gt", "branch", "Bgt after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_461 },
+    { 462, "cond_b_le", "branch", "Ble after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_462 },
+    { 463, "cond_mov_eq", "cond", "MOVeq r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_463 },
+    { 464, "cond_mov_ne", "cond", "MOVne r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_464 },
+    { 465, "cond_mov_cs", "cond", "MOVcs r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_465 },
+    { 466, "cond_mov_cc", "cond", "MOVcc r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_466 },
+    { 467, "cond_mov_mi", "cond", "MOVmi r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_467 },
+    { 468, "cond_mov_pl", "cond", "MOVpl r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_468 },
+    { 469, "cond_mov_vs", "cond", "MOVvs r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_469 },
+    { 470, "cond_mov_vc", "cond", "MOVvc r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_470 },
+    { 471, "cond_mov_hi", "cond", "MOVhi r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_471 },
+    { 472, "cond_mov_ls", "cond", "MOVls r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_472 },
+    { 473, "cond_mov_ge", "cond", "MOVge r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_473 },
+    { 474, "cond_mov_lt", "cond", "MOVlt r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_474 },
+    { 475, "cond_mov_gt", "cond", "MOVgt r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_475 },
+    { 476, "cond_mov_le", "cond", "MOVle r0,#0x11 after CMP r1,#0", "arm", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_476 },
+    { 477, "cond_dp_cs_0", "cond", "conditional data-processing on C=0", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_477 },
+    { 478, "cond_dp_cs_1", "cond", "conditional data-processing on C=1", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_478 },
+    { 479, "cond_dp_cc_0", "cond", "conditional data-processing on C=0", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_479 },
+    { 480, "cond_dp_cc_1", "cond", "conditional data-processing on C=1", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_480 },
+    { 481, "mixed_0", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0xd62c9ad2u, 0x7ef0ffdfu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_481 },
+    { 482, "mixed_1", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x6082f05fu, 0x1dcdabceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_482 },
+    { 483, "mixed_2", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0xa80a08d5u, 0xa64fa482u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_483 },
+    { 484, "mixed_3", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x6bdd093cu, 0xc368b428u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_484 },
+    { 485, "mixed_4", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x19bcb720u, 0xfd6bb763u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_485 },
+    { 486, "mixed_5", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x8340230du, 0x5f1b33e6u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_486 },
+    { 487, "mixed_6", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x0eb9adeeu, 0xca140afau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_487 },
+    { 488, "mixed_7", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x2a63724bu, 0x1062d2d0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_488 },
+    { 489, "mixed_8", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x245501b1u, 0xeda134aau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_489 },
+    { 490, "mixed_9", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x19677658u, 0xb5e654fau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_490 },
+    { 491, "mixed_10", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0xbec4cd6eu, 0x3cfc09adu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_491 },
+    { 492, "mixed_11", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x26860242u, 0x01e0e14au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_492 },
+    { 493, "mixed_12", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x3692df83u, 0xbcff69feu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_493 },
+    { 494, "mixed_13", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x25d8fa09u, 0xb3eb1a10u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_494 },
+    { 495, "mixed_14", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0xe0fa69c9u, 0xf940bb43u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_495 },
+    { 496, "mixed_15", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0xaf6e1e70u, 0xa6c79717u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_496 },
+    { 497, "mixed_16", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x7fbb1f5fu, 0x71ba3c82u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_497 },
+    { 498, "mixed_17", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0xc5d52df6u, 0x594aaf0eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_498 },
+    { 499, "mixed_18", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0x9465a50bu, 0xc6f52fc7u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_499 },
+    { 500, "mixed_19", "mixed", "ADDS/MOV-shift/STR/LDR/EOR", "arm", { 0, 0xf847bbecu, 0x048f2e33u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_500 },
+    { 501, "t_shift_lsl_0", "thumb-shift", "T LSL r0,r1,#0", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_501 },
+    { 502, "t_shift_lsl_1", "thumb-shift", "T LSL r0,r1,#1", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_502 },
+    { 503, "t_shift_lsl_5", "thumb-shift", "T LSL r0,r1,#5", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_503 },
+    { 504, "t_shift_lsl_31", "thumb-shift", "T LSL r0,r1,#31", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_504 },
+    { 505, "t_shift_lsr_0", "thumb-shift", "T LSR r0,r1,#0", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_505 },
+    { 506, "t_shift_lsr_1", "thumb-shift", "T LSR r0,r1,#1", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_506 },
+    { 507, "t_shift_lsr_5", "thumb-shift", "T LSR r0,r1,#5", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_507 },
+    { 508, "t_shift_lsr_31", "thumb-shift", "T LSR r0,r1,#31", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_508 },
+    { 509, "t_shift_asr_0", "thumb-shift", "T ASR r0,r1,#0", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_509 },
+    { 510, "t_shift_asr_1", "thumb-shift", "T ASR r0,r1,#1", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_510 },
+    { 511, "t_shift_asr_5", "thumb-shift", "T ASR r0,r1,#5", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_511 },
+    { 512, "t_shift_asr_31", "thumb-shift", "T ASR r0,r1,#31", "thumb", { 0, 0x80000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_512 },
+    { 513, "t_alu_and_0", "thumb-alu", "T AND r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_513 },
+    { 514, "t_alu_and_1", "thumb-alu", "T AND r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_514 },
+    { 515, "t_alu_and_2", "thumb-alu", "T AND r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_515 },
+    { 516, "t_alu_and_3", "thumb-alu", "T AND r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_516 },
+    { 517, "t_alu_eor_0", "thumb-alu", "T EOR r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_517 },
+    { 518, "t_alu_eor_1", "thumb-alu", "T EOR r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_518 },
+    { 519, "t_alu_eor_2", "thumb-alu", "T EOR r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_519 },
+    { 520, "t_alu_eor_3", "thumb-alu", "T EOR r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_520 },
+    { 521, "t_alu_lsl_0", "thumb-alu", "T LSL r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_521 },
+    { 522, "t_alu_lsl_1", "thumb-alu", "T LSL r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_522 },
+    { 523, "t_alu_lsl_2", "thumb-alu", "T LSL r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_523 },
+    { 524, "t_alu_lsl_3", "thumb-alu", "T LSL r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_524 },
+    { 525, "t_alu_lsr_0", "thumb-alu", "T LSR r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_525 },
+    { 526, "t_alu_lsr_1", "thumb-alu", "T LSR r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_526 },
+    { 527, "t_alu_lsr_2", "thumb-alu", "T LSR r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_527 },
+    { 528, "t_alu_lsr_3", "thumb-alu", "T LSR r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_528 },
+    { 529, "t_alu_asr_0", "thumb-alu", "T ASR r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_529 },
+    { 530, "t_alu_asr_1", "thumb-alu", "T ASR r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_530 },
+    { 531, "t_alu_asr_2", "thumb-alu", "T ASR r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_531 },
+    { 532, "t_alu_asr_3", "thumb-alu", "T ASR r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_532 },
+    { 533, "t_alu_adc_0", "thumb-alu", "T ADC r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_533 },
+    { 534, "t_alu_adc_1", "thumb-alu", "T ADC r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_534 },
+    { 535, "t_alu_adc_2", "thumb-alu", "T ADC r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_535 },
+    { 536, "t_alu_adc_3", "thumb-alu", "T ADC r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_536 },
+    { 537, "t_alu_sbc_0", "thumb-alu", "T SBC r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_537 },
+    { 538, "t_alu_sbc_1", "thumb-alu", "T SBC r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_538 },
+    { 539, "t_alu_sbc_2", "thumb-alu", "T SBC r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_539 },
+    { 540, "t_alu_sbc_3", "thumb-alu", "T SBC r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_540 },
+    { 541, "t_alu_ror_0", "thumb-alu", "T ROR r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_541 },
+    { 542, "t_alu_ror_1", "thumb-alu", "T ROR r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_542 },
+    { 543, "t_alu_ror_2", "thumb-alu", "T ROR r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_543 },
+    { 544, "t_alu_ror_3", "thumb-alu", "T ROR r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_544 },
+    { 545, "t_alu_tst_0", "thumb-alu", "T TST r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_545 },
+    { 546, "t_alu_tst_1", "thumb-alu", "T TST r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_546 },
+    { 547, "t_alu_tst_2", "thumb-alu", "T TST r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_547 },
+    { 548, "t_alu_tst_3", "thumb-alu", "T TST r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_548 },
+    { 549, "t_alu_neg_0", "thumb-alu", "T NEG r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_549 },
+    { 550, "t_alu_neg_1", "thumb-alu", "T NEG r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_550 },
+    { 551, "t_alu_neg_2", "thumb-alu", "T NEG r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_551 },
+    { 552, "t_alu_neg_3", "thumb-alu", "T NEG r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_552 },
+    { 553, "t_alu_cmp_0", "thumb-alu", "T CMP r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_553 },
+    { 554, "t_alu_cmp_1", "thumb-alu", "T CMP r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_554 },
+    { 555, "t_alu_cmp_2", "thumb-alu", "T CMP r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_555 },
+    { 556, "t_alu_cmp_3", "thumb-alu", "T CMP r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_556 },
+    { 557, "t_alu_cmn_0", "thumb-alu", "T CMN r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_557 },
+    { 558, "t_alu_cmn_1", "thumb-alu", "T CMN r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_558 },
+    { 559, "t_alu_cmn_2", "thumb-alu", "T CMN r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_559 },
+    { 560, "t_alu_cmn_3", "thumb-alu", "T CMN r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_560 },
+    { 561, "t_alu_orr_0", "thumb-alu", "T ORR r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_561 },
+    { 562, "t_alu_orr_1", "thumb-alu", "T ORR r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_562 },
+    { 563, "t_alu_orr_2", "thumb-alu", "T ORR r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_563 },
+    { 564, "t_alu_orr_3", "thumb-alu", "T ORR r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_564 },
+    { 565, "t_alu_mul_0", "thumb-alu", "T MUL r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_565 },
+    { 566, "t_alu_mul_1", "thumb-alu", "T MUL r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_566 },
+    { 567, "t_alu_mul_2", "thumb-alu", "T MUL r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_567 },
+    { 568, "t_alu_mul_3", "thumb-alu", "T MUL r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_568 },
+    { 569, "t_alu_bic_0", "thumb-alu", "T BIC r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_569 },
+    { 570, "t_alu_bic_1", "thumb-alu", "T BIC r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_570 },
+    { 571, "t_alu_bic_2", "thumb-alu", "T BIC r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_571 },
+    { 572, "t_alu_bic_3", "thumb-alu", "T BIC r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_572 },
+    { 573, "t_alu_mvn_0", "thumb-alu", "T MVN r0,r1", "thumb", { 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_573 },
+    { 574, "t_alu_mvn_1", "thumb-alu", "T MVN r0,r1", "thumb", { 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_574 },
+    { 575, "t_alu_mvn_2", "thumb-alu", "T MVN r0,r1", "thumb", { 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_575 },
+    { 576, "t_alu_mvn_3", "thumb-alu", "T MVN r0,r1", "thumb", { 0x7fffffffu, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_576 },
+    { 577, "t_movs_imm8_0", "thumb-imm8", "T movs r0,#0x0", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_577 },
+    { 578, "t_movs_imm8_1", "thumb-imm8", "T movs r0,#0x1", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_578 },
+    { 579, "t_movs_imm8_2", "thumb-imm8", "T movs r0,#0x7f", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_579 },
+    { 580, "t_movs_imm8_3", "thumb-imm8", "T movs r0,#0xff", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_580 },
+    { 581, "t_cmp_imm8_0", "thumb-imm8", "T cmp r0,#0x0", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_581 },
+    { 582, "t_cmp_imm8_1", "thumb-imm8", "T cmp r0,#0x1", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_582 },
+    { 583, "t_cmp_imm8_2", "thumb-imm8", "T cmp r0,#0x7f", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_583 },
+    { 584, "t_cmp_imm8_3", "thumb-imm8", "T cmp r0,#0xff", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_584 },
+    { 585, "t_adds_imm8_0", "thumb-imm8", "T adds r0,#0x0", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_585 },
+    { 586, "t_adds_imm8_1", "thumb-imm8", "T adds r0,#0x1", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_586 },
+    { 587, "t_adds_imm8_2", "thumb-imm8", "T adds r0,#0x7f", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_587 },
+    { 588, "t_adds_imm8_3", "thumb-imm8", "T adds r0,#0xff", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_588 },
+    { 589, "t_subs_imm8_0", "thumb-imm8", "T subs r0,#0x0", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_589 },
+    { 590, "t_subs_imm8_1", "thumb-imm8", "T subs r0,#0x1", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_590 },
+    { 591, "t_subs_imm8_2", "thumb-imm8", "T subs r0,#0x7f", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_591 },
+    { 592, "t_subs_imm8_3", "thumb-imm8", "T subs r0,#0xff", "thumb", { 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_592 },
+    { 593, "t_adds_reg_0", "thumb-addsub", "T ADDS r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_593 },
+    { 594, "t_subs_reg_0", "thumb-addsub", "T SUBS r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_594 },
+    { 595, "t_adds_reg_1", "thumb-addsub", "T ADDS r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_595 },
+    { 596, "t_subs_reg_1", "thumb-addsub", "T SUBS r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_596 },
+    { 597, "t_adds_reg_2", "thumb-addsub", "T ADDS r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_597 },
+    { 598, "t_subs_reg_2", "thumb-addsub", "T SUBS r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_598 },
+    { 599, "t_adds_i3_0", "thumb-addsub", "T ADDS r0,r1,#0", "thumb", { 0, 0xfffffff0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_599 },
+    { 600, "t_subs_i3_0", "thumb-addsub", "T SUBS r0,r1,#0", "thumb", { 0, 0x00000005u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_600 },
+    { 601, "t_adds_i3_1", "thumb-addsub", "T ADDS r0,r1,#1", "thumb", { 0, 0xfffffff0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_601 },
+    { 602, "t_subs_i3_1", "thumb-addsub", "T SUBS r0,r1,#1", "thumb", { 0, 0x00000005u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_602 },
+    { 603, "t_adds_i3_2", "thumb-addsub", "T ADDS r0,r1,#3", "thumb", { 0, 0xfffffff0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_603 },
+    { 604, "t_subs_i3_2", "thumb-addsub", "T SUBS r0,r1,#3", "thumb", { 0, 0x00000005u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_604 },
+    { 605, "t_adds_i3_3", "thumb-addsub", "T ADDS r0,r1,#7", "thumb", { 0, 0xfffffff0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_605 },
+    { 606, "t_subs_i3_3", "thumb-addsub", "T SUBS r0,r1,#7", "thumb", { 0, 0x00000005u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_606 },
+    { 607, "t_add_hi_0", "thumb-hi", "T ADD r0,r8", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_607 },
+    { 608, "t_mov_hi_0", "thumb-hi", "T MOV r11,r2", "thumb", { 0, 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_608 },
+    { 609, "t_cmp_hi_0", "thumb-hi", "T CMP r8,r1 then MOVS (flags)", "thumb", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_609 },
+    { 610, "t_add_hi_1", "thumb-hi", "T ADD r0,r8", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_610 },
+    { 611, "t_mov_hi_1", "thumb-hi", "T MOV r11,r2", "thumb", { 0, 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_611 },
+    { 612, "t_cmp_hi_1", "thumb-hi", "T CMP r8,r1 then MOVS (flags)", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_612 },
+    { 613, "t_add_hi_2", "thumb-hi", "T ADD r0,r8", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_613 },
+    { 614, "t_mov_hi_2", "thumb-hi", "T MOV r11,r2", "thumb", { 0, 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 2, a32_code_614 },
+    { 615, "t_cmp_hi_2", "thumb-hi", "T CMP r8,r1 then MOVS (flags)", "thumb", { 0, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_615 },
+    { 616, "t_blx_reg_0", "thumb-hi", "T BLX register (odd, stays Thumb) + BX lr", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_616 },
+    { 617, "t_blx_reg_1", "thumb-hi", "T BLX register (odd, stays Thumb) + BX lr", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_617 },
+    { 618, "t_str_reg_0", "thumb-ldst", "T STR r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_618 },
+    { 619, "t_str_reg_1", "thumb-ldst", "T STR r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_619 },
+    { 620, "t_str_reg_2", "thumb-ldst", "T STR r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_620 },
+    { 621, "t_strh_reg_0", "thumb-ldst", "T STRH r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_621 },
+    { 622, "t_strh_reg_1", "thumb-ldst", "T STRH r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_622 },
+    { 623, "t_strh_reg_2", "thumb-ldst", "T STRH r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_623 },
+    { 624, "t_strb_reg_0", "thumb-ldst", "T STRB r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_624 },
+    { 625, "t_strb_reg_1", "thumb-ldst", "T STRB r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_625 },
+    { 626, "t_strb_reg_2", "thumb-ldst", "T STRB r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_626 },
+    { 627, "t_ldrsb_reg_0", "thumb-ldst", "T LDRSB r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_627 },
+    { 628, "t_ldrsb_reg_1", "thumb-ldst", "T LDRSB r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_628 },
+    { 629, "t_ldrsb_reg_2", "thumb-ldst", "T LDRSB r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_629 },
+    { 630, "t_ldr_reg_0", "thumb-ldst", "T LDR r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_630 },
+    { 631, "t_ldr_reg_1", "thumb-ldst", "T LDR r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_631 },
+    { 632, "t_ldr_reg_2", "thumb-ldst", "T LDR r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_632 },
+    { 633, "t_ldrh_reg_0", "thumb-ldst", "T LDRH r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_633 },
+    { 634, "t_ldrh_reg_1", "thumb-ldst", "T LDRH r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_634 },
+    { 635, "t_ldrh_reg_2", "thumb-ldst", "T LDRH r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_635 },
+    { 636, "t_ldrb_reg_0", "thumb-ldst", "T LDRB r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_636 },
+    { 637, "t_ldrb_reg_1", "thumb-ldst", "T LDRB r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_637 },
+    { 638, "t_ldrb_reg_2", "thumb-ldst", "T LDRB r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_638 },
+    { 639, "t_ldrsh_reg_0", "thumb-ldst", "T LDRSH r0,[r7,r2]", "thumb", { 0, 0xc0de1234u, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_639 },
+    { 640, "t_ldrsh_reg_1", "thumb-ldst", "T LDRSH r0,[r7,r4]", "thumb", { 0, 0xc0de1234u, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_640 },
+    { 641, "t_ldrsh_reg_2", "thumb-ldst", "T LDRSH r0,[r7,r6]", "thumb", { 0, 0xc0de1234u, 0, 0, 0, 0, 0x00000010u, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_641 },
+    { 642, "t_str_ldr_imm_0", "thumb-ldst", "T STR/LDR imm5", "thumb", { 0, 0x1234abcdu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_642 },
+    { 643, "t_str_ldr_imm_1", "thumb-ldst", "T STR/LDR imm5", "thumb", { 0, 0x1234abcdu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_643 },
+    { 644, "t_str_ldr_imm_2", "thumb-ldst", "T STR/LDR imm5", "thumb", { 0, 0x1234abcdu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_644 },
+    { 645, "t_str_ldr_imm_3", "thumb-ldst", "T STR/LDR imm5", "thumb", { 0, 0x1234abcdu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_645 },
+    { 646, "t_strh_ldrh_0", "thumb-ldst", "T STRH/LDRH imm5", "thumb", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_646 },
+    { 647, "t_strh_ldrh_1", "thumb-ldst", "T STRH/LDRH imm5", "thumb", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_647 },
+    { 648, "t_strh_ldrh_2", "thumb-ldst", "T STRH/LDRH imm5", "thumb", { 0, 0x0000beefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_648 },
+    { 649, "t_strb_ldrb_0", "thumb-ldst", "T STRB/LDRB imm5", "thumb", { 0, 0x0000005au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_649 },
+    { 650, "t_strb_ldrb_1", "thumb-ldst", "T STRB/LDRB imm5", "thumb", { 0, 0x0000005au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_650 },
+    { 651, "t_strb_ldrb_2", "thumb-ldst", "T STRB/LDRB imm5", "thumb", { 0, 0x0000005au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_651 },
+    { 652, "t_ldr_lit_0", "thumb-ldst", "T LDR literal reads a word after the fragment", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_652 },
+    { 653, "t_ldr_lit_1", "thumb-ldst", "T LDR literal reads a word after the fragment", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_653 },
+    { 654, "t_ldr_lit_2", "thumb-ldst", "T LDR literal reads a word after the fragment", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_654 },
+    { 655, "t_sp_ldst_0", "thumb-sp", "T STR/LDR [sp,#imm8*4]", "thumb", { 0, 0x0badf00du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_655 },
+    { 656, "t_sp_ldst_1", "thumb-sp", "T STR/LDR [sp,#imm8*4]", "thumb", { 0, 0x0badf00du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_656 },
+    { 657, "t_sp_ldst_2", "thumb-sp", "T STR/LDR [sp,#imm8*4]", "thumb", { 0, 0x0badf00du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_657 },
+    { 658, "t_sp_ldst_3", "thumb-sp", "T STR/LDR [sp,#imm8*4]", "thumb", { 0, 0x0badf00du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_658 },
+    { 659, "t_add_rdsp_0", "thumb-adr", "T ADD rd,sp,#imm8*4 (delta recorded)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_659 },
+    { 660, "t_add_rdsp_1", "thumb-adr", "T ADD rd,sp,#imm8*4 (delta recorded)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_660 },
+    { 661, "t_add_rdsp_2", "thumb-adr", "T ADD rd,sp,#imm8*4 (delta recorded)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_661 },
+    { 662, "t_add_rdsp_3", "thumb-adr", "T ADD rd,sp,#imm8*4 (delta recorded)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_662 },
+    { 663, "t_adr_0", "thumb-adr", "T ADR of two labels; the difference", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_663 },
+    { 664, "t_adr_1", "thumb-adr", "T ADR of two labels; the difference", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_664 },
+    { 665, "t_pushpop_0", "thumb-pushpop", "T PUSH/POP r-list", "thumb", { 0x11111111u, 0x22222222u, 0, 0, 0, 0, 0, 0x77777777u, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_665 },
+    { 666, "t_pushpop_1", "thumb-pushpop", "T PUSH/POP r-list", "thumb", { 0x11111111u, 0x22222222u, 0, 0, 0, 0, 0, 0x77777777u, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_666 },
+    { 667, "t_pushpop_2", "thumb-pushpop", "T PUSH/POP r-list", "thumb", { 0x11111111u, 0x22222222u, 0, 0, 0, 0, 0, 0x77777777u, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_667 },
+    { 668, "t_push_lr_0", "thumb-pushpop", "T PUSH {r0,lr}", "thumb", { 0xcafebabeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_668 },
+    { 669, "t_push_lr_1", "thumb-pushpop", "T PUSH {r0,lr}", "thumb", { 0xcafebabeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_669 },
+    { 670, "t_pushpop_lr_0", "thumb-pushpop", "T PUSH/POP with LR", "thumb", { 0xfeedfaceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_670 },
+    { 671, "t_pushpop_lr_1", "thumb-pushpop", "T PUSH/POP with LR", "thumb", { 0xfeedfaceu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_671 },
+    { 672, "t_ldmstm_0", "thumb-block", "T STMIA/LDMIA", "thumb", { 0x00000001u, 0x00000002u, 0x00000003u, 0x00000004u, 0x00000005u, 0x00000006u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_672 },
+    { 673, "t_ldmstm_1", "thumb-block", "T STMIA/LDMIA", "thumb", { 0x00000001u, 0x00000002u, 0x00000003u, 0x00000004u, 0x00000005u, 0x00000006u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_673 },
+    { 674, "t_stmia_0", "thumb-block", "T STMIA r7!,{r2,r3}", "thumb", { 0, 0, 0xaaaa5555u, 0xbbbb6666u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 6, a32_code_674 },
+    { 675, "t_stmia_1", "thumb-block", "T STMIA r7!,{r2,r3}", "thumb", { 0, 0, 0xaaaa5555u, 0xbbbb6666u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 6, a32_code_675 },
+    { 676, "t_b_forward", "thumb-branch", "T B forward skips a write", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_676 },
+    { 677, "t_b_backward", "thumb-branch", "T B backward loop to r0=4", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_677 },
+    { 678, "t_cond_b_eq", "thumb-branch", "T Beq after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_678 },
+    { 679, "t_cond_b_ne", "thumb-branch", "T Bne after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_679 },
+    { 680, "t_cond_b_cs", "thumb-branch", "T Bcs after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_680 },
+    { 681, "t_cond_b_cc", "thumb-branch", "T Bcc after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_681 },
+    { 682, "t_cond_b_mi", "thumb-branch", "T Bmi after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_682 },
+    { 683, "t_cond_b_pl", "thumb-branch", "T Bpl after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_683 },
+    { 684, "t_cond_b_vs", "thumb-branch", "T Bvs after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_684 },
+    { 685, "t_cond_b_vc", "thumb-branch", "T Bvc after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_685 },
+    { 686, "t_cond_b_hi", "thumb-branch", "T Bhi after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_686 },
+    { 687, "t_cond_b_ls", "thumb-branch", "T Bls after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_687 },
+    { 688, "t_cond_b_ge", "thumb-branch", "T Bge after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_688 },
+    { 689, "t_cond_b_lt", "thumb-branch", "T Blt after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_689 },
+    { 690, "t_cond_b_gt", "thumb-branch", "T Bgt after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_690 },
+    { 691, "t_cond_b_le", "thumb-branch", "T Ble after CMP r1,#0", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_691 },
+    { 692, "t_cbz_0", "thumb-cbz", "T CBZ r1", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_692 },
+    { 693, "t_cbz_1", "thumb-cbz", "T CBZ r1", "thumb", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_693 },
+    { 694, "t_cbz_2", "thumb-cbz", "T CBZ r1", "thumb", { 0, 0x00000100u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_694 },
+    { 695, "t_cbz_3", "thumb-cbz", "T CBZ r1", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_695 },
+    { 696, "t_cbnz_0", "thumb-cbz", "T CBNZ r1", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_696 },
+    { 697, "t_cbnz_1", "thumb-cbz", "T CBNZ r1", "thumb", { 0, 0x00000005u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_697 },
+    { 698, "t_bl_bx", "thumb-branch", "T BL then BX lr", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_698 },
+    { 699, "t_it_0", "thumb-it", "T IT EQ (r1=0)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_699 },
+    { 700, "t_it_1", "thumb-it", "T IT EQ (r1=1)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_700 },
+    { 701, "t_ite_0", "thumb-it", "T ITE EQ (r1=0)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_701 },
+    { 702, "t_ite_1", "thumb-it", "T ITE EQ (r1=1)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_702 },
+    { 703, "t_itt_0", "thumb-it", "T ITT EQ (r1=0)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_703 },
+    { 704, "t_itt_1", "thumb-it", "T ITT EQ (r1=1)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_704 },
+    { 705, "t_iteee_0", "thumb-it", "T ITEEE NE (r1=0)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_705 },
+    { 706, "t_iteee_1", "thumb-it", "T ITEEE NE (r1=1)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_706 },
+    { 707, "t_it_flag_eq", "thumb-it", "T IT eq after CMP equal", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_707 },
+    { 708, "t_it_flag_ne", "thumb-it", "T IT ne after CMP equal", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_708 },
+    { 709, "t_it_flag_cc", "thumb-it", "T IT cc after CMP equal", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_709 },
+    { 710, "t_it_flag_cs", "thumb-it", "T IT cs after CMP equal", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 10, a32_code_710 },
+    { 711, "t32_dp_and_0_0", "thumb2-dp", "T32 AND.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_711 },
+    { 712, "t32_dp_and_0_2", "thumb2-dp", "T32 AND.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_712 },
+    { 713, "t32_dp_and_1_0", "thumb2-dp", "T32 AND.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_713 },
+    { 714, "t32_dp_and_1_2", "thumb2-dp", "T32 AND.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_714 },
+    { 715, "t32_dp_and_2_0", "thumb2-dp", "T32 AND.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_715 },
+    { 716, "t32_dp_and_2_2", "thumb2-dp", "T32 AND.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_716 },
+    { 717, "t32_dp_bic_0_0", "thumb2-dp", "T32 BIC.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_717 },
+    { 718, "t32_dp_bic_0_2", "thumb2-dp", "T32 BIC.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_718 },
+    { 719, "t32_dp_bic_1_0", "thumb2-dp", "T32 BIC.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_719 },
+    { 720, "t32_dp_bic_1_2", "thumb2-dp", "T32 BIC.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_720 },
+    { 721, "t32_dp_bic_2_0", "thumb2-dp", "T32 BIC.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_721 },
+    { 722, "t32_dp_bic_2_2", "thumb2-dp", "T32 BIC.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_722 },
+    { 723, "t32_dp_orr_0_0", "thumb2-dp", "T32 ORR.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_723 },
+    { 724, "t32_dp_orr_0_2", "thumb2-dp", "T32 ORR.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_724 },
+    { 725, "t32_dp_orr_1_0", "thumb2-dp", "T32 ORR.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_725 },
+    { 726, "t32_dp_orr_1_2", "thumb2-dp", "T32 ORR.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_726 },
+    { 727, "t32_dp_orr_2_0", "thumb2-dp", "T32 ORR.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_727 },
+    { 728, "t32_dp_orr_2_2", "thumb2-dp", "T32 ORR.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_728 },
+    { 729, "t32_dp_orn_0_0", "thumb2-dp", "T32 ORN.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_729 },
+    { 730, "t32_dp_orn_0_2", "thumb2-dp", "T32 ORN.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_730 },
+    { 731, "t32_dp_orn_1_0", "thumb2-dp", "T32 ORN.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_731 },
+    { 732, "t32_dp_orn_1_2", "thumb2-dp", "T32 ORN.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_732 },
+    { 733, "t32_dp_orn_2_0", "thumb2-dp", "T32 ORN.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_733 },
+    { 734, "t32_dp_orn_2_2", "thumb2-dp", "T32 ORN.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_734 },
+    { 735, "t32_dp_eor_0_0", "thumb2-dp", "T32 EOR.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_735 },
+    { 736, "t32_dp_eor_0_2", "thumb2-dp", "T32 EOR.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_736 },
+    { 737, "t32_dp_eor_1_0", "thumb2-dp", "T32 EOR.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_737 },
+    { 738, "t32_dp_eor_1_2", "thumb2-dp", "T32 EOR.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_738 },
+    { 739, "t32_dp_eor_2_0", "thumb2-dp", "T32 EOR.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_739 },
+    { 740, "t32_dp_eor_2_2", "thumb2-dp", "T32 EOR.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_740 },
+    { 741, "t32_dp_add_0_0", "thumb2-dp", "T32 ADD.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_741 },
+    { 742, "t32_dp_add_0_2", "thumb2-dp", "T32 ADD.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_742 },
+    { 743, "t32_dp_add_1_0", "thumb2-dp", "T32 ADD.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_743 },
+    { 744, "t32_dp_add_1_2", "thumb2-dp", "T32 ADD.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_744 },
+    { 745, "t32_dp_add_2_0", "thumb2-dp", "T32 ADD.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_745 },
+    { 746, "t32_dp_add_2_2", "thumb2-dp", "T32 ADD.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_746 },
+    { 747, "t32_dp_adc_0_0", "thumb2-dp", "T32 ADC.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_747 },
+    { 748, "t32_dp_adc_0_2", "thumb2-dp", "T32 ADC.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_748 },
+    { 749, "t32_dp_adc_1_0", "thumb2-dp", "T32 ADC.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_749 },
+    { 750, "t32_dp_adc_1_2", "thumb2-dp", "T32 ADC.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_750 },
+    { 751, "t32_dp_adc_2_0", "thumb2-dp", "T32 ADC.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_751 },
+    { 752, "t32_dp_adc_2_2", "thumb2-dp", "T32 ADC.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_752 },
+    { 753, "t32_dp_sbc_0_0", "thumb2-dp", "T32 SBC.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_753 },
+    { 754, "t32_dp_sbc_0_2", "thumb2-dp", "T32 SBC.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_754 },
+    { 755, "t32_dp_sbc_1_0", "thumb2-dp", "T32 SBC.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_755 },
+    { 756, "t32_dp_sbc_1_2", "thumb2-dp", "T32 SBC.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_756 },
+    { 757, "t32_dp_sbc_2_0", "thumb2-dp", "T32 SBC.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_757 },
+    { 758, "t32_dp_sbc_2_2", "thumb2-dp", "T32 SBC.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_758 },
+    { 759, "t32_dp_sub_0_0", "thumb2-dp", "T32 SUB.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_759 },
+    { 760, "t32_dp_sub_0_2", "thumb2-dp", "T32 SUB.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_760 },
+    { 761, "t32_dp_sub_1_0", "thumb2-dp", "T32 SUB.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_761 },
+    { 762, "t32_dp_sub_1_2", "thumb2-dp", "T32 SUB.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_762 },
+    { 763, "t32_dp_sub_2_0", "thumb2-dp", "T32 SUB.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_763 },
+    { 764, "t32_dp_sub_2_2", "thumb2-dp", "T32 SUB.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_764 },
+    { 765, "t32_dp_rsb_0_0", "thumb2-dp", "T32 RSB.w r0,r1,r2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_765 },
+    { 766, "t32_dp_rsb_0_2", "thumb2-dp", "T32 RSB.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000000u, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_766 },
+    { 767, "t32_dp_rsb_1_0", "thumb2-dp", "T32 RSB.w r0,r1,r2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_767 },
+    { 768, "t32_dp_rsb_1_2", "thumb2-dp", "T32 RSB.w r0,r1,r2 lsl #2", "thumb", { 0, 0x00000001u, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_768 },
+    { 769, "t32_dp_rsb_2_0", "thumb2-dp", "T32 RSB.w r0,r1,r2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_769 },
+    { 770, "t32_dp_rsb_2_2", "thumb2-dp", "T32 RSB.w r0,r1,r2 lsl #2", "thumb", { 0, 0xffffffffu, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_770 },
+    { 771, "t32_mov_0", "thumb2-dp", "T32 MOV.W r0,r2", "thumb", { 0, 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_771 },
+    { 772, "t32_mvn_0", "thumb2-dp", "T32 MVN.W r0,r2", "thumb", { 0, 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_772 },
+    { 773, "t32_mov_1", "thumb2-dp", "T32 MOV.W r0,r2", "thumb", { 0, 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_773 },
+    { 774, "t32_mvn_1", "thumb2-dp", "T32 MVN.W r0,r2", "thumb", { 0, 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_774 },
+    { 775, "t32_mov_2", "thumb2-dp", "T32 MOV.W r0,r2", "thumb", { 0, 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_775 },
+    { 776, "t32_mvn_2", "thumb2-dp", "T32 MVN.W r0,r2", "thumb", { 0, 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_776 },
+    { 777, "t32_mov_3", "thumb2-dp", "T32 MOV.W r0,r2", "thumb", { 0, 0, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_777 },
+    { 778, "t32_mvn_3", "thumb2-dp", "T32 MVN.W r0,r2", "thumb", { 0, 0, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_778 },
+    { 779, "t32_mov_4", "thumb2-dp", "T32 MOV.W r0,r2", "thumb", { 0, 0, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_779 },
+    { 780, "t32_mvn_4", "thumb2-dp", "T32 MVN.W r0,r2", "thumb", { 0, 0, 0x80000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_780 },
+    { 781, "t32_mov_5", "thumb2-dp", "T32 MOV.W r0,r2", "thumb", { 0, 0, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_781 },
+    { 782, "t32_mvn_5", "thumb2-dp", "T32 MVN.W r0,r2", "thumb", { 0, 0, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_782 },
+    { 783, "t32_immi_and_0", "thumb2-imm", "T32 AND.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_783 },
+    { 784, "t32_immi_and_1", "thumb2-imm", "T32 AND.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_784 },
+    { 785, "t32_immi_and_2", "thumb2-imm", "T32 AND.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_785 },
+    { 786, "t32_immi_and_3", "thumb2-imm", "T32 AND.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_786 },
+    { 787, "t32_immi_and_4", "thumb2-imm", "T32 AND.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_787 },
+    { 788, "t32_immi_and_5", "thumb2-imm", "T32 AND.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_788 },
+    { 789, "t32_immi_bic_0", "thumb2-imm", "T32 BIC.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_789 },
+    { 790, "t32_immi_bic_1", "thumb2-imm", "T32 BIC.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_790 },
+    { 791, "t32_immi_bic_2", "thumb2-imm", "T32 BIC.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_791 },
+    { 792, "t32_immi_bic_3", "thumb2-imm", "T32 BIC.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_792 },
+    { 793, "t32_immi_bic_4", "thumb2-imm", "T32 BIC.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_793 },
+    { 794, "t32_immi_bic_5", "thumb2-imm", "T32 BIC.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_794 },
+    { 795, "t32_immi_orr_0", "thumb2-imm", "T32 ORR.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_795 },
+    { 796, "t32_immi_orr_1", "thumb2-imm", "T32 ORR.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_796 },
+    { 797, "t32_immi_orr_2", "thumb2-imm", "T32 ORR.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_797 },
+    { 798, "t32_immi_orr_3", "thumb2-imm", "T32 ORR.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_798 },
+    { 799, "t32_immi_orr_4", "thumb2-imm", "T32 ORR.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_799 },
+    { 800, "t32_immi_orr_5", "thumb2-imm", "T32 ORR.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_800 },
+    { 801, "t32_immi_orn_0", "thumb2-imm", "T32 ORN.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_801 },
+    { 802, "t32_immi_orn_1", "thumb2-imm", "T32 ORN.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_802 },
+    { 803, "t32_immi_orn_2", "thumb2-imm", "T32 ORN.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_803 },
+    { 804, "t32_immi_orn_3", "thumb2-imm", "T32 ORN.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_804 },
+    { 805, "t32_immi_orn_4", "thumb2-imm", "T32 ORN.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_805 },
+    { 806, "t32_immi_orn_5", "thumb2-imm", "T32 ORN.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_806 },
+    { 807, "t32_immi_eor_0", "thumb2-imm", "T32 EOR.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_807 },
+    { 808, "t32_immi_eor_1", "thumb2-imm", "T32 EOR.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_808 },
+    { 809, "t32_immi_eor_2", "thumb2-imm", "T32 EOR.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_809 },
+    { 810, "t32_immi_eor_3", "thumb2-imm", "T32 EOR.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_810 },
+    { 811, "t32_immi_eor_4", "thumb2-imm", "T32 EOR.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_811 },
+    { 812, "t32_immi_eor_5", "thumb2-imm", "T32 EOR.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_812 },
+    { 813, "t32_immi_add_0", "thumb2-imm", "T32 ADD.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_813 },
+    { 814, "t32_immi_add_1", "thumb2-imm", "T32 ADD.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_814 },
+    { 815, "t32_immi_add_2", "thumb2-imm", "T32 ADD.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_815 },
+    { 816, "t32_immi_add_3", "thumb2-imm", "T32 ADD.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_816 },
+    { 817, "t32_immi_add_4", "thumb2-imm", "T32 ADD.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_817 },
+    { 818, "t32_immi_add_5", "thumb2-imm", "T32 ADD.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_818 },
+    { 819, "t32_immi_adc_0", "thumb2-imm", "T32 ADC.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_819 },
+    { 820, "t32_immi_adc_1", "thumb2-imm", "T32 ADC.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_820 },
+    { 821, "t32_immi_adc_2", "thumb2-imm", "T32 ADC.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_821 },
+    { 822, "t32_immi_adc_3", "thumb2-imm", "T32 ADC.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_822 },
+    { 823, "t32_immi_adc_4", "thumb2-imm", "T32 ADC.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_823 },
+    { 824, "t32_immi_adc_5", "thumb2-imm", "T32 ADC.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_824 },
+    { 825, "t32_immi_sbc_0", "thumb2-imm", "T32 SBC.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_825 },
+    { 826, "t32_immi_sbc_1", "thumb2-imm", "T32 SBC.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_826 },
+    { 827, "t32_immi_sbc_2", "thumb2-imm", "T32 SBC.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_827 },
+    { 828, "t32_immi_sbc_3", "thumb2-imm", "T32 SBC.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_828 },
+    { 829, "t32_immi_sbc_4", "thumb2-imm", "T32 SBC.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_829 },
+    { 830, "t32_immi_sbc_5", "thumb2-imm", "T32 SBC.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_830 },
+    { 831, "t32_immi_sub_0", "thumb2-imm", "T32 SUB.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_831 },
+    { 832, "t32_immi_sub_1", "thumb2-imm", "T32 SUB.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_832 },
+    { 833, "t32_immi_sub_2", "thumb2-imm", "T32 SUB.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_833 },
+    { 834, "t32_immi_sub_3", "thumb2-imm", "T32 SUB.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_834 },
+    { 835, "t32_immi_sub_4", "thumb2-imm", "T32 SUB.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_835 },
+    { 836, "t32_immi_sub_5", "thumb2-imm", "T32 SUB.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_836 },
+    { 837, "t32_immi_rsb_0", "thumb2-imm", "T32 RSB.w r0,r1,#0x1", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_837 },
+    { 838, "t32_immi_rsb_1", "thumb2-imm", "T32 RSB.w r0,r1,#0xff", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_838 },
+    { 839, "t32_immi_rsb_2", "thumb2-imm", "T32 RSB.w r0,r1,#0x100", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_839 },
+    { 840, "t32_immi_rsb_3", "thumb2-imm", "T32 RSB.w r0,r1,#0x80000000", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_840 },
+    { 841, "t32_immi_rsb_4", "thumb2-imm", "T32 RSB.w r0,r1,#0xff00", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_841 },
+    { 842, "t32_immi_rsb_5", "thumb2-imm", "T32 RSB.w r0,r1,#0xf", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_842 },
+    { 843, "t32_movw_0", "thumb2-imm", "T32 MOVW r0,#0x1234", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_843 },
+    { 844, "t32_movt_0", "thumb2-imm", "T32 MOVT r0,#0x1234", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 6, a32_code_844 },
+    { 845, "t32_movw_1", "thumb2-imm", "T32 MOVW r0,#0xbeef", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_845 },
+    { 846, "t32_movt_1", "thumb2-imm", "T32 MOVT r0,#0xbeef", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 6, a32_code_846 },
+    { 847, "t32_movw_2", "thumb2-imm", "T32 MOVW r0,#0x0", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_847 },
+    { 848, "t32_movt_2", "thumb2-imm", "T32 MOVT r0,#0x0", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 6, a32_code_848 },
+    { 849, "t32_movw_3", "thumb2-imm", "T32 MOVW r0,#0xffff", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_849 },
+    { 850, "t32_movt_3", "thumb2-imm", "T32 MOVT r0,#0xffff", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 6, a32_code_850 },
+    { 851, "t32_addw_0", "thumb2-imm", "T32 ADDW r0,r1,#0x123", "thumb", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_851 },
+    { 852, "t32_subw_0", "thumb2-imm", "T32 SUBW r0,r1,#0x123", "thumb", { 0, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_852 },
+    { 853, "t32_addw_1", "thumb2-imm", "T32 ADDW r0,r1,#0xfff", "thumb", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_853 },
+    { 854, "t32_subw_1", "thumb2-imm", "T32 SUBW r0,r1,#0xfff", "thumb", { 0, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_854 },
+    { 855, "t32_addw_2", "thumb2-imm", "T32 ADDW r0,r1,#0x10", "thumb", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_855 },
+    { 856, "t32_subw_2", "thumb2-imm", "T32 SUBW r0,r1,#0x10", "thumb", { 0, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_856 },
+    { 857, "t32_ldr_str_imm_0", "thumb2-ldst", "T32 LDR/STR imm12", "thumb", { 0x13572468u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_857 },
+    { 858, "t32_ldr_str_imm_1", "thumb2-ldst", "T32 LDR/STR imm12", "thumb", { 0x13572468u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_858 },
+    { 859, "t32_ldr_str_imm_2", "thumb2-ldst", "T32 LDR/STR imm12", "thumb", { 0x13572468u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_859 },
+    { 860, "t32_ldr_str_imm_3", "thumb2-ldst", "T32 LDR/STR imm12", "thumb", { 0x13572468u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_860 },
+    { 861, "t32_ldr_str_neg_0", "thumb2-ldst", "T32 LDR/STR negative imm8", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_861 },
+    { 862, "t32_ldr_str_neg_1", "thumb2-ldst", "T32 LDR/STR negative imm8", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 12, a32_code_862 },
+    { 863, "t32_ldr_str_reg_0", "thumb2-ldst", "T32 LDR/STR register offset", "thumb", { 0x2468ace0u, 0, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_863 },
+    { 864, "t32_ldr_str_reg_1", "thumb2-ldst", "T32 LDR/STR register offset", "thumb", { 0x2468ace0u, 0, 0, 0x00000008u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_864 },
+    { 865, "t32_strb_ldrb_0", "thumb2-ldst", "T32 STRB/LDRB imm12", "thumb", { 0x0000009au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_865 },
+    { 866, "t32_strb_ldrb_1", "thumb2-ldst", "T32 STRB/LDRB imm12", "thumb", { 0x0000009au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_866 },
+    { 867, "t32_strb_ldrb_2", "thumb2-ldst", "T32 STRB/LDRB imm12", "thumb", { 0x0000009au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_867 },
+    { 868, "t32_strh_ldrh_0", "thumb2-ldst", "T32 STRH/LDRH imm12", "thumb", { 0xcafebabeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_868 },
+    { 869, "t32_strh_ldrh_1", "thumb2-ldst", "T32 STRH/LDRH imm12", "thumb", { 0xcafebabeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_869 },
+    { 870, "t32_strh_ldrh_2", "thumb2-ldst", "T32 STRH/LDRH imm12", "thumb", { 0xcafebabeu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_870 },
+    { 871, "t32_ldrsb_0", "thumb2-ldst", "T32 LDRSB imm12", "thumb", { 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_871 },
+    { 872, "t32_ldrsb_1", "thumb2-ldst", "T32 LDRSB imm12", "thumb", { 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_872 },
+    { 873, "t32_ldrsh_0", "thumb2-ldst", "T32 LDRSH imm12", "thumb", { 0x00008002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_873 },
+    { 874, "t32_ldrsh_1", "thumb2-ldst", "T32 LDRSH imm12", "thumb", { 0x00008002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_874 },
+    { 875, "t32_strd_ldrd_0", "thumb2-dual", "T32 STRD/LDRD imm", "thumb", { 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_875 },
+    { 876, "t32_strd_ldrd_1", "thumb2-dual", "T32 STRD/LDRD imm", "thumb", { 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_876 },
+    { 877, "t32_strd_ldrd_2", "thumb2-dual", "T32 STRD/LDRD imm", "thumb", { 0xa1a2a3a4u, 0xb1b2b3b4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_877 },
+    { 878, "t32_ldrd_wb", "thumb2-dual", "T32 LDRD pre-indexed writeback", "thumb", { 0x11112222u, 0x33334444u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_878 },
+    { 879, "t32_ldrd_neg_0", "thumb2-dual", "T32 LDRD negative imm", "thumb", { 0x55556666u, 0x77778888u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_879 },
+    { 880, "t32_ldrd_neg_1", "thumb2-dual", "T32 LDRD negative imm", "thumb", { 0x55556666u, 0x77778888u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_880 },
+    { 881, "t32_tbb_0", "thumb2-table", "T32 TBB", "thumb", { 0, 0, 0, 0x00000002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 18, a32_code_881 },
+    { 882, "t32_tbb_1", "thumb2-table", "T32 TBB", "thumb", { 0, 0, 0, 0x00000002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 18, a32_code_882 },
+    { 883, "t32_tbh_0", "thumb2-table", "T32 TBH", "thumb", { 0, 0, 0, 0x00000002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 18, a32_code_883 },
+    { 884, "t32_tbh_1", "thumb2-table", "T32 TBH", "thumb", { 0, 0, 0, 0x00000002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 18, a32_code_884 },
+    { 885, "t32_sxtb_0", "thumb2-extend", "T32 SXTB r0,r1", "thumb", { 0, 0x00000080u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_885 },
+    { 886, "t32_sxtb_1", "thumb2-extend", "T32 SXTB r0,r1", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_886 },
+    { 887, "t32_sxtb_2", "thumb2-extend", "T32 SXTB r0,r1", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_887 },
+    { 888, "t32_sxtb_3", "thumb2-extend", "T32 SXTB r0,r1", "thumb", { 0, 0x0000007fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_888 },
+    { 889, "t32_sxth_0", "thumb2-extend", "T32 SXTH r0,r1", "thumb", { 0, 0x00000080u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_889 },
+    { 890, "t32_sxth_1", "thumb2-extend", "T32 SXTH r0,r1", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_890 },
+    { 891, "t32_sxth_2", "thumb2-extend", "T32 SXTH r0,r1", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_891 },
+    { 892, "t32_sxth_3", "thumb2-extend", "T32 SXTH r0,r1", "thumb", { 0, 0x0000007fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_892 },
+    { 893, "t32_uxtb_0", "thumb2-extend", "T32 UXTB r0,r1", "thumb", { 0, 0x00000080u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_893 },
+    { 894, "t32_uxtb_1", "thumb2-extend", "T32 UXTB r0,r1", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_894 },
+    { 895, "t32_uxtb_2", "thumb2-extend", "T32 UXTB r0,r1", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_895 },
+    { 896, "t32_uxtb_3", "thumb2-extend", "T32 UXTB r0,r1", "thumb", { 0, 0x0000007fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_896 },
+    { 897, "t32_uxth_0", "thumb2-extend", "T32 UXTH r0,r1", "thumb", { 0, 0x00000080u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_897 },
+    { 898, "t32_uxth_1", "thumb2-extend", "T32 UXTH r0,r1", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_898 },
+    { 899, "t32_uxth_2", "thumb2-extend", "T32 UXTH r0,r1", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_899 },
+    { 900, "t32_uxth_3", "thumb2-extend", "T32 UXTH r0,r1", "thumb", { 0, 0x0000007fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_900 },
+    { 901, "t32_rev_0", "thumb2-extend", "T32 REV r0,r1", "thumb", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_901 },
+    { 902, "t32_rev_1", "thumb2-extend", "T32 REV r0,r1", "thumb", { 0, 0x0000ff00u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_902 },
+    { 903, "t32_rev_2", "thumb2-extend", "T32 REV r0,r1", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_903 },
+    { 904, "t32_rev16_0", "thumb2-extend", "T32 REV16 r0,r1", "thumb", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_904 },
+    { 905, "t32_rev16_1", "thumb2-extend", "T32 REV16 r0,r1", "thumb", { 0, 0x0000ff00u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_905 },
+    { 906, "t32_rev16_2", "thumb2-extend", "T32 REV16 r0,r1", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_906 },
+    { 907, "t32_revsh_0", "thumb2-extend", "T32 REVSH r0,r1", "thumb", { 0, 0x12345678u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_907 },
+    { 908, "t32_revsh_1", "thumb2-extend", "T32 REVSH r0,r1", "thumb", { 0, 0x0000ff00u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_908 },
+    { 909, "t32_revsh_2", "thumb2-extend", "T32 REVSH r0,r1", "thumb", { 0, 0x00008001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_909 },
+    { 910, "t32_clz_0", "thumb2-misc", "T32 CLZ r0,r1", "thumb", { 0, 0x00000000u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_910 },
+    { 911, "t32_clz_1", "thumb2-misc", "T32 CLZ r0,r1", "thumb", { 0, 0x00000001u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_911 },
+    { 912, "t32_clz_2", "thumb2-misc", "T32 CLZ r0,r1", "thumb", { 0, 0x7fffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_912 },
+    { 913, "t32_clz_3", "thumb2-misc", "T32 CLZ r0,r1", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_913 },
+    { 914, "t32_ubfx_0", "thumb2-bitfield", "T32 UBFX r0,r1,#0,#4", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_914 },
+    { 915, "t32_sbfx_0", "thumb2-bitfield", "T32 SBFX r0,r1,#0,#4", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_915 },
+    { 916, "t32_ubfx_1", "thumb2-bitfield", "T32 UBFX r0,r1,#4,#4", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_916 },
+    { 917, "t32_sbfx_1", "thumb2-bitfield", "T32 SBFX r0,r1,#4,#4", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_917 },
+    { 918, "t32_ubfx_2", "thumb2-bitfield", "T32 UBFX r0,r1,#8,#8", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_918 },
+    { 919, "t32_sbfx_2", "thumb2-bitfield", "T32 SBFX r0,r1,#8,#8", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_919 },
+    { 920, "t32_ubfx_3", "thumb2-bitfield", "T32 UBFX r0,r1,#0,#16", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_920 },
+    { 921, "t32_sbfx_3", "thumb2-bitfield", "T32 SBFX r0,r1,#0,#16", "thumb", { 0, 0xdeadbeefu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_921 },
+    { 922, "t32_bfi_0", "thumb2-bitfield", "T32 BFI r0,r1,#0,#4", "thumb", { 0xaaaaaaaau, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_922 },
+    { 923, "t32_bfc_0", "thumb2-bitfield", "T32 BFC r0,#0,#4", "thumb", { 0xaaaaaaaau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_923 },
+    { 924, "t32_bfi_1", "thumb2-bitfield", "T32 BFI r0,r1,#4,#4", "thumb", { 0xaaaaaaaau, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_924 },
+    { 925, "t32_bfc_1", "thumb2-bitfield", "T32 BFC r0,#4,#4", "thumb", { 0xaaaaaaaau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_925 },
+    { 926, "t32_bfi_2", "thumb2-bitfield", "T32 BFI r0,r1,#8,#8", "thumb", { 0xaaaaaaaau, 0x0000ffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_926 },
+    { 927, "t32_bfc_2", "thumb2-bitfield", "T32 BFC r0,#8,#8", "thumb", { 0xaaaaaaaau, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_927 },
+    { 928, "t32_ssat_0", "thumb2-sat", "T32 SSAT r0,#8,r1,lsl #0", "thumb", { 0, 0x00010002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_928 },
+    { 929, "t32_usat_0", "thumb2-sat", "T32 USAT r0,#8,r1,lsl #0", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_929 },
+    { 930, "t32_ssat_1", "thumb2-sat", "T32 SSAT r0,#8,r1,lsl #4", "thumb", { 0, 0x00010002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_930 },
+    { 931, "t32_usat_1", "thumb2-sat", "T32 USAT r0,#8,r1,lsl #4", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_931 },
+    { 932, "t32_ssat_2", "thumb2-sat", "T32 SSAT r0,#16,r1,lsl #0", "thumb", { 0, 0x00010002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_932 },
+    { 933, "t32_usat_2", "thumb2-sat", "T32 USAT r0,#16,r1,lsl #0", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_933 },
+    { 934, "t32_ssat_3", "thumb2-sat", "T32 SSAT r0,#4,r1,lsl #0", "thumb", { 0, 0x00010002u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_934 },
+    { 935, "t32_usat_3", "thumb2-sat", "T32 USAT r0,#4,r1,lsl #0", "thumb", { 0, 0xffffffffu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 4, a32_code_935 },
+    { 936, "t32_mrs_0", "thumb2-psr", "T32 MRS + LSR #28 (flag nibble)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_936 },
+    { 937, "t32_mrs_1", "thumb2-psr", "T32 MRS + LSR #28 (flag nibble)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_937 },
+    { 938, "t32_mrs_2", "thumb2-psr", "T32 MRS + LSR #28 (flag nibble)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 8, a32_code_938 },
+    { 939, "t32_msr_0", "thumb2-psr", "T32 MSR apsr_nzcvq + MRS", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_939 },
+    { 940, "t32_msr_1", "thumb2-psr", "T32 MSR apsr_nzcvq + MRS", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_940 },
+    { 941, "t32_msr_2", "thumb2-psr", "T32 MSR apsr_nzcvq + MRS", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 16, a32_code_941 },
+    { 942, "t32_bl_bx", "thumb2-branch", "T32 BL then BX lr", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_942 },
+    { 943, "t_mixed_0", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0xefbd3221u, 0x2b825609u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_943 },
+    { 944, "t_mixed_1", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x0aba002cu, 0x3b9baec1u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_944 },
+    { 945, "t_mixed_2", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x21ceda9au, 0x68206191u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_945 },
+    { 946, "t_mixed_3", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x4b3c49acu, 0x1d8e9d31u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_946 },
+    { 947, "t_mixed_4", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x69abe43bu, 0x94a0b6d8u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_947 },
+    { 948, "t_mixed_5", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x2fb34f61u, 0xb38592a6u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_948 },
+    { 949, "t_mixed_6", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x11471aa1u, 0x328f4327u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_949 },
+    { 950, "t_mixed_7", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x9082b5d6u, 0x979fdac6u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_950 },
+    { 951, "t_mixed_8", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0xed55e892u, 0xbc44c2c4u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_951 },
+    { 952, "t_mixed_9", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x197058f7u, 0x244a0633u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_952 },
+    { 953, "t_mixed_10", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0xa1346655u, 0x6724b221u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_953 },
+    { 954, "t_mixed_11", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0xa60810ccu, 0x1a64662fu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_954 },
+    { 955, "t_mixed_12", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x605ebfd9u, 0x5f0c4961u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_955 },
+    { 956, "t_mixed_13", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x7e8d6917u, 0x5213637eu, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_956 },
+    { 957, "t_mixed_14", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0xd27eccddu, 0xd31fce7du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_957 },
+    { 958, "t_mixed_15", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x6a123fcbu, 0xac4be507u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_958 },
+    { 959, "t_mixed_16", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x7f824591u, 0xbaa5477du, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_959 },
+    { 960, "t_mixed_17", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0xbaaacb84u, 0x70044e90u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_960 },
+    { 961, "t_mixed_18", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0xbb3e7a46u, 0x30ece38au, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_961 },
+    { 962, "t_mixed_19", "thumb-mixed", "T ADDS/LSLS/STR/LDR/EORS", "thumb", { 0, 0x1a0dea43u, 0xbc551f21u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 14, a32_code_962 },
+    { 963, "t_iw_t2a_0", "interwork", "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 26, a32_code_963 },
+    { 964, "t_iw_t2a_1", "interwork", "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 26, a32_code_964 },
+    { 965, "t_iw_t2a_2", "interwork", "Thumb BX(even)->ARM->BX lr->Thumb (T bit tracked)", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 26, a32_code_965 },
+    { 966, "t_iw_a2t_0", "interwork", "A32 BLX(register, odd)->Thumb->BX lr->ARM", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 28, a32_code_966 },
+    { 967, "t_iw_a2t_1", "interwork", "A32 BLX(register, odd)->Thumb->BX lr->ARM", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 28, a32_code_967 },
+    { 968, "t_iw_a2t_2", "interwork", "A32 BLX(register, odd)->Thumb->BX lr->ARM", "arm", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 28, a32_code_968 },
+    { 969, "t_iw_blximm_0", "interwork", "T32 BLX immediate -> ARM", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_969 },
+    { 970, "t_iw_blximm_1", "interwork", "T32 BLX immediate -> ARM", "thumb", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 20, a32_code_970 },
 };
 
 #define A32_WORDS_COUNT (sizeof(a32_case_words) / sizeof(a32_case_words[0]))
