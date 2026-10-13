@@ -27,6 +27,22 @@ public final class AppRunner {
     private static boolean sPausedByHost;
 
     private static ClassLoader sLoader;
+
+    /* ---- closing the app, the way Android closes one ---- */
+    /* Set once the layer has asked the app to close. While it is set the app must not start a new round of activity churn
+     * (finish()/startActivity()) under the teardown that is walking the stack, nor re-post Native.exit() from a finish that
+     * the teardown itself provoked. Apps that check read it too. */
+    private static volatile boolean sShuttingDown;
+    /* What the teardown actually did, so the layer's close log can be honest: how many activities it took through each
+     * callback, and whether the posted teardown ever ran at all (an app wedged on its main thread never runs it). */
+    private static volatile boolean sShutdownRan;
+    private static volatile int sShutdownPaused, sShutdownStopped, sShutdownDestroyed;
+    public static boolean isShuttingDown() { return sShuttingDown; }
+    public static boolean huskShutdownRan() { return sShutdownRan; }
+    public static int huskShutdownPaused() { return sShutdownPaused; }
+    public static int huskShutdownStopped() { return sShutdownStopped; }
+    public static int huskShutdownDestroyed() { return sShutdownDestroyed; }
+
     /** The app's class loader, as Android gives every app: a PathClassLoader over its APK and splits. Its classes say they come from
      *  it (Class.getClassLoader), and resources in the APKs are found through it. */
     public static ClassLoader classLoader() { return sLoader != null ? sLoader : AppRunner.class.getClassLoader(); }
@@ -79,6 +95,52 @@ public final class AppRunner {
     public static Application application() { return sApp; }
 
     /**
+     * Close the app the way Android does when the user leaves it: every activity, newest first, goes
+     * onPause -> onStop -> onDestroy on the main thread, the Application hears onTerminate, and only then the main looper
+     * is told to quit so AppRunner.run returns and the app's main thread unwinds.
+     *
+     * This is the close the layer never had. On a host-initiated close it only stopped its OWN machinery (looper quit, GL
+     * loop end) and then cleared the activity stack (resetForNewApp) -- no activity was ever asked to stop. An app that
+     * does not quit on its own -- a Unity game, which drives its frames, its Handler messages and its own JNI callbacks
+     * from its own threads -- was therefore never told to close and kept running after the session was reported closed
+     * (the music, and U.handleMessage, outliving the close). Driving the platform lifecycle is the SAFE way to end it:
+     * the app runs its own teardown on its own threads (UnityPlayer.quit stops Unity's threads, a game joins its own), as
+     * it would on a phone.
+     *
+     * Called from the layer's close thread: the work is posted to the main thread, where the lifecycle belongs, and this
+     * returns at once. The layer waits, bounded, for the app's main thread to return; if the post never runs (an app
+     * wedged on the main thread) the layer falls back to quitting the looper directly and says so.
+     */
+    public static void shutdown() {
+        sShuttingDown = true;
+        Handler h = sHandler;
+        boolean posted = h != null && h.post(AppRunner::shutdownOnMain);
+        if (!posted) { Looper l = Looper.getMainLooper(); if (l != null) l.quit(); }   /* no main thread to drive: fall back to the bare quit */
+    }
+
+    /* On the main thread: run the app's lifecycle down, then quit the looper -- the quit comes LAST so that the teardown
+     * above is not the message the quit discards. Each callback is isolated: a game that throws in onStop must still get
+     * onDestroy, or its threads would be left running anyway. */
+    private static void shutdownOnMain() {
+        while (!sStack.isEmpty()) {
+            Activity a = sStack.remove(sStack.size() - 1);          /* newest first, as ActivityThread tears a task down */
+            if (a.isResumedHusk()) {
+                try { a.huskPause(); } catch (Throwable t) { android.util.Log.w("Husk", "onPause at close: " + t); }
+                sShutdownPaused++;
+            }
+            try { a.huskStop(); } catch (Throwable t) { android.util.Log.w("Husk", "onStop at close: " + t); }
+            sShutdownStopped++;
+            try { a.huskDestroy(); } catch (Throwable t) { android.util.Log.w("Husk", "onDestroy at close: " + t); }
+            sShutdownDestroyed++;
+        }
+        Application app = sApp;
+        if (app != null) { try { app.onTerminate(); } catch (Throwable t) { android.util.Log.w("Husk", "onTerminate at close: " + t); } }
+        sShutdownRan = true;
+        Looper l = Looper.getMainLooper();
+        if (l != null) l.quit();
+    }
+
+    /**
      * Clear this app's per-app state so a different app can run in the same process. Called from the layer when the session
      * closes (husk-tl-dvm.c: tl_dvm_end_app), before the app's dexes are dropped: every framework class keeps its statics in a
      * boot class that survives a second launch, so each must be told, or app B would read app A's activity stack, loader,
@@ -93,6 +155,9 @@ public final class AppRunner {
         down = 0;
         downTime = 0;
         sPausedByHost = false;
+        sShuttingDown = false;
+        sShutdownRan = false;
+        sShutdownPaused = sShutdownStopped = sShutdownDestroyed = 0;
         for (int i = 0; i < ids.length; i++) { ids[i] = 0; xs[i] = 0; ys[i] = 0; }
         Manifest.resetForNewApp();
         ContextImpl.resetForNewApp();
@@ -164,8 +229,18 @@ public final class AppRunner {
     }
     /** Context.startActivity: an activity of the app's own, or something the host can open (a web page, mail, the store). */
     public static void startActivity(Context from, Intent i, int request, Bundle opts) {
+        /* The session is closing: an activity started now would be created under the teardown that is walking the stack,
+         * and never destroyed. Drop it and say so, as Android drops a start after the task is gone. */
+        if (sShuttingDown) { android.util.Log.d("Husk", "startActivity ignored during close: " + i); return; }
         Manifest.Component c = Manifest.resolve(i);
         android.util.Log.d("Husk", "startActivity " + i + (c != null ? " -> " + c.name : " (not an activity of this app)"));
+        /* A full-screen ad surface Husk cannot draw or dismiss would cover the game and freeze it (husk.AdSurfaces). Fail it
+         * closed: do not create the activity, tell a caller that asked for a result the user backed out, and say so once. */
+        if (c != null && AdSurfaces.refuse(c.name)) {
+            final Activity caller = from instanceof Activity ? (Activity) from : top();
+            if (request >= 0 && caller != null) sHandler.post(() -> caller.huskActivityResult(request, Activity.RESULT_CANCELED, null));
+            return;
+        }
         if (c != null) {
             final Activity caller = from instanceof Activity ? (Activity) from : top();
             final Intent intent = new Intent(i);
@@ -223,7 +298,12 @@ public final class AppRunner {
         throw new ActivityNotFoundException("No Activity found to handle " + i);
     }
     /** Activity.finish: the one below comes back (with the result when it asked for one). */
-    public static void finish(Activity a) { sHandler.post(() -> finishNow(a, true)); }
+    public static void finish(Activity a) {
+        /* During a host close the teardown is already destroying this activity; a finish it provokes (a game quitting in
+         * onStop) must not post a second finishNow -- that would re-enter the stack walk and could reach Native.exit(). */
+        if (sShuttingDown) return;
+        sHandler.post(() -> finishNow(a, true));
+    }
     private static void finishNow(Activity a, boolean resumeBelow) {
         android.util.Log.d("Husk", "finish " + a.getClass().getName());
         int idx = sStack.indexOf(a);

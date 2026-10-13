@@ -1200,23 +1200,57 @@ static bool java_reset_wait(atomic_bool *done, int *ms_waited)
     return atomic_load(done);
 }
 
+/* What the app's own close actually did, read back from husk.AppRunner while its dexes are still loaded: how many
+ * activities it took through onPause/onStop/onDestroy, and whether the teardown ran at all. Called only once the app's
+ * main thread has returned (no guest thread left to race the lookups). Honest by construction: -1 means "could not read". */
+static void report_app_close(void)
+{
+    jvalue r;
+    bool ran = false; int p = -1, s = -1, d = -1;
+    if (tl_dvm_call_static("husk/AppRunner", "huskShutdownRan", "()Z", NULL, &r)) ran = r.z != 0;
+    if (tl_dvm_call_static("husk/AppRunner", "huskShutdownPaused", "()I", NULL, &r)) p = r.i;
+    if (tl_dvm_call_static("husk/AppRunner", "huskShutdownStopped", "()I", NULL, &r)) s = r.i;
+    if (tl_dvm_call_static("husk/AppRunner", "huskShutdownDestroyed", "()I", NULL, &r)) d = r.i;
+    if (tl_jni_pending()) tl_jni_clear();
+    tl_log_line("husk: java reset app close %s: onPause x%d, onStop x%d, onDestroy x%d (the app ran its own teardown)",
+                ran ? "dispatched" : "DID NOT RUN", p, s, d);
+}
+
 int tl_javaapp_reset(void)
 {
     if (!A.app_thread_live && !A.gl_thread_live) { tl_log_line("husk: java reset skipped (no app was started)"); return 0; }
 
-    /* 1. Ask the app's main thread to unwind: Looper.loop() returns when its queue is told to quit, so AppRunner.run returns and
-          app_main returns. Never cancel/kill: a guest thread's cancellation runs its TLS and pthread-key destructors. */
+    /* 1. Close the app the way Android does when the user leaves it: ask husk.AppRunner to run onPause -> onStop ->
+          onDestroy for its activities (newest first) and Application.onTerminate on the MAIN thread, and only then to quit
+          its main looper. This is the close the layer never had -- before it only stopped its OWN machinery and cleared
+          the activity stack (resetForNewApp), so an app that does not quit on its own (a Unity game, whose frames and
+          Handler messages and U.handleMessage run on its OWN threads) was never told to close and kept running after the
+          session was reported closed. Driving the platform lifecycle is the safe way to end it: the app unwinds its own
+          threads itself, as on a phone. shutdown() posts the work and returns; step 3 waits, bounded, for the main thread. */
     bool asked = false;
     if (A.app_thread_live) {
-        jvalue looper;
-        if (tl_dvm_call_static("android/os/Looper", "getMainLooper", "()Landroid/os/Looper;", NULL, &looper) && looper.l) {
-            tl_jni_call(looper.l, "quit", "()V", NULL);
+        jvalue r;
+        if (tl_dvm_call_static("husk/AppRunner", "shutdown", "()V", NULL, &r)) {
             asked = true;
-            if (tl_jni_pending()) { char b[300]; tl_log_line("husk: java reset looper quit threw %s", tl_dvm_describe_pending(b, sizeof(b)) ? b : "?"); tl_jni_clear(); }
-            tl_log_line("husk: java reset looper quit requested");
+            tl_log_line("husk: java reset app close requested (onPause/onStop/onDestroy for the activity stack, then looper quit)");
+            if (tl_jni_pending()) { char b[300]; tl_log_line("husk: java reset app close threw %s", tl_dvm_describe_pending(b, sizeof(b)) ? b : "?"); tl_jni_clear(); }
         } else {
-            if (tl_jni_pending()) tl_jni_clear();
-            tl_log_line("husk: java reset no main looper to quit");
+            if (tl_jni_pending()) { char b[300]; tl_log_line("husk: java reset no husk.AppRunner.shutdown: %s; falling back to a bare looper quit", tl_dvm_describe_pending(b, sizeof(b)) ? b : "?"); tl_jni_clear(); }
+            else tl_log_line("husk: java reset no husk.AppRunner.shutdown; falling back to a bare looper quit");
+        }
+        /* Fallback only: a framework without shutdown() still needs its main looper quit, which is all the close used to do.
+           Issuing it is a cooperative stop, so `asked` stays true for the status the same way it did before. */
+        if (!asked) {
+            jvalue looper;
+            if (tl_dvm_call_static("android/os/Looper", "getMainLooper", "()Landroid/os/Looper;", NULL, &looper) && looper.l) {
+                tl_jni_call(looper.l, "quit", "()V", NULL);
+                asked = true;
+                if (tl_jni_pending()) { char b[300]; tl_log_line("husk: java reset looper quit threw %s", tl_dvm_describe_pending(b, sizeof(b)) ? b : "?"); tl_jni_clear(); }
+                tl_log_line("husk: java reset looper quit requested");
+            } else {
+                if (tl_jni_pending()) tl_jni_clear();
+                tl_log_line("husk: java reset no main looper to quit");
+            }
         }
     }
 
@@ -1232,10 +1266,31 @@ int tl_javaapp_reset(void)
     }
     if (A.app_thread_live) {
         int ms = 0;
-        if (java_reset_wait(&A.app_done, &ms)) { tl_log_line("husk: java reset app main thread returned (%d ms)", ms); pthread_detach(A.app_thread); }
-        else {
-            tl_log_line("husk: java reset app main thread still running after %d ms; left parked", ms);
-            status = asked ? 1 : 2;          /* would not stop (quarantined) vs nothing could ask it to stop (irreversible) */
+        if (java_reset_wait(&A.app_done, &ms)) {
+            report_app_close();                                  /* the lifecycle teardown ran (or did not); say which */
+            tl_log_line("husk: java reset app main thread returned (%d ms)", ms);
+            pthread_detach(A.app_thread);
+        } else {
+            /* The main thread never ran the close within the grace: an app wedged on its own main thread. Quit its looper
+             * directly as the close used to, give it one more bounded wait, and report how it ended -- never claim a close
+             * that did not happen. */
+            if (asked) {
+                tl_log_line("husk: java reset the app's main thread did not run the close within %d ms; quitting its looper directly", ms);
+                jvalue looper;
+                if (tl_dvm_call_static("android/os/Looper", "getMainLooper", "()Landroid/os/Looper;", NULL, &looper) && looper.l) {
+                    tl_jni_call(looper.l, "quit", "()V", NULL);
+                    if (tl_jni_pending()) tl_jni_clear();
+                } else if (tl_jni_pending()) tl_jni_clear();
+                java_reset_wait(&A.app_done, &ms);
+            }
+            if (atomic_load(&A.app_done)) {
+                report_app_close();
+                tl_log_line("husk: java reset app main thread returned after a bare quit (%d ms)", ms);
+                pthread_detach(A.app_thread);
+            } else {
+                tl_log_line("husk: java reset app main thread still running after %d ms; left parked (the app was NOT closed)", ms);
+                status = asked ? 1 : 2;          /* would not stop (quarantined) vs nothing could ask it to stop (irreversible) */
+            }
         }
     }
     A.gl_thread_live = false;
