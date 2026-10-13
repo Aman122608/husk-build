@@ -85,6 +85,27 @@ public class Resources {
     static ResTable table(int id) { return ((id >>> 24) == 1) ? sFramework : sApp; }
 
     public static Resources getSystem() { synchronized (sLock) { if (sSystem == null) sSystem = new Resources(new AssetManager()); return sSystem; } }
+
+    /**
+     * Forget the tables this app's resources were resolved against, so the next app in this process resolves its own.
+     *
+     * sApp is read once from the CURRENT APK (husk.Native.readApkFile(0, "resources.arsc")) and cached for the whole process
+     * (loadTables() only reads it while it is null). After a swap the cache still held app A's resources.arsc, so app B --
+     * whose own table holds its own string/drawable ids -- was looked up in app A's table: a literal id only B has found no
+     * entry (getValue threw "Resource ID #0x7f..."), and a name only B has resolved to 0 through id 0 (getIdentifier returned
+     * 0, getText(0) threw "Resource ID #0x0"). That is the whole "app B gives app A's error" symptom: the id a caller passes
+     * is fine, the table the id was resolved against belonged to the app before it. The framework table (package 0x01) and
+     * the cached system Resources are dropped with it, so both are rebuilt from the new app's APK on the next construction.
+     * resetForNewApp() (husk.AppRunner) calls this from the session close, before the app's dexes are dropped.
+     */
+    public static void resetForNewApp() {
+        synchronized (sLock) {
+            sApp = null;
+            sFramework = null;
+            sSystem = null;
+            sLogged.clear();
+        }
+    }
     public final AssetManager getAssets() { return mAssets; }
     public DisplayMetrics getDisplayMetrics() { return mMetrics; }
     public Configuration getConfiguration() { return mConfig; }

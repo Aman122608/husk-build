@@ -958,6 +958,12 @@ int husk_tl_session_close(void)
     /* Forget the old loopers once reported: the next app builds its own main looper and HandlerThreads. */
     tl_loop_reset();
 
+    /* One app's HOST world, forgotten at the boundary: the Ren'Py platform flag (set by tl_renpy_prepare and otherwise
+     * left set for every later app), the virtual-file name table, the stale entries of the descriptor redirection table
+     * and the jar lookup cache. Every item is the layer's own bookkeeping -- no guest memory and no mapping is dropped --
+     * so a thread that outlived the close (quarantined) reads through none of it (see tl_io_reset_for_new_app). */
+    { void tl_io_reset_for_new_app(void); tl_io_reset_for_new_app(); }
+
     /* The linker's session generation: stale mappings stay mapped but stop being reachable by name. */
     tl_ld_end_session();
 

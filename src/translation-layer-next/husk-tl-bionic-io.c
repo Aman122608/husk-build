@@ -465,6 +465,58 @@ static bool jar_lookup(const char *p, jar_entry *out)
     return true;
 }
 
+/*
+ * One app's host world, forgotten at the session boundary, so the next app in this process starts from nothing of the
+ * last one. Called from husk_tl_session_close (husk-tl-unity-app.c) after the app has been asked to close and before a
+ * second app is launched. Every item here is the layer's OWN bookkeeping -- no guest memory, no mapping is unmapped and
+ * no guest descriptor is closed -- so a thread that outlived the close (quarantined) cannot be reading through anything
+ * this drops.
+ *
+ *   g_renpy_android        Ren'Py's platform answer. It makes the guest see the host's SystemVersion.plist as absent so
+ *                          platform.mac_ver() falls through to Ren'Py's Android branch (husk-tl-python.c), and it is set
+ *                          ONLY for a Ren'Py app, from tl_renpy_prepare. Left set, EVERY later app in the process is lied
+ *                          to about that one host file whether it is Ren'Py or not: one app's platform answer surviving
+ *                          into the next. The next Ren'Py app sets it again from its own prepare path.
+ *
+ *   g_vfiles / g_nvfiles   the name -> (APK, offset, size) table an OBB carried inside a repackaged APK is shown through
+ *                          (husk-tl-nativeactivity.c). It belongs to the ended app; the next app registers its own, and a
+ *                          name the old app registered would otherwise still resolve, handing the new app the old app's
+ *                          bytes. It is append-only and capped at 8, so it must be cleared per app for the cap to be the
+ *                          next app's too.
+ *
+ *   g_vfd                  the descriptor -> (APK entry offset, size) redirection table. It describes a descriptor, so the
+ *                          one invariant that must hold at every boundary is the one vfd_drop keeps as descriptors close:
+ *                          an entry must not outlive the descriptor it describes, or the next app's descriptor could land
+ *                          on that number and be served the old APK's bytes (b_pread64). Swept here, but only where the
+ *                          descriptor is genuinely gone (F_GETFD fails with EBADF): a live descriptor's redirect is left
+ *                          exactly as it is, since a descriptor still open on the host cannot be reused anyway.
+ *
+ *   g_jar_zip / g_jar_apk  the jar:file: entry lookup cache. It is keyed by the APK path and reopened when the path
+ *                          differs, so it self-corrects on the next app; dropped here so the ended app's APK is not held
+ *                          open a moment longer than the run needed it. It is the layer's own tl_zip handle, never a guest
+ *                          descriptor or a guest mapping (served reads go through the guest's own fd, b_pread64).
+ */
+void tl_io_reset_for_new_app(void)
+{
+    int nvfiles = g_nvfiles;
+    g_renpy_android = false;
+    g_nvfiles = 0;
+
+    int swept = 0;
+    for (int fd = 0; fd < 4096; fd++) {
+        if (!g_vfd[fd].on) continue;
+        if (fcntl(fd, F_GETFD) == -1 && errno == EBADF) { g_vfd[fd] = (vfd){ false, 0, 0, 0 }; swept++; }
+    }
+
+    int jar = 0;
+    pthread_mutex_lock(&g_jar_lock);
+    if (g_jar_apk[0]) { tl_zip_close(&g_jar_zip); g_jar_apk[0] = 0; jar = 1; }
+    pthread_mutex_unlock(&g_jar_lock);
+
+    tl_log_line("husk: app state reset: renpy platform flag off, %d virtual-file name(s) dropped, %d stale descriptor redirect(s) swept, jar cache closed=%d",
+                nvfiles, swept, jar);
+}
+
 /* One line each, per distinct entry: that an APK entry was resolved (with its name, size and how it is served), so a phone log
  * proves the APK was read; and that one was asked for and is not in the APK -- an honest ENOENT, said once, not a lie. */
 static void jar_note(const jar_entry *j, bool found)

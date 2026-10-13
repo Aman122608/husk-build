@@ -164,6 +164,10 @@ public final class AppRunner {
         for (int i = 0; i < ids.length; i++) { ids[i] = 0; xs[i] = 0; ys[i] = 0; }
         Manifest.resetForNewApp();
         ContextImpl.resetForNewApp();
+        /* The resource tables are read from the CURRENT APK and cached for the process, so they belong to the app that
+         * read them: left alone, app B resolved its own ids and names against app A's resources.arsc and threw app A's
+         * Resources$NotFoundException. Cleared with the rest of the per-app statics (see Resources.resetForNewApp). */
+        android.content.res.Resources.resetForNewApp();
         ViewRoot.resetForNewApp();
         InputMethods.resetForNewApp();
         DecorView.resetForNewApp();
