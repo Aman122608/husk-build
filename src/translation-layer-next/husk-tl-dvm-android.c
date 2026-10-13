@@ -50,6 +50,10 @@ static struct {
     int insets[5];                              /* left, top, right, bottom, keyboard */
 } A = { .q_lock = PTHREAD_MUTEX_INITIALIZER, .t_lock = PTHREAD_MUTEX_INITIALIZER };
 
+/* The touches queued for the app, and the drains of that queue: both bounded, so the input chain can be read in one run
+ * from a touch to the app's own view (host input: line -> tl_javaapp_touch -> N_pollInput -> AppRunner.deliver -> ViewRoot). */
+static atomic_int g_input_queued, g_input_polls;
+
 static jvalue L(void *p) { jvalue v; v.j = 0; v.l = p; return v; }
 static jvalue I(int32_t i) { jvalue v; v.j = (uint32_t)i; return v; }
 static jvalue J(int64_t j) { jvalue v; v.j = j; return v; }
@@ -292,6 +296,11 @@ NAT(N_pollInput)
     pthread_mutex_lock(&A.q_lock);
     int n = A.qn / 4;
     if (!n) { pthread_mutex_unlock(&A.q_lock); *ret = L(NULL); return true; }
+    /* The queue end of the input chain: the app's main thread has taken the queued touches off it. The first few drains
+     * only, so one run says whether input that reached the queue ever left it. A touch logged as queued (tl_javaapp_touch)
+     * but never as taken is a queue nobody drains -- a Java main looper that is not running. */
+    if (atomic_fetch_add(&g_input_polls, 1) < 4)
+        tl_log_line("husk: java input: the app main thread took %d event(s) off the queue", n);
     jobj *arr = tl_jni_new_prim_array('I', (uint32_t)(1 + A.qn));
     arr->refs = 1u << 30;
     int32_t *v = arr->arr.data;
@@ -1178,7 +1187,14 @@ void tl_javaapp_touch(int phase, int id, float x, float y)
     union { float f; int32_t i; } fx, fy; fx.f = x; fy.f = y;
     pthread_mutex_lock(&A.q_lock);
     if (A.qn + 4 <= 4096) { A.q[A.qn++] = phase; A.q[A.qn++] = id; A.q[A.qn++] = fx.i; A.q[A.qn++] = fy.i; }
+    int depth = A.qn / 4;
     pthread_mutex_unlock(&A.q_lock);
+    /* One end of the input chain: the touch is now on the app's queue, waiting for the app main thread's next pickup
+     * (N_pollInput). The first few touches only, and only touches -- keys, back and the rest share this queue and would
+     * otherwise fill the log. A touch logged here but never in "the app main thread took ... off the queue" is a queue
+     * nobody drains: the app's Java main looper is not polling. */
+    if (phase <= 3 && atomic_fetch_add(&g_input_queued, 1) < 4)
+        tl_log_line("husk: java input: queued touch (phase %d, id %d, %.0f,%.0f) -- %d event(s) waiting", phase, id, x, y, depth);
 }
 void tl_javaapp_key(int code, bool down) { tl_javaapp_touch(4, code, down ? 1e-45f : 0.0f, 0); }
 void tl_javaapp_back(void) { tl_javaapp_touch(5, 0, 0, 0); }

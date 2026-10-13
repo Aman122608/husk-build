@@ -25,6 +25,8 @@ public final class AppRunner {
     private static int down;
     private static long downTime;
     private static boolean sPausedByHost;
+    /* How many input deliveries have been written to the log; bounded, so the log stays readable. */
+    private static int sInputNotes;
 
     private static ClassLoader sLoader;
 
@@ -155,6 +157,7 @@ public final class AppRunner {
         down = 0;
         downTime = 0;
         sPausedByHost = false;
+        sInputNotes = 0;
         sShuttingDown = false;
         sShutdownRan = false;
         sShutdownPaused = sShutdownStopped = sShutdownDestroyed = 0;
@@ -352,6 +355,18 @@ public final class AppRunner {
     /** events: [n, then n x (phase, id, xbits, ybits)] -- phase 0 down, 1 move, 2 up, 3 cancel; 4 key (id = code, x = down); 5 back; 6 host pause (id 1) / resume (0); 7 text waiting; 8 insets changed; 9 web view events waiting */
     private static void deliver(int[] ev) {
         int n = ev[0];
+        // The Java end of the input chain: the touch left Husk's queue (husk.Native.pollInput, drained on the app's main
+        // thread) and is being handed to the app. The first few deliveries are written down, with what each event was, so
+        // one run reads host touch -> layer -> queue -> here -> the view dispatch (husk.ViewRoot). A run with the layer's
+        // "queued touch" but no line here is a looper that never polled.
+        if (sInputNotes < 6 && n > 0) {
+            sInputNotes++;
+            StringBuilder b = new StringBuilder("app input: ").append(n).append(" event(s):");
+            for (int k = 0; k < n; k++)
+                b.append(" [phase ").append(ev[1 + 4 * k]).append(", id ").append(ev[2 + 4 * k])
+                 .append(" @ ").append(Float.intBitsToFloat(ev[3 + 4 * k])).append(",").append(Float.intBitsToFloat(ev[4 + 4 * k])).append("]");
+            android.util.Log.d("HuskInput", b.toString());
+        }
         for (int k = 0; k < n; k++) {
             int phase = ev[1 + 4 * k], id = ev[2 + 4 * k];
             float x = Float.intBitsToFloat(ev[3 + 4 * k]), y = Float.intBitsToFloat(ev[4 + 4 * k]);

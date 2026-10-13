@@ -29,8 +29,18 @@ final class TLUnityUIView: UIView, UIKeyInput {
     override class var layerClass: AnyClass { CAMetalLayer.self }
 
     /// A touch on a Java app's web page goes to the WKWebView under this view.
+    ///
+    /// This is also the first place a game can stop hearing touches: when a page's rectangle is taken to cover the point,
+    /// this view refuses the touch entirely and the game's own view is never asked. That refusal is said once in the log, so
+    /// a game that draws but ignores touches is not left to guesswork.
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        if engine == .java, husk_java_web_hit(Float(point.x), Float(point.y)) != 0 { return nil }
+        if engine == .java, husk_java_web_hit(Float(point.x), Float(point.y)) != 0 {
+            if websTookTouch < 4 {
+                websTookTouch += 1
+                HuskLog.log("tl", "input: host touch at \(Int(point.x)),\(Int(point.y)) pt goes to a web page, so the game view is not asked")
+            }
+            return nil
+        }
         return super.hitTest(point, with: event)
     }
 
@@ -54,6 +64,11 @@ final class TLUnityUIView: UIView, UIKeyInput {
     var onStats: ((String) -> Void)?
     /// Active touches by UITouch identity, each given a small stable id like Android's pointer ids.
     private var pointers: [ObjectIdentifier: Int32] = [:]
+    /// How many touches have been written to the log this run, and how many were handed to a web page instead of the game.
+    /// Both are bounded: a line per touch would drown the log, and four lines are enough for one run to say whether a touch
+    /// reached the game surface at all, and whether a page took it. Reset when a game launches.
+    private var touchesLogged = 0
+    private var websTookTouch = 0
 
     /// "58 fps · 11.2 ms" in the corner, as the other screen has: frames the game finished per second, and the
     /// mean time one frame takes it. Refreshed once a second from the runtime's own counters.
@@ -247,6 +262,8 @@ final class TLUnityUIView: UIView, UIKeyInput {
 
     private func launch(width: Int, height: Int) {
         launched = true
+        // A new run's own input accounting: the previous game's four lines are not this one's.
+        touchesLogged = 0; websTookTouch = 0
         launchedSize = bounds.size
         let angle = (Bundle.main.privateFrameworksPath ?? "") + "/libANGLE-shared.dylib"
         let ca = Bundle.main.path(forResource: "cacert", ofType: "pem") ?? ""
@@ -560,6 +577,15 @@ final class TLUnityUIView: UIView, UIKeyInput {
         for t in touches {
             let p = t.location(in: self)
             let pid = id(for: t)
+            // The host end of the input chain, recorded for the first few touches of a run: the touch arrived at the game
+            // surface, and at what point, in the pixels Android reports. The layer writes the same touch down again as it
+            // queues and dispatches it (husk_unity_touch, tl_javaapp_touch, the app's ViewRoot), so one run says which hop
+            // a touch stopped at.
+            if touchesLogged < 4 {
+                touchesLogged += 1
+                let what = phase == 0 ? "down" : phase == 1 ? "move" : phase == 2 ? "up" : "cancel"
+                HuskLog.log("tl", "input: host touch \(what) id \(pid) at \(Int(p.x)),\(Int(p.y)) pt -> \(Int(p.x * contentScaleFactor)),\(Int(p.y * contentScaleFactor)) px (\(engine), \(Int(bounds.width))x\(Int(bounds.height)) pt)")
+            }
             husk_unity_touch(phase, pid, Float(p.x * contentScaleFactor), Float(p.y * contentScaleFactor))
             if phase == 2 || phase == 3 { pointers[ObjectIdentifier(t)] = nil }
         }

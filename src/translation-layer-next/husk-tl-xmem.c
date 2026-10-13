@@ -25,6 +25,7 @@
 #include "husk-tl-internal.h"
 
 void tl_log_line(const char *fmt, ...);
+static void xmem_report_open(void);
 
 static struct {
     uint8_t *rx, *rw;
@@ -80,9 +81,14 @@ extern int csops(pid_t pid, unsigned int ops, void *useraddr, size_t usersize);
  * and a fault must longjmp into the frame of the thread that faulted, not another's. */
 static __thread sigjmp_buf g_self_jump;
 static __thread volatile sig_atomic_t g_self_running;
-static void self_fault(int sig)
+/* What the guarded fetch was killed by, kept so the verdict line can say it. "the fetch failed"
+ * alone cannot tell a fault (SIGBUS with si_code KERN_PROTECTION_FAILURE) from a device that ends
+ * the process for fetching unblessed memory; the run must name the signal and the si_code. */
+static __thread volatile sig_atomic_t g_self_sig, g_self_code;
+static void self_fault_info(int sig, siginfo_t *info, void *uctx)
 {
-    if (g_self_running) siglongjmp(g_self_jump, 1);
+    (void)uctx;
+    if (g_self_running) { g_self_sig = sig; g_self_code = info ? info->si_code : 0; siglongjmp(g_self_jump, 1); }
     signal(sig, SIG_DFL);
     raise(sig);
 }
@@ -102,10 +108,11 @@ static bool self_runs(uint8_t *call_at, uint8_t *write_at)
     vm_region_submap_info_data_64_t info; mach_msg_type_number_t cnt = VM_REGION_SUBMAP_INFO_COUNT_64;
     if (vm_region_recurse_64(mach_task_self(), &addr, &sz, &depth, (vm_region_recurse_info_t)&info, &cnt) != KERN_SUCCESS || !(info.protection & VM_PROT_EXECUTE)) return false;
     struct sigaction sa, ob, os, oi;
-    memset(&sa, 0, sizeof(sa)); sa.sa_handler = self_fault; sigemptyset(&sa.sa_mask);
+    memset(&sa, 0, sizeof(sa)); sa.sa_sigaction = self_fault_info; sa.sa_flags = SA_SIGINFO; sigemptyset(&sa.sa_mask);
     sigaction(SIGBUS, &sa, &ob); sigaction(SIGSEGV, &sa, &os); sigaction(SIGILL, &sa, &oi);
     bool ok = false;
     g_self_running = 1;
+    g_self_sig = g_self_code = 0;
     if (sigsetjmp(g_self_jump, 1) == 0) {
         xmem_write_mode(true);
         memcpy(write_at, code, sizeof(code));
@@ -304,6 +311,14 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
         g_x.rw = m->rw_addr;
         g_x.size = m->size;
         near_alias();
+        /* This path used to say nothing, which is why the PvZ runs' region could not be identified:
+         * their rw/rx pair sits exactly +0x37e6000 from the region the husk-jit log blessed (the same
+         * offset in both PvZ runs) and no line in the log accounted for it. Say which region was
+         * taken and on which view the JIT authorisation sits, every run. */
+        tl_log_line("xmem: open: StikDebug's prewarmed region -- rx %p rw %p size %zu MiB, delta %td; the view the guest addresses is %s",
+                    (void *)g_x.rx, (void *)g_x.rw, g_x.size >> 20, tl_xmem_delta(),
+                    g_x.guest_view_jit ? "the JIT-authorised mapping"
+                                       : "the vm_remap of it: Fix A cannot run on this path (the debugger owns both views), so a guest arena here can only be refused honestly");
         return true;
     }
     /* From iOS 26 the Trusted Execution Monitor decides what may execute, and an attempt to run unblessed memory can end the process rather than fail. Only a debugger
@@ -358,6 +373,9 @@ bool tl_xmem_open(size_t host_bytes, char *err, size_t errlen)
         ok = open_platform(host_bytes, local, sizeof(local));
         if (ok) {
             g_x.open = true;
+            /* One run must be able to end the guessing: what the kernel says the region's entries
+             * are, entry by entry, and whether the view the guest addresses and calls will fetch. */
+            xmem_report_open();
         } else if (err && errlen) {
             snprintf(err, errlen, "%s", local);
         }
@@ -435,15 +453,46 @@ extern void tl_set_guest_errno(int guest_errno) __attribute__((weak));
  * verdict is taken from the two things that decide it, never from the return code.
  */
 
-/* Whether the map entry that holds `p` really reports VM_PROT_EXECUTE right now. */
-static bool xmem_entry_is_exec(uintptr_t p)
+/*
+ * What the map entry that holds `p` actually says.
+ *
+ * The yes/no this used to be (xmem_entry_is_exec) collapsed three different answers into "no
+ * execute": the probe failing outright (vm_region_recurse_64 returning non-success), the probe
+ * naming an entry that genuinely does not carry VM_PROT_EXECUTE, and the probe naming a DIFFERENT
+ * entry than the one vm_protect changed (a submap level, see `depth`). Only the first two mean the
+ * page cannot be executable. Keeping the raw answer -- the call's own return code plus the entry
+ * the kernel named, its range, protection, max_protection, nesting depth and user tag -- is the
+ * difference between a truthful refusal and a false negative, and it is what the phone's log could
+ * not say (exec-on-device-csdebugged.md).
+ */
+typedef struct {
+    kern_return_t kr;       /* vm_region_recurse_64's own return code */
+    vm_address_t  start;    /* start of the entry the kernel named */
+    vm_size_t     size;     /* ...and its length */
+    natural_t     depth;    /* submap nesting depth the kernel reported */
+    vm_prot_t     prot, max;
+    uint32_t      tag;
+} xmem_entry;
+
+static xmem_entry xmem_probe_entry(uintptr_t p)
 {
+    xmem_entry e; memset(&e, 0, sizeof(e));
     vm_address_t addr = (vm_address_t)p; vm_size_t sz = 0;
     natural_t depth = 0; vm_region_submap_info_data_64_t info;
     mach_msg_type_number_t cnt = VM_REGION_SUBMAP_INFO_COUNT_64;
-    if (vm_region_recurse_64(mach_task_self(), &addr, &sz, &depth, (vm_region_recurse_info_t)&info, &cnt) != KERN_SUCCESS)
-        return false;
-    return (info.protection & VM_PROT_EXECUTE) != 0;
+    e.kr = vm_region_recurse_64(mach_task_self(), &addr, &sz, &depth, (vm_region_recurse_info_t)&info, &cnt);
+    if (e.kr == KERN_SUCCESS) {
+        e.start = addr; e.size = sz; e.depth = depth;
+        e.prot = info.protection; e.max = info.max_protection; e.tag = info.user_tag;
+    }
+    return e;
+}
+
+/* Whether the map entry that holds `p` really reports VM_PROT_EXECUTE right now. */
+static bool xmem_entry_is_exec(uintptr_t p)
+{
+    xmem_entry e = xmem_probe_entry(p);
+    return e.kr == KERN_SUCCESS && (e.prot & VM_PROT_EXECUTE) != 0;
 }
 
 /*
@@ -463,10 +512,11 @@ static bool xmem_writable_fetches(uintptr_t at)
     uint32_t saved[2];
     memcpy(saved, (const void *)at, sizeof(saved));
     struct sigaction sa, ob, os, oi;
-    memset(&sa, 0, sizeof(sa)); sa.sa_handler = self_fault; sigemptyset(&sa.sa_mask);
+    memset(&sa, 0, sizeof(sa)); sa.sa_sigaction = self_fault_info; sa.sa_flags = SA_SIGINFO; sigemptyset(&sa.sa_mask);
     sigaction(SIGBUS, &sa, &ob); sigaction(SIGSEGV, &sa, &os); sigaction(SIGILL, &sa, &oi);
     bool ok = false;
     g_self_running = 1;
+    g_self_sig = g_self_code = 0;
     if (sigsetjmp(g_self_jump, 1) == 0) {
         xmem_write_mode(true);
         memcpy((void *)at, code, sizeof(code));
@@ -482,6 +532,66 @@ static bool xmem_writable_fetches(uintptr_t at)
     sys_icache_invalidate((void *)at, sizeof(saved));
     return ok;
 }
+
+/*
+ * Say once, entry by entry, what the kernel says about the region the guest runs in -- the
+ * executable view from its base to its end. Two crashes were invisible for want of exactly this:
+ * the region's FIRST entry being executable is not proof that 177 MiB into it is, and robot gf's
+ * fetch fault (UnityMain, pc == fault == 0x1234ee430, 177 MiB into this view) is inside the
+ * executable view, where a fetch is supposed to run. A hole or a non-executable entry here is a
+ * requestless fault waiting to happen, and it is one line to know.
+ */
+static void xmem_report_region(void)
+{
+    uintptr_t a = (uintptr_t)g_x.rx, end = a + g_x.size;
+    size_t mapped = 0, execut = 0;
+    unsigned entries = 0, holes = 0, noexec = 0;
+    while (a < end && entries < 128) {
+        xmem_entry e = xmem_probe_entry(a);
+        if (e.kr != KERN_SUCCESS) {
+            tl_log_line("xmem: region walk at %p: vm_region_recurse_64 returned %d (%s) -- no entry there (a hole in the region)", (void *)a, (int)e.kr, mach_error_string(e.kr));
+            holes++;
+            break;
+        }
+        if (e.size == 0) break;
+        mapped += e.size;
+        if (xmem_entry_is_exec(e.start)) execut += e.size;
+        else { noexec++; tl_log_line("xmem: region entry %p..%p prot %d max %d depth %u tag %u -- NOT EXECUTABLE", (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag); }
+        if (e.start != a) tl_log_line("xmem: region entry %p..%p prot %d max %d depth %u tag %u (gap before it)", (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag);
+        a = e.start + e.size;
+        entries++;
+    }
+    tl_log_line("xmem: region %p..%p (%zu MiB): %u entries, %zu MiB mapped, %zu MiB executable%s",
+                (void *)g_x.rx, (void *)end, g_x.size >> 20, entries, mapped >> 20, execut >> 20,
+                (holes || noexec) ? " -- a fetch inside a non-executable or unmapped entry is a requestless fault, not a permission the guest asked for" : "");
+}
+
+/*
+ * Ask the guest-facing view the question the guest will ask it: write a stub there and call it
+ * there, guarded. This is the same shape self_runs uses, pointed at the one view the phone died on,
+ * and it runs once per open on bytes nothing has written yet (the region is empty at this point).
+ * The read-back is printed beside it, raw, so the next run says which of the two answers is real.
+ */
+static void xmem_probe_guest_view(void)
+{
+    uintptr_t at = (uintptr_t)g_x.rw;
+    xmem_entry e = xmem_probe_entry(at);
+    bool f = xmem_writable_fetches(at);
+    tl_log_line("xmem: guest-facing view %p: read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write-then-execute %s%s",
+                (void *)at, e.kr == KERN_SUCCESS ? "ok" : "FAILED",
+                (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
+                f ? "RAN" : "FAULTED", f ? "" : " (an unblessed fetch here is a caught fault, not a dead process: the guest's own jump into it delivered signal 10)");
+}
+
+static void xmem_report_open(void)
+{
+    if (!g_x.open) return;
+    xmem_report_region();
+    xmem_probe_guest_view();
+}
+#else
+/* No mach probe on a host that is not an Apple one: nothing to report. */
+static void xmem_report_open(void) {}
 #endif
 
 /*
@@ -495,17 +605,26 @@ static bool xmem_writable_fetches(uintptr_t at)
  * carries the JIT authorisation (make_views); where the kernel will not grant that, it is a vm_remap
  * alias and adding execute to it is legal-looking but ineffective.
  *
- * The verdict is honest, and it is the same verdict in both view orders. In the Fix A order the
+ * The verdict is the GUARDED FETCH, and the read-back is a diagnostic. In the Fix A order the
  * guest-facing view is the mapping that carries the JIT authorisation, so adding execute to it is
- * real and the read-back plus guarded fetch both succeed -- which is the point of the order. In the
- * fallback order the guest-facing view is a vm_remap whose defining mapping was never granted that
- * authorisation, and adding execute to such an alias is accepted by vm_protect yet the page will not
- * fetch (the SIGBUS the phone log shows: the layer said "made executable" and the very next fetch
- * faulted). Either way the protect is followed by a read-back of the entry's protection and a guarded
- * fetch of freshly written bytes, and success is claimed only when both say executable. Returns false,
- * and says which check failed, otherwise -- so the caller does not pretend the page is executable, and
- * the guest gets EACCES and takes its interpreter fallback instead of jumping into a page that will
- * not fetch.
+ * real and the fetch runs. In the fallback order it may be a vm_remap whose defining mapping was
+ * never granted that authorisation, in which case the fetch faults and the refusal is honest.
+ *
+ * WHY THE FETCH DECIDES AND NOT THE READ-BACK (exec-on-device-csdebugged.md): the phone's runs are
+ * self-contradictory for the read-back. vm_protect returned KERN_SUCCESS -- which by XNU's contract
+ * means the request was inside the entry's max_protection and the entry's protection was set -- and
+ * then the read-back of the SAME page said it did not name execute. A successful vm_protect cannot
+ * both have happened and not have happened, so either the read-back failed outright (its own
+ * return code is now kept and printed) or it named a different entry/level than the one vm_protect
+ * changed. The old code hid all of that: it only ran the fetch when the read-back agreed, so a
+ * read-back that lies was indistinguishable from a page that will not fetch, and the phone refused
+ * a page that may well have executed. Now the fetch always runs and its result is the answer; the
+ * read-back is printed raw beside it. The fetch is guarded (sigsetjmp + SIGBUS/SIGSEGV/SIGILL) and
+ * this device demonstrably delivers an unblessed fetch as a CATCHABLE SIGBUS -- the guest's own
+ * jump into the arena produced signal 10, caught by the crash reporter -- so a page that really
+ * will not fetch is a caught fault and an honest EACCES, never a dead process. TL_XMEM_NO_FETCH_VERDICT=1
+ * restores the old gating (fetch only when the read-back agrees) for a device that ends the process
+ * rather than faulting.
  *
  * TL_NO_XMEM_RW_EXEC=1 never adds execute here, to force the store-emulation fallback.
  */
@@ -521,22 +640,42 @@ bool tl_xmem_allow_exec(void *p, size_t n)
     if (last > end) last = end;
     size_t len = last > page ? last - page : TL_XMEM_PAGE;
     bool ok;
-    char why[160];
+    char why[200];
 #if defined(__APPLE__)
+    static int readback_decides = -1;
+    if (readback_decides < 0) readback_decides = getenv("TL_XMEM_NO_FETCH_VERDICT") ? 1 : 0;
     kern_return_t kr = vm_protect(mach_task_self(), (vm_address_t)page, len, FALSE,
                                   VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
-    bool named = kr == KERN_SUCCESS && xmem_entry_is_exec(page);
-    bool fetched = named && xmem_writable_fetches(page);
-    ok = named && fetched;
+    xmem_entry e = xmem_probe_entry(page);
+    bool named = kr == KERN_SUCCESS && e.kr == KERN_SUCCESS && (e.prot & VM_PROT_EXECUTE) != 0;
+    bool fetched = xmem_writable_fetches(page);   /* the ground truth, and it runs either way */
+    ok = readback_decides ? (named && fetched) : fetched;
     if (kr != KERN_SUCCESS)
         snprintf(why, sizeof(why), "the kernel's vm_protect returned %d (the entry was never given execute)", (int)kr);
+    else if (e.kr != KERN_SUCCESS)
+        snprintf(why, sizeof(why), "vm_protect returned 0 and the read-back itself failed (vm_region_recurse_64 returned %d, %s), and the guarded fetch faulted (signal %d, si_code %d)",
+                 (int)e.kr, mach_error_string(e.kr), (int)g_self_sig, (int)g_self_code);
     else if (!named)
-        snprintf(why, sizeof(why), "vm_protect returned 0 but the read-back of the entry still does not report VM_PROT_EXECUTE");
+        snprintf(why, sizeof(why), "vm_protect returned 0 but the read-back named entry %p..%p prot %d max %d depth %u tag %u (no execute), and the guarded fetch faulted (signal %d, si_code %d)",
+                 (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
+                 (int)g_self_sig, (int)g_self_code);
     else
-        snprintf(why, sizeof(why), "vm_protect returned 0 and the read-back names execute, but a guarded fetch of freshly written bytes faulted");
+        snprintf(why, sizeof(why), "vm_protect returned 0 and the read-back names execute, but the guarded fetch faulted (signal %d, si_code %d)",
+                 (int)g_self_sig, (int)g_self_code);
 #else
     ok = mprotect((void *)page, len, PROT_READ | PROT_WRITE | PROT_EXEC) == 0;
     snprintf(why, sizeof(why), "%s", ok ? "" : strerror(errno));
+#endif
+    /* A success is worth a line WHEN THE READ-BACK DISAGREED: that is exactly the phone's shape,
+     * and the run that finally lets the guest's arena run must say the read-back was wrong. */
+#if defined(__APPLE__)
+    if (ok && !named) {
+        static int said_ok;
+        if (said_ok++ < 4)
+            tl_log_line("husk: xmem exec on the writable view at %p (%#zx bytes): MADE EXECUTABLE although the read-back did not name execute (read-back: %s, entry %p..%p prot %d max %d depth %u tag %u) -- the guarded fetch is the verdict and it RAN",
+                        p, n, e.kr == KERN_SUCCESS ? "probe ok" : "probe FAILED",
+                        (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag);
+    }
 #endif
     if (!ok) {
         static int said;

@@ -349,6 +349,18 @@ static const vfile *vfile_find(const char *path)
 }
 static bool vfd_is(int fd) { return fd >= 0 && fd < 4096 && g_vfd[fd].on; }
 
+/* The redirect belongs to the descriptor, so it has to follow it exactly as the kernel's copy of the file description
+ * does: dup/F_DUPFD make a second descriptor onto the same entry and both must redirect; dup2 that replaces a descriptor
+ * onto an entry drops the old one (the host closes it); and a descriptor closed by a raw close system call must leave
+ * nothing behind, because the next descriptor to land on that number would otherwise be served the APK's bytes at the old
+ * entry's offset instead of its own file. Every one of those goes through these two, so the table cannot drift from the
+ * descriptors it describes. */
+static void vfd_copy(int newfd, int oldfd)
+{
+    if (newfd >= 0 && newfd < 4096) g_vfd[newfd] = (oldfd >= 0 && oldfd < 4096 && g_vfd[oldfd].on) ? g_vfd[oldfd] : (vfd){ false, 0, 0, 0 };
+}
+static void vfd_drop(int fd) { if (fd >= 0 && fd < 4096) g_vfd[fd] = (vfd){ false, 0, 0, 0 }; }
+
 static void ftrace_open_jar(const char *path, int fd)
 {
     static int tr = -1;
@@ -467,6 +479,29 @@ static void jar_note(const jar_entry *j, bool found)
                     j->method == 0 ? "stored (read in place)" : "deflated (inflated once)", j->apk);
     else
         tl_log_line("husk: apk entry %s: not in %s (ENOENT)", j->entry[0] ? j->entry : "(no entry named)", j->apk[0] ? j->apk : "(the APK)");
+}
+
+/* The other half of the line above, and the one a phone log needs when an entry is *not* served after all. The
+ * "served" line is deliberately not printed until the descriptor and its redirection are both in place, because an
+ * entry that was resolved but whose descriptor could not be handed over reads, to the game, as a file that opened and
+ * then failed mid-read -- Unity's "Win32 IO returned ERROR_GEN_FAILURE" -- and no line said so. Here it does: whether
+ * the APK open failed (with its errno), or the descriptor number was outside the redirection table below (fd >= 4096,
+ * where a read would have come from the APK's own bytes at its own offset while fstat() reported the APK's size --
+ * a wrong file, not an error). */
+static void jar_note_serve_failed(const jar_entry *j, int fd, int e)
+{
+    static char said[64][192];
+    static int nsaid;
+    const char *key = j->entry[0] ? j->entry : j->apk;
+    for (int i = 0; i < nsaid; i++) if (!strcmp(said[i], key)) return;
+    if (nsaid < 64) snprintf(said[nsaid++], sizeof(said[0]), "%s", key);
+    if (fd < 0)
+        tl_log_line("husk: apk entry %s: resolved (%llu bytes, %s) but its %s could not be opened (errno %d), so the open fails",
+                    key, (unsigned long long)j->size, j->method == 0 ? "stored" : "deflated",
+                    j->method == 0 ? "APK" : "inflated cache file", e);
+    else
+        tl_log_line("husk: apk entry %s: resolved (%llu bytes, %s) but its descriptor %d is outside the redirection table, so the open fails",
+                    key, (unsigned long long)j->size, j->method == 0 ? "stored" : "deflated", fd);
 }
 
 /* A compressed entry, inflated once into <data>/.jar-cache: the path to open instead, or NULL. */
@@ -605,16 +640,34 @@ static int b_open(const char *path, int flags, unsigned mode)
     if (jar_lookup(path, &jar)) {
         if (!jar.found) jar_note(&jar, false);
         if (!jar.found || jar.dir || (flags & 3) != 0) { tl_set_guest_errno(jar.dir ? 21 : 2); ftrace_open_jar(path, -1); return -1; }
-        jar_note(&jar, true);
-        int fd;
+        int fd = -1, e = 0;
         if (jar.method == 0) {
-            TL_ERRNO_BEGIN(); fd = open(jar.apk, O_RDONLY); TL_ERRNO_END();
-            if (fd >= 0 && fd < 4096) g_vfd[fd] = (vfd){ true, jar.off, jar.size, 0 };
+            /* A stored entry is a stretch of the APK itself, so the APK is opened and every read of that descriptor is
+             * redirected into the entry (g_vfd) -- that redirect *is* the entry. Two ways of getting it wrong are silent
+             * and both are refused here instead: an APK that will not open, and a descriptor number outside the table,
+             * where the read would have come from the APK's own offset while fstat() reported the APK's size, so the
+             * game would have been handed the wrong file with no error anywhere. */
+            TL_ERRNO_BEGIN(); fd = open(jar.apk, O_RDONLY); e = errno; TL_ERRNO_END();
+            if (fd < 0 || fd >= 4096) {
+                jar_note_serve_failed(&jar, fd, e);
+                if (fd >= 0) close(fd);
+                tl_set_guest_errno(fd < 0 ? (e ? tl_errno_to_guest(e) : 5 /* EIO */) : 24 /* EMFILE */);
+                ftrace_open_jar(path, -1);
+                return -1;
+            }
+            g_vfd[fd] = (vfd){ true, jar.off, jar.size, 0 };
         } else {
             char inflated[1200];
             const char *real = jar_inflated(&jar, inflated, sizeof(inflated));
-            TL_ERRNO_BEGIN(); fd = real ? open(real, O_RDONLY) : -1; TL_ERRNO_END();
+            TL_ERRNO_BEGIN(); fd = real ? open(real, O_RDONLY) : -1; e = errno; TL_ERRNO_END();
+            if (fd < 0) {
+                jar_note_serve_failed(&jar, fd, e);
+                tl_set_guest_errno(e ? tl_errno_to_guest(e) : 5 /* EIO */);
+                ftrace_open_jar(path, -1);
+                return -1;
+            }
         }
+        jar_note(&jar, true);              /* said once the entry is actually served, never before (see jar_note_serve_failed) */
         ftrace_open_jar(path, fd);
         return fd;
     }
@@ -651,7 +704,7 @@ static bool net_trace_fd(int fd);
 static int g_evfd_peer[1024];
 void tl_eventfd_register(int rd, int wr) { if (rd >= 0 && rd < 1024) g_evfd_peer[rd] = wr + 1; }
 static int evfd_peer(int fd) { return fd >= 0 && fd < 1024 ? g_evfd_peer[fd] - 1 : -1; }
-static int b_close(int fd) { if (evfd_peer(fd) >= 0) { close(evfd_peer(fd)); g_evfd_peer[fd] = 0; } if (vfd_is(fd)) g_vfd[fd].on = false; bool sock = net_trace_fd(fd); TL_ERRNO_BEGIN(); int r = close(fd); tl_atomic_closed(fd); TL_ERRNO_END(); if (sock) tl_log_line("net: close(fd %d)", fd); return r; }
+static int b_close(int fd) { if (evfd_peer(fd) >= 0) { close(evfd_peer(fd)); g_evfd_peer[fd] = 0; } vfd_drop(fd); bool sock = net_trace_fd(fd); TL_ERRNO_BEGIN(); int r = close(fd); tl_atomic_closed(fd); TL_ERRNO_END(); if (sock) tl_log_line("net: close(fd %d)", fd); return r; }
 /* close() as the guest calls it (for other shims that close on its behalf: fdsan's close_with_tag) */
 int tl_guest_close(int fd) { return b_close(fd); }
 static bool net_trace_fd(int fd)
@@ -738,10 +791,10 @@ static long b_lseek(int fd, long off, int whence)
     }
     TL_ERRNO_BEGIN(); long r = lseek(fd, off, whence); TL_ERRNO_END(); return r;
 }
-static int b_dup(int fd) { TL_ERRNO_BEGIN(); int r = dup(fd); TL_ERRNO_END(); return r; }
+static int b_dup(int fd) { TL_ERRNO_BEGIN(); int r = dup(fd); TL_ERRNO_END(); if (r >= 0) vfd_copy(r, fd); return r; }
 /* The host's stdin/stdout/stderr stay the host's: apps that send stdout/stderr to logcat dup2 a pipe over them (Waze), which
  * would swallow Husk's own log. The redirect is reported done; their pipe simply stays empty. */
-static int b_dup2(int a, int b) { if (b >= 0 && b <= 2 && a != b) return b; TL_ERRNO_BEGIN(); int r = dup2(a, b); if (r >= 0 && a != b) tl_atomic_closed(b); TL_ERRNO_END(); return r; }
+static int b_dup2(int a, int b) { if (b >= 0 && b <= 2 && a != b) return b; TL_ERRNO_BEGIN(); int r = dup2(a, b); if (r >= 0 && a != b) { tl_atomic_closed(b); vfd_copy(b, a); } TL_ERRNO_END(); return r; }
 static int b_pipe(int fds[2]) { TL_ERRNO_BEGIN(); int r = pipe(fds); TL_ERRNO_END(); return r; }
 static int b_fsync(int fd) { TL_ERRNO_BEGIN(); int r = fsync(fd); TL_ERRNO_END(); return r; }
 static int b_ftruncate(int fd, long n) { TL_ERRNO_BEGIN(); int r = ftruncate(fd, n); TL_ERRNO_END(); return r; }
@@ -932,12 +985,12 @@ static int b_fcntl(int fd, int cmd, long arg)
     int r;
     TL_ERRNO_BEGIN();
     switch (cmd) {
-    case 0:    r = fcntl(fd, F_DUPFD, (int)arg); break;
+    case 0:    r = fcntl(fd, F_DUPFD, (int)arg); if (r >= 0) vfd_copy(r, fd); break;
     case 1:    r = fcntl(fd, F_GETFD); break;
     case 2:    r = fcntl(fd, F_SETFD, (int)arg); break;
     case 3:    r = fcntl(fd, F_GETFL); if (r >= 0) r = oflags_from_darwin(r); break;
     case 4:    r = fcntl(fd, F_SETFL, oflags_to_darwin((int)arg) & ~3); break;
-    case 1030: r = fcntl(fd, F_DUPFD_CLOEXEC, (int)arg); break;
+    case 1030: r = fcntl(fd, F_DUPFD_CLOEXEC, (int)arg); if (r >= 0) vfd_copy(r, fd); break;
     case 5: case 6: case 7: {                               /* F_GETLK, F_SETLK, F_SETLKW */
         guest_flock *g = (guest_flock *)arg;
         struct flock f = { .l_start = g->l_start, .l_len = g->l_len, .l_pid = g->l_pid,
@@ -1280,8 +1333,9 @@ static int b_mprotect(void *a, size_t l, int prot)
         /* A page the guest names with PROT_EXEC that is in the WRITABLE view is its own JIT arena (the loader retargets
          * the guest's adrp at the writable view, husk-tl-ld.c), which the guest then calls through that address. The
          * executable view of those pages already runs, but the address the guest holds does not, so execute is added to
-         * the writable view -- and only claimed if that really happened: tl_xmem_allow_exec reads the protection back and
-         * fetch-tests the page, because vm_protect's success on such an alias does not mean the page will fetch. */
+         * the writable view -- and only claimed if that really happened: tl_xmem_allow_exec fetch-tests the page (a
+         * guarded write-then-execute; the verdict is that fetch, not vm_protect's return code and not the
+         * vm_region_recurse_64 read-back, which is a diagnostic printed beside it). */
         if ((prot & PROT_EXEC) && !tl_xmem_is_rx(a)) {
             bool ok = tl_xmem_allow_exec(a, l);
             static int said;
@@ -1621,8 +1675,8 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
         int fd = b_open((const char *)a1, (int)a2, (unsigned)a3);
         return fd < 0 ? -*tl_guest_errno_ptr() : fd;
     }
-    case 57: { int r = close((int)a0); if (r == 0) tl_atomic_closed((int)a0); return r < 0 ? -tl_errno_to_guest(errno) : r; }
-    case 63: { long r = read((int)a0, (void *)a1, (size_t)a2); return r < 0 ? -tl_errno_to_guest(errno) : r; }
+    case 57: { int r = b_close((int)a0); return r < 0 ? -(*tl_guest_errno_ptr() ? *tl_guest_errno_ptr() : 9 /* EBADF */) : r; }   /* through the shim: a raw close must drop the descriptor's redirect (see vfd_drop) */
+    case 63: { if (vfd_is((int)a0)) { long r = b_read((int)a0, (void *)a1, (size_t)a2); return r < 0 ? -(*tl_guest_errno_ptr() ? *tl_guest_errno_ptr() : 5) : r; } long r = read((int)a0, (void *)a1, (size_t)a2); return r < 0 ? -tl_errno_to_guest(errno) : r; }
     case 64: { long r = write((int)a0, (const void *)a1, (size_t)a2); return r < 0 ? -tl_errno_to_guest(errno) : r; }
     case 113: { int r = clock_gettime(clock_to_darwin((int)a0), (struct timespec *)a1); return r < 0 ? -tl_errno_to_guest(errno) : 0; }
     case 169: return b_gettimeofday((int64_t *)a0, (void *)a1);
@@ -1646,7 +1700,11 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
         char buf[1024]; const char *p = tl_path_resolve((const char *)a1, buf, sizeof(buf));
         return access(p, (int)a2) ? -tl_errno_to_guest(errno) : 0;
     }
-    case 62: { off_t r = lseek((int)a0, (off_t)a1, (int)a2); return r < 0 ? -tl_errno_to_guest(errno) : (long)r; }
+    /* A guest that issues raw system calls instead of libc's (protectors and packers do) must get the same file as one
+     * that calls libc: for a descriptor redirecting into an APK entry, read and lseek are served by the same shims the
+     * wrapped calls use. Otherwise the entry's own descriptor would read the APK's bytes from the APK's own offset -- the
+     * wrong file, silently, depending only on how the guest spelled the call. */
+    case 62: { if (vfd_is((int)a0)) { long r = b_lseek((int)a0, (long)a1, (int)a2); return r < 0 ? -(*tl_guest_errno_ptr() ? *tl_guest_errno_ptr() : 22) : r; } off_t r = lseek((int)a0, (off_t)a1, (int)a2); return r < 0 ? -tl_errno_to_guest(errno) : (long)r; }
     case 101: { int r = nanosleep((const struct timespec *)a0, (struct timespec *)a1); return r < 0 ? -tl_errno_to_guest(errno) : 0; }
     case 124: sched_yield(); return 0;
     case 132: return 0;                                                                 /* sigaltstack: accepted (guest handlers are not installed) */

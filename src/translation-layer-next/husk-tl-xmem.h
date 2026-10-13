@@ -23,6 +23,13 @@
  * images is the code that runs on the phone. The Mac gets its two views from
  * mach_vm_remap of ordinary memory.
  *
+ * Whether "an alias never inherits it" is the whole truth is NOT assumed: on the phone the
+ * process is CS_DEBUGGED (its own log says so), and a debugged process is allowed to make
+ * writable memory executable, yet the read-back of the writable view did not name execute after
+ * a successful vm_protect. tl_xmem_allow_exec therefore decides nothing by read-back: it
+ * fetch-tests the page and reports what the kernel actually said
+ * (exec-on-device-csdebugged.md).
+ *
  * Allocation is a bump pointer: nothing is ever returned. The phone's region is
  * one-shot, so a freed hole could not be refilled by asking for another.
  */
@@ -69,15 +76,17 @@ bool tl_xmem_is_rx(const void *p);
  * hands it in writable-view form -- holds an address in the writable view and calls it. Adds
  * execute to that view and flushes the instruction cache.
  *
- * The verdict is not vm_protect's return code. On iOS the writable view is a vm_remap whose
- * defining mapping was never granted JIT authorisation (MAP_JIT), and adding execute to such an
- * alias is accepted by the kernel and yet the page will not fetch (SIGBUS with pc == fault
- * address) -- vm_protect's KERN_SUCCESS only says the entry's protection field now names EXECUTE.
- * So success is claimed only after BOTH (i) a vm_region_recurse_64 read-back of that page reports
- * VM_PROT_EXECUTE and (ii) a guarded fetch of freshly written bytes at the page returns the
- * expected value. Returns false -- and says so once, naming which check failed -- otherwise, and
- * sets the guest errno to EACCES so a JIT takes its interpreter fallback instead of jumping into
- * a page that will not fetch. The caller must not report success then.
+ * The verdict is the GUARDED FETCH, not the return code and not a read-back. The fetch writes a
+ * movz/ret through that view and calls it there, under a signal guard, and reports whether it ran.
+ * A read-back (vm_region_recurse_64) is taken too, and printed raw beside the fetch -- its own
+ * return code and the entry it named (range, protection, max_protection, depth, tag) -- but it does
+ * NOT decide: on the phone vm_protect returned KERN_SUCCESS and the read-back of the same page still
+ * did not name execute, which is self-contradictory for a successful protect, so the read-back can
+ * be wrong (a failed probe, or a different entry/level than the one vm_protect changed) while the
+ * page would in fact fetch. Returns false -- and says so once, naming which check failed and what
+ * the read-back saw -- otherwise, and sets the guest errno to EACCES so a JIT takes its interpreter
+ * fallback instead of jumping into a page that will not fetch. The caller must not report success then.
+ * TL_XMEM_NO_FETCH_VERDICT=1 restores the old behaviour (verdict = read-back AND fetch).
  */
 bool tl_xmem_allow_exec(void *p, size_t n);
 

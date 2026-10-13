@@ -29,13 +29,18 @@
  *   (b) FIX A: whether the guest-facing view carries the JIT authorisation, which the
  *       layer reports (tl_xmem_guest_view_is_jit). If it does, the guest's own arena at
  *       that address MUST execute after a write through it, and tl_xmem_allow_exec MUST
- *       succeed on it -- that is the whole change. If the host will not grant the mapping
- *       (a Mac with neither MAP_JIT nor RWX), the layer falls back, and the same address
- *       MUST NOT execute; either is asserted, so this cannot pass vacuously.
- *   (c) the NEGATIVE CONTROL, in a child forced onto the fallback order
+ *       succeed on it -- that is the whole change. If it does not, the fallback view must
+ *       still be honest: it executes if and only if it really fetches. Either way the
+ *       verdict and the fetch are asserted against each other, so this cannot pass
+ *       vacuously.
+ *   (c) the FALLBACK-ORDER CONTROL, in a child forced onto the fallback order
  *       (TL_XMEM_NO_JIT_VIEW=1): the guest-facing view is then a vm_remap alias, exactly
- *       the shape that failed on the phone. It MUST come back non-executable. A harness
- *       that cannot fail the way the phone failed proves nothing.
+ *       the shape that failed on the phone. It asserts the same honesty rule as (a) --
+ *       the verdict matches a guarded fetch of the page -- and reports which of the two
+ *       shapes this host produced. The verdict IS the fetch now (the read-back named a
+ *       different entry than vm_protect changed, which is why the phone's honest refusal
+ *       was wrong), so a fallback view that really fetches is the fix working, not a
+ *       contradiction. The forced refusal is (d).
  *   (d) with TL_NO_XMEM_RW_EXEC=1 the detector must refuse, and writing through the
  *       writable view and running through the executable one must still work. The
  *       workflow runs this program with no such variable, so the program runs (d)
@@ -48,7 +53,8 @@
  * Run:   TL_XMEM_SELF=1 /tmp/step0_xmem      # then also: /tmp/step0_xmem
  *
  * Exit: 0 the runner executes freshly written code, the guest-facing view's verdict is
- *       honest and matches the fix, and the negative control fails the way the phone did.
+ *       honest and matches the fix, the fallback-order control agrees with what this host
+ *       really does, and the forced refusal path refuses.
  *       1 any of those is false.
  */
 #include <setjmp.h>
@@ -117,10 +123,13 @@ static bool guarded_call(uint8_t *at)
 }
 
 /*
- * Check (c): the negative control, in a child forced onto the fallback order
+ * Check (c): the fallback-order control, in a child forced onto the fallback order
  * (TL_XMEM_NO_JIT_VIEW=1). The guest-facing view is then a vm_remap of the code view -- exactly
- * the shape that failed on the phone -- and it MUST come back non-executable: a harness that
- * cannot fail the way the phone failed proves nothing about the detector or the fix.
+ * the shape that failed on the phone. What this check asserts is HONESTY: the verdict must equal
+ * what a guarded fetch of the page really does. Which of the two shapes this host produces is not
+ * a pass/fail -- if the alias really fetches then allow_exec really made it executable (that is
+ * the fetch verdict working, and the outcome that should unblock a game), and if it faults the
+ * detector refuses. The forced, deterministic refusal is check (d).
  */
 static int negative_control_checks(void)
 {
@@ -148,15 +157,12 @@ static int negative_control_checks(void)
                 verdict ? "executable" : "non-executable", ran ? "ran" : "faulted");
         return 1;
     }
-    if (verdict || ran) {
-        fprintf(stderr,
-                "STEP0 FAIL (negative control child): the fallback guest-facing view (a vm_remap alias) "
-                "came back executable. That is the shape that failed on the phone; if this host cannot "
-                "fail the way the phone failed, the harness proves nothing.\n");
-        return 1;
-    }
-    printf("STEP0 OK (negative control child): in the fallback two-view order the guest-facing view "
-           "is non-executable and the detector refuses a writable-view arena\n");
+    printf("STEP0 OK (negative control child): in the fallback two-view order the verdict (%s) matches "
+           "the guarded fetch (%s) -- %s\n",
+           verdict ? "executable" : "non-executable", ran ? "ran" : "faulted",
+           ran ? "this host's fallback alias really executes, so the fetch verdict is what can unblock "
+                 "the phone" : "this host reproduces the phone's shape: the alias does not fetch, and the "
+                                "detector refuses it");
     return 0;
 }
 
@@ -273,17 +279,17 @@ int main(int argc, char **argv)
                 "own arena at the address it already holds must execute.\n");
         return 1;
     }
-    if (!guest_jit && wr_ran) {
-        fprintf(stderr,
-                "STEP0 FAIL: the guest-facing view is NOT the authorised mapping yet it executed; the "
-                "layer's own account of which view carries the JIT authorisation is wrong.\n");
-        return 1;
-    }
-    printf("STEP0 OK: guest-facing view -> authorisation %s, detector says %s, guarded fetch %s (%s path)%s\n",
+    /* !guest_jit && wr_ran is NOT a failure any more. The verdict is the guarded fetch's answer, so a
+     * fallback view that actually fetches means the layer really did make it executable -- the outcome
+     * that should unblock a game on the phone, not a contradiction in the layer's account. What must
+     * never happen is execution claimed without a fetch, and that is the honesty check above. */
+    printf("STEP0 OK: guest-facing view -> authorisation %s, detector says %s, guarded fetch %s (%s path); %s\n",
            guest_jit ? "yes" : "no", verdict ? "yes" : "no", wr_ran ? "ran" : "faulted",
            self ? "grant_self" : "Mac two-view",
-           guest_jit ? "; the guest's own arena is genuinely executable"
-                     : "; fallback: a writable-view arena is refused, as the phone needed");
+           guest_jit ? "the guest's own arena is genuinely executable"
+                     : (wr_ran ? "the fallback view was made executable and really fetched -- the fetch "
+                                 "verdict working, where the read-back alone would have refused it"
+                               : "the fallback view does not fetch, so the detector refuses it honestly"));
 
     /* (c) The negative control, in a child forced onto the fallback order, so it is deterministic
      *     whatever this host granted; then (d) the refusal path, in another child. Both run here so
@@ -323,7 +329,8 @@ int main(int argc, char **argv)
     }
 
     printf("STEP0 OK (all): rx executes, the two views alias, the guest-facing view's verdict is honest "
-           "and matches %s, the negative control fails the way the phone did, and the refusal path refuses.\n",
-           guest_jit ? "the fix (its own arena executes)" : "the fallback (a writable-view arena is refused)");
+           "and matches %s, the fallback-order control agrees with what this host really does, and the "
+           "forced refusal path refuses and its page does not fetch.\n",
+           guest_jit ? "the fix (its own arena executes)" : "the fallback (the fetch verdict decides)");
     return 0;
 }

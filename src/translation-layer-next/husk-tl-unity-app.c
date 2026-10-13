@@ -14,6 +14,10 @@
 #include <sys/ucontext.h>
 #include <unistd.h>
 #include <TargetConditionals.h>
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/vm_map.h>
+#endif
 #if TARGET_OS_IPHONE
 #include <os/proc.h>
 #endif
@@ -134,6 +138,40 @@ static void write_view_pointer(uintptr_t pc, uintptr_t lr)
 }
 
 /*
+ * What the kernel says about the map entry that holds the address a REQUESTLESS fetch died at.
+ *
+ * The write-view diagnostic above stays silent for a fault in the EXECUTABLE view (its first line
+ * returns), which is where robot gf's UnityMain fault was: 0x1234ee430, 177 MiB into the region's
+ * executable view, pc == fault == x8, with no mprotect request anywhere in the log. The write-view
+ * check alone could not say whether that page is executable, unmapped, or a hole in the region --
+ * and "the first page of the region executes" is not proof that 177 MiB in does. One query, no side
+ * effects, on the fatal path only.
+ */
+static void fault_address_region(uintptr_t pc)
+{
+    bool in_rx = tl_xmem_is_rx((const void *)pc);
+    bool in_rw = !in_rx && tl_xmem_contains((const void *)pc);
+    const char *view = in_rx ? "executable view" : in_rw ? "writable view" : "outside the region";
+#if defined(__APPLE__)
+    vm_address_t addr = (vm_address_t)pc; vm_size_t sz = 0; natural_t depth = 0;
+    vm_region_submap_info_data_64_t info; mach_msg_type_number_t cnt = VM_REGION_SUBMAP_INFO_COUNT_64;
+    kern_return_t kr = vm_region_recurse_64(mach_task_self(), &addr, &sz, &depth, (vm_region_recurse_info_t)&info, &cnt);
+    if (kr != KERN_SUCCESS) {
+        tl_log_line("husk: fetch fault at %p (%s): vm_region_recurse_64 returned %d (%s) -- nothing is mapped there, so the target was never code (or the region has a hole)",
+                    (void *)pc, view, (int)kr, mach_error_string(kr));
+        return;
+    }
+    tl_log_line("husk: fetch fault at %p (%s): entry %p..%p prot %d max %d depth %u tag %u -> %s",
+                (void *)pc, view, (void *)addr, (void *)(addr + sz), (int)info.protection,
+                (int)info.max_protection, (unsigned)depth, info.user_tag,
+                (info.protection & 0x4) ? "names execute, so this fault is NOT a permission (the page is mapped executable and still did not fetch)"
+                                        : "no execute (the page is mapped but not executable)");
+#else
+    tl_log_line("husk: fetch fault at %p (%s)", (void *)pc, view);
+#endif
+}
+
+/*
  * A fault in guest code ends the process, as it would on Android, but not before the log says where:
  * the guest library and offset of the faulting instruction and of the code that called it. The app's
  * own crash handling (which keeps the log file) runs after.
@@ -150,6 +188,20 @@ static void on_fatal(int sig, siginfo_t *info, void *uctx)
     tl_log_line("    pc %s", a);
     tl_log_line("    lr %s", b);
     write_view_pointer((uintptr_t)uc->uc_mcontext->__ss.__pc, (uintptr_t)uc->uc_mcontext->__ss.__lr);
+    fault_address_region((uintptr_t)info->si_addr);
+    /* Which register held the fault address, for the requestless family: a `blr xN` into a computed
+     * target is exactly how robot gf died (x8 == fault address, inside the executable view, no
+     * mprotect anywhere), and it is the register that says whether the target was "code" at all.
+     * Only when the fault IS the fetch (pc == fault address); otherwise a register holding the
+     * address is just an operand of a data fault and the claim would be wrong. */
+    if ((uintptr_t)info->si_addr == (uintptr_t)uc->uc_mcontext->__ss.__pc) {
+        for (int i = 0; i <= 28; i++) {
+            if ((uintptr_t)uc->uc_mcontext->__ss.__x[i] == (uintptr_t)info->si_addr) {
+                tl_log_line("    the fault address was held in x%d (a computed `blr x%d` target, not a call to a fixed address)", i, i);
+                break;
+            }
+        }
+    }
     uintptr_t fp = uc->uc_mcontext->__ss.__fp;
     for (int i = 0; i < 12 && fp && (fp & 7) == 0 && fp > 0x100000000ull; i++) {
         uintptr_t *f = (uintptr_t *)fp;
@@ -1048,9 +1100,23 @@ void husk_unity_perf_snapshot(husk_unity_perf *out)
     if (A.engine == ENGINE_GODOT) { tl_godot_perf p; tl_godot_perf_snapshot(&p); out->fps = p.fps; out->mean_ms = p.mean_ms; out->max_ms = p.max_ms; return; }
     tl_unity_perf p; tl_unity_perf_snapshot(&p); out->fps = p.fps; out->mean_ms = p.mean_ms; out->max_ms = p.max_ms;
 }
+/* The touches written to the log this process: bounded, so one run that ignores touches can be read without a line per
+ * finger per frame. */
+static atomic_int g_touch_notes;
+
 void husk_unity_touch(int phase, int id, float x, float y)
 {
-    if (atomic_load(&A.state) != HUSK_UNITY_RUNNING) return;
+    /* The layer end of the input chain: a touch has left the host's view and reached the layer. It is written down on
+     * its way in -- the first few only -- with what happened to it: which engine it is for, or that no game was running
+     * and it was dropped. A game that draws but ignores touches cannot be told from one whose input never left the host
+     * unless this line and the host's own "input: host touch" line are both in the log. */
+    int n = atomic_fetch_add(&g_touch_notes, 1);
+    int state = atomic_load(&A.state);
+    if (state != HUSK_UNITY_RUNNING) {
+        if (n < 4) tl_log_line("husk: input: touch (phase %d, id %d, %.0f,%.0f px) dropped: no game is running (state %s)", phase, id, x, y, state_name(state));
+        return;
+    }
+    if (n < 4) tl_log_line("husk: input: touch (phase %d, id %d, %.0f,%.0f px) -> engine %s", phase, id, x, y, engine_name(A.engine));
     if (A.engine == ENGINE_JAVA) tl_javaapp_touch(phase, id, x, y);
     else if (A.engine == ENGINE_GAMEMAKER) tl_gm_touch(phase, id, x, y);
     else if (A.engine == ENGINE_FLUTTER) tl_flutter_touch(phase, id, x, y);
