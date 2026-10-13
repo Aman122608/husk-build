@@ -325,7 +325,13 @@ const char *tl_path_resolve(const char *path, char *buf, size_t n)
  * stored in the APK). It is shown to the game under its usual name, and reads go to the right place in the APK, so nothing is unpacked. Matching is by file name.
  */
 typedef struct { char name[160]; char host[1024]; uint64_t off, size; } vfile;
-typedef struct { bool on; uint64_t off, size, pos; } vfd;
+/* A descriptor that is really a stretch of an APK entry: a stored jar:file: entry served in place. `on` says the descriptor
+ * is served from the entry now; `was` remembers a descriptor whose redirect has been DROPPED (the descriptor was closed, or
+ * a dup2/dup3 replaced it) together with the entry it served, so that a read arriving on that number afterwards can be
+ * *named* instead of only surfacing as the guest's nameless generic I/O error -- Unity's "Win32 IO returned
+ * ERROR_GEN_FAILURE", the black screen this was chased over three separate runs. A descriptor the layer never redirected has
+ * both false and is never mentioned. `name` is for the diagnostic only; it never takes part in serving. */
+typedef struct { bool on, was; uint64_t off, size, pos; char name[96]; } vfd;
 static vfile g_vfiles[8];
 static int g_nvfiles;
 static vfd g_vfd[4096];
@@ -357,9 +363,74 @@ static bool vfd_is(int fd) { return fd >= 0 && fd < 4096 && g_vfd[fd].on; }
  * descriptors it describes. */
 static void vfd_copy(int newfd, int oldfd)
 {
-    if (newfd >= 0 && newfd < 4096) g_vfd[newfd] = (oldfd >= 0 && oldfd < 4096 && g_vfd[oldfd].on) ? g_vfd[oldfd] : (vfd){ false, 0, 0, 0 };
+    if (newfd >= 0 && newfd < 4096) g_vfd[newfd] = (oldfd >= 0 && oldfd < 4096 && g_vfd[oldfd].on) ? g_vfd[oldfd] : (vfd){ 0 };
 }
-static void vfd_drop(int fd) { if (fd >= 0 && fd < 4096) g_vfd[fd] = (vfd){ false, 0, 0, 0 }; }
+/* Drop a descriptor's redirect -- but keep the entry's name and geometry behind as a tombstone (`was`), never as a live
+ * redirect. An entry that outlived its descriptor must never serve anything again (that is the stale-redirect bug this keeps
+ * closed: the next file to land on that number would be served the old APK's bytes), yet a read that fails on that number
+ * afterwards should still be able to say which entry it used to be, instead of vanishing into the guest's nameless error. */
+static void vfd_drop(int fd)
+{
+    if (fd < 0 || fd >= 4096) return;
+    if (g_vfd[fd].on) { g_vfd[fd].on = false; g_vfd[fd].was = true; g_vfd[fd].pos = 0; }
+}
+/* The layer's one place for recording a redirect (a stored APK entry, or an OBB inside an APK shown through a vfile), so
+ * the descriptor's name is remembered wherever a redirect is set and a failure can name it. */
+static void vfd_set(int fd, uint64_t off, uint64_t size, const char *name)
+{
+    if (fd < 0 || fd >= 4096) return;
+    g_vfd[fd] = (vfd){ .on = true, .was = false, .off = off, .size = size, .pos = 0 };
+    snprintf(g_vfd[fd].name, sizeof(g_vfd[fd].name), "%s", name ? name : "");
+}
+/* A descriptor number just handed out by an open that does NOT redirect it: whatever the layer remembered about that number
+ * belongs to another file now. The kernel can never hand out a number that is still open, so this cannot drop a redirect
+ * that is still serving -- it closes the other half of the same invariant: a redirect that outlived its descriptor through
+ * a close the layer did not see (a lane that is not shimmed) must not be applied to the next file to land on the number. */
+static void vfd_take_over(int fd)
+{
+    if (fd >= 0 && fd < 4096) g_vfd[fd] = (vfd){ 0 };
+}
+
+/* ------------------------------------------------------------------ naming a failed read on a redirected descriptor
+ *
+ * The layer's line for an entry prints at OPEN time ("... stored (read in place)"), so a build can log a served entry whose
+ * descriptor is still read wrong -- and the guest then reports it as System.IO.IOException: "Win32 IO returned
+ * ERROR_GEN_FAILURE": a generic Win32 I/O error, with no errno and no call in the sentence (Mono's file_read turns the
+ * read() failure into one of these generic codes, so the guest log cannot say which errno it was). Three black screens were
+ * chased this way. The one place that still knows the errno is here, so a read (or pread, or seek) on a descriptor the layer
+ * redirected that FAILS is now said out loud, once per descriptor: which descriptor, which call, the offset and length asked
+ * for, where inside the APK that lands, the entry and its size, and the host errno beside its guest number. A descriptor
+ * whose redirect was dropped says that too -- that is the shape that reads the APK's own bytes at the APK's own offset (a
+ * wrong file, silently) or fails outright if the number has since been taken by a pipe or a socket. */
+static void vfd_note_failed(int fd, const char *call, const vfd *v, uint64_t off, size_t len, int host_errno)
+{
+    static bool said[4096];
+    if (fd < 0 || fd >= 4096 || said[fd]) return;
+    said[fd] = true;
+    tl_log_line("husk: virtual file: %s on redirected fd %d FAILED: asked for %zu bytes at %llu of the entry, the APK's byte %llu (entry %s, %llu bytes), errno %d (guest %d)",
+                call, fd, len, (unsigned long long)off, (unsigned long long)(v->off + off),
+                v->name[0] ? v->name : "(unnamed)", (unsigned long long)v->size, host_errno,
+                tl_errno_to_guest(host_errno));
+}
+/* A read on a descriptor the layer DID redirect and is not redirecting any more: its redirect was dropped when the
+ * descriptor was closed or replaced, and the number now belongs to something else (or to nothing). Saying this is what
+ * separates "the layer never served the entry" from "it served it once and the guest kept reading a number whose redirect
+ * was gone" -- the two look identical from Unity's side. */
+static void vfd_note_dropped(int fd, const char *call, long r, int host_errno)
+{
+    static bool said[4096];
+    if (fd < 0 || fd >= 4096 || !g_vfd[fd].was || said[fd]) return;
+    said[fd] = true;
+    if (r < 0)
+        tl_log_line("husk: virtual file: %s on fd %d FAILED with NO redirect: this descriptor last served the APK entry %s (%llu bytes), and its redirect was dropped when the descriptor was closed or replaced. errno %d (guest %d). Unity reports a read like this as \"Win32 IO returned ERROR_GEN_FAILURE\".",
+                    call, fd, g_vfd[fd].name[0] ? g_vfd[fd].name : "(unnamed)", (unsigned long long)g_vfd[fd].size,
+                    host_errno, tl_errno_to_guest(host_errno));
+    else
+        tl_log_line("husk: virtual file: %s on fd %d returned %ld bytes with NO redirect: this descriptor last served the APK entry %s (%llu bytes) and its redirect was dropped when the descriptor was closed or replaced, so these are the APK's own bytes at the APK's own offset -- a wrong file, silently.",
+                    call, fd, r, g_vfd[fd].name[0] ? g_vfd[fd].name : "(unnamed)", (unsigned long long)g_vfd[fd].size);
+}
+/* b_dup3 (husk-tl-bionic-ldbl.c) must route through b_dup2, so this file's descriptor->entry table follows dup3 exactly as
+ * it follows dup/dup2/F_DUPFD (see vfd_copy); it looks b_dup2 up by name for that. */
 
 static void ftrace_open_jar(const char *path, int fd)
 {
@@ -504,8 +575,11 @@ void tl_io_reset_for_new_app(void)
 
     int swept = 0;
     for (int fd = 0; fd < 4096; fd++) {
-        if (!g_vfd[fd].on) continue;
-        if (fcntl(fd, F_GETFD) == -1 && errno == EBADF) { g_vfd[fd] = (vfd){ false, 0, 0, 0 }; swept++; }
+        if (g_vfd[fd].on) {
+            if (fcntl(fd, F_GETFD) == -1 && errno == EBADF) { g_vfd[fd] = (vfd){ 0 }; swept++; }
+        } else if (g_vfd[fd].was) {
+            g_vfd[fd] = (vfd){ 0 };                 /* a tombstone names the ended app's entry: it goes with the app (see vfd_drop) */
+        }
     }
 
     int jar = 0;
@@ -687,6 +761,26 @@ void tl_note_missing_file(const char *path)
     const char *dot = strrchr(path, '.');
     if (strstr(path, "/obb/") && dot && !strcmp(dot, ".obb")) { said = true; tl_log_line("husk: the app's expansion file (OBB) is missing: %s", path); }
 }
+/* The Java runtime's own data is in ordinary FILES the layer was handed -- the i18n APEX's etc/icu/icudt*.dat and the
+ * tzdata APEX's etc/tz/... -- not in an archive and not in the APK. Android's ICU4J reads them with android.system.Os.open
+ * + Os.mmap (android.icu.impl.AndroidDataFiles / ICUBinary), which arrive here as a plain open() of an ordinary path. When
+ * such a path will not open, the Java code that wanted it dies inside a static initialiser with nothing but a bare
+ * NullPointerException to show for it (android/icu/impl/ICUBinary.<clinit> -> libcore/icu/LocaleData.<clinit>), so the path
+ * and its errno are said once, here, where they can still be named. */
+static bool runtime_data_path(const char *p)
+{
+    return p && (strstr(p, "/usr/icu/") || strstr(p, "/etc/icu/") || strstr(p, "/icu/icudt") ||
+                 strstr(p, "/tz/versioned/") || strstr(p, "/usr/share/zoneinfo/"));
+}
+static void tl_note_missing_data(const char *path, int e)
+{
+    static char said[16][192];
+    static int nsaid;
+    if (!runtime_data_path(path)) return;
+    for (int i = 0; i < nsaid; i++) if (!strcmp(said[i], path)) return;
+    if (nsaid < 16) snprintf(said[nsaid++], sizeof(said[0]), "%s", path);
+    tl_log_line("husk: the runtime's own data file could not be opened: %s (errno %d); the Java code that wanted it fails in a static initialiser with a bare NullPointerException", path, e);
+}
 static int b_open(const char *path, int flags, unsigned mode)
 {
     char buf[1024]; static __thread char content[32768];
@@ -710,7 +804,7 @@ static int b_open(const char *path, int flags, unsigned mode)
                 ftrace_open_jar(path, -1);
                 return -1;
             }
-            g_vfd[fd] = (vfd){ true, jar.off, jar.size, 0 };
+            vfd_set(fd, jar.off, jar.size, jar.entry);
         } else {
             char inflated[1200];
             const char *real = jar_inflated(&jar, inflated, sizeof(inflated));
@@ -721,17 +815,18 @@ static int b_open(const char *path, int flags, unsigned mode)
                 ftrace_open_jar(path, -1);
                 return -1;
             }
+            vfd_take_over(fd);        /* a plain inflated copy on disk, not the entry: a fresh number must carry nothing of one */
         }
         jar_note(&jar, true);              /* said once the entry is actually served, never before (see jar_note_serve_failed) */
         ftrace_open_jar(path, fd);
         return fd;
     }
     const char *real = tl_path_resolve(path, buf, sizeof(buf));
-    if (strstr(path, "/auxv")) { int afd = tl_synth_open(path); if (afd >= 0) return afd; }   /* binary, not text */
+    if (strstr(path, "/auxv")) { int afd = tl_synth_open(path); if (afd >= 0) { vfd_take_over(afd); return afd; } }   /* binary, not text */
     const char *s = synth_content(path, content, sizeof(content));
     if (s) {
         int fd = synth_file(s);
-        if (fd < 0) tl_set_guest_errno(2);
+        if (fd < 0) tl_set_guest_errno(2); else vfd_take_over(fd);
         return fd;
     }
     const vfile *vf = (flags & 3) == 0 ? vfile_find(path) : NULL;
@@ -740,7 +835,7 @@ static int b_open(const char *path, int flags, unsigned mode)
         int fd = open(vf->host, O_RDONLY);
         int e = errno;
         TL_ERRNO_END();
-        if (fd >= 0 && fd < 4096) g_vfd[fd] = (vfd){ true, vf->off, vf->size, 0 };
+        if (fd >= 0 && fd < 4096) vfd_set(fd, vf->off, vf->size, vf->name);
         { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 20000)) tl_log_line("file: open(%s) -> %d (virtual: %llu bytes at %llu of %s)%s", path, fd, (unsigned long long)vf->size, (unsigned long long)vf->off, vf->host, fd < 0 ? (e == ENOENT ? " ENOENT" : " error") : ""); }
         return fd;
     }
@@ -750,7 +845,8 @@ static int b_open(const char *path, int flags, unsigned mode)
     int e = errno;
     TL_ERRNO_END();
     { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 20000)) tl_log_line("file: open(%s, %#x) -> %d%s", path, flags, fd, fd < 0 ? (e == ENOENT ? " ENOENT" : " error") : ""); }
-    if (fd < 0 && e == ENOENT) tl_note_missing_file(real);   /* name the host path it looked in, not just the guest one */
+    if (fd >= 0) vfd_take_over(fd);   /* an ordinary file opened on this number: no redirect of an older file may survive onto it */
+    if (fd < 0 && e == ENOENT) { tl_note_missing_file(real); tl_note_missing_data(real, e); }   /* name the host path it looked in, not just the guest one */
     return fd;
 }
 static int b___open_2(const char *path, int flags) { return b_open(path, flags, 0); }
@@ -776,12 +872,15 @@ static long b_read(int fd, void *p, size_t n)
         vfd *v = &g_vfd[fd];
         if (v->pos >= v->size) return 0;
         if (n > v->size - v->pos) n = (size_t)(v->size - v->pos);
-        { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 400)) tl_log_line("file: read(fd %d, %zu bytes at %llu of the virtual file)", fd, n, (unsigned long long)v->pos); }
-        TL_ERRNO_BEGIN(); long r = pread(fd, p, n, (off_t)(v->off + v->pos)); TL_ERRNO_END();
+        uint64_t pos = v->pos;
+        { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 400)) tl_log_line("file: read(fd %d, %zu bytes at %llu of the virtual file)", fd, n, (unsigned long long)pos); }
+        TL_ERRNO_BEGIN(); long r = pread(fd, p, n, (off_t)(v->off + pos)); int e = errno; TL_ERRNO_END();
+        if (r < 0) vfd_note_failed(fd, "read", v, pos, n, e);
         if (r > 0) v->pos += (uint64_t)r;
         return r;
     }
     TL_ERRNO_BEGIN(); long r = read(fd, p, n); int e = errno; TL_ERRNO_END();
+    if (fd >= 0 && fd < 4096 && g_vfd[fd].was) vfd_note_dropped(fd, "read", r, e);     /* the layer DID redirect this number once (see vfd_drop) */
     { static int tr = -1; if (tr < 0) tr = getenv("TL_TIMERFD_TRACE") ? 1 : 0;
       bool tl_timerfd_is(int fd);
       if (tr && tl_timerfd_is(fd)) { char nm[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); tl_log_line("timerfd[%s]: read fd %d -> %ld errno %d", nm, fd, r, r < 0 ? e : 0); } }
@@ -812,6 +911,42 @@ static int b_endmntent(void *f) { (void)f; return 1; }
 /* write() with the buffer's size checked first, as bionic's FORTIFY does */
 static long b___write_chk(int fd, const void *p, size_t n, size_t bufsize) { if (n > bufsize) abort(); return b_write(fd, p, n); }
 static long b_writev(int fd, const struct iovec *v, int n) { TL_ERRNO_BEGIN(); long r = writev(fd, v, n); TL_ERRNO_END(); return r; }
+static long b_pread64(int fd, void *p, size_t n, long off);   /* b_preadv (below) serves its iovecs through it */
+/* readv/preadv on a descriptor redirecting into an APK entry: the redirect must serve these exactly as it serves read, or
+ * the guest is handed the APK's own bytes at the APK's own offset -- the wrong file, silently. readv used to be a plain
+ * passthrough (TL_DIRECT in husk-tl-bionic-ldbl.c) and preadv was not wrapped at all, so a guest that read an entry in
+ * iovecs got the wrong bytes while read() got the right ones: how the guest spelled the call decided the answer. Each
+ * iovec is served in order; a short iovec ends the call, as readv would. */
+static long b_readv(int fd, const struct iovec *v, int n)
+{
+    if (vfd_is(fd)) {
+        long total = 0;
+        for (int i = 0; i < n; i++) {
+            if (!v[i].iov_len) continue;
+            long r = b_read(fd, v[i].iov_base, v[i].iov_len);
+            if (r < 0) return total > 0 ? total : r;
+            total += r;
+            if ((size_t)r < v[i].iov_len) break;
+        }
+        return total;
+    }
+    TL_ERRNO_BEGIN(); long r = readv(fd, v, n); TL_ERRNO_END(); return r;
+}
+static long b_preadv(int fd, const struct iovec *v, int n, long off)
+{
+    if (vfd_is(fd)) {
+        long total = 0;
+        for (int i = 0; i < n; i++) {
+            if (!v[i].iov_len) continue;
+            long r = b_pread64(fd, v[i].iov_base, v[i].iov_len, off + total);
+            if (r < 0) return total > 0 ? total : r;
+            total += r;
+            if ((size_t)r < v[i].iov_len) break;
+        }
+        return total;
+    }
+    TL_ERRNO_BEGIN(); long r = preadv(fd, v, n, off); TL_ERRNO_END(); return r;
+}
 static long b_pread64(int fd, void *p, size_t n, long off)
 {
     if (vfd_is(fd)) {
@@ -820,9 +955,13 @@ static long b_pread64(int fd, void *p, size_t n, long off)
         if ((uint64_t)off >= v->size) return 0;
         if (n > v->size - (uint64_t)off) n = (size_t)(v->size - (uint64_t)off);
         { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 400)) tl_log_line("file: pread(fd %d, %zu bytes at %ld of the virtual file)", fd, n, off); }
-        off += (long)v->off;
+        TL_ERRNO_BEGIN(); long r = pread(fd, p, n, off + (long)v->off); int e = errno; TL_ERRNO_END();
+        if (r < 0) vfd_note_failed(fd, "pread64", v, (uint64_t)off, n, e);
+        return r;
     }
-    TL_ERRNO_BEGIN(); long r = pread(fd, p, n, off); TL_ERRNO_END(); return r;
+    TL_ERRNO_BEGIN(); long r = pread(fd, p, n, off); int e = errno; TL_ERRNO_END();
+    if (fd >= 0 && fd < 4096 && g_vfd[fd].was) vfd_note_dropped(fd, "pread64", r, e);
+    return r;
 }
 static long b_pwrite64(int fd, const void *p, size_t n, long off) { TL_ERRNO_BEGIN(); long r = pwrite(fd, p, n, off); TL_ERRNO_END(); return r; }
 static long b___pwrite64_chk(int fd, const void *p, size_t n, long off, size_t bufsz)
@@ -844,7 +983,9 @@ static long b_lseek(int fd, long off, int whence)
         v->pos = (uint64_t)np;
         return np;
     }
-    TL_ERRNO_BEGIN(); long r = lseek(fd, off, whence); TL_ERRNO_END(); return r;
+    TL_ERRNO_BEGIN(); long r = lseek(fd, off, whence); int e = errno; TL_ERRNO_END();
+    if (r < 0 && fd >= 0 && fd < 4096 && g_vfd[fd].was) vfd_note_dropped(fd, "lseek", r, e);
+    return r;
 }
 static int b_dup(int fd) { TL_ERRNO_BEGIN(); int r = dup(fd); TL_ERRNO_END(); if (r >= 0) vfd_copy(r, fd); return r; }
 /* The host's stdin/stdout/stderr stay the host's: apps that send stdout/stderr to logcat dup2 a pipe over them (Waze), which
@@ -909,13 +1050,17 @@ static int b_utime(const char *p, const struct utimbuf *t) { char b[1024]; TL_ER
 static int b_futimens(int fd, const struct timespec ts[2]) { TL_ERRNO_BEGIN(); int r = futimens(fd, ts); TL_ERRNO_END(); return r; }
 static unsigned b___umask_chk(unsigned m) { return umask((mode_t)m); }
 
-/* sendfile: Linux's (out, in, off*, count) emulated with read/write. */
+/* sendfile: Linux's (out, in, off*, count) emulated with read/write. The source may be a descriptor redirecting into an APK
+ * entry: then the entry's bytes are sent, not the APK's, and the entry's position/offset is advanced the way the copy does
+ * (b_read/b_pread64 do the redirection). Before this, sendfile read the APK itself, so a guest that copied an entry this
+ * way got the archive's own bytes at its own offset. */
 static long b_sendfile(int out, int in, long *off, size_t count)
 {
     char buf[16384]; long total = 0;
     while ((size_t)total < count) {
         size_t chunk = count - (size_t)total < sizeof(buf) ? count - (size_t)total : sizeof(buf);
-        long n = off ? pread(in, buf, chunk, *off) : read(in, buf, chunk);
+        long n = vfd_is(in) ? (off ? b_pread64(in, buf, chunk, (long)(*off + total)) : b_read(in, buf, chunk))
+                            : (off ? pread(in, buf, chunk, *off) : read(in, buf, chunk));
         if (n <= 0) break;
         long w = write(out, buf, (size_t)n);
         if (w <= 0) break;
@@ -1336,6 +1481,18 @@ static void *b_mmap(void *addr, size_t len, int prot, int flags, int fd, long of
     int df = flags & 0x3;                                   /* MAP_SHARED / MAP_PRIVATE */
     if (flags & 0x10)   df |= MAP_FIXED;
     if (flags & 0x20)   df |= MAP_ANON;
+    /* A redirected descriptor mapped directly: mmap would take the APK's own bytes at the guest's own offset, not the
+     * entry's. mmap is not a read() and Mono's FileStream never uses it (it reads), so the mapping is left exactly as it is
+     * -- placing a guest's file mapping differently is not a bounded change and could not be checked without a phone -- but
+     * it is said once, so that an entry read through a mapping is never silent. */
+    if (!(flags & 0x20) && vfd_is(fd)) {
+        static bool said[4096];
+        if (fd >= 0 && fd < 4096 && !said[fd]) {
+            said[fd] = true;
+            tl_log_line("husk: virtual file: mmap on redirected fd %d maps the APK itself (%#zx bytes at offset %ld), not the entry %s: a read through that mapping is NOT served by the redirect",
+                        fd, len, off, g_vfd[fd].name[0] ? g_vfd[fd].name : "(unnamed)");
+        }
+    }
     TL_ERRNO_BEGIN();
     static int force_phantom = -1;
     if (force_phantom < 0) force_phantom = getenv("TL_MM_PHANTOM") != NULL;          /* a Mac pretending to be a phone */
@@ -1781,7 +1938,7 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
             { 19, "eventfd" }, { 20, "epoll_create1" }, { 21, "epoll_ctl" }, { 22, "epoll_pwait" }, { 23, "dup" }, { 24, "dup3" },
             { 25, "fcntl" }, { 29, "ioctl" }, { 32, "flock" }, { 34, "mkdirat" }, { 35, "unlinkat" }, { 37, "linkat" }, { 38, "renameat" },
             { 43, "fstatfs" }, { 46, "ftruncate" }, { 49, "chdir" }, { 50, "fchdir" }, { 52, "fchmod" }, { 53, "fchmodat" }, { 55, "fchown" },
-            { 59, "pipe2" }, { 61, "getdents64" }, { 65, "readv" }, { 66, "writev" }, { 67, "pread64" }, { 68, "pwrite64" },
+            { 59, "pipe2" }, { 61, "getdents64" }, { 65, "readv" }, { 66, "writev" }, { 67, "pread64" }, { 68, "pwrite64" }, { 69, "preadv" },
             { 71, "sendfile" }, { 73, "ppoll" }, { 78, "readlinkat" }, { 82, "fsync" }, { 83, "fdatasync" },
             { 85, "timerfd_create" }, { 86, "timerfd_settime" }, { 87, "timerfd_gettime" }, { 88, "utimensat" },
             { 114, "clock_getres" }, { 115, "clock_nanosleep" }, { 163, "getrlimit" }, { 164, "setrlimit" }, { 165, "getrusage" },
@@ -1873,6 +2030,7 @@ const tl_bionic_entry tl_tab_io[] = {
     TL_WRAP("open", b_open), TL_WRAP("__open_2", b___open_2), TL_WRAP("close", b_close), TL_WRAP("read", b_read),
     TL_WRAP("__read_chk", b___read_chk), TL_WRAP("write", b_write), TL_WRAP("__write_chk", b___write_chk), TL_WRAP("writev", b_writev),
     TL_WRAP("pread64", b_pread64), TL_WRAP("pwrite64", b_pwrite64), TL_WRAP("pread", b_pread64), TL_WRAP("pwrite", b_pwrite64), TL_WRAP("__pread64_chk", b___pread64_chk), TL_WRAP("__pwrite64_chk", b___pwrite64_chk), TL_WRAP("__pwrite_chk", b___pwrite64_chk), TL_WRAP("__pread_chk", b___pread64_chk), TL_WRAP("lseek", b_lseek), TL_WRAP("lseek64", b_lseek),
+    TL_WRAP("readv", b_readv), TL_WRAP("preadv", b_preadv),   /* the iovec forms of read must be served by the same redirect (see b_readv) */
     TL_WRAP("dup", b_dup), TL_WRAP("dup2", b_dup2), TL_WRAP("pipe", b_pipe), TL_WRAP("fsync", b_fsync), TL_WRAP("fdatasync", b_fsync),
     TL_WRAP("mkfifo", b_mkfifo), TL_WRAP("mknod", b_mknod), TL_WRAP("mknodat", b_mknodat), TL_WRAP("mkfifoat", b_mkfifoat),
     TL_WRAP("eventfd_write", b_eventfd_write), TL_WRAP("eventfd_read", b_eventfd_read), TL_WRAP("setmntent", b_setmntent),

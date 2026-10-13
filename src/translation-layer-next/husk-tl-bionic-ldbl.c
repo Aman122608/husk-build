@@ -170,7 +170,13 @@ static long b_fpathconf(int fd, int name) { (void)fd; return name == 3 /* _PC_NA
 static int b_dup3(int old, int nw, int flags)
 {
     if (nw >= 0 && nw <= 2 && old != nw) return nw;                 /* stdio stays the host's (see b_dup2) */
-    int r = dup2(old, nw);
+    /* Through the guest's dup2 shim, not the host's dup2 directly: that shim (husk-tl-bionic-io.c) drops the redirect of
+     * the descriptor being replaced and copies the source's redirect onto the new number, which is what keeps the layer's
+     * descriptor->entry table describing the descriptors that actually exist. Calling dup2 raw left a redirect on a number
+     * that no longer served it and none on the number that did. */
+    void *tl_bionic_find(const char *name);
+    int (*dup2_guest)(int, int) = (int (*)(int, int))tl_bionic_find("dup2");
+    int r = dup2_guest ? dup2_guest(old, nw) : dup2(old, nw);
     if (r >= 0 && (flags & 0x80000 /* O_CLOEXEC */)) fcntl(r, F_SETFD, FD_CLOEXEC);
     return r;
 }
@@ -196,7 +202,7 @@ const tl_bionic_entry tl_tab_ldbl[] = {
     TL_WRAP("modfl", b_modfl), TL_WRAP("sincosl", b_sincosl), TL_WRAP("lrintl", b_lrintl), TL_WRAP("lroundl", b_lroundl),
     TL_WRAP("__isinfl", b___isinfl), TL_WRAP("__isnanl", b___isnanl), TL_WRAP("nextafterl", b_nextafterl),
     TL_WRAP("nexttowardl", b_nextafterl),
-    TL_DIRECT(copysign), TL_DIRECT(erf), TL_DIRECT(erfc), TL_DIRECT(readv), TL_DIRECT(sync), TL_DIRECT(getsid),
+    TL_DIRECT(copysign), TL_DIRECT(erf), TL_DIRECT(erfc), TL_DIRECT(sync), TL_DIRECT(getsid),
     TL_DIRECT(tcgetpgrp), TL_DIRECT(tcsetpgrp), TL_DIRECT(getitimer), TL_DIRECT(setitimer), TL_DIRECT(wait4),
     TL_DIRECT(deflateCopy), TL_DIRECT(inflateCopy),
     TL_WRAP("fpathconf", b_fpathconf), TL_WRAP("fstatvfs", b_enosys), TL_WRAP("dup3", b_dup3),
