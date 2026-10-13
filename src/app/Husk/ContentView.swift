@@ -503,6 +503,7 @@ struct LogView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var lines: [String] = []
     @State private var showShare = false
+    @State private var showSend = false
     private let tick = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -536,8 +537,28 @@ struct LogView: View {
                         Button("Done") { dismiss() }
                     }
                 }
+                // Two separate items, and the send one is labelled: an icon alone in the corner is how
+                // the feature looked missing. Sending the live log belongs here as much as on the crash
+                // screen -- a game that hangs on a black screen never crashes, so it never writes a
+                // report, so the only screen that carried the button was the one screen this failure
+                // cannot reach, and the log of the hang is the whole reason the feature exists.
+                ToolbarItem(placement: .primaryAction) {
+                    Button { showSend = true } label: { Label("Send", systemImage: "paperplane") }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button { showShare = true } label: { Image(systemName: "square.and.arrow.up") }
+                }
+            }
+            .sheet(isPresented: $showSend) {
+                NavigationStack {
+                    Form { Section { SendLogToPCButton() } }
+                        .navigationTitle("Send Log to PC")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { showSend = false }
+                            }
+                        }
                 }
             }
             .sheet(isPresented: $showShare) {
