@@ -11,7 +11,7 @@
  *
  * Two ways of getting there, both meaningful:
  *   TL_XMEM_SELF=1 ./step0      -> husk-tl-xmem.c's grant_self path, which runs
- *                                  the layer's built-in self_selftest (movz/ret,
+ *                                  the layer's built-in self-test (movz/ret,
  *                                  0x5a5a). This is the loud existing signal.
  *   ./step0                     -> the ordinary Mac two-view path (mmap RW +
  *                                  mach_vm_remap alias + mprotect RX); this
@@ -19,20 +19,26 @@
  *                                  the RW view and calls it through the RX view.
  * Either failing is a hard, obvious CI failure, not a silent wrong answer.
  *
- * On top of that, three checks on the property the phone actually depends on and
+ * On top of that, checks on the property the phone actually depends on and
  * that a fetch through the RX view can never show -- the phone died calling a
  * WRITABLE-view address the layer had just said it made executable:
- *   (a) the writable view is executed on purpose. tl_xmem_allow_exec's verdict for
- *       it must match what really happens: a detector that says a page is executable
- *       when a guarded fetch of it faults is exactly the bug that killed the phone
- *       (SIGBUS with pc == fault address), so a mismatch is a hard failure.
- *   (b) the NEGATIVE CONTROL: on the ordinary Mac two-view path the writable view
- *       must come back NON-executable, because that path is the shape that failed on
- *       the phone. A harness that cannot fail the way the phone failed proves
- *       nothing, so "reported executable here" is itself a failure.
- *   (c) with TL_NO_XMEM_RW_EXEC=1 the detector must refuse, and writing through the
+ *   (a) the writable/guest-facing view is executed on purpose. tl_xmem_allow_exec's
+ *       verdict for it must match what really happens: a detector that says a page is
+ *       executable when a guarded fetch of it faults is exactly the bug that killed the
+ *       phone (SIGBUS with pc == fault address), so a mismatch is a hard failure.
+ *   (b) FIX A: whether the guest-facing view carries the JIT authorisation, which the
+ *       layer reports (tl_xmem_guest_view_is_jit). If it does, the guest's own arena at
+ *       that address MUST execute after a write through it, and tl_xmem_allow_exec MUST
+ *       succeed on it -- that is the whole change. If the host will not grant the mapping
+ *       (a Mac with neither MAP_JIT nor RWX), the layer falls back, and the same address
+ *       MUST NOT execute; either is asserted, so this cannot pass vacuously.
+ *   (c) the NEGATIVE CONTROL, in a child forced onto the fallback order
+ *       (TL_XMEM_NO_JIT_VIEW=1): the guest-facing view is then a vm_remap alias, exactly
+ *       the shape that failed on the phone. It MUST come back non-executable. A harness
+ *       that cannot fail the way the phone failed proves nothing.
+ *   (d) with TL_NO_XMEM_RW_EXEC=1 the detector must refuse, and writing through the
  *       writable view and running through the executable one must still work. The
- *       workflow runs this program with no such variable, so the program runs (c)
+ *       workflow runs this program with no such variable, so the program runs (d)
  *       itself in a child of its own with the variable set -- CI sees it without a
  *       third invocation to keep in sync.
  *
@@ -41,8 +47,9 @@
  *          src/translation-layer-next/husk-tl-xmem.c -o /tmp/step0_xmem
  * Run:   TL_XMEM_SELF=1 /tmp/step0_xmem      # then also: /tmp/step0_xmem
  *
- * Exit: 0 the runner executes freshly written code and the writable-view verdict is
- *       honest; 1 either is false.
+ * Exit: 0 the runner executes freshly written code, the guest-facing view's verdict is
+ *       honest and matches the fix, and the negative control fails the way the phone did.
+ *       1 any of those is false.
  */
 #include <setjmp.h>
 #include <signal.h>
@@ -94,18 +101,66 @@ static bool guarded_call(uint8_t *at)
     bool ran = false;
     g_in_guard = 1;
     if (sigsetjmp(g_jump, 1) == 0) {
+        tl_xmem_emit_begin();                       /* a MAP_JIT view is writable only in write mode */
         memcpy(at, k_code, sizeof(k_code));
+        tl_xmem_emit_end();                         /* and executable only back in execute mode */
         tl_xmem_flush(at, sizeof(k_code));
         ran = ((int (*)(void))(void *)at)() == 0x5a5a;
     }
     g_in_guard = 0;
     sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
+    tl_xmem_emit_begin();
     memcpy(at, saved, sizeof(saved));
+    tl_xmem_emit_end();
     tl_xmem_flush(at, sizeof(saved));
     return ran;
 }
 
-/* Check (c): the TL_NO_XMEM_RW_EXEC=1 refusal path, run in a child so CI exercises it too. */
+/*
+ * Check (c): the negative control, in a child forced onto the fallback order
+ * (TL_XMEM_NO_JIT_VIEW=1). The guest-facing view is then a vm_remap of the code view -- exactly
+ * the shape that failed on the phone -- and it MUST come back non-executable: a harness that
+ * cannot fail the way the phone failed proves nothing about the detector or the fix.
+ */
+static int negative_control_checks(void)
+{
+    char err[256] = "";
+    if (!tl_xmem_open(64u << 20, err, sizeof(err))) {
+        fprintf(stderr, "STEP0 FAIL (negative control child): tl_xmem_open: %s\n", err);
+        return 1;
+    }
+    if (tl_xmem_guest_view_is_jit()) {
+        fprintf(stderr,
+                "STEP0 FAIL (negative control child): TL_XMEM_NO_JIT_VIEW=1 but the guest-facing view "
+                "is still reported as the authorised one; the control is not testing the fallback.\n");
+        return 1;
+    }
+    uint8_t *rx = NULL, *rw = NULL;
+    if (!tl_xmem_alloc(4096, &rx, &rw)) {
+        fprintf(stderr, "STEP0 FAIL (negative control child): tl_xmem_alloc failed\n");
+        return 1;
+    }
+    uint8_t *rw_page = (uint8_t *)((uintptr_t)rw & ~(uintptr_t)(TL_XMEM_PAGE - 1));
+    bool verdict = tl_xmem_allow_exec(rw_page, 4096);
+    bool ran = guarded_call(rw_page);
+    if (verdict != ran) {
+        fprintf(stderr, "STEP0 FAIL (negative control child): the detector lied -- verdict %s, guarded fetch %s\n",
+                verdict ? "executable" : "non-executable", ran ? "ran" : "faulted");
+        return 1;
+    }
+    if (verdict || ran) {
+        fprintf(stderr,
+                "STEP0 FAIL (negative control child): the fallback guest-facing view (a vm_remap alias) "
+                "came back executable. That is the shape that failed on the phone; if this host cannot "
+                "fail the way the phone failed, the harness proves nothing.\n");
+        return 1;
+    }
+    printf("STEP0 OK (negative control child): in the fallback two-view order the guest-facing view "
+           "is non-executable and the detector refuses a writable-view arena\n");
+    return 0;
+}
+
+/* Check (d): the TL_NO_XMEM_RW_EXEC=1 refusal path, run in a child so CI exercises it too. */
 static int refusal_checks(void)
 {
     char err[256] = "";
@@ -142,13 +197,14 @@ int main(int argc, char **argv)
 {
     (void)argc;
     if (getenv("TL_STEP0_REFUSE_CHILD")) return refusal_checks();
+    if (getenv("TL_STEP0_NEGCTL_CHILD")) return negative_control_checks();
 
     const char *self = getenv("TL_XMEM_SELF");
     char err[256] = "";
 
     /* Open the writable+executable region. With TL_XMEM_SELF=1 this is the
      * layer's grant_self path, which itself executes freshly written code
-     * (self_selftest) before returning; the loud message above is the verdict. */
+     * (its own self-test) before returning; the loud message above is the verdict. */
     if (!tl_xmem_open(64u << 20, err, sizeof(err))) {
         fprintf(stderr,
                 "STEP0 FAIL: this runner cannot make executable memory for "
@@ -156,8 +212,10 @@ int main(int argc, char **argv)
                 "  husk-tl-xmem says: %s\n", err);
         return 1;
     }
-    printf("STEP0: tl_xmem_open ok (%s path), region %zu MiB\n",
-           self ? "grant_self/self-test" : "Mac two-view", tl_xmem_size() >> 20);
+    printf("STEP0: tl_xmem_open ok (%s path), region %zu MiB, guest-facing view %s\n",
+           self ? "grant_self/self-test" : "Mac two-view", tl_xmem_size() >> 20,
+           tl_xmem_guest_view_is_jit() ? "CARRIES the JIT authorisation (Fix A)"
+                                       : "is NOT the authorised mapping (fallback)");
 
     /* Take one page and write a function through the RW view, then execute it
      * through the RX view. This is exactly the shape the translator will use. */
@@ -179,36 +237,75 @@ int main(int argc, char **argv)
     printf("STEP0 OK: this process wrote a function and executed it through the "
            "executable view; it returned 0x%x\n", rc);
 
-    /* (a) The writable view. Ask the layer to make it executable, then see what really
-     *     happens: the detector's verdict and a guarded fetch of the same page must agree.
-     *     (b) On the ordinary Mac two-view path the writable view must be non-executable --
-     *     that is the phone's failing shape and the whole point of the negative control. */
+    /* The two views are one set of pages: a value stored through the guest-facing view is the
+     * same value read through the code view. This is what lets the loader write image bytes
+     * through one view and the guest fetch them through the other. */
+    uint64_t probe = 0x0123456789abcdefull, back = 0;
+    memcpy(rw, &probe, sizeof(probe));
+    memcpy(&back, rx, sizeof(back));
+    if (back != probe) {
+        fprintf(stderr, "STEP0 FAIL: the two views are not one set of pages (wrote %llx through the "
+                "guest view, read %llx through the code view)\n",
+                (unsigned long long)probe, (unsigned long long)back);
+        return 1;
+    }
+
+    /* (a) The guest-facing view, executed on purpose; and (b) the fix: whether that view carries
+     *     the JIT authorisation. Ask the layer, make the page executable the way a guest does,
+     *     then really fetch it. Verdict and fetch must agree, and the fix must show in one branch
+     *     or the other -- never pass vacuously. */
     uint8_t *rw_page = (uint8_t *)((uintptr_t)rw & ~(uintptr_t)(TL_XMEM_PAGE - 1));
+    bool guest_jit = tl_xmem_guest_view_is_jit();
     bool verdict = tl_xmem_allow_exec(rw_page, 4096);
     bool wr_ran = guarded_call(rw_page);
     if (verdict != wr_ran) {
         fprintf(stderr,
-                "STEP0 FAIL: the execute detector lied -- tl_xmem_allow_exec on the writable view "
+                "STEP0 FAIL: the execute detector lied -- tl_xmem_allow_exec on the guest-facing view "
                 "said %s, but a guarded fetch of it %s. This is the phone's bug: the layer reported "
                 "'made executable' and the fetch faulted.\n",
                 verdict ? "EXECUTABLE" : "non-executable", wr_ran ? "ran" : "faulted");
         return 1;
     }
-    if (!self && verdict) {
+    if (guest_jit && !wr_ran) {
         fprintf(stderr,
-                "STEP0 FAIL: NEGATIVE CONTROL -- the Mac two-view writable view was reported executable "
-                "(and really executed). That is the shape that failed on the phone; if the Mac cannot "
-                "fail the way the phone failed, this harness proves nothing about the detector.\n");
+                "STEP0 FAIL: FIX A -- the guest-facing view is the authorised mapping "
+                "(tl_xmem_guest_view_is_jit) yet a guarded fetch of a page in it faulted. The guest's "
+                "own arena at the address it already holds must execute.\n");
         return 1;
     }
-    printf("STEP0 OK: writable view execute -> the detector says %s and a guarded fetch %s (%s path)%s\n",
-           verdict ? "yes" : "no", wr_ran ? "ran" : "faulted",
+    if (!guest_jit && wr_ran) {
+        fprintf(stderr,
+                "STEP0 FAIL: the guest-facing view is NOT the authorised mapping yet it executed; the "
+                "layer's own account of which view carries the JIT authorisation is wrong.\n");
+        return 1;
+    }
+    printf("STEP0 OK: guest-facing view -> authorisation %s, detector says %s, guarded fetch %s (%s path)%s\n",
+           guest_jit ? "yes" : "no", verdict ? "yes" : "no", wr_ran ? "ran" : "faulted",
            self ? "grant_self" : "Mac two-view",
-           (!self && !verdict) ? "; negative control holds" : "");
+           guest_jit ? "; the guest's own arena is genuinely executable"
+                     : "; fallback: a writable-view arena is refused, as the phone needed");
 
-    /* (c) The refusal path, in a child with TL_NO_XMEM_RW_EXEC=1 set, so the workflow need not
-     *     add a third invocation for CI to see it. */
+    /* (c) The negative control, in a child forced onto the fallback order, so it is deterministic
+     *     whatever this host granted; then (d) the refusal path, in another child. Both run here so
+     *     the workflow needs no extra invocation to keep in sync. */
     pid_t pid = fork();
+    if (pid == 0) {
+        setenv("TL_XMEM_NO_JIT_VIEW", "1", 1);
+        setenv("TL_STEP0_NEGCTL_CHILD", "1", 1);
+        execvp(argv[0], argv);
+        _exit(127);
+    }
+    if (pid < 0) {
+        fprintf(stderr, "STEP0 FAIL: fork for the forced-fallback negative-control child failed\n");
+        return 1;
+    }
+    int st = 0;
+    if (waitpid(pid, &st, 0) != pid || !WIFEXITED(st) || WEXITSTATUS(st) != 0) {
+        fprintf(stderr, "STEP0 FAIL: the forced-fallback negative-control child failed\n");
+        return 1;
+    }
+
+    pid = fork();
     if (pid == 0) {
         setenv("TL_NO_XMEM_RW_EXEC", "1", 1);
         setenv("TL_STEP0_REFUSE_CHILD", "1", 1);
@@ -219,13 +316,14 @@ int main(int argc, char **argv)
         fprintf(stderr, "STEP0 FAIL: fork for the TL_NO_XMEM_RW_EXEC=1 refusal-path child failed\n");
         return 1;
     }
-    int st = 0;
+    st = 0;
     if (waitpid(pid, &st, 0) != pid || !WIFEXITED(st) || WEXITSTATUS(st) != 0) {
         fprintf(stderr, "STEP0 FAIL: the TL_NO_XMEM_RW_EXEC=1 refusal-path child failed\n");
         return 1;
     }
 
-    printf("STEP0 OK (all): rx executes, the writable-view verdict is honest, "
-           "the negative control holds, and the refusal path refuses.\n");
+    printf("STEP0 OK (all): rx executes, the two views alias, the guest-facing view's verdict is honest "
+           "and matches %s, the negative control fails the way the phone did, and the refusal path refuses.\n",
+           guest_jit ? "the fix (its own arena executes)" : "the fallback (a writable-view arena is refused)");
     return 0;
 }

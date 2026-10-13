@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!--
+    Entitlements for tools/a32/step0_xmem.c, signed ad-hoc in the arm32-harness step0 job.
+
+    The harness asks the layer (husk-tl-xmem.c) for the two views of its JIT region. MAP_JIT --
+    a writable-and-executable mapping -- is refused unless the process is signed with the JIT
+    entitlement, so without this the runner can only ever exercise the layer's fallback view order.
+    With it the runner grants the Fix A guest-facing view and the positive check
+    (tl_xmem_guest_view_is_jit + "the guest's own arena executes") runs for real.
+
+    These are the same bits the app carries (docs/02-jit-substrate.md): allow-jit is the macOS
+    hardened-runtime entitlement for MAP_JIT; dynamic-codesigning is the plain key TrollStore
+    honours on iOS. Signing is ad-hoc (no team), so nothing here is trusted by anyone -- it only
+    asks this kernel for the mapping the harness is built to test.
+  -->
+  <key>com.apple.security.cs.allow-jit</key><true/>
+  <key>dynamic-codesigning</key><true/>
+</dict>
+</plist>

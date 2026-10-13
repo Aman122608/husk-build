@@ -10,6 +10,7 @@
 
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
+#include <dlfcn.h>
 #include <libkern/OSCacheControl.h>
 #include <mach/mach.h>
 #include <mach/vm_map.h>
@@ -29,8 +30,36 @@ static struct {
     uint8_t *rx, *rw;
     size_t size, used;
     bool open;
+    /* True when the guest-facing view (g_x.rw) is the mapping that carries the JIT authorisation
+     * (Fix A). It is the whole point of this file's two-view ordering: see tl_xmem_guest_view_is_jit. */
+    bool guest_view_jit;
     pthread_mutex_t lock;
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
+
+/*
+ * The per-thread W^X toggle for a MAP_JIT mapping. pthread_jit_write_protect_np() is in libsystem
+ * but the iOS SDK marks it unavailable, so it is looked up at run time and nothing links against it.
+ * With it, a thread's MAP_JIT pages are writable (write_mode(true)) or executable (write_mode(false));
+ * where no write protection is enforced -- and for any mapping that is not MAP_JIT -- it is a no-op
+ * and the mapping is plain RWX. (QEMU pokes the comm-page APRR registers itself inside tcg/; this is
+ * the libsystem entry point that governs the same state, and the one reachable from here.)
+ */
+static void xmem_write_mode(bool writable)
+{
+#if defined(__APPLE__)
+    typedef int  (*xmem_wp_supported_fn)(void);
+    typedef void (*xmem_wp_fn)(int);
+    static xmem_wp_fn fn; static int resolved;
+    if (!resolved) {
+        xmem_wp_supported_fn supported = (xmem_wp_supported_fn)dlsym(RTLD_DEFAULT, "pthread_jit_write_protect_supported_np");
+        if (supported && supported()) fn = (xmem_wp_fn)dlsym(RTLD_DEFAULT, "pthread_jit_write_protect_np");
+        resolved = 1;
+    }
+    if (fn) fn(writable ? 0 : 1);
+#else
+    (void)writable;
+#endif
+}
 
 #if defined(__APPLE__)
 /*
@@ -39,8 +68,9 @@ static struct {
  * TrollStore's enable-jit does (its root helper attaches with ptrace and lets go, which leaves the flag set), and what a debugger's attach does on an iOS before TXM. It is
  * the way UTM gets its JIT there too: an anonymous read+execute mapping, and a read+write alias of the same pages made with vm_remap.
  *
- * The two views sit side by side, the alias right after the executable one, because the loader reaches one from the other with adrp (+-4 GiB). Nothing is trusted until a
- * function written through the alias has been called through the executable view; a guard turns a refusal into a failure rather than a crash.
+ * The two views sit side by side, a fixed distance apart, because the loader reaches one from the other with adrp (+-4 GiB). Which one carries the JIT authorisation is settled by make_views below: the
+ * view the guest addresses and calls is preferred, so that an arena the guest keeps at a writable-view address can really be made to execute. Nothing is trusted until a function written through one view
+ * has been called through the other (and, for the preferred order, through itself); a guard turns a refusal into a failure rather than a crash.
  */
 extern int csops(pid_t pid, unsigned int ops, void *useraddr, size_t usersize);
 #define TL_CS_OPS_STATUS 0
@@ -57,11 +87,18 @@ static void self_fault(int sig)
     raise(sig);
 }
 
-/* movz w0, #0x5a5a ; ret */
-static bool self_selftest(uint8_t *rx, uint8_t *rw)
+/*
+ * Write the movz/ret stub through `write_at`, flush it, and call it at `call_at`, under the guard.
+ * `write_at` and `call_at` are the two views of one set of pages, or one view named twice when the
+ * question is whether that single view both takes a write and executes -- which is exactly the
+ * question a guest's JIT arena asks of the writable view. The write is bracketed with the W^X toggle
+ * so that a MAP_JIT view is writable for the store and executable for the call. True only if the call
+ * ran and returned 0x5a5a.
+ */
+static bool self_runs(uint8_t *call_at, uint8_t *write_at)
 {
     static const uint32_t code[2] = { 0x528B4B40u, 0xD65F03C0u };
-    vm_address_t addr = (vm_address_t)rx; vm_size_t sz = 0; natural_t depth = 0;
+    vm_address_t addr = (vm_address_t)call_at; vm_size_t sz = 0; natural_t depth = 0;
     vm_region_submap_info_data_64_t info; mach_msg_type_number_t cnt = VM_REGION_SUBMAP_INFO_COUNT_64;
     if (vm_region_recurse_64(mach_task_self(), &addr, &sz, &depth, (vm_region_recurse_info_t)&info, &cnt) != KERN_SUCCESS || !(info.protection & VM_PROT_EXECUTE)) return false;
     struct sigaction sa, ob, os, oi;
@@ -70,46 +107,116 @@ static bool self_selftest(uint8_t *rx, uint8_t *rw)
     bool ok = false;
     g_self_running = 1;
     if (sigsetjmp(g_self_jump, 1) == 0) {
-        memcpy(rw, code, sizeof(code));
-        sys_icache_invalidate(rx, sizeof(code));
-        ok = ((int (*)(void))(void *)rx)() == 0x5a5a;
+        xmem_write_mode(true);
+        memcpy(write_at, code, sizeof(code));
+        xmem_write_mode(false);
+        sys_icache_invalidate(call_at, sizeof(code));
+        ok = ((int (*)(void))(void *)call_at)() == 0x5a5a;
     }
     g_self_running = 0;
     sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
     return ok;
 }
 
+/*
+ * Build the two views of one set of pages inside the reservation `base` (room for `base` and
+ * `base + size`), and hand them to the loader as g_x.rw (the view the guest addresses and calls,
+ * where the loader's adrp retarget and sym_value put writable content) and g_x.rx (the view guest
+ * CODE is executed through). Which mapping carries the JIT authorisation is the whole question:
+ *
+ *   - Fix A, tried first: the guest-facing view IS the `mmap`, created PROT_READ|PROT_WRITE|PROT_EXEC
+ *     with MAP_JIT (or plain where the host allows a writable-and-executable mapping), and the code
+ *     view is a `vm_remap` of it. The address a guest keeps for its own arena is then an authorised
+ *     mapping, so adding execute to it -- which is all the guest does -- is real.
+ *   - the fallback, exactly what shipped before: the `mmap` carries the authorisation as the CODE
+ *     view and the guest-facing view is the `vm_remap`. A guest arena in the writable view is then a
+ *     vm_remap alias that no vm_protect can make fetch (the phone's SIGBUS), which tl_xmem_allow_exec
+ *     refuses honestly.
+ *
+ * The order is settled by MEASUREMENT, never by a guess: a pair is adopted only after both views have
+ * been shown to execute code written through the other (and, for Fix A, the guest-facing view a
+ * function written through itself). A host that refuses the Fix A mapping, or whose code view turns
+ * out not to execute, is given the fallback; and a host that refuses both fails loudly rather than
+ * returning a region that cannot run. Nothing is unmapped -- the next attempt overwrites the same
+ * reservation with MAP_FIXED -- and no thread is ended or joined.
+ */
+static bool make_views(uint8_t *base, size_t size, char *err, size_t errlen)
+{
+    task_t me = mach_task_self();
+    vm_prot_t cur, max;
+    int last_errno = 0;
+    /* TL_XMEM_NO_JIT_VIEW=1 forces the fallback order (the negative control: a writable view that is a
+     * vm_remap alias must stay non-executable). */
+    bool allow_fix_a = getenv("TL_XMEM_NO_JIT_VIEW") == NULL;
+
+    /* Fix A: the guest-facing view (g_x.rw) is the authorised mmap; the code view (g_x.rx) is a vm_remap. */
+    static const int guest_extra[2] = { MAP_JIT, 0 };   /* MAP_JIT first, then plain (a host that allows RWX) */
+    for (int k = 0; allow_fix_a && k < 2; k++) {
+        uint8_t *rw = mmap(base, size, PROT_READ | PROT_WRITE | PROT_EXEC,
+                           MAP_FIXED | MAP_PRIVATE | MAP_ANON | guest_extra[k], -1, 0);
+        if (rw == MAP_FAILED) { last_errno = errno; continue; }
+        vm_address_t alias = (vm_address_t)(uintptr_t)(base + size);
+        kern_return_t kr = vm_remap(me, &alias, size, 0, VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE,
+                                    me, (vm_address_t)(uintptr_t)rw, FALSE, &cur, &max, VM_INHERIT_NONE);
+        if (kr != KERN_SUCCESS) { last_errno = EPERM; continue; }
+        if (vm_protect(me, alias, size, FALSE, VM_PROT_READ | VM_PROT_EXECUTE) != KERN_SUCCESS) { last_errno = EPERM; continue; }
+        bool code_view_runs = self_runs((uint8_t *)(uintptr_t)alias, rw);   /* write the guest view, run the code view */
+        bool guest_view_runs = self_runs(rw, rw);                          /* the question the phone died on */
+        if (code_view_runs && guest_view_runs) {
+            g_x.rw = rw; g_x.rx = (uint8_t *)(uintptr_t)alias; g_x.size = size; g_x.guest_view_jit = true;
+            tl_log_line("xmem: Fix A: the view the guest addresses and calls (%p) is the %s mapping and the code view (%p) is a vm_remap of it; a guest's own arena there is authorised",
+                        (void *)rw, guest_extra[k] ? "MAP_JIT" : "plain RWX", (void *)alias);
+            return true;
+        }
+        tl_log_line("xmem: a %s guest-facing view was created but %s; not adopting it",
+                    guest_extra[k] ? "MAP_JIT" : "plain RWX",
+                    !code_view_runs && !guest_view_runs ? "neither view executed a function written into it"
+                    : code_view_runs ? "the guest-facing view did not execute (its code view did)"
+                                     : "the code view (a vm_remap) did not execute");
+    }
+
+    /* The fallback: the mmap carries the authorisation as the code view; the guest-facing view is the
+     * vm_remap. This is the order that shipped, and the shape the negative control asserts. */
+    static const int code_prot[2] = { PROT_READ | PROT_EXEC, PROT_READ | PROT_WRITE | PROT_EXEC };
+    static const int code_extra[2] = { 0, MAP_JIT };
+    for (int k = 0; k < 2; k++) {
+        uint8_t *rx = mmap(base, size, code_prot[k], MAP_FIXED | MAP_PRIVATE | MAP_ANON | code_extra[k], -1, 0);
+        if (rx == MAP_FAILED) { last_errno = errno; continue; }
+        vm_address_t alias = (vm_address_t)(uintptr_t)(base + size);
+        kern_return_t kr = vm_remap(me, &alias, size, 0, VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE,
+                                    me, (vm_address_t)(uintptr_t)rx, FALSE, &cur, &max, VM_INHERIT_NONE);
+        if (kr != KERN_SUCCESS) { last_errno = EPERM; continue; }
+        if (vm_protect(me, alias, size, FALSE, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS) { last_errno = EPERM; continue; }
+        if (self_runs(rx, (uint8_t *)(uintptr_t)alias)) {
+            g_x.rx = rx; g_x.rw = (uint8_t *)(uintptr_t)alias; g_x.size = size; g_x.guest_view_jit = false;
+            tl_log_line("xmem: no authorised guest-facing view here: fell back to the two-view order (%s mapping, code view %p, guest view %p); a guest arena in the writable view cannot be made to fetch",
+                        code_extra[k] ? "MAP_JIT" : "plain", (void *)rx, (void *)alias);
+            return true;
+        }
+        last_errno = EPERM;
+    }
+    snprintf(err, errlen, "could not make two executable views of one set of pages here (%s)", last_errno ? strerror(last_errno) : "refused");
+    return false;
+}
+
 static bool grant_self(size_t host_bytes, char *err, size_t errlen)
 {
     uint32_t flags = 0;
     bool debugged = csops(getpid(), TL_CS_OPS_STATUS, &flags, sizeof(flags)) == 0 && (flags & TL_CS_DEBUGGED);
-    static const int how[2][2] = { { PROT_READ | PROT_EXEC, 0 }, { PROT_READ | PROT_WRITE | PROT_EXEC, MAP_JIT } };
     int last_errno = 0;
     for (size_t size = (host_bytes + TL_XMEM_PAGE - 1) & ~(size_t)(TL_XMEM_PAGE - 1); size >= (64u << 20); size /= 2) {
         uint8_t *base = mmap(NULL, size * 2, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0);
         if (base == MAP_FAILED) { last_errno = errno; continue; }
-        for (int h = 0; h < 2; h++) {
-            uint8_t *rx = mmap(base, size, how[h][0], MAP_FIXED | MAP_PRIVATE | MAP_ANON | how[h][1], -1, 0);
-            if (rx == MAP_FAILED) { last_errno = errno; continue; }
-            vm_address_t alias = (vm_address_t)(uintptr_t)(base + size);
-            vm_prot_t cur, max;
-            kern_return_t kr = vm_remap(mach_task_self(), &alias, size, 0, VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE, mach_task_self(), (vm_address_t)(uintptr_t)rx, FALSE, &cur, &max, VM_INHERIT_NONE);
-            if (kr != KERN_SUCCESS || vm_protect(mach_task_self(), alias, size, FALSE, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS) {
-                last_errno = EPERM;
-                mmap(base, size * 2, PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0);
-                continue;
-            }
-            if (self_selftest(rx, (uint8_t *)(uintptr_t)alias)) {
-                g_x.rx = rx; g_x.rw = (uint8_t *)(uintptr_t)alias; g_x.size = size;
-                tl_log_line("xmem: made its own %zu MiB executable region (%s mapping, rx %p, rw %p, process %s debugged)", size >> 20, h ? "MAP_JIT" : "plain", (void *)rx, (void *)alias, debugged ? "is" : "is not");
-                return true;
-            }
-            last_errno = EPERM;
-            munmap(base, size * 2);
-            base = mmap(NULL, size * 2, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0);
-            if (base == MAP_FAILED) break;
+        char local[160] = "";
+        if (make_views(base, size, local, sizeof(local))) {
+            tl_log_line("xmem: made its own %zu MiB executable region (%s; process %s debugged)", size >> 20,
+                        g_x.guest_view_jit ? "Fix A: the guest-facing view carries the JIT authorisation"
+                                           : "two-view fallback: a writable-view arena will be refused",
+                        debugged ? "is" : "is not");
+            return true;
         }
-        if (base != MAP_FAILED) munmap(base, size * 2);
+        last_errno = EPERM;
+        munmap(base, size * 2);
     }
     snprintf(err, errlen, "this process cannot make executable memory for itself (%s%s). It needs JIT: a jailbreak with JIT allowed for apps, TrollStore's enable-jit, or a debugger",
              last_errno ? strerror(last_errno) : "refused", debugged ? "" : "; it is not marked as debugged");
@@ -226,37 +333,19 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
         snprintf(err, errlen, "mmap of %zu MiB failed: %s", (size * 2) >> 20, strerror(errno));
         return false;
     }
-    uint8_t *rw = base;
-    if (mprotect(rw, size, PROT_READ | PROT_WRITE) != 0) {
-        snprintf(err, errlen, "mprotect(RW) failed: %s", strerror(errno));
-        munmap(base, size * 2);
-        return false;
-    }
 #if defined(__APPLE__)
-    mach_vm_address_t alias = (mach_vm_address_t)(uintptr_t)(base + size);
-    vm_prot_t cur, max;
-    kern_return_t kr = mach_vm_remap(mach_task_self(), &alias, size, 0, VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE,
-                                     mach_task_self(), (mach_vm_address_t)(uintptr_t)rw, FALSE,
-                                     &cur, &max, VM_INHERIT_NONE);
-    if (kr != KERN_SUCCESS) {
-        snprintf(err, errlen, "mach_vm_remap failed (%d)", kr);
-        munmap(base, size * 2);
-        return false;
-    }
-    if (mprotect((void *)(uintptr_t)alias, size, PROT_READ | PROT_EXEC) != 0) {
-        snprintf(err, errlen, "mprotect(R|X) on the alias failed: %s", strerror(errno));
-        munmap(base, size * 2);
-        return false;
-    }
-    g_x.rx = (uint8_t *)(uintptr_t)alias;
+    /* The same builder the phone's self-grant path uses, so the Mac runs the code the phone runs --
+     * including the Fix A ordering: where this host grants a writable-and-executable mapping (a Mac
+     * with the JIT entitlement, or one that does not enforce W^X), the guest-facing view carries the
+     * authorisation; where it does not, the two-view fallback is adopted and the negative control
+     * keeps the shape it asserts. */
+    if (!make_views(base, size, err, errlen)) { munmap(base, size * 2); return false; }
+    return true;
 #else
     snprintf(err, errlen, "no dual mapping on this host");
     munmap(base, size * 2);
     return false;
 #endif
-    g_x.rw = rw;
-    g_x.size = size;
-    return true;
 }
 #endif
 
@@ -296,7 +385,12 @@ ptrdiff_t tl_xmem_delta(void) { return g_x.rw - g_x.rx; }
 bool tl_xmem_near(const void *p, size_t dist)
 {
     if (!g_x.open || !p) return false;
+    /* Two views of one set of pages, and in the Fix A order the guest-facing one is the LOWER address,
+     * so the span is taken from the two views rather than assumed to start at rx. */
     uintptr_t a = (uintptr_t)p, lo = (uintptr_t)g_x.rx, hi = lo + g_x.size;
+    uintptr_t rwb = (uintptr_t)g_x.rw;
+    if (rwb < lo) lo = rwb;
+    if (rwb + g_x.size > hi) hi = rwb + g_x.size;
     return a + dist >= lo && a <= hi + dist;
 }
 
@@ -354,11 +448,14 @@ static bool xmem_entry_is_exec(uintptr_t p)
 
 /*
  * The fetch itself: write a movz/ret through the writable view at `at` and call it there, under the
- * same sigsetjmp guard self_selftest uses, so a page that names execute but will not fetch is caught
+ * same sigsetjmp guard self_runs uses, so a page that names execute but will not fetch is caught
  * rather than fatal. Nothing but a real fetch can answer the question, because a protection field
  * can name EXECUTE while the pmap refuses the fetch. `at` is the guest's own arena, so its bytes are
  * saved and put back whether the call returns or faults -- a thread that reached that address between
- * the two writes must find the code it had, and nothing here unmaps or leaves a stub behind.
+ * the two writes must find the code it had, and nothing here unmaps or leaves a stub behind. The two
+ * writes are bracketed with the W^X toggle so the store lands on a MAP_JIT view (writable), and the
+ * call happens in execute mode -- the two states a guest's arena passes through as it writes and then
+ * runs its own trampoline.
  */
 static bool xmem_writable_fetches(uintptr_t at)
 {
@@ -371,13 +468,17 @@ static bool xmem_writable_fetches(uintptr_t at)
     bool ok = false;
     g_self_running = 1;
     if (sigsetjmp(g_self_jump, 1) == 0) {
+        xmem_write_mode(true);
         memcpy((void *)at, code, sizeof(code));
+        xmem_write_mode(false);
         sys_icache_invalidate((void *)at, sizeof(code));
         ok = ((int (*)(void))(void *)at)() == 0x5a5a;
     }
     g_self_running = 0;
     sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
+    xmem_write_mode(true);
     memcpy((void *)at, saved, sizeof(saved));
+    xmem_write_mode(false);
     sys_icache_invalidate((void *)at, sizeof(saved));
     return ok;
 }
@@ -386,23 +487,25 @@ static bool xmem_writable_fetches(uintptr_t at)
 /*
  * Make the writable view's pages executable where the guest named them with PROT_EXEC.
  *
- * A JIT -- here the game's own And64InlineHook -- writes a trampoline into memory it mapped
- * rw and calls it by the address that view gave it (the loader retargets its adrp at the
- * writable view because the page has no TL_PAGE_X, husk-tl-ld.c). The executable view of the
- * same pages already runs, but the address the guest holds is the writable one, so execute has
- * to be added to that view -- and then flushed, so the bytes just written are what the CPU
- * fetches. The region is two kernels mappings of the same pages (one rx, one rw, husk-tl-xmem.c
- * open_platform/grant_self); adding execute to the rw alias is legal only where the device
- * permits RWX on it (a JIT-entitled/debugged process, MAP_JIT).
+ * A JIT -- here the game's own A64HookFunction -- writes a trampoline into memory it holds and calls
+ * it by the address that view gave it (the loader retargets its adrp at the writable view because the
+ * page has no TL_PAGE_X, husk-tl-ld.c). The executable view of the same pages already runs, but the
+ * address the guest holds is the guest-facing one, so execute has to be added to THAT view -- and then
+ * flushed, so the bytes just written are what the CPU fetches. Fix A makes that view the one that
+ * carries the JIT authorisation (make_views); where the kernel will not grant that, it is a vm_remap
+ * alias and adding execute to it is legal-looking but ineffective.
  *
- * The verdict is honest: vm_protect's KERN_SUCCESS is not enough, because the writable view is a
- * vm_remap whose defining mapping was never granted JIT authorisation, and adding execute to such
- * an alias is accepted yet the page will not fetch (this is the SIGBUS the log shows: the layer
- * said "made executable" and the very next fetch faulted at an address inside the range). So the
- * protect is followed by a read-back of the entry's protection and a guarded fetch of freshly
- * written bytes; success is claimed only when both say executable. Returns false, and says which
- * check failed, otherwise -- so the caller does not pretend the page is executable, and the guest
- * gets EACCES and takes its interpreter fallback instead of jumping into a page that will not fetch.
+ * The verdict is honest, and it is the same verdict in both view orders. In the Fix A order the
+ * guest-facing view is the mapping that carries the JIT authorisation, so adding execute to it is
+ * real and the read-back plus guarded fetch both succeed -- which is the point of the order. In the
+ * fallback order the guest-facing view is a vm_remap whose defining mapping was never granted that
+ * authorisation, and adding execute to such an alias is accepted by vm_protect yet the page will not
+ * fetch (the SIGBUS the phone log shows: the layer said "made executable" and the very next fetch
+ * faulted). Either way the protect is followed by a read-back of the entry's protection and a guarded
+ * fetch of freshly written bytes, and success is claimed only when both say executable. Returns false,
+ * and says which check failed, otherwise -- so the caller does not pretend the page is executable, and
+ * the guest gets EACCES and takes its interpreter fallback instead of jumping into a page that will
+ * not fetch.
  *
  * TL_NO_XMEM_RW_EXEC=1 never adds execute here, to force the store-emulation fallback.
  */
@@ -448,3 +551,13 @@ bool tl_xmem_allow_exec(void *p, size_t n)
 
 size_t tl_xmem_used(void) { return g_x.used; }
 size_t tl_xmem_size(void)  { return g_x.size; }
+
+bool tl_xmem_guest_view_is_jit(void) { return g_x.open && g_x.guest_view_jit; }
+
+/*
+ * The layer's own emission into the region, bracketed so a device that enforces W^X lets the store
+ * and the fetch both happen. Only the Fix A order has a host-facing view that is simultaneously the
+ * one the guest executes, so only there does the state matter; a no-op everywhere else.
+ */
+void tl_xmem_emit_begin(void) { if (g_x.guest_view_jit) xmem_write_mode(true); }
+void tl_xmem_emit_end(void)   { if (g_x.guest_view_jit) xmem_write_mode(false); }

@@ -51,6 +51,22 @@ jobs:
       - name: Build the host executable-memory harness
         run: bash tools/a32/build.sh step0 /tmp/a32-step0
 
+      - name: Grant the harness the JIT entitlement (best effort)
+        # MAP_JIT -- the writable-and-executable mapping Fix A puts the guest-facing view on -- is
+        # refused unless the process is signed with the JIT entitlement. Signing the harness with it
+        # lets the runner grant that view, so the step below asserts the POSITIVE case: the guest's
+        # own arena at the address it holds executes. Where signing is not honoured, the layer falls
+        # back and the same step asserts the fallback instead, so it is never vacuous and never red.
+        run: |
+          set -uo pipefail
+          if codesign --force --sign - --options runtime \
+                --entitlements tools/a32/jit.entitlements /tmp/a32-step0; then
+            echo "::notice::signed /tmp/a32-step0 with the JIT entitlement (allow-jit)"
+            codesign -d --entitlements - /tmp/a32-step0 2>/dev/null || true
+          else
+            echo "::warning::could not sign the harness with the JIT entitlement; the step will assert the fallback view order"
+          fi
+
       - name: STEP 0 (go/no-go) - the layer's self-test and an own-written function
         run: |
           set -euo pipefail

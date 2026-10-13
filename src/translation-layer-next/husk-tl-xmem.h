@@ -8,6 +8,16 @@
  * at launch, as two views of the same pages. Code is written through the
  * writable view and run through the executable one.
  *
+ * Which of the two views carries the JIT authorisation (MAP_JIT, or the debugger's
+ * blessing) decides whether a GUEST can execute the memory it wrote for itself. iOS
+ * authorises execute per mapping ENTRY, so an alias never inherits it: a guest that
+ * keeps a code pointer in the WRITABLE view -- an inline-hook arena, which the
+ * loader's adrp retarget hands it in writable-view form -- cannot execute it when
+ * the writable view is a vm_remap. So the layer puts the authorisation on the view
+ * the guest addresses (the guest-facing view) and makes the loader's code view the
+ * vm_remap (tl_xmem_guest_view_is_jit); where the kernel will not grant that, it
+ * falls back to the old order and tl_xmem_allow_exec says so honestly.
+ *
  * On a Mac there is no such restriction, but the loader is written against the
  * same two-view shape so the code that relocates, patches and addresses guest
  * images is the code that runs on the phone. The Mac gets its two views from
@@ -70,6 +80,28 @@ bool tl_xmem_is_rx(const void *p);
  * a page that will not fetch. The caller must not report success then.
  */
 bool tl_xmem_allow_exec(void *p, size_t n);
+
+/*
+ * Whether the guest-facing view -- the address the loader's adrp retarget hands the guest for
+ * writable content, and the one a JIT calls its own arena by -- is the mapping that carries the
+ * JIT authorisation (Fix A). When true, the address the guest already holds genuinely becomes
+ * executable when it asks with PROT_EXEC, and tl_xmem_allow_exec's read-back plus guarded fetch
+ * succeed; when false, the layer fell back to the old order (the authorisation on the code view,
+ * the writable view a vm_remap) and a writable-view arena cannot be made to fetch -- tl_xmem_allow_exec
+ * then refuses it honestly with EACCES. Fixed once at open; valid after tl_xmem_open succeeds.
+ */
+bool tl_xmem_guest_view_is_jit(void);
+
+/*
+ * Put the calling thread in write mode (emit_begin) or back in execute mode (emit_end) around the
+ * layer's OWN emission into the region. Only meaningful when tl_xmem_guest_view_is_jit(): the
+ * guest-facing view is then a MAP_JIT mapping, which on a device that enforces W^X is writable or
+ * executable per thread, never both at once. A no-op where no write protection is enforced (and on
+ * a host with no such mapping), so it is safe to call unconditionally. Never unmaps or joins
+ * anything; purely the APRR/thread state.
+ */
+void tl_xmem_emit_begin(void);
+void tl_xmem_emit_end(void);
 
 /* Make bytes written through the RW view visible to instruction fetch. */
 void tl_xmem_flush(const void *rx, size_t bytes);

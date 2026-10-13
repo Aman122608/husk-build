@@ -11,7 +11,9 @@
  *   - mmap for executable memory hands out a piece of the JIT region;
  *   - a store into the executable view faults, and the fault handler performs it through the writable view -- the store
  *     instruction is decoded from the faulting PC, its value read from the saved registers -- flushes the instruction cache
- *     for the bytes it changed, and resumes after the instruction.
+ *     for the bytes it changed, and resumes after the instruction. A store into the GUEST-FACING view (a JIT's own arena,
+ *     which the loader hands it in writable-view form) faults there too when that view is the authorised MAP_JIT mapping
+ *     and the calling thread is in execute mode: the same handler writes it in place with the thread put back in write mode.
  *
  * Patching happens a few hundred times while a mod loader starts, so a fault per store costs nothing that shows. Off unless
  * a driver turns it on (tl_codewrite_enable), so no other game's crash ever passes through here.
@@ -54,13 +56,34 @@ static void set_xreg(struct __darwin_arm_thread_state64 *ss, unsigned r, uint64_
     else ss->__x[r] = v;
 }
 
-/* Store `bytes` of a register's value at the executable address `addr`, through the writable view. */
+/* Store `bytes` of a register's value at `addr`, through whichever view is writable.
+ *
+ * An address in the EXECUTABLE view (what a hooking library patches: library code) is written through
+ * the writable view at a fixed distance. An address in the GUEST-FACING view -- a JIT's own arena, which
+ * the loader's adrp retarget hands it in writable-view form -- is written in place, with the thread
+ * briefly in write mode: under Fix A that view is the MAP_JIT mapping, so on a device that enforces W^X
+ * a store there needs write mode and the code that follows needs execute mode back (tl_xmem_emit_begin
+ * / end are no-ops where no write protection is enforced, and where the guest-facing view is not the
+ * authorised one this branch is never taken for a store that already faulted in the other view).
+ *
+ * Either way the instruction cache is dropped for the bytes changed, so the CPU fetches what was stored. */
 static bool put(uint64_t addr, const void *value, unsigned bytes)
 {
-    if (!tl_xmem_is_rx((const void *)addr) || !tl_xmem_is_rx((const void *)(addr + bytes - 1))) return false;
-    memcpy((void *)(addr + (uint64_t)tl_xmem_delta()), value, bytes);
-    tl_xmem_flush((const void *)addr, bytes);
-    return true;
+    if (tl_xmem_is_rx((const void *)addr) && tl_xmem_is_rx((const void *)(addr + bytes - 1))) {
+        tl_xmem_emit_begin();
+        memcpy((void *)(addr + (uint64_t)tl_xmem_delta()), value, bytes);
+        tl_xmem_emit_end();
+        tl_xmem_flush((const void *)addr, bytes);
+        return true;
+    }
+    if (tl_xmem_contains((const void *)addr) && tl_xmem_contains((const void *)(addr + bytes - 1))) {
+        tl_xmem_emit_begin();
+        memcpy((void *)addr, value, bytes);
+        tl_xmem_emit_end();
+        tl_xmem_flush((const void *)addr, bytes);
+        return true;
+    }
+    return false;
 }
 
 static void reg_bytes(const mcontext_t mc, bool simd, unsigned r, unsigned bytes, uint8_t out[16])
@@ -184,7 +207,10 @@ static void chain(struct sigaction *prev, int sig, siginfo_t *info, void *uc)
 static void on_fault(int sig, siginfo_t *info, void *uc)
 {
     ucontext_t *u = uc;
-    if (g_on && info && tl_xmem_is_rx(info->si_addr) && emulate(u->uc_mcontext)) {
+    /* A store into the JIT region faults in either view: the executable view (library code a hooking
+     * library patches) or the guest-facing view (a JIT's own arena, which under Fix A is the authorised
+     * mapping and needs only the thread put back in write mode). Outside the region it is not ours. */
+    if (g_on && info && tl_xmem_contains(info->si_addr) && emulate(u->uc_mcontext)) {
         u->uc_mcontext->__ss.__pc += 4;
         g_emulated++;
         return;
