@@ -77,6 +77,19 @@ jobs:
           HUSK_BUNDLE_GUEST: ${{ inputs.bundle_guest }}
         run: bash ./scripts/build_ipa_prebuilt.sh build/Husk.ipa
 
+      # Checks the ARTIFACT, not the step. The dex step above is deliberately non-fatal, so a missing
+      # JDK or a Maven outage cannot block an iOS build -- but that also meant a COMPILE ERROR in our
+      # own Java went unnoticed: the packaging script fell back to the donor IPA's frozen dex, the
+      # workflow reported success, and the ad refusal, the touchable-web-page rule, the resource
+      # tables and the activity lifecycle were all dead code in every build. A step can fail quietly;
+      # the bytes in the IPA cannot. If this fails, fix the Java -- do not ship the IPA to a phone.
+      - name: Verify the shipped framework dex is built from this repo
+        run: |
+          set -euo pipefail
+          python3 tools/check-shipped-dex.py build/Husk.ipa || {
+            echo "::error::this IPA carries the DONOR's husk-framework.dex, so every change to src/java-framework is dead code in it. Fix the compile error in 'Build Husk's Java framework (from this repo)'."
+            exit 1
+          }
       - name: Upload logs (also on failure)
         if: always()
         uses: actions/upload-artifact@v4
