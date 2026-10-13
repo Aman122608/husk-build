@@ -388,6 +388,17 @@ static int b_attr_setstacksize(guest_attr *a, size_t n)
     a->stack_size = n;
     return 0;
 }
+/* bionic's pthread_attr_setstack: the caller wants a thread with `size` bytes of stack placed at `addr`. A host thread
+ * cannot be pinned to a guest address, so the size is honoured (exactly as pthread_attr_setstacksize) and the address
+ * recorded but not used -- what the callers in practice want is the size: a big stack for a guest thread, which b_create
+ * then gives it. EINVAL below bionic's minimum, as the real one answers. */
+static int b_attr_setstack(guest_attr *a, void *addr, size_t n)
+{
+    if (n < 16384) return 22;
+    a->stack_base = addr;
+    a->stack_size = n;
+    return 0;
+}
 static int b_attr_getstacksize(const guest_attr *a, size_t *n) { *n = a->stack_size; return 0; }
 /* Scheduling attributes: a thread on this host runs at the system's own priority; the guest is told the default (SCHED_OTHER, priority 0) and its requests are accepted. */
 static int b_attr_getschedparam(const guest_attr *a, int *prio) { (void)a; *prio = 0; return 0; }
@@ -542,6 +553,7 @@ const tl_bionic_entry tl_tab_pthread[] = {
     TL_WRAP("pthread_getspecific", b_getspecific), TL_WRAP("pthread_setspecific", b_setspecific),
     TL_WRAP("pthread_attr_init", b_attr_init), TL_WRAP("pthread_attr_destroy", b_attr_destroy),
     TL_WRAP("pthread_attr_setdetachstate", b_attr_setdetachstate), TL_WRAP("pthread_attr_setstacksize", b_attr_setstacksize),
+    TL_WRAP("pthread_attr_setstack", b_attr_setstack),
     TL_WRAP("pthread_attr_getstacksize", b_attr_getstacksize), TL_WRAP("pthread_attr_getguardsize", b_attr_getguardsize), TL_WRAP("pthread_attr_setguardsize", b_attr_setguardsize), TL_WRAP("pthread_attr_setscope", b_attr_setscope), TL_WRAP("pthread_attr_getscope", b_attr_getscope), TL_WRAP("pthread_attr_getstack", b_attr_getstack),
     TL_WRAP("pthread_attr_getschedparam", b_attr_getschedparam),
     TL_WRAP("pthread_attr_getschedpolicy", b_attr_getschedpolicy), TL_WRAP("pthread_attr_setinheritsched", b_attr_setinheritsched), TL_WRAP("pthread_attr_getinheritsched", b_attr_getinheritsched), TL_WRAP("pthread_attr_setschedpolicy", b_attr_setschedpolicy),

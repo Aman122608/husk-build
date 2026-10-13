@@ -7,6 +7,7 @@
 
 #include <ctype.h>
 #include <crt_externs.h>
+#include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -248,7 +249,7 @@ static void *b_fopen(const char *path, const char *mode)
         if (fd >= 0 && !(f = fdopen(fd, mode))) { close(fd); tl_atomic_abandon(fd); }
     }
     if (!f) f = fopen(real, mode);
-    if (!f && errno == ENOENT) { void tl_note_missing_file(const char *path); tl_note_missing_file(path); }
+    if (!f && errno == ENOENT) { void tl_note_missing_file(const char *path); tl_note_missing_file(real); }
     { static int tr = -1; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0;
       if (tr) tl_log_line("file: fopen(%s, %s) -> %s%s", path, mode, f ? "ok" : "failed", real != path ? " (mapped)" : ""); }
     TL_ERRNO_END();
@@ -675,6 +676,44 @@ static const char *g_sys_signame[32] = { "Unknown signal", "HUP", "INT", "QUIT",
 
 /* ---------------------------------------------------------------- tables */
 
+/*
+ * zlib's gzip-file API. A game that reads a .gz through gzopen/gzread/gzclose gets the host's zlib, looked up by name
+ * rather than linked: the guest's gzFile is the host's handle, so nothing is re-implemented and the file it names is
+ * opened through gzopen as ordinary files are. If the device exposes no libz, each call answers NULL/-1 -- the honest
+ * "cannot open" -- instead of pretending the read worked. Worth binding rather than leaving stubbed: PvZ2 (Reflourished)
+ * imports all three, and a stub that returned 0 to gzread would look like an empty file, not a failure.
+ */
+static void *gz_sym(const char *name)
+{
+    static void *libz;
+    static bool tried;
+    if (!tried) {
+        tried = true;
+        libz = dlopen("/usr/lib/libz.1.dylib", RTLD_LAZY);
+    }
+    void *p = libz ? dlsym(libz, name) : NULL;
+    return p ? p : dlsym(RTLD_DEFAULT, name);
+}
+static void *b_gzopen(const char *path, const char *mode)
+{
+    static void *(*fn)(const char *, const char *);
+    char buf[1024];
+    if (!fn) fn = (void *(*)(const char *, const char *))gz_sym("gzopen");
+    return fn ? fn(tl_path_resolve(path, buf, sizeof(buf)), mode) : NULL;
+}
+static int b_gzread(void *f, void *buf, unsigned n)
+{
+    static int (*fn)(void *, void *, unsigned);
+    if (!fn) fn = (int (*)(void *, void *, unsigned))gz_sym("gzread");
+    return fn && f ? fn(f, buf, n) : -1;
+}
+static int b_gzclose(void *f)
+{
+    static int (*fn)(void *);
+    if (!fn) fn = (int (*)(void *))gz_sym("gzclose");
+    return fn && f ? fn(f) : -1;
+}
+
 const tl_bionic_entry tl_tab_str[] = {
     /* string.h */
     TL_DIRECT(memchr), TL_DIRECT(memcmp), TL_DIRECT(memcpy), TL_DIRECT(memmove), TL_DIRECT(memset),
@@ -742,6 +781,7 @@ const tl_bionic_entry tl_tab_str[] = {
     /* stdio.h */
     TL_DATA("__sF", g_sF),
     TL_WRAP("fopen", b_fopen), TL_WRAP("freopen", b_freopen), TL_WRAP("freopen64", b_freopen), TL_WRAP("fopen64", b_fopen), TL_WRAP("fseeko64", b_fseeko), TL_WRAP("ftello64", b_ftello), TL_DIRECT(funopen), TL_DIRECT(wcwidth), TL_WRAP("fdopen", b_fdopen), TL_WRAP("fclose", b_fclose), TL_WRAP("fgets", b_fgets),
+    TL_WRAP("gzopen", b_gzopen), TL_WRAP("gzread", b_gzread), TL_WRAP("gzclose", b_gzclose),
     TL_WRAP("fread", b_fread), TL_WRAP("fwrite", b_fwrite), TL_WRAP("fseek", b_fseek), TL_WRAP("fseeko", b_fseeko),
     TL_WRAP("ftell", b_ftell), TL_WRAP("ftello", b_ftello), TL_WRAP("fgetpos", b_fgetpos), TL_WRAP("fsetpos", b_fsetpos), TL_WRAP("fgetpos64", b_fgetpos), TL_WRAP("fsetpos64", b_fsetpos), TL_WRAP("fflush", b_fflush), TL_WRAP("fputc", b_fputc),
     TL_WRAP("getline", b_getline), TL_WRAP("getdelim", b_getdelim), TL_WRAP("flockfile", b_flockfile), TL_WRAP("funlockfile", b_funlockfile),
@@ -753,6 +793,9 @@ const tl_bionic_entry tl_tab_str[] = {
     TL_WRAP("remove", b_remove), TL_WRAP("rename", b_rename),
     TL_WRAP("snprintf", tl_va_snprintf), TL_WRAP("sprintf", tl_va_sprintf), TL_WRAP("printf", tl_va_printf), TL_WRAP("asprintf", tl_va_asprintf),
     TL_WRAP("fprintf", tl_va_fprintf), TL_WRAP("sscanf", tl_va_sscanf), TL_WRAP("fscanf", tl_va_fscanf),
+    /* bionic's swscanf is the host's: both read a wide string with the host's wchar_t, which is 4 bytes here and on
+     * Android. PvZ2 imports it; a stub would have parsed nothing and answered "no fields". */
+    TL_DIRECT(swscanf),
     TL_WRAP("vswprintf", b_vswprintf), TL_WRAP("__fwrite_chk", b___fwrite_chk), TL_WRAP("system", b_system),
     TL_WRAP("sched_getcpu", b_sched_getcpu), TL_DIRECT(wcslcpy), TL_DIRECT(wcslcat), TL_DIRECT(wcscasecmp), TL_DIRECT(wcsncasecmp),
     TL_WRAP("vsnprintf", b_vsnprintf), TL_WRAP("__vsnprintf_chk", b___vsnprintf_chk), TL_WRAP("__vsprintf_chk", b___vsprintf_chk),

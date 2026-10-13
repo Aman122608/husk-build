@@ -65,6 +65,12 @@ static jobj *new_file(const char *path)
 }
 static const char *file_path(const jobj *f) { return S(tl_jni_get_field((jobj *)f, "path", "Ljava/lang/String;").l); }
 
+/* A path a java.io.File holds may name /sdcard (the OBB directory, a game's own data folder there): every check or
+ * change of the file has to go through the same mapping the native calls do, or exists() fails for a file the game can
+ * open. A host path (the private tree the Context getters hand out) passes through unchanged. */
+const char *tl_path_resolve(const char *path, char *buf, size_t n);   /* husk-tl-bionic-io.c */
+static const char *file_resolved(const jobj *f, char *buf, size_t n) { return tl_path_resolve(file_path(f), buf, n); }
+
 static void File_init_s(tl_jcall *c) { set_str(c->self, "path", S(c->args[0].l)); }
 static void File_init_fs(tl_jcall *c)
 {
@@ -93,15 +99,15 @@ static void File_getParentFile(tl_jcall *c)
     if (s == p) s[1] = 0; else *s = 0;
     c->ret = vl(new_file(p));
 }
-static void File_exists(tl_jcall *c) { struct stat st; c->ret = vz(stat(file_path(c->self), &st) == 0); }
-static void File_isDirectory(tl_jcall *c) { struct stat st; c->ret = vz(stat(file_path(c->self), &st) == 0 && S_ISDIR(st.st_mode)); }
-static void File_isFile(tl_jcall *c) { struct stat st; c->ret = vz(stat(file_path(c->self), &st) == 0 && S_ISREG(st.st_mode)); }
-static void File_canRead(tl_jcall *c) { c->ret = vz(access(file_path(c->self), R_OK) == 0); }
-static void File_canWrite(tl_jcall *c) { c->ret = vz(access(file_path(c->self), W_OK) == 0); }
-static void File_mkdirs(tl_jcall *c) { mkdirs(file_path(c->self)); struct stat st; c->ret = vz(stat(file_path(c->self), &st) == 0); }
-static void File_mkdir(tl_jcall *c) { c->ret = vz(mkdir(file_path(c->self), 0755) == 0); }
-static void File_delete(tl_jcall *c) { c->ret = vz(unlink(file_path(c->self)) == 0 || rmdir(file_path(c->self)) == 0); }
-static void File_length(tl_jcall *c) { struct stat st; jvalue v; v.j = stat(file_path(c->self), &st) == 0 ? st.st_size : 0; c->ret = v; }
+static void File_exists(tl_jcall *c) { char b[1024]; struct stat st; c->ret = vz(stat(file_resolved(c->self, b, sizeof(b)), &st) == 0); }
+static void File_isDirectory(tl_jcall *c) { char b[1024]; struct stat st; c->ret = vz(stat(file_resolved(c->self, b, sizeof(b)), &st) == 0 && S_ISDIR(st.st_mode)); }
+static void File_isFile(tl_jcall *c) { char b[1024]; struct stat st; c->ret = vz(stat(file_resolved(c->self, b, sizeof(b)), &st) == 0 && S_ISREG(st.st_mode)); }
+static void File_canRead(tl_jcall *c) { char b[1024]; c->ret = vz(access(file_resolved(c->self, b, sizeof(b)), R_OK) == 0); }
+static void File_canWrite(tl_jcall *c) { char b[1024]; c->ret = vz(access(file_resolved(c->self, b, sizeof(b)), W_OK) == 0); }
+static void File_mkdirs(tl_jcall *c) { char b[1024]; struct stat st; const char *p = file_resolved(c->self, b, sizeof(b)); mkdirs(p); c->ret = vz(stat(p, &st) == 0); }
+static void File_mkdir(tl_jcall *c) { char b[1024]; c->ret = vz(mkdir(file_resolved(c->self, b, sizeof(b)), 0755) == 0); }
+static void File_delete(tl_jcall *c) { char b[1024]; const char *p = file_resolved(c->self, b, sizeof(b)); c->ret = vz(unlink(p) == 0 || rmdir(p) == 0); }
+static void File_length(tl_jcall *c) { char b[1024]; struct stat st; jvalue v; v.j = stat(file_resolved(c->self, b, sizeof(b)), &st) == 0 ? st.st_size : 0; c->ret = v; }
 static void File_toString(tl_jcall *c) { c->ret = vl(STR(file_path(c->self))); }
 
 /* --------------------------------------------------------------- java.lang */
@@ -743,12 +749,26 @@ static void Coll_size(tl_jcall *c) { c->ret = vi(0); }
 static void Coll_isEmpty(tl_jcall *c) { c->ret = vz(1); }
 static void SP_getAll(tl_jcall *c) { c->ret = vl(make("java/util/HashMap")); }
 static void Intent_getExtras(tl_jcall *c) { c->ret = vl(NULL); }
-static void Context_getObbDir(tl_jcall *c) { char p[700]; snprintf(p, sizeof(p), "%s/obb", H.ext_files); mkdirs(p); c->ret = vl(new_file(p)); }
+/* Android's OBB directory: /sdcard/Android/obb/<package>. The File names that guest path, so a game that opens
+ * <obbDir>/main.<version>.<package>.obb goes through the same mapping every /sdcard open does -- the file is found in the
+ * app's own tree if it is there, and in the shared folder the player can fill from Files or from a served download. The
+ * app's private copy of the directory is made now, so a game that lists it finds a real directory. */
+static void Context_getObbDir(tl_jcall *c)
+{
+    char dir[700], guest[400];
+    snprintf(dir, sizeof(dir), "%s/sdcard/Android/obb/%s", H.data, H.pkg);
+    mkdirs(dir);
+    snprintf(guest, sizeof(guest), "/sdcard/Android/obb/%s", H.pkg);
+    c->ret = vl(new_file(guest));
+}
 static void Context_getObbDirs(tl_jcall *c)
 {
+    char dir[700], guest[400];
     jobj *a = tl_jni_new_obj_array(C("java/io/File"), 1);
-    char p[700]; snprintf(p, sizeof(p), "%s/obb", H.ext_files); mkdirs(p);
-    a->oarr.v[0] = new_file(p);
+    snprintf(dir, sizeof(dir), "%s/sdcard/Android/obb/%s", H.data, H.pkg);
+    mkdirs(dir);
+    snprintf(guest, sizeof(guest), "/sdcard/Android/obb/%s", H.pkg);
+    a->oarr.v[0] = new_file(guest);
     c->ret = vl(a);
 }
 static void Activity_setRequestedOrientation(tl_jcall *c) { (void)c; }

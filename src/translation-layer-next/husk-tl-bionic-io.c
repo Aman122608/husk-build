@@ -195,6 +195,25 @@ static bool renpy_hidden_macver(const char *p)
     return g_renpy_android && p && (strstr(p, "/CoreServices/SystemVersion.plist") != NULL);
 }
 
+/*
+ * A game's expansion file (Android/obb/<package>/main.<version>.<package>.obb) that is there: said once, naming where it
+ * was found, so a run says the OBB was found the way the missing line says it was not. Skipped for anything under /obb
+ * that is not a .obb, and for a target that does not exist (a game that creates the file itself must not be reported as
+ * having found one).
+ */
+static void note_obb_used(const char *rest, const char *full)
+{
+    static bool said;
+    const char *dot;
+    struct stat st;
+    if (said || !rest || !strstr(rest, "/obb/")) return;
+    dot = strrchr(rest, '.');
+    if (!dot || strcmp(dot, ".obb")) return;
+    if (stat(full, &st) != 0) return;
+    said = true;
+    tl_log_line("husk: the app's expansion file (OBB) is at %s (%lld bytes)", full, (long long)st.st_size);
+}
+
 const char *tl_path_resolve(const char *path, char *buf, size_t n)
 {
     if (!path) return path;
@@ -278,17 +297,21 @@ const char *tl_path_resolve(const char *path, char *buf, size_t n)
     }
     if (!strncmp(path, "/sdcard", 7) || !strncmp(path, "/storage/emulated/0", 19)) {
         const char *rest = !strncmp(path, "/sdcard", 7) ? path + 7 : path + 19;
-        /* Shared storage (anything but an app's own Android/data and Android/obb) is one folder for every game when the app gave one,
+        /* Shared storage (anything but an app's own Android/data) is one folder for every game when the app gave one,
          * which the player can fill from Files: a game whose data lives in a folder of its own on /sdcard finds it there. What a game
-         * already keeps in its private copy stays found. */
-        if (g_shared_storage[0] && strncmp(rest, "/Android/data", 13) && strncmp(rest, "/Android/obb", 12)) {
+         * already keeps in its private copy stays found. Android/obb is included on purpose: an expansion file is the one thing a player
+         * has to supply by hand, the shared folder is reachable from Files and from Husk's own served downloads, and a game that asks
+         * Android for its OBB directory is handed this same path -- so there is one place to put it and the layer finds it there. */
+        if (g_shared_storage[0] && strncmp(rest, "/Android/data", 13)) {
             char own[1024]; struct stat st;
             snprintf(own, sizeof(own), "%s/sdcard%s", tl_data_dir(), rest);
-            if (rest[0] && rest[1] && stat(own, &st) == 0) { snprintf(buf, n, "%s", own); return buf; }
+            if (rest[0] && rest[1] && stat(own, &st) == 0) { snprintf(buf, n, "%s", own); note_obb_used(rest, buf); return buf; }
             snprintf(buf, n, "%s%s", g_shared_storage, rest);
+            note_obb_used(rest, buf);
             return buf;
         }
         snprintf(buf, n, "%s/sdcard%s", tl_data_dir(), rest);
+        note_obb_used(rest, buf);
         return buf;
     }
     return path;
@@ -564,7 +587,9 @@ void tl_atomic_closed(int fd)
 }
 
 /* A game's expansion file (Android/obb/<package>/main.<version>.<package>.obb) that is not there: said once, for the app's
- * diagnosis ("Missing game data") -- the store installs APKs and splits, not expansion files. */
+ * diagnosis ("Missing game data") -- the store installs APKs and splits, not expansion files. The path printed is the
+ * one the file system looked in (the app's own tree, or where the player can put the file), so the line says where the
+ * OBB has to go as well as that it is missing. */
 void tl_note_missing_file(const char *path)
 {
     static bool said;
@@ -617,7 +642,7 @@ static int b_open(const char *path, int flags, unsigned mode)
     int e = errno;
     TL_ERRNO_END();
     { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 20000)) tl_log_line("file: open(%s, %#x) -> %d%s", path, flags, fd, fd < 0 ? (e == ENOENT ? " ENOENT" : " error") : ""); }
-    if (fd < 0 && e == ENOENT) tl_note_missing_file(path);
+    if (fd < 0 && e == ENOENT) tl_note_missing_file(real);   /* name the host path it looked in, not just the guest one */
     return fd;
 }
 static int b___open_2(const char *path, int flags) { return b_open(path, flags, 0); }
@@ -834,9 +859,9 @@ static int b_stat(const char *p, guest_stat *g)
         if (vr == 0) { fill_stat(g, &s); g->st_size = (int64_t)vf->size; g->st_mode = S_IFREG | 0444; }
         return vr;
     }
-    TL_ERRNO_BEGIN(); int r = stat(tl_path_resolve(p, b, sizeof(b)), &s); int e = errno; TL_ERRNO_END();
+    TL_ERRNO_BEGIN(); const char *real = tl_path_resolve(p, b, sizeof(b)); int r = stat(real, &s); int e = errno; TL_ERRNO_END();
     ftrace("stat", p, r, e);
-    if (r != 0 && e == ENOENT) tl_note_missing_file(p);
+    if (r != 0 && e == ENOENT) tl_note_missing_file(real);   /* name the host path it looked in, not just the guest one */
     if (r == 0) fill_stat(g, &s);
     return r;
 }

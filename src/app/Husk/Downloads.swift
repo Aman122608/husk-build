@@ -133,7 +133,18 @@ final class Downloads: ObservableObject {
         }
         let (name, size) = await Self.probe(url)
         let kind: Job.Kind = name.lowercased().hasSuffix(".apk") ? .apk : .file
-        start(Job(title: name, source: url.absoluteString, kind: kind, files: [File(path: name, url: url.absoluteString, size: size)]))
+        // A file fetched from the folder server keeps its place under Shared Storage: /f/Android/obb/<pkg>/main.<ver>.<pkg>.obb
+        // lands at Android/obb/<pkg>/... , which is where the layer looks for an expansion file. Anything else keeps its name.
+        start(Job(title: name, source: url.absoluteString, kind: kind, files: [File(path: Self.servedPath(url) ?? name, url: url.absoluteString, size: size)]))
+    }
+
+    /// The path a served file should keep under Shared Storage: everything after the folder server's "/f/" prefix, so a
+    /// file it lists at Android/obb/<pkg>/x.obb lands there instead of at the top. nil for a link that is not one.
+    private static func servedPath(_ url: URL) -> String? {
+        let comps = url.pathComponents
+        guard let i = comps.firstIndex(of: "f"), i + 1 < comps.count else { return nil }
+        let rest = comps[(i + 1)...].joined(separator: "/")
+        return rest.isEmpty ? nil : rest
     }
 
     /// Start one file by its own URL, without asking the server what it is.
@@ -141,9 +152,9 @@ final class Downloads: ObservableObject {
     /// Used by LAN discovery, where the folder's listing already gave the exact path and size. The listing
     /// itself is never handed to `add(link:)`: a manifest of files makes a `.folder` job, whose files land in
     /// Shared Storage and never appear in the library. One file, one URL, and an APK becomes a real app.
-    func addFile(name: String, url: String, size: Int64) {
+    func addFile(name: String, path: String? = nil, url: String, size: Int64) {
         let kind: Job.Kind = name.lowercased().hasSuffix(".apk") ? .apk : .file
-        start(Job(title: name, source: url, kind: kind, files: [File(path: name, url: url, size: size)]))
+        start(Job(title: name, source: url, kind: kind, files: [File(path: path ?? name, url: url, size: size)]))
     }
 
     private func start(_ new: Job) {

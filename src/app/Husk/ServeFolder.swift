@@ -145,11 +145,13 @@ final class ServeFolder: ObservableObject {
 
     /// Start one file: `http://<host>/f/<exact path>`. This is the whole point -- a single-file URL is what
     /// becomes a real app in the library. Handing the app the manifest instead makes a folder job, which drops
-    /// the files into Shared Storage and leaves the library empty.
+    /// the files into Shared Storage and leaves the library empty. The file keeps its path inside the served
+    /// folder under Shared Storage (an OBB the folder lists at Android/obb/<pkg>/x.obb lands there, which is where
+    /// the layer looks for an expansion file); an APK is unaffected -- it goes to the library either way.
     func download(_ entry: Entry) {
         guard let host, let url = Self.fileURL(host: host, path: entry.path) else { return }
         HuskLog.log("discovery", "downloading \(entry.path) as one file: \(url)")
-        Downloads.shared.addFile(name: entry.name, url: url, size: entry.size)
+        Downloads.shared.addFile(name: entry.name, path: entry.path, url: url, size: entry.size)
     }
 
     /// The job already running (or done) for a row, so it can show progress instead of a second Get button.

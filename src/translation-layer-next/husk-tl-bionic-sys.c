@@ -122,6 +122,11 @@ static void *b_getpwnam(const char *name)
     const char *const *pw = tl_bionic_app_passwd();
     return name && !strcmp(name, pw[0]) ? (void *)pw : NULL;
 }
+/* Group lookups: getgroups/getgrouplist say the app's group is 10100 and there are no named groups, so a lookup by
+ * gid or by name finds nothing and answers NULL -- which every caller of getgrgid/getgrnam already has to handle for an
+ * unknown group. Returning a struct nobody filled would be worse than an honest miss. */
+static void *b_getgrgid(unsigned gid) { (void)gid; return NULL; }
+static void *b_getgrnam(const char *name) { (void)name; return NULL; }
 
 /* ---------------------------------------------------------------- strings, numbers */
 
@@ -444,6 +449,7 @@ const tl_bionic_entry tl_tab_sys[] = {
     TL_WRAP("fallocate", b_fallocate), TL_WRAP("fallocate64", b_fallocate),
     TL_WRAP("msync", b_msync), TL_WRAP("mincore", b_mincore),
     TL_WRAP("nftw", b_nftw), TL_WRAP("nftw64", b_nftw), TL_WRAP("getpwnam", b_getpwnam),
+    TL_WRAP("getgrgid", b_getgrgid), TL_WRAP("getgrnam", b_getgrnam),
     TL_WRAP("strtod_l", b_strtod_l), TL_WRAP("strtof_l", b_strtof_l),
     TL_WRAP("__gnu_strerror_r", b___gnu_strerror_r), TL_WRAP("__assert", b___assert), TL_WRAP("__fread_chk", b___fread_chk),
     TL_DIRECT(aligned_alloc), TL_DIRECT(arc4random), TL_DIRECT(rand_r),
