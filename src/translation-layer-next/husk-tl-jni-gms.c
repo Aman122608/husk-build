@@ -38,6 +38,16 @@ static void RetZero(tl_jcall *c) { c->ret = vi(0); }
 /* The Play services version a current phone has (25.13). */
 #define GMS_VERSION 251333035
 
+/* Play Asset Delivery's class names (see the section at the bottom of this file), here because the class list below needs them. */
+#define PADF  "com/google/android/play/core/assetpacks/AssetPackManagerFactory"
+#define PADM  "com/google/android/play/core/assetpacks/AssetPackManager"
+#define PADS  "com/google/android/play/core/assetpacks/AssetPackState"
+#define PADSS "com/google/android/play/core/assetpacks/AssetPackStates"
+#define PADL  "com/google/android/play/core/assetpacks/AssetPackLocation"
+#define PADAL "com/google/android/play/core/assetpacks/AssetLocation"
+#define PADE  "com/google/android/play/core/assetpacks/AssetPackException"
+#define PADNL "com/google/android/play/core/assetpacks/NativeAssetPackStateUpdateListener"
+
 static jobj *singleton(const char *cls)
 {
     static struct { const char *cls; jobj *obj; } cache[32];
@@ -284,6 +294,9 @@ static const struct { const char *name, *super; } k_classes[] = {
     { FB "GoogleApiAvailabilityHelper", "java/lang/Object" },
     { PPP, "java/lang/Object" }, { PPPB, "java/lang/Object" },
     { BC, "java/lang/Object" }, { BCB, "java/lang/Object" }, { BR, "java/lang/Object" },
+    { PADF, "java/lang/Object" }, { PADM, "java/lang/Object" }, { PADS, "java/lang/Object" },
+    { PADSS, "java/lang/Object" }, { PADL, "java/lang/Object" }, { PADE, "java/lang/Exception" },
+    { PADNL, "java/lang/Object" },
 };
 
 /* ------------------------------------------------------------ class loader */
@@ -308,6 +321,237 @@ static void CL_loadClass(tl_jcall *c)
 static void CL_loadClass2(tl_jcall *c) { CL_loadClass(c); }      /* loadClass(String, boolean resolve) */
 /* new DexClassLoader(path, optimizedDir, libraryPath, parent): the classes it would add are looked up in the APK's anyway. */
 static void CL_init(tl_jcall *c) { (void)c; }
+
+/* ------------------------------------------------- Google Play Asset Delivery */
+
+/*
+ * Play's asset packs, as a game packaged for them sees them.
+ *
+ * GTA: San Andreas Definitive Edition delivers its paks this way, and the game checks before it will start: its first map
+ * is a DownloadMenu that asks Play which packs of its own manifest are installed, requests the ones that are not, and only
+ * goes on when they are all there. There is no Play service on iOS and no other source for that content, so with nothing
+ * answering, the game sits at "starting the download" forever -- the download belongs to Play and Play is not here.
+ *
+ * The paks themselves are on the device: they are inside the APK's OBB, which the engine mounts, and this answers Play's
+ * questions the way a phone whose packs had already been installed would -- every pack complete, at the folder the engine
+ * looks for paks in (<external files>/UE4Game/<Project>/<Project>/Content/Paks, served by that same OBB), every request a
+ * Task that has finished. A pack this APK genuinely does not carry still fails when its pak is mounted, and the log says
+ * which one: that is a fact about the file, not something to answer around.
+ */
+#define PAD_COMPLETED     4      /* AssetPackStatus.COMPLETED */
+#define PAD_STORAGE_FILES 2      /* AssetPackStorageMethod.STORAGE_FILES */
+#define PAD_SEEN_MAX      64
+
+const char *tl_hle_ext_files(void);
+const char *tl_ue4_meta(const char *key);
+
+static jvalue vj(int64_t j) { jvalue v; v.j = j; return v; }
+static const char *S_(const jobj *o) { const char *s = tl_jni_string(o); return s ? s : ""; }
+
+/* The folder the engine scans for paks -- and the one the OBB is mounted over, so the paks really are there. */
+static const char *pad_pak_dir(void)
+{
+    static char dir[1000];
+    if (!dir[0]) {
+        const char *p = tl_ue4_meta("com.epicgames.ue4.GameActivity.ProjectName");
+        if (!p || !p[0]) p = "Gameface";
+        snprintf(dir, sizeof(dir), "%s/UE4Game/%s/%s/Content/Paks", tl_hle_ext_files(), p, p);
+    }
+    return dir;
+}
+
+/* Every pack the game has named, so getPackLocations() can answer for all of them. */
+static struct { char name[80]; } g_pad[PAD_SEEN_MAX];
+static int g_pad_n;
+static jobj *g_pad_listener;
+
+static void pad_note(const char *pack)
+{
+    if (!pack || !pack[0]) return;
+    for (int i = 0; i < g_pad_n; i++) if (!strcmp(g_pad[i].name, pack)) return;
+    if (g_pad_n < PAD_SEEN_MAX) snprintf(g_pad[g_pad_n++].name, sizeof(g_pad[0].name), "%s", pack);
+}
+
+/* A pack list as the plugin hands it over: a String[] (the usual), or a List if a game built one. */
+static int pad_count(jobj *l)
+{
+    if (!l) return 0;
+    if (l->kind == TL_K_OBJ_ARRAY && l->oarr.v) return (int)l->oarr.len;
+    if (tl_jni_pending()) tl_jni_clear();
+    jvalue r = tl_jni_call(l, "size", "()I", NULL);
+    if (tl_jni_pending()) tl_jni_clear();
+    return r.i > 0 && r.i < 4096 ? r.i : 0;
+}
+static jobj *pad_at(jobj *l, int i)
+{
+    if (!l) return NULL;
+    if (l->kind == TL_K_OBJ_ARRAY && l->oarr.v) return i < (int)l->oarr.len ? l->oarr.v[i] : NULL;
+    jvalue a = vi(i);
+    jobj *o = tl_jni_call(l, "get", "(I)Ljava/lang/Object;", &a).l;
+    if (tl_jni_pending()) tl_jni_clear();
+    return o;
+}
+
+/* One pack, complete: what its getters hand back. */
+static jobj *pad_state(const char *pack)
+{
+    jobj *s = tl_jni_new_object(tl_jni_class(PADS));
+    tl_jni_set_field(s, "name", "Ljava/lang/String;", vl(tl_jni_new_string(pack)));
+    tl_jni_set_field(s, "status", "I", vi(PAD_COMPLETED));
+    tl_jni_set_field(s, "errorCode", "I", vi(0));
+    tl_jni_set_field(s, "bytesDownloaded", "J", vj(0));
+    tl_jni_set_field(s, "totalBytesToDownload", "J", vj(0));
+    tl_jni_set_field(s, "transferProgressPercentage", "I", vi(100));   /* finished, so 100% */
+    tl_jni_set_field(s, "installedVersionTag", "Ljava/lang/String;", vl(tl_jni_new_string("")));
+    tl_jni_set_field(s, "availableVersionTag", "Ljava/lang/String;", vl(tl_jni_new_string("")));
+    tl_jni_set_field(s, "updateAvailability", "I", vi(0));             /* no update available: the pack is current */
+    return s;
+}
+
+/* Where its paks are: the folder the engine already finds them in. */
+static jobj *pad_location(void)
+{
+    jobj *l = tl_jni_new_object(tl_jni_class(PADL));
+    tl_jni_set_field(l, "path", "Ljava/lang/String;", vl(tl_jni_new_string(pad_pak_dir())));
+    tl_jni_set_field(l, "assetsPath", "Ljava/lang/String;", vl(tl_jni_new_string(pad_pak_dir())));
+    tl_jni_set_field(l, "packStorageMethod", "I", vi(PAD_STORAGE_FILES));
+    return l;
+}
+
+static jobj *pad_map(jobj **vals, const char **names, int n)
+{
+    jobj *m = tl_jni_new_object(tl_jni_class("java/util/HashMap"));
+    for (int i = 0; i < n; i++) {
+        jvalue a[2];
+        a[0] = vl(tl_jni_new_string(names[i]));
+        a[1] = vl(vals[i]);
+        tl_jni_call(m, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", a);
+    }
+    if (tl_jni_pending()) tl_jni_clear();
+    return m;
+}
+
+/* AssetPackStates over the packs a call named. */
+static jobj *pad_states(jobj *names)
+{
+    char buf[24][80];
+    const char *nm[24];
+    jobj *st[24];
+    int n = pad_count(names);
+    if (n > 24) n = 24;
+    for (int i = 0; i < n; i++) {
+        const char *s = tl_jni_string(pad_at(names, i));
+        snprintf(buf[i], sizeof(buf[i]), "%s", s && s[0] ? s : "?");
+        nm[i] = buf[i];
+        pad_note(nm[i]);
+        st[i] = pad_state(nm[i]);
+    }
+    jobj *ss = tl_jni_new_object(tl_jni_class(PADSS));
+    tl_jni_set_field(ss, "states", "Ljava/util/Map;", vl(pad_map(st, nm, n)));
+    tl_jni_set_field(ss, "totalBytes", "J", vj(0));
+    return ss;
+}
+
+/* The game's own listener, if it registered one, is told too: its onStateUpdate is a native the engine registered. */
+static void pad_tell(const char *pack)
+{
+    static bool said_no_native;
+    if (!g_pad_listener) return;
+    typedef void (*cb)(void *, jobj *, jobj *);
+    cb fn = (cb)tl_jni_native(PADNL, "onStateUpdate", "(Lcom/google/android/play/core/assetpacks/AssetPackState;)V");
+    if (!fn) { if (!said_no_native) { said_no_native = true; tl_log_line("pad: the engine registered no onStateUpdate native; listeners are not called"); } return; }
+    fn(tl_jni_env(), g_pad_listener, pad_state(pack));
+}
+
+static void pad_names_say(const char *what, jobj *names)
+{
+    char list[700];
+    size_t at = 0;
+    list[0] = 0;
+    int n = pad_count(names);
+    for (int i = 0; i < n && at < 600; i++) {
+        const char *s = tl_jni_string(pad_at(names, i));
+        at += (size_t)snprintf(list + at, sizeof(list) - at, "%s%s", i ? ", " : "", s ? s : "?");
+    }
+    tl_log_line("pad: %s%d pack(s): %s -- all complete, paks at %s", what, n, list[0] ? list : "(none)", pad_pak_dir());
+}
+
+static void pad_getInstance(tl_jcall *c) { c->ret = vl(singleton(PADM)); }
+static void pad_register(tl_jcall *c)
+{
+    g_pad_listener = c->args[0].l;
+    tl_log_line("pad: registerListener(%s) -- every pack is already final, so no update is coming", g_pad_listener ? tl_jni_class_name(g_pad_listener) : "(null)");
+}
+static void pad_unregister(tl_jcall *c) { if (c->args[0].l == g_pad_listener) g_pad_listener = NULL; }
+static void pad_clear(tl_jcall *c) { (void)c; g_pad_listener = NULL; }
+static void pad_getPackStates(tl_jcall *c) { pad_names_say("getPackStates: ", c->args[0].l); c->ret = vl(task_done(pad_states(c->args[0].l), NULL)); }
+static void pad_fetch(tl_jcall *c)
+{
+    pad_names_say("fetch: ", c->args[0].l);
+    c->ret = vl(task_done(pad_states(c->args[0].l), NULL));
+    for (int i = 0, n = pad_count(c->args[0].l); i < n; i++) { const char *s = tl_jni_string(pad_at(c->args[0].l, i)); if (s) pad_tell(s); }
+}
+static void pad_cancel(tl_jcall *c) { pad_names_say("cancel: ", c->args[0].l); c->ret = vl(pad_states(c->args[0].l)); }
+static void pad_removePack(tl_jcall *c)
+{
+    tl_log_line("pad: removePack(%s) -- refused: the content is the app's own", S_(c->args[0].l));
+    c->ret = vl(task_done(NULL, "the pack is part of the app"));
+}
+static void pad_getPackLocation(tl_jcall *c)
+{
+    const char *n = S_(c->args[0].l);
+    pad_note(n);
+    tl_log_line("pad: getPackLocation(%s) -> %s", n, pad_pak_dir());
+    c->ret = vl(pad_location());
+}
+static void pad_getPackLocations(tl_jcall *c)
+{
+    jobj *v[PAD_SEEN_MAX];
+    const char *nm[PAD_SEEN_MAX];
+    for (int i = 0; i < g_pad_n; i++) { nm[i] = g_pad[i].name; v[i] = pad_location(); }
+    tl_log_line("pad: getPackLocations() -> %d pack(s) at %s", g_pad_n, pad_pak_dir());
+    c->ret = vl(pad_map(v, nm, g_pad_n));
+}
+static void pad_getAssetLocation(tl_jcall *c)
+{
+    tl_log_line("pad: getAssetLocation(%s, %s)", S_(c->args[0].l), S_(c->args[1].l));
+    jobj *a = tl_jni_new_object(tl_jni_class(PADAL));
+    tl_jni_set_field(a, "path", "Ljava/lang/String;", vl(tl_jni_new_string(pad_pak_dir())));
+    tl_jni_set_field(a, "offset", "J", vj(0));
+    tl_jni_set_field(a, "size", "J", vj(0));
+    c->ret = vl(a);
+}
+/* The confirmation dialogs Play shows before a download over cellular: there is nothing to download, so they are answered. */
+static void pad_confirm_task(tl_jcall *c) { (void)c; c->ret = vl(task_done(NULL, NULL)); }
+static void pad_confirm_bool(tl_jcall *c) { (void)c; c->ret = vz(1); }
+
+static void PADS_name(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "name", "Ljava/lang/String;"); }
+static void PADS_status(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "status", "I"); }
+static void PADS_error(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "errorCode", "I"); }
+static void PADS_bytes(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "bytesDownloaded", "J"); }
+static void PADS_total(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "totalBytesToDownload", "J"); }
+static void PADS_progress(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "transferProgressPercentage", "I"); }
+static void PADS_update(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "updateAvailability", "I"); }
+static void PADS_installed(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "installedVersionTag", "Ljava/lang/String;"); }
+static void PADS_available(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "availableVersionTag", "Ljava/lang/String;"); }
+static void PADS_toString(tl_jcall *c)
+{
+    char b[220];
+    snprintf(b, sizeof(b), "AssetPackState{%s, COMPLETED}", S_(tl_jni_get_field(c->self, "name", "Ljava/lang/String;").l));
+    c->ret = vl(tl_jni_new_string(b));
+}
+static void PADSS_packStates(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "states", "Ljava/util/Map;"); }
+static void PADSS_totalBytes(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "totalBytes", "J"); }
+static void PADSS_toString(tl_jcall *c) { c->ret = vl(tl_jni_new_string("AssetPackStates{complete}")); }
+static void PADL_path(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "path", "Ljava/lang/String;"); }
+static void PADL_assetsPath(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "assetsPath", "Ljava/lang/String;"); }
+static void PADL_method(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "packStorageMethod", "I"); }
+static void PADL_toString(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "path", "Ljava/lang/String;"); }
+static void PADAL_path(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "path", "Ljava/lang/String;"); }
+static void PADAL_offset(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "offset", "J"); }
+static void PADAL_size(tl_jcall *c) { c->ret = tl_jni_get_field(c->self, "size", "J"); }
+static void PADE_getErrorCode(tl_jcall *c) { (void)c; c->ret = vi(0); }    /* AssetPackErrorCode: NO_ERROR */
+static void PADE_toString(tl_jcall *c) { (void)c; c->ret = vl(tl_jni_new_string("AssetPackException{no error}")); }
 
 #define M(c, n, s, f) { c, n, s, f }
 #define AC "com/google/android/gms/games/AchievementsClient"
@@ -415,6 +659,36 @@ static const tl_jhle k_gms[] = {
     M(BC, "isFeatureSupported", "(Ljava/lang/String;)Lcom/android/billingclient/api/BillingResult;", BC_isFeatureSupported),
     M(BR, "getResponseCode", "()I", BR_code), M(BR, "getDebugMessage", "()Ljava/lang/String;", BR_message),
     M(BR, "toString", "()Ljava/lang/String;", BR_message),
+    /* Play Asset Delivery (GTA SA DE's content, delivered as Play asset packs: everything is already installed) */
+    M(PADF, "<init>", "()V", Noop),
+    M(PADF, "getInstance", "(Landroid/content/Context;)Lcom/google/android/play/core/assetpacks/AssetPackManager;", pad_getInstance),
+    M(PADM, "registerListener", "(Lcom/google/android/play/core/assetpacks/AssetPackStateUpdateListener;)V", pad_register),
+    M(PADM, "unregisterListener", "(Lcom/google/android/play/core/assetpacks/AssetPackStateUpdateListener;)V", pad_unregister),
+    M(PADM, "clearListeners", "()V", pad_clear),
+    M(PADM, "getPackStates", "(Ljava/util/List;)Lcom/google/android/gms/tasks/Task;", pad_getPackStates),
+    M(PADM, "fetch", "(Ljava/util/List;)Lcom/google/android/gms/tasks/Task;", pad_fetch),
+    M(PADM, "cancel", "(Ljava/util/List;)Lcom/google/android/play/core/assetpacks/AssetPackStates;", pad_cancel),
+    M(PADM, "removePack", "(Ljava/lang/String;)Lcom/google/android/gms/tasks/Task;", pad_removePack),
+    M(PADM, "getPackLocation", "(Ljava/lang/String;)Lcom/google/android/play/core/assetpacks/AssetPackLocation;", pad_getPackLocation),
+    M(PADM, "getPackLocations", "()Ljava/util/Map;", pad_getPackLocations),
+    M(PADM, "getAssetLocation", "(Ljava/lang/String;Ljava/lang/String;)Lcom/google/android/play/core/assetpacks/AssetLocation;", pad_getAssetLocation),
+    M(PADM, "showCellularDataConfirmation", "(Landroid/app/Activity;)Lcom/google/android/gms/tasks/Task;", pad_confirm_task),
+    M(PADM, "showConfirmationDialog", "(Landroid/app/Activity;)Lcom/google/android/gms/tasks/Task;", pad_confirm_task),
+    M(PADM, "showCellularDataConfirmation", "(Landroidx/activity/result/ActivityResultLauncher;)Z", pad_confirm_bool),
+    M(PADM, "showConfirmationDialog", "(Landroidx/activity/result/ActivityResultLauncher;)Z", pad_confirm_bool),
+    M(PADS, "name", "()Ljava/lang/String;", PADS_name), M(PADS, "status", "()I", PADS_status),
+    M(PADS, "errorCode", "()I", PADS_error), M(PADS, "bytesDownloaded", "()J", PADS_bytes),
+    M(PADS, "totalBytesToDownload", "()J", PADS_total), M(PADS, "transferProgressPercentage", "()I", PADS_progress),
+    M(PADS, "updateAvailability", "()I", PADS_update),
+    M(PADS, "installedVersionTag", "()Ljava/lang/String;", PADS_installed),
+    M(PADS, "availableVersionTag", "()Ljava/lang/String;", PADS_available),
+    M(PADS, "toString", "()Ljava/lang/String;", PADS_toString),
+    M(PADSS, "packStates", "()Ljava/util/Map;", PADSS_packStates), M(PADSS, "totalBytes", "()J", PADSS_totalBytes),
+    M(PADSS, "toString", "()Ljava/lang/String;", PADSS_toString),
+    M(PADL, "path", "()Ljava/lang/String;", PADL_path), M(PADL, "assetsPath", "()Ljava/lang/String;", PADL_assetsPath),
+    M(PADL, "packStorageMethod", "()I", PADL_method), M(PADL, "toString", "()Ljava/lang/String;", PADL_toString),
+    M(PADAL, "path", "()Ljava/lang/String;", PADAL_path), M(PADAL, "offset", "()J", PADAL_offset), M(PADAL, "size", "()J", PADAL_size),
+    M(PADE, "getErrorCode", "()I", PADE_getErrorCode), M(PADE, "toString", "()Ljava/lang/String;", PADE_toString),
     { NULL, NULL, NULL, NULL }
 };
 

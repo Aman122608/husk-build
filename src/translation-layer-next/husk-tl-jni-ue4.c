@@ -179,10 +179,12 @@ extern bool tl_pad_connected(int slot);
 static void GA_gamepad(tl_jcall *c) { c->ret = vz(tl_pad_connected(0)); }
 static void GA_listInputDevices(tl_jcall *c) { c->ret = vl(tl_jni_new_string("")); }
 static void GA_isOBBInAPK(tl_jcall *c) { c->ret = vz(0); }
-/* AndroidThunkJava_GooglePAD_Available: whether Play Asset Delivery can deliver this game's content. There is no Play service on
- * iOS, so the answer is no -- but the answer decides how the game gets its paks (Play's asset packs, or a content CDN), which is
- * why it is said rather than only returned. */
-static void GA_googlePAD(tl_jcall *c) { tl_log_line("ue4: AndroidThunkJava_GooglePAD_Available -> false (no Play Asset Delivery here)"); c->ret = vz(0); }
+/* AndroidThunkJava_GooglePAD_Available: whether Play Asset Delivery can deliver this game's content. iOS has no Play
+ * service, but "no" is not an answer this game can use: its content is delivered as Play asset packs and it has no other
+ * source for it, so "no" leaves it waiting at 0% forever. The packs it asks about are the APK's own (inside the OBB, which
+ * the layer mounts and Play Asset Delivery in it reports as installed), so the answer Play would give a phone whose packs
+ * are all in place is "yes". */
+static void GA_googlePAD(tl_jcall *c) { tl_log_line("ue4: AndroidThunkJava_GooglePAD_Available -> true (Play Asset Delivery is answered by the layer)"); c->ret = vz(1); }
 static void GA_boolObj(tl_jcall *c)                                            /* java.lang.Boolean true */
 {
     jobj *b = tl_jni_new_object(tl_jni_class("java/lang/Boolean"));
