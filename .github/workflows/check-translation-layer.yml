@@ -46,9 +46,14 @@ jobs:
           # thing this workflow exists to avoid.
           for f in src/translation-layer-next/*.c src/translation-layer-next/*.m; do
             obj="/tmp/tl-obj/$(basename "${f%.c}").o"
+            # The app target sets CLANG_ENABLE_OBJC_ARC = YES and these .m files use __weak, which
+            # does not exist under manual reference counting: without this the gate reports an error
+            # in a file that builds perfectly in the real target. Mirror the app's flags, or the gate
+            # is measuring a build nobody performs.
+            arc=""; case "$f" in *.m) arc="-fobjc-arc";; esac
             if ! clang -isysroot "$SDK" \
                    -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
-                   $INC -c "$f" -o "$obj" 2> "/tmp/tl-obj/err.txt"; then
+                   $INC $arc -c "$f" -o "$obj" 2> "/tmp/tl-obj/err.txt"; then
               echo "::error file=$f::does not compile for arm64-apple-ios"
               sed -n '1,12p' "/tmp/tl-obj/err.txt"
               fail=1
@@ -70,9 +75,10 @@ jobs:
           fail=0
           for f in src/translation-layer/*.c src/translation-layer/*.m; do
             obj="/tmp/tl-obj-old/$(basename "${f%.c}").o"
+            arc=""; case "$f" in *.m) arc="-fobjc-arc";; esac
             if ! clang -isysroot "$SDK" \
                    -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
-                   $INC -c "$f" -o "$obj" 2> "/tmp/tl-obj-old/err.txt"; then
+                   $INC $arc -c "$f" -o "$obj" 2> "/tmp/tl-obj-old/err.txt"; then
               echo "::error file=$f::does not compile for arm64-apple-ios"
               sed -n '1,12p' "/tmp/tl-obj-old/err.txt"
               fail=1
