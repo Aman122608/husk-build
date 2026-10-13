@@ -9,9 +9,10 @@
 # known-good, because they are what already runs every other Android game on Husk.
 #
 # What this does NOT validate: our own ANGLE / virglrenderer / MoltenVK / QEMU
-# builds. scripts/ci_build.sh is the from-source path. This script exists so a
-# translation-layer fix can reach a device without waiting for the graphics
-# configuration to be settled.
+# builds, or the Java runtime and Android system it stages from another released
+# IPA (the step below). scripts/ci_build.sh is the from-source path. This script
+# exists so a translation-layer fix can reach a device without waiting for the
+# graphics configuration to be settled.
 set -euo pipefail
 
 HUSK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -93,6 +94,40 @@ fi
 [ -s "$BIOS/edk2-aarch64-code.fd.bz2" ] \
     || { echo "donor IPA has no edk2-aarch64-code.fd to stage" >&2; exit 1; }
 
+step "java runtime + Android system (from the 2.0 release IPA)"
+# Two more binaries this path reuses from a released IPA, and the reason a build from this script
+# could never run a Java app: the app's own build phase stages build/java-runtime and
+# build/android-system when they are there, and 1.1.0 -- the graphics donor above -- carries
+# neither, so every Java/Dalvik app (PvZ2, libGDX, Flutter) died at "no java/lang/Object on the
+# boot class path" with nothing in the log to say why. Husk 2.0's IPA ships both: the ART jars and
+# natives laid out as APEXes, Husk's Java framework, framework-res (stripped), and the system fonts
+# and cacerts. Taken as released and checked, exactly like the graphics stack. The same caveat
+# applies: a change to src/java-framework or to a Java shim in this tree is NOT in here, so rebuild
+# the runtime with scripts/build_java_runtime.sh rather than reusing this when that is what is
+# under test.
+JAVA_DONOR_TAG="${HUSK_JAVA_DONOR_TAG:-2.0}"
+JR_WORK="$HUSK_ROOT/build/java-donor-$JAVA_DONOR_TAG"
+JR_IPA="$JR_WORK/Husk.ipa"
+mkdir -p "$JR_WORK"
+if [ ! -s "$JR_IPA" ]; then
+    curl -fL --retry 3 -o "$JR_IPA.part" \
+        "https://github.com/Leviidev/Husk/releases/download/$JAVA_DONOR_TAG/Husk.ipa"
+    mv "$JR_IPA.part" "$JR_IPA"
+fi
+rm -rf "$JR_WORK/x"; mkdir -p "$JR_WORK/x"
+( cd "$JR_WORK/x" && unzip -q "$JR_IPA" )
+JR_APP="$JR_WORK/x/Payload/Husk.app"
+[ -f "$JR_APP/java-runtime/husk-framework.dex" ] \
+    || { echo "donor $JAVA_DONOR_TAG has no java-runtime to stage" >&2; exit 1; }
+[ -d "$JR_APP/android-system/fonts" ] \
+    || { echo "donor $JAVA_DONOR_TAG has no android-system to stage" >&2; exit 1; }
+rm -rf "$HUSK_ROOT/build/java-runtime" "$HUSK_ROOT/build/android-system"
+rsync -a "$JR_APP/java-runtime/" "$HUSK_ROOT/build/java-runtime/"
+rsync -a "$JR_APP/android-system/" "$HUSK_ROOT/build/android-system/"
+[ -s "$HUSK_ROOT/build/java-runtime/com.android.art/javalib/core-oj.jar" ] \
+    || { echo "the staged java-runtime has no core-oj.jar; a Java app still cannot start" >&2; exit 1; }
+du -sh "$HUSK_ROOT/build/java-runtime" "$HUSK_ROOT/build/android-system"
+
 step "guest kernel + firmware"
 ./scripts/fetch_phase0_guest.sh
 
@@ -125,7 +160,10 @@ fi
 
 step "manifest: which binaries are whose"
 for f in "$SYSROOT_LIB/libANGLE-shared.dylib" "$APP_LIB/libqemu-aarch64-softmmu.dylib"; do
-    printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -d' ' -f1)" "$(basename "$f")"
+    [ -f "$f" ] && printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -d' ' -f1)" "$(basename "$f")"
 done
+printf '%s  %s\n' "$(shasum -a 256 "$HUSK_ROOT/build/java-runtime/husk-framework.dex" | cut -d' ' -f1)" "java-runtime/husk-framework.dex"
+printf '%s  %s\n' "$(find "$HUSK_ROOT/build/java-runtime" "$HUSK_ROOT/build/android-system" -type f | wc -l | tr -d ' ')" "java-runtime + android-system files"
 echo "graphics/QEMU stack: upstream Husk $TAG (unchanged)"
+echo "java runtime + Android system: upstream Husk $JAVA_DONOR_TAG (unchanged)"
 echo "app binary: built from this tree at $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
