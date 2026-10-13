@@ -19,6 +19,11 @@ on:
 
 jobs:
   ipa:
+    # Publishing the IPA as a release asset needs contents: write. Releases are served from a
+    # different endpoint than Actions artifacts, which are METERED: this account hit its artifact
+    # egress limit and that blocked delivery of a build that was otherwise completely fine.
+    permissions:
+      contents: write
     # macos-26, not macos-14: the app project requires the Xcode 16+ project format
     # (objectVersion 77) and the vendored StikJIT framework carries a .swiftinterface
     # built by Apple Swift 6.4, which Xcode 16.2 (macos-14's newest) cannot read.
@@ -108,3 +113,21 @@ jobs:
             build/Husk.tipa
           if-no-files-found: error
           retention-days: 30
+
+      # Artifact downloads are metered and this account is over its egress limit, which is only a
+      # delivery problem -- the build itself succeeded. A release asset is served from a different
+      # endpoint and is not subject to that quota, so every build also publishes itself as a release
+      # with the IPA attached. That is the path the phone downloads from when artifacts will not come.
+      - name: Publish the IPA as a release asset
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="night-$(git rev-parse --short HEAD)"
+          # a re-run of the same commit replaces its own release rather than failing on the existing tag
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" build/Husk.ipa \
+            --title "Husk night $TAG" \
+            --notes "Built from $(git rev-parse HEAD) by build-ipa-prebuilt.yml (run ${{ github.run_id }}). Artifact egress on this account is metered, so this release is the delivery path."
+          echo "release: https://github.com/${{ github.repository }}/releases/download/$TAG/Husk.ipa"
