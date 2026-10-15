@@ -621,6 +621,39 @@ void tl_io_reset_for_new_app(void)
                 nvfiles, swept, jar);
 }
 
+/*
+ * The swapped-in app's OWN first-frame path, the PAIRED instrument. The stall probe's verdict, when no parked thread holds
+ * a layer lock, points here: at the new app's onResume/launch and its asset/asset-file reads. When a swap has happened
+ * (tl_swap_in_progress) this logs the first APK-asset reads of THIS session and any that FAIL -- so if the guest-lock story
+ * is wrong, the log already shows what the new app was reading when it froze. Bounded per session and OFF THE HOT PATH:
+ * before any swap the only cost is one atomic load; after the budgets are spent the counters short-circuit.
+ * TL_ASSET_TRACE=1 forces it on for a single-app run. The budgets reset when the session EPOCH advances (the swap
+ * boundary), so each swapped-in app gets its own, and a later app is not starved by an earlier one's reads.
+ * `ok` -1 = attempt, 1 = served, 0 = failed.
+ */
+#define TL_ASSET_TRACE_TRY  24
+#define TL_ASSET_TRACE_OK   24
+#define TL_ASSET_TRACE_FAIL 16
+static int g_asset_try_n, g_asset_ok_n, g_asset_fail_n;
+static int g_asset_forced = -1, g_asset_epoch = -1;
+void tl_asset_read_note(const char *what, int ok, int err)
+{
+    if (g_asset_forced < 0) g_asset_forced = getenv("TL_ASSET_TRACE") ? 1 : 0;
+    if (!g_asset_forced && !tl_swap_in_progress()) return;      /* a lone app pays an atomic load and nothing else */
+    int ep = tl_guest_thread_epoch();
+    if (ep != g_asset_epoch) { g_asset_epoch = ep; g_asset_try_n = g_asset_ok_n = g_asset_fail_n = 0; }
+    int slot = ok < 0 ? __atomic_fetch_add(&g_asset_try_n, 1, __ATOMIC_RELAXED)
+             : ok      ? __atomic_fetch_add(&g_asset_ok_n, 1, __ATOMIC_RELAXED)
+                       : __atomic_fetch_add(&g_asset_fail_n, 1, __ATOMIC_RELAXED);
+    int cap = ok < 0 ? TL_ASSET_TRACE_TRY : ok ? TL_ASSET_TRACE_OK : TL_ASSET_TRACE_FAIL;
+    if (slot >= cap) return;
+    char me[32] = "?"; pthread_getname_np(pthread_self(), me, sizeof(me));
+    const char *name = (what && what[0]) ? what : "(unnamed entry)";
+    if (ok < 0)      tl_log_line("asset[swap]: opening '%s' (read %d) by '%s' -- the swapped-in app's first-frame path", name, slot + 1, me);
+    else if (ok)     tl_log_line("asset[swap]: read '%s' served by '%s'", name, me);
+    else             tl_log_line("asset[swap]: read of '%s' FAILED (errno %d) by '%s' -- the swapped-in app's first-frame path reached this read", name, err, me);
+}
+
 /* One line per distinct entry: that an APK entry was resolved (name, size, how served), and that one asked for is not in
  * the APK -- an honest ENOENT, said once. */
 static void jar_note(const jar_entry *j, bool found)
@@ -658,6 +691,7 @@ static void jar_note_serve_failed(const jar_entry *j, int fd, int e)
     else
         tl_log_line("husk: apk entry %s: resolved (%llu bytes, %s) but its descriptor %d is outside the redirection table, so the open fails",
                     key, (unsigned long long)j->size, j->method == 0 ? "stored" : "deflated", fd);
+    tl_asset_read_note(key, 0, fd < 0 ? e : 24);
 }
 
 /* A compressed entry, inflated once into <data>/.jar-cache: the path to open instead, or NULL. */
@@ -810,8 +844,10 @@ static int b_open(const char *path, int flags, unsigned mode)
     jar_entry jar;
     if (renpy_hidden_macver(path)) { tl_set_guest_errno(2); return -1; }   /* Ren'Py must not look like a Mac (see above) */
     if (jar_lookup(path, &jar)) {
+        /* The paired instrument: what the swapped-in app is reading (bounded, and only after a swap). */
+        tl_asset_read_note(jar.entry[0] ? jar.entry : path, -1, 0);
         if (!jar.found) jar_note(&jar, false);
-        if (!jar.found || jar.dir || (flags & 3) != 0) { tl_set_guest_errno(jar.dir ? 21 : 2); ftrace_open_jar(path, -1); return -1; }
+        if (!jar.found || jar.dir || (flags & 3) != 0) { tl_asset_read_note(jar.entry[0] ? jar.entry : path, 0, jar.dir ? 21 : 2); tl_set_guest_errno(jar.dir ? 21 : 2); ftrace_open_jar(path, -1); return -1; }
         int fd = -1, e = 0;
         if (jar.method == 0) {
             /* A stored entry is a stretch of the APK, so the APK is opened and every read of that descriptor is

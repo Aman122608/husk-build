@@ -608,13 +608,29 @@ tl_lib *tl_ld_lib_of(const void *addr)
     return NULL;
 }
 
+/*
+ * The library an address lies in, IGNORING the session scope -- for NAMING a parked thread's pc, and nothing else.
+ * A thread quarantined by a session close runs in the image of the session that was swapped OUT, and tl_ld_lib_of skips
+ * another session's libraries BY DESIGN (dispatch must never reach them). That skip is exactly why the stall probe used
+ * to print a bare hex pc: 'AssetGarbageCollectorHelper ... pc [0x2515c45f8]' names no library. This crosses sessions for
+ * the LOG only; what the layer resolves for the guest (tl_ld_lookup, sym_value, the global namespace) stays scoped.
+ */
+tl_lib *tl_ld_lib_of_any(const void *addr)
+{
+    const uint8_t *a = addr;
+    for (int i = 0; i < G.nlibs; i++) {
+        tl_lib *L = G.libs[i];
+        size_t span = L->npages * PAGE;
+        if ((a >= L->rx && a < L->rx + span) || (a >= L->rw && a < L->rw + span)) return L;
+    }
+    return NULL;
+}
+
 const char *tl_ld_lib_name(const tl_lib *lib) { return lib ? lib->name : NULL; }
 
-const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void **sym_addr)
+/* The nearest defined symbol at or below `addr` in `L`, and its address. Shared by the scoped and any-session forms. */
+static const char *sym_in_lib(const tl_lib *L, const void *addr, const void **sym_addr)
 {
-    tl_lib *L = tl_ld_lib_of(addr);
-    if (!L) return NULL;
-    if (lib_name) *lib_name = L->name;
     uint64_t off = (const uint8_t *)addr >= L->rx && (const uint8_t *)addr < L->rx + L->npages * PAGE
                  ? (uint64_t)((const uint8_t *)addr - L->rx) : (uint64_t)((const uint8_t *)addr - L->rw);
     const elf_sym *best = NULL;
@@ -628,6 +644,23 @@ const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void 
     if (!best) return NULL;
     if (sym_addr) *sym_addr = L->rx + (best->st_value - L->base_vaddr);
     return sym_name(L, best);
+}
+
+const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void **sym_addr)
+{
+    tl_lib *L = tl_ld_lib_of(addr);
+    if (!L) return NULL;
+    if (lib_name) *lib_name = L->name;
+    return sym_in_lib(L, addr, sym_addr);
+}
+
+/* The same, ignoring the session scope: what NAMES a parked thread's pc (husk-tl-unity-app.c). Reporting only. */
+const char *tl_ld_symbol_at_any(const void *addr, const char **lib_name, const void **sym_addr)
+{
+    tl_lib *L = tl_ld_lib_of_any(addr);
+    if (!L) return NULL;
+    if (lib_name) *lib_name = L->name;
+    return sym_in_lib(L, addr, sym_addr);
 }
 
 /* /proc/self/maps as the app's code sees it: each loaded library, at its address, under the path it was loaded by. */

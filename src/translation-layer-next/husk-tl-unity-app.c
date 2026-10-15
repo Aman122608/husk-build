@@ -888,17 +888,46 @@ static int ss_put(char *buf, int w, size_t cap, const char *fmt, ...)
     return (size_t)r >= cap - (size_t)w ? (int)cap - 1 : w + r;
 }
 
-/* A guest address as image+symbol+offset, or a bare hex when no library claims it. */
-static void ss_where(char *out, size_t n, uintptr_t a, bool is_pc)
+/* A symbol name that says "this is a lock or a wait" -- a HINT the probe prints as such, never a claim. */
+static bool ss_sym_is_lock_helper(const char *sym)
+{
+    static const char *kw[] = { "lock", "Lock", "mutex", "Mutex", "futex", "cond", "Cond", "wait", "Wait",
+                                "sem", "Sem", "monitor", "Monitor", "pause", "yield" };
+    for (unsigned i = 0; i < sizeof kw / sizeof kw[0]; i++) if (strstr(sym, kw[i])) return true;
+    return false;
+}
+
+/*
+ * A guest address as image+symbol+offset. A PARKED thread's pc and entry lie in the image of the session that was swapped
+ * OUT, so this resolves ACROSS sessions (tl_ld_symbol_at_any): the scoped resolver skips another session's libraries by
+ * design (dispatch must never reach them), which is exactly why the line used to print bare hex
+ * ('AssetGarbageCollectorHelper ... pc [0x2515c45f8]' names no library). It falls back in order to the JIT arena, then to
+ * the HOST image the address is in (a Darwin library -> the pc is inside the wait primitive itself, not guest code), then
+ * to bare hex. It NEVER guesses: an address in none of those is printed as just the number.
+ */
+static void ss_where(char *out, size_t n, uintptr_t a)
 {
     const char *lib = NULL; const void *sa = NULL;
-    const char *sym = tl_ld_symbol_at((const void *)a, &lib, &sa);
-    if (lib)
-        snprintf(out, n, "%s %s+%#lx", lib, sym ? sym : "?", sa ? (unsigned long)(a - (uintptr_t)sa) : 0ul);
-    else if (is_pc && tl_xmem_is_rx((const void *)a))
-        snprintf(out, n, "the arena +%#lx (executable view: it is running JIT'd guest code)", (unsigned long)(a - (uintptr_t)tl_xmem_region_base()));
-    else
-        snprintf(out, n, "%#lx", (unsigned long)a);
+    const char *sym = tl_ld_symbol_at_any((const void *)a, &lib, &sa);
+    if (lib) {
+        int w = snprintf(out, n, "%s %s+%#lx", lib, sym ? sym : "?", sa ? (unsigned long)(a - (uintptr_t)sa) : 0ul);
+        if (sym && ss_sym_is_lock_helper(sym) && w > 0 && (size_t)w < n)
+            snprintf(out + w, n - (size_t)w, " -- a lock/wait helper");
+        return;
+    }
+    if (tl_xmem_is_rx((const void *)a)) {
+        snprintf(out, n, "the arena +%#lx (the executable view: it is running JIT'd guest code)", (unsigned long)(a - (uintptr_t)tl_xmem_region_base()));
+        return;
+    }
+    {
+        Dl_info di;
+        if (dladdr((const void *)a, &di) && di.dli_fname) {
+            const char *base = strrchr(di.dli_fname, '/'); base = base ? base + 1 : di.dli_fname;
+            snprintf(out, n, "%s +%#lx (%s)", base, (unsigned long)(a - (uintptr_t)di.dli_fbase),
+                     ss_sym_is_lock_helper(base) ? "host lock/wait helper, not guest code" : "host/Darwin code, not a guest image");
+        } else
+            snprintf(out, n, "%#lx (in no guest image and no host image the layer can name)", (unsigned long)a);
+    }
 }
 
 /* One line per N seconds, and once at session close, with the hot-path counters: what the log cannot answer without a
@@ -922,6 +951,10 @@ static void tl_perf_summary(const char *tag)
 #define TL_SS_THREADS 160
 static void ss_probe(unsigned long frames, double quiet_s)
 {
+    /* A stall has been DETECTED: turn on the diagnostics a swap needs for the rest of the run (the guest-mutex trace, and
+     * the swapped-in asset trace), because the phone launches the IPA and nobody can set an environment variable on the
+     * device -- the layer decides. Idempotent, one atomic store. */
+    tl_swap_in_progress_set(1);
     char line[2000];
     int w = 0;
 
@@ -963,13 +996,26 @@ static void ss_probe(unsigned long frames, double quiet_s)
     int shown = 0;
     for (int j = 0; j < ngt; j++) {
         if (gt[j].epoch >= cur) continue;                       /* this session's own threads are not parked */
-        if (w >= (int)sizeof(line) - 240) break;                /* leave room for the count and the verdict */
+        if (w >= (int)sizeof(line) - 460) break;                /* leave room for the count and the verdict */
         char nm[32] = "?"; pthread_getname_np((pthread_t)(uintptr_t)gt[j].tid, nm, sizeof(nm));
-        char ent[128]; ss_where(ent, sizeof(ent), (uintptr_t)gt[j].entry, false);
+        char ent[160]; ss_where(ent, sizeof(ent), (uintptr_t)gt[j].entry);
         uintptr_t pc = 0; bool have = ss_thread_pc(gt[j].tid, &pc);
-        char pcs[128];
-        if (have) ss_where(pcs, sizeof(pcs), pc, true); else snprintf(pcs, sizeof(pcs), "not readable by the layer");
-        w = ss_put(line, w, sizeof(line), " #%d '%s' entry [%s] pc [%s];", shown + 1, nm, ent, pcs);
+        char pcs[160];
+        if (have) ss_where(pcs, sizeof(pcs), pc); else snprintf(pcs, sizeof(pcs), "not readable by the layer");
+        /* WAITING or IDLE: the shim knows when it is inside b_mutex_lock/b_cond_wait/b_sem_wait/b_rwlock (the marker it
+         * leaves in this thread's census slot), so a thread BLOCKED INSIDE A GUEST LOCK is named as such, and one that is
+         * merely idle (or running guest code outside a shim lock) is named as that instead. They are different states. */
+        char wait[240];
+        if (gt[j].wait_kind) {
+            const char *what = gt[j].wait_kind == TL_GW_MUTEX  ? "b_mutex_lock"
+                             : gt[j].wait_kind == TL_GW_COND   ? "b_cond_wait"
+                             : gt[j].wait_kind == TL_GW_SEM    ? "b_sem_wait"
+                             : gt[j].wait_kind == TL_GW_RWLOCK ? "b_rwlock_lock" : "a shim lock";
+            char wsite[128]; ss_where(wsite, sizeof(wsite), (uintptr_t)gt[j].wait_site);
+            snprintf(wait, sizeof(wait), " LOCK-WAITING: inside %s on guest object %p (entered at %s)", what, (void *)(uintptr_t)gt[j].wait_obj, wsite);
+        } else
+            snprintf(wait, sizeof(wait), " idle/not in a guest lock (no shim lock call in progress: idle, or running guest code outside one)");
+        w = ss_put(line, w, sizeof(line), " #%d '%s' entry [%s] pc [%s]%s;", shown + 1, nm, ent, pcs, wait);
         shown++;
     }
     if (parked == 0)
@@ -984,7 +1030,7 @@ static void ss_probe(unsigned long frames, double quiet_s)
                    lk[held_parked].name ? lk[held_parked].name : "a layer lock");
     else
         w = ss_put(line, w, sizeof(line),
-                   " VERDICT: no parked thread holds any layer lock the layer can see, so this stall is NOT the swap's quarantine -- look next at the app's OWN first-frame path (its onResume/launch and its own asset/asset-file reads). A guest-level lock (a bionic pthread mutex, a JVM monitor) is not in this ledger: the pthread shim already names one that waits 5 s under TL_MUTEX_TRACE (husk-tl-bionic-pthread.c), the paired run for that case.");
+                   " VERDICT: no parked thread holds any layer lock the layer can see, so this stall is NOT the swap's quarantine -- look next at the app's OWN first-frame path (its onResume/launch and its own asset/asset-file reads). A guest-level lock (a bionic pthread mutex, a JVM monitor) is not in this ledger, so TWO paired instruments now cover it, both turned on by this stall: the guest-mutex trace (husk-tl-bionic-pthread.c) now runs by itself after a swap and names, ONCE per distinct (waiter site, holder site) pair, a guest mutex that has waited 5 s with its holder and both sites; and the swapped-in asset trace (husk-tl-bionic-io.c) now logs the first APK-asset reads of this session (and any that FAIL), so if the guest-lock story is wrong the log already shows what the new app was reading when it froze. Each parked thread above is marked LOCK-WAITING (blocked inside a shim lock) or idle/not in a guest lock -- those are different states.");
     if (w > 0) tl_log_line("%s", line);
 }
 
@@ -1195,6 +1241,12 @@ int husk_tl_session_close(void)
     /* The guest-thread epoch advances at the same boundary: every thread still running from the run that just ended is now
      * "from an earlier session", so the stall probe can tell a parked thread from this session's own (tl_swapstall_tick). */
     tl_guest_thread_new_epoch();
+
+    /* A SWAP has happened. Turn on the diagnostics a swap needs for the rest of the run -- the guest-mutex trace and the
+     * swapped-in asset trace -- because the phone launches the IPA and nobody can set an environment variable on the
+     * device, and because the NEXT app is the one a quarantined guest lock can wedge. A lone app never reaches here, so
+     * it never pays for them. */
+    tl_swap_in_progress_set(1);
 
     /* Reset our own bookkeeping ONLY -- never the memory, and field-by-field (a blanket clear would wipe the engine id
      * used for the log). */

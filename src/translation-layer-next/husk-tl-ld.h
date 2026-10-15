@@ -101,9 +101,14 @@ void *tl_ld_sym_deep(tl_lib *lib, const char *name, tl_lib **found_in);   /* the
 
 /* The library an address belongs to (either view), and the nearest exported symbol. */
 tl_lib *tl_ld_lib_of(const void *addr);
+/* The same, ignoring the session scope. For NAMING a parked thread's pc (a thread from the session that was swapped
+ * out runs in that session's image); reporting only, never used for dispatch. */
+tl_lib *tl_ld_lib_of_any(const void *addr);
 void *tl_ld_lib_base(const tl_lib *lib);
 const char *tl_ld_lib_name(const tl_lib *lib);
 const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void **sym_addr);
+/* tl_ld_symbol_at across sessions: names an address in an earlier session's image (a parked thread's pc). */
+const char *tl_ld_symbol_at_any(const void *addr, const char **lib_name, const void **sym_addr);
 /* Whether an address (either view) lies in a library's executable sections: 1 code, 0 data in a
  * library, -1 not in a library. The loader's own "is this vaddr code" answer, for diagnostics. */
 int tl_ld_va_is_code(const void *addr);

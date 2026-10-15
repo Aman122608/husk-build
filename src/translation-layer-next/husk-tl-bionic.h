@@ -138,13 +138,32 @@ static inline void tl_hp_bump(int which)
 int tl_guest_thread_live_count(void);
 
 /*
+ * The swapped-in app's OWN first-frame path, the PAIRED instrument. The stall probe's verdict, when no parked thread
+ * holds a layer lock, points at the new app's onResume/launch and its asset/asset-file reads. This records the first N
+ * APK-asset reads of a session that began after a swap (and any that FAIL), so if the guest-lock story is wrong the log
+ * already shows what the new app was reading when it froze. Bounded per session, and off the hot path: a lone app pays
+ * one atomic load and nothing else (TL_ASSET_TRACE=1 forces it on for a single-app run). `ok` is 1 for a read served,
+ * 0 for one that failed. */
+void tl_asset_read_note(const char *what, int ok, int err);
+
+/*
  * WHO those live threads are, so a stall can name itself. The counter can say a close left 35 threads running and cannot
  * say which; a swapped-in app that then hangs on its first frame cannot be explained from a number. A small lock-free
  * table records, per live thread, its Darwin identity, the entry it was created on and the session EPOCH it started in,
  * so a reader can tell a thread from an EARLIER session (parked from the app that was swapped out) from this session's
  * own. Reading it never blocks and never stops a thread -- it is for reporting, exactly as the counter is.
  */
-typedef struct { unsigned long tid, entry; int epoch; } tl_guest_thread_info;
+typedef struct {
+    unsigned long tid, entry;
+    int epoch;
+    /* Why the thread is inside a guest lock wait, or 0 (TL_GW_NONE) when it is not. A thread BLOCKED INSIDE A GUEST LOCK
+     * is a different state from an idle one -- a worker pool waiting for work looks identical to a crowd on a lock from
+     * outside -- so the shim records it (it is the shim's own b_mutex_lock/b_cond_wait/b_sem_wait that is running) and
+     * the stall probe reports it. wait_obj/wait_site are the object waited on and where the wait was entered. */
+    unsigned long wait_kind, wait_obj, wait_site;
+} tl_guest_thread_info;
+/* wait_kind values (TL_GW_*), shared with husk-tl-bionic-pthread.c's census writer. */
+enum { TL_GW_NONE = 0, TL_GW_MUTEX = 1, TL_GW_COND = 2, TL_GW_SEM = 3, TL_GW_RWLOCK = 4 };
 int  tl_guest_thread_census(tl_guest_thread_info *out, int max);   /* live count (may exceed max); fills up to max */
 int  tl_guest_thread_epoch(void);                                  /* the current session epoch */
 void tl_guest_thread_new_epoch(void);                             /* a session boundary: later threads are this session's */

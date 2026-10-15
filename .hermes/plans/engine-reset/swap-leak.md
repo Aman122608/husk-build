@@ -350,3 +350,112 @@ unchanged — the fix in §4 of this file is untouched.
 - A final `VERDICT:` naming either the lock (deadlock confirmed) or that no parked thread holds
   a layer lock (next place: the app's own first-frame path).
 
+---
+
+# Addendum 2: naming what the 35 parked threads are actually blocked on
+
+Scope: `src/translation-layer-next/` — `husk-tl-xmem.{c,h}` (a swap-in-progress flag), `husk-tl-ld.{c,h}`
+(a session-agnostic address resolver), `husk-tl-bionic.h`, `husk-tl-bionic-pthread.c` (the guest-mutex trace,
+made conditional and bounded, plus a per-thread lock-wait marker), `husk-tl-bionic-io.c` and
+`husk-tl-bionic-ndk.c` (the paired asset-read instrument), `husk-tl-unity-app.c` (the stall probe). Nothing
+under `tools/a32`; no other agent's plan touched.
+
+Evidence: `HuskLogs/husk-20261015-135557-2.0.0-112.log` (675 lines). The swap-stall line is `:618`; robot gf
+(EFDB7EC9, Unity/IL2CPP) closed at `:474` leaving 35 threads, the swapped-in lewdest house (Ren'Py, A75A5F32)
+presented 1 frame (`:601`) and froze.
+
+## 0. Why the pc printed as bare hex, and what it is
+
+`tl_ld_lib_of` walks `G.libs` and **skips every node whose `session != G.session`** (`lib_in_session`,
+`husk-tl-ld.c:367`): an address in a previous app's image is deliberately not this session's library, so
+dispatch never reaches the swapped-out app's code. A parked thread's pc and entry lie in *that* image, so the
+resolver returned NULL and `ss_where` fell through to `%#lx` — hence `pc [0x2515c45f8]` and
+`entry [0x116552b6c]`, both naming nothing. That skip is right for dispatch and wrong for a log line.
+
+**What the pc is, from the log alone:** `0x2515c45f8` is byte-identical for all 35 parked threads. It is **not
+in the JIT arena** — the arena's executable view is `0x1150d4000..0x1350d4000` (`:141`, and the dual mapping
+`:30` `rw=0x1350d4000 rx=0x1150d4000`), so an arena address would have read `the arena +0x...` had the probe
+tested it. Host system libraries live at `~0x2d…` in this same log (`libunwind.dylib` bound at `0x2df1c83e8`,
+`:150`), which places `0x2515c45f8` between the arena and the shared cache: it is **either a guest library
+(`libunity.so`/`libil2cpp.so` `+0x…`) or a host Darwin image (the wait primitive itself)**. The log does not
+say which, because the layer never logged the guest libraries' mapping base addresses — that is the honest
+limit of the offline evidence, and the reason for the resolver change below. What *is* decidable offline:
+35 threads of a worker pool stopped at ONE pc is either a crowd on one lock or a pool parked in one wait
+primitive, and the waiting/idle marker (below) tells those apart.
+
+## 1. The resolver: `tl_ld_lib_of_any` / `tl_ld_symbol_at_any`
+
+`husk-tl-ld.{c,h}`: a second walk that ignores the session scope, and a `tl_ld_symbol_at_any` built on it
+(shared `sym_in_lib` core, so the scoped and any-session forms agree). Used **only for naming** — the stall
+probe's `ss_where` and the mutex shim's `describe_site` (a holder may itself be a parked thread). Dispatch
+(`tl_ld_lookup`, `sym_value`, the global namespace) is untouched and stays scoped. `ss_where` now prints, in
+order: `<lib> <sym>+0xN` (+ ` -- a lock/wait helper` when the symbol name says so), else `the arena +0xN`, else
+`dladdr` → `<hostlib> +0xN (host/Darwin code, not a guest image | host lock/wait helper)`, else bare hex with
+`(in no guest image and no host image the layer can name)`. It never guesses.
+
+## 2. The guest-mutex trace, on by itself for a swap — and why it must be conditional
+
+`mutex_trace()` (`husk-tl-bionic-pthread.c`) now returns true when `tl_swap_in_progress()` — a new process flag
+(`husk-tl-xmem.c`, one atomic) **set at the session close** (`husk-tl-unity-app.c:1249`, right where the epoch
+advances) **and by the stall probe when it fires** (`:957`). `TL_MUTEX_TRACE` still forces it on. The phone
+launches the IPA, so nobody can set an environment variable on the device; the layer decides.
+
+**Output is bounded** like the codewrite refusal table: `mt_site_new` keeps up to 64 distinct
+(waiter site, holder site) pairs and prints **one line per pair** — never per lock, never per 5 s. The line is
+unchanged in shape: `mutex: '<waiter>' has waited 5 s on mutex %p, held by '<owner>' (locked from <holder
+site>); waiting at <waiter site>`, now with the holder site resolved across sessions too.
+
+**Always-on was evaluated from the code, not assumed, and is not free.** When the trace is on, `b_mutex_lock`
+no longer blocks in Darwin: it spins `trylock` + `usleep(200)` (≈25000 iterations per 5 s of waiting) and writes
+the owner into the guest object's spare bytes on **every** acquisition. That is a behaviour change on every
+*contended* lock, not a log line that only appears after a 5 s block — so it is turned on only once a swap makes
+a stuck guest lock the live hypothesis. (A lone first app never reaches `tl_swap_in_progress_set`, so it pays
+one atomic load per lock and nothing else.)
+
+## 3. Lock-waiting or idle: the per-thread marker
+
+A parked thread busy inside `b_mutex_lock` and a parked thread idly waiting for work look identical from the
+counter alone. The shim knows which it is, so `gt_wait_enter(kind, obj, lr)` / `gt_wait_leave()` record it in the
+thread's **own** census slot (the slot index is cached in TLS, so the write is three relaxed stores and no table
+scan). It covers `b_mutex_lock`, `b_cond_wait`, `b_sem_wait` and `b_rwlock_{rd,wr}lock`. `wait_kind` is published
+*after* the object/site (release/acquire pairing), so the reader never sees a kind without its object.
+`tl_guest_thread_info` carries the three new fields; the probe prints, per parked thread, either
+`LOCK-WAITING: inside <shim call> on guest object 0x… (entered at <site>)` or
+`idle/not in a guest lock (no shim lock call in progress: idle, or running guest code outside one)`. The marker
+is reporting only — it never blocks, stops or joins anything.
+
+## 4. The paired alternative: the swapped-in app's own first-frame reads
+
+`tl_asset_read_note` (`husk-tl-bionic-io.c`), called from `b_open`'s `jar_lookup` branch (the asset/asset-file
+path that drives `vfd`/`jar:`) and from `b_AAssetManager_open` (`husk-tl-bionic-ndk.c`). Once a swap is in
+progress it logs the **first 24 APK-asset reads of the session and any that FAIL (16)**, and it is off the hot
+path: before any swap it is one atomic load, after the budgets are spent the counters short-circuit. The budgets
+reset when the session **epoch** advances, so each swapped-in app gets its own. `TL_ASSET_TRACE=1` forces it on.
+
+**A datum already in this log:** the swapped-in Ren'Py app (`:575-618`) logged **no `husk: apk entry` line at
+all** before it froze — it never reached an asset read. So on the next run the *absence* of `asset[swap]:` lines
+is itself the finding (the new app died before its asset path), and their presence is what it was reading.
+
+## 5. What the instrumentation will print on the next swap, and what each outcome proves
+
+`swap-stall:` (once, ~8 s after the swapped-in app's first frame goes quiet) will carry, per parked thread,
+`entry [<lib> <sym>+0xN] pc [<lib> <sym>+0xN | the arena +0xN | <hostlib> +0xN (host/Darwin code) | not readable
+by the layer] LOCK-WAITING: inside <shim> on guest object 0x… | idle/not in a guest lock`, and the `VERDICT:`
+line will name both paired instruments.
+
+| outcome | what it proves |
+|---|---|
+| pc resolves to `libunity.so`/`libil2cpp.so +0x…`, all 35 threads, marked **LOCK-WAITING** (b_mutex_lock/b_cond_wait/b_sem_wait) | the pool is blocked **inside one guest lock/condition**; a `mutex:` line from the (now on) trace names its holder and both sites — a guest-level deadlock, not the layer quarantine |
+| pc resolves to a **host `libsystem_*` +0x…**, marked LOCK-WAITING | the shim delegated to Darwin and the threads are inside the wait primitive — same conclusion, one level down: they are genuinely blocked, on a guest object the layer can name |
+| pc resolves, but every thread reads **idle/not in a guest lock** | 35 threads are a *parked pool waiting for work* (the old app's job queue), **not** a lock — so the stall is not the parked threads' lock and the next place is genuinely the swapped-in app's own path (asset trace + mutex trace now both armed) |
+| `asset[swap]:` lines appear before the freeze | the new app **was** in its asset path; the last-read entry is the place to look |
+| no `asset[swap]:` lines and no `mutex:` lines | the freeze is **before** either path — the app never reached an asset read and never took a guest lock: point at its onResume/launch, not at the quarantine |
+
+## 6. Invariants kept
+
+No `vm_protect` on the arena region, the executable view is never written, nothing the guest holds is unmapped,
+and no thread that ran guest code is ended or joined. The swap's quarantine policy is **unchanged** — this
+addendum only measures. The new instruments are lock-free (atomic counters and a fixed slot table), so a probe
+that reports a stall cannot itself be what hangs, and none of them runs on a fault path or installs a handler.
+
+

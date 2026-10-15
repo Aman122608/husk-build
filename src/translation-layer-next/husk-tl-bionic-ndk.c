@@ -300,6 +300,8 @@ static void *b_AAssetManager_open(void *mgr, const char *name, int mode)
     static int trace = -1;
     if (trace < 0) trace = getenv("TL_FILE_TRACE") != NULL;
     if (trace) tl_log_line("assets: open %s", name);
+    /* The paired instrument (husk-tl-bionic-io.c): the NDK asset surface, which the swapped-in app also reads through. */
+    tl_asset_read_note(name, -1, 0);
     /* TL_ASSET_DIR: a file of that name under this directory stands in for the one in the APK (to change a game's config while debugging) */
     if (getenv("TL_ASSET_DIR")) {
         char alt[1100];
@@ -325,14 +327,17 @@ static void *b_AAssetManager_open(void *mgr, const char *name, int mode)
         const uint8_t *data; size_t n; bool owned; char err[160];
         if (!tl_zip_data(z, e, (size_t)2 << 30, &data, &n, &owned, err, sizeof(err))) {
             tl_log_line("assets: %s: %s", name, err);
+            tl_asset_read_note(name, 0, 5 /* EIO */);
             return NULL;
         }
         tl_asset *a = calloc(1, sizeof(*a));
         a->data = data; a->len = n;
         if (owned) a->owned = (uint8_t *)data;
         snprintf(a->name, sizeof(a->name), "%s", name);
+        tl_asset_read_note(name, 1, 0);
         return a;
     }
+    tl_asset_read_note(name, 0, 2 /* ENOENT */);
     return NULL;
 }
 /*

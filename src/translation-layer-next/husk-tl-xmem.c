@@ -66,6 +66,12 @@ static struct {
  * g_x.lock; read racy from the heartbeat (a counter, not a control value). */
 static size_t g_x_alloc_calls, g_x_alloc_pages;
 
+/* See husk-tl-xmem.h: a session boundary has happened, so the diagnostics a swap needs are turned on. Plain __atomic
+ * builtins -- no <stdatomic.h> needed here, and the a32 harness links this file with only its own errno stub. */
+static int g_swap_in_progress;
+void tl_swap_in_progress_set(int on) { __atomic_store_n(&g_swap_in_progress, on ? 1 : 0, __ATOMIC_RELEASE); }
+int  tl_swap_in_progress(void)       { return __atomic_load_n(&g_swap_in_progress, __ATOMIC_ACQUIRE); }
+
 #if defined(__APPLE__)
 /*
  * The last GUEST FAULT the crash reporter handed in (tl_xmem_note_guest_fault), and whether the fatal-time verdicts

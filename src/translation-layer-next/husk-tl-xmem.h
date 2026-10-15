@@ -196,6 +196,19 @@ void tl_lock_acquired(int slot, const char *site);   /* call AFTER the mutex is 
 void tl_lock_released(int slot);                     /* call AFTER the mutex is dropped */
 int  tl_lock_ledger(tl_lock_info *out, int max);     /* snapshot; returns TL_LOCK_COUNT */
 
+/* ------------------------------------------------------------------- a swap, in progress */
+
+/*
+ * Whether this process has crossed a session boundary (a swap). A close QUARANTINES guest threads it cannot stop and the
+ * NEXT app is the one a swapped-out thread can wedge, so diagnostics that are too costly to keep on for a lone run turn
+ * on from here: the guest-mutex trace (husk-tl-bionic-pthread.c) and the swapped-in asset trace (husk-tl-bionic-io.c).
+ * The phone launches the IPA and nobody can set an environment variable on the device, so the LAYER decides. Set at the
+ * close and by the stall probe when it fires; never cleared, because it is a process-level fact for the rest of the run.
+ * One relaxed atomic on the reading side, so a hot path that checks it pays almost nothing.
+ */
+void tl_swap_in_progress_set(int on);
+int  tl_swap_in_progress(void);
+
 #ifdef __cplusplus
 }
 #endif
