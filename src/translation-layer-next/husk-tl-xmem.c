@@ -1170,16 +1170,33 @@ static void xmem_persist_verdict(void)
 }
 
 /*
- * Whether this fault is the GUEST's fetch failing in the region it runs from: a fetch (the program
- * counter IS the fault address, not a data access that merely used it) at an address in the arena
- * region -- and that region is where ALL of the guest's code lives, the app's libraries and its JIT
- * arena both. The crash reporter (husk-tl-unity-app.c, on_fatal) treats exactly this as a guest
- * failure -- the app is unwound and Husk stays -- rather than a host crash, so the user can read why
- * the run died. A fault outside the region is still a host crash.
+ * Whether this fault is the GUEST failing in the region it runs from. That region is where ALL of the
+ * guest's code AND data-adjacent memory lives: the loader emits the app's libraries into it
+ * (husk-tl-ld.c, tl_xmem_alloc + memset of every image) and the guest's JIT arena is carved from it,
+ * so an address the kernel places inside the region is the guest's memory, and a fault at such an
+ * address is the APP's memory failing, not Husk's. The crash reporter (husk-tl-unity-app.c, on_fatal)
+ * treats it as a guest failure -- the app is unwound and Husk stays -- rather than a host crash, so
+ * the user can read why the run died.
+ *
+ * THE TEST IS THE FAULT ADDRESS, NOT THE PROGRAM COUNTER, and that is the whole widening. A fetch
+ * fault reports pc == the fault address, but a DATA fault reports the pc of the instruction that did
+ * the access -- and that instruction is in the guest's own library, OUTSIDE the region. Robot gf's
+ * second crash (husk-20261015-101057) is exactly this shape:
+ *     === FATAL signal 10 on thread 'UnityMain': fault address 0x122a51b90
+ *     pc .../Documents/Data/App+0x4c5e8e4   (the guest's il2cpp, not the region)
+ *     si_addr 0x122a51b90                   (INSIDE the region, entry 0x122a50000 prot 5 max 7)
+ * The old test (`pc == addr && contains(pc)`) read false, on_fatal re-raised, and the process died --
+ * the app's failure taking the host with it, which is the one thing this rule exists to prevent.
+ * Whether a fetch or a load/store, the region is guest memory however the pc is reported, so the
+ * address alone decides; the caller keeps pc only to name the faulting instruction in the log.
+ *
+ * A fault whose address is OUTSIDE the region is still a host crash and keeps the old behaviour
+ * exactly -- the refusal is one-sided and stays.
  */
 bool tl_xmem_arena_fetch_fault(uintptr_t pc, uintptr_t addr)
 {
-    return g_x.open && pc == addr && tl_xmem_contains((const void *)pc);
+    (void)pc;   /* the pc names the instruction; the ADDRESS names whose memory it was */
+    return g_x.open && tl_xmem_contains((const void *)addr);
 }
 
 /*

@@ -172,28 +172,40 @@ static void fault_address_region(uintptr_t pc)
 }
 
 /*
- * Is this fault the GUEST failing in its own arena -- the shape robot gf died on?
+ * Is this fault the GUEST failing in its own arena -- the shape robot gf died on (twice)?
  *
- * The guest's compiled code branched (a computed `blr x8`) to an address in the arena that will not
- * fetch; the kernel delivered SIGBUS with pc == fault address, inside the region, on a page whose
- * entry named no execute. Such a fault is the APP's failure, not Husk's: it was the app's own code
- * that ran, and iOS is refusing the page it ran into. So it must end the game SESSION and leave Husk
- * standing -- the same rule the guest exit family already follows (tl_guest_exit_unwind: A GUEST'S
- * FAILURE MUST NOT KILL THE HOST). Otherwise the one thing built to explain the run -- the "Guest
- * arena" row and this very report -- goes down with the process, and the user cannot read why.
+ * The region the layer makes for the guest is where ALL of the guest's code and its JIT arena live
+ * (the loader emits the app's libraries there and tl_xmem_alloc carves the arena from it), so a fault
+ * whose FAULT ADDRESS is inside that region is the APP's memory failing, not Husk's, whichever thread
+ * reported it. Two shapes reach here, and the second is why the test is the address and not the pc:
  *
- * It must be a FETCH, not a data access: pc == fault address. And it must be inside the arena, which
- * is guest memory; a fault anywhere else is still a host crash and keeps the old behaviour exactly.
- * `why` is filled with a one-line reason for the log, the UI and the persisted verdict file.
+ *   - a FETCH: the guest's compiled code branched (a computed `blr x8`) to an address in the arena
+ *     that will not fetch; pc == fault address, both inside the region.
+ *   - a DATA access: the guest's own code in its library does a load or store to an address inside
+ *     the region and that page will not be served. Here the pc is the guest library OUTSIDE the region
+ *     (robot gf's second crash: fault address 0x122a51b90, pc Documents/Data/App+0x4c5e8e4), so a test
+ *     that required pc == addr let it through as a host crash and the process died.
+ *
+ * Either way it is the APP's failure, not Husk's: it was the app's own code that ran, and iOS is
+ * refusing the page it touched. So it must end the game SESSION and leave Husk standing -- the same
+ * rule the guest exit family already follows (tl_guest_exit_unwind: A GUEST'S FAILURE MUST NOT KILL
+ * THE HOST). Otherwise the one thing built to explain the run -- the "Guest arena" row and this very
+ * report -- goes down with the process, and the user cannot read why.
+ *
+ * A fault whose address is NOT in the region is still a host crash and keeps the old behaviour
+ * exactly. `why` is filled with a one-line reason for the log, the UI and the persisted verdict file.
  */
-static bool guest_arena_fetch(siginfo_t *info, ucontext_t *uc, char *why, size_t whyn)
+static bool guest_arena_fault(siginfo_t *info, ucontext_t *uc, char *why, size_t whyn)
 {
     uintptr_t pc = (uintptr_t)uc->uc_mcontext->__ss.__pc;
     uintptr_t addr = (uintptr_t)info->si_addr;
     if (!tl_xmem_arena_fetch_fault(pc, addr)) return false;
     char at[200];
     where(at, sizeof(at), pc);
-    snprintf(why, whyn, "the app's own code branched to %s in the guest arena and the page will not fetch (it is inside the arena the layer made, and iOS refuses to execute it on this device)", at);
+    if (pc == addr)
+        snprintf(why, whyn, "the app's own code branched to %s in the guest arena and the page will not fetch (it is inside the arena the layer made, and iOS refuses to execute it on this device)", at);
+    else
+        snprintf(why, whyn, "the app's own code at %s touched %p inside the guest arena and the page would not be served (the address lies in the region the layer made for the guest -- its libraries and its JIT arena -- and this device gives no backing there)", at, (void *)addr);
     return true;
 }
 
@@ -241,21 +253,23 @@ static void on_fatal(int sig, siginfo_t *info, void *uctx)
         tl_log_line("    x%d=%#llx x%d=%#llx x%d=%#llx x%d=%#llx", i, uc->uc_mcontext->__ss.__x[i], i + 1, uc->uc_mcontext->__ss.__x[i + 1],
                     i + 2, i + 2 < 29 ? uc->uc_mcontext->__ss.__x[i + 2] : 0ull, i + 3, i + 3 < 29 ? uc->uc_mcontext->__ss.__x[i + 3] : 0ull);
     /*
-     * A guest fetch fault INSIDE THE ARENA is the GUEST's failure, not Husk's, so it ends the game
-     * session and not the process. The full report above is printed unchanged (the evidence is the
-     * point), then the run is unwound the way a guest exit() unwinds it (tl_guest_exit_unwind), and
-     * the reason is written to the container so the next launch can show it.
+     * A guest fault INSIDE THE ARENA -- a fetch that will not fetch, or a load/store the device will
+     * not serve -- is the GUEST's failure, not Husk's, so it ends the game session and not the process.
+     * The full report above is printed unchanged (the evidence is the point), then the run is unwound
+     * the way a guest exit() unwinds it (tl_guest_exit_unwind), and the reason is written to the
+     * container so the next launch can show it.
      *
-     * Only the faulting thread ends, and only because it cannot continue: the instruction at pc is
-     * unreadable, so there is NO "resume with a defined value" here the way an unserviced brk returns
-     * 0 -- that convention exists for brk (the debugger's answer register), and nothing defines the
-     * bytes after a page that will not fetch. So this is the honest behaviour available: end the
-     * calling thread (pthread_exit, exactly what tl_guest_exit_unwind does -- never a cancel or join
-     * of anyone else's thread) and leave Husk standing with the reason recorded.
+     * Only the faulting thread ends, and only because it cannot continue: the page the guest touched
+     * supplies no readable content (for a fetch, the instruction at pc is unreadable; for a data access,
+     * the address is unserved), so there is NO "resume with a defined value" here the way an unserviced
+     * brk returns 0 -- that convention exists for brk (the debugger's answer register), and nothing
+     * defines bytes a page will not supply. So this is the honest behaviour available: end the calling
+     * thread (pthread_exit, exactly what tl_guest_exit_unwind does -- never a cancel or join of anyone
+     * else's thread), and leave Husk standing with the reason recorded. Nothing is unmapped by the layer.
      */
     {
         char gf[240];
-        if (guest_arena_fetch(info, uc, gf, sizeof(gf))) {
+        if (guest_arena_fault(info, uc, gf, sizeof(gf))) {
             tl_xmem_note_guest_fault(gf, (uintptr_t)info->si_addr);
             tl_log_line("husk: GUEST FAULT: %s; this is the APP failing, so the app is unwound and Husk stays "
                         "for the next game (never the host process; the verdict row and the log above say why)",

@@ -189,14 +189,17 @@ bool tl_xmem_near(const void *p, size_t dist);
 void tl_xmem_set_verdict_path(const char *path);
 
 /*
- * Whether a fatal fault is the GUEST's fetch failing in the region it runs from: the program counter
- * IS the fault address (a fetch, not a data access that merely used the address) and that address lies
- * in the arena region -- which is where ALL of the guest's code lives (the loader emits the app's
- * libraries and its JIT arena into the same region). True exactly for the shape robot gf died on --
- * `blr x8` into a page that will not fetch. The crash reporter (husk-tl-unity-app.c, on_fatal) treats
- * it as a GUEST failure: the run is ended, Husk stays, and the reason is displayed and persisted, the
- * same rule that makes a guest exit() unwind the app rather than the process. A fault outside the
- * region is still a host crash and keeps the old behaviour.
+ * Whether a fatal fault is the GUEST failing in the region it runs from: the FAULT ADDRESS lies in
+ * the arena region -- which is where ALL of the guest's code and its JIT arena live (the loader emits
+ * the app's libraries and its JIT arena into the same region, and it owns every address in it). It is
+ * deliberately the address, not the program counter: a fetch reports pc == fault address, but a DATA
+ * access (a load or store) reports the pc of the instruction, which is in the guest's own library
+ * OUTSIDE the region -- robot gf's second crash (fault address 0x122a51b90, pc in
+ * Documents/Data/App+0x4c5e8e4) is that shape, and the pc-equality test let it through as a host
+ * crash. The crash reporter (husk-tl-unity-app.c, on_fatal) treats a true here as a GUEST failure:
+ * the run is ended, Husk stays, and the reason is displayed and persisted, the same rule that makes a
+ * guest exit() unwind the app rather than the process. A fault whose address is OUTSIDE the region is
+ * still a host crash and keeps the old behaviour.
  */
 bool tl_xmem_arena_fetch_fault(uintptr_t pc, uintptr_t addr);
 
