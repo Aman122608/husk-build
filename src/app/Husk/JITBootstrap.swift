@@ -91,12 +91,20 @@ enum JITBootstrap {
             return works
         }
         HuskLog.log("jit", "claiming \(jitBytes / (1024 * 1024)) MiB of JIT memory now, "
-                         + "before the guest download -- StikDebug does not stay attached")
+                         + "before the guest download -- the region's execute is the debugger's "
+                         + "per-entry grant, so the debugger is held rather than detached")
         let ok = husk_ios_jit_prewarm(jitBytes)
         if ok {
             prewarmed = true
             lastFailure = nil
-            detachIfDone()
+            // Do NOT detach here. The region's execute is the debugger's per-entry grant and it
+            // dies with the detach: measured in the 085540 run, the boot selftest executed
+            // generated code through the RX alias while the helper was attached, and every entry
+            // of the same region read `prot 1 max 3` with the first real fetch faulting once it
+            // had detached. So claiming the region is also the moment the grant is taken; it is
+            // given up only when no run is live (releaseGrantWhenIdle), which is the one moment
+            // a suspended servicer cannot stall anything.
+            holdGrantForRun("the claim")
         }
         else if mapJITWorks {
             // Not a failure worth reporting: this is the ordinary shape of an
@@ -117,18 +125,59 @@ enum JITBootstrap {
         return ok
     }
 
-    /// Whether to leave StikDebug attached after the region is held.
+    /// An unconditional "never detach", as a user setting.
     ///
-    /// While a debugger is attached, every stop event (a `brk`, a signal, a
-    /// Mach exception) halts the whole process until StikDebug answers. iOS
-    /// suspends StikDebug soon after it hands the foreground back, so the next
-    /// stop freezes Husk with nothing in the log. On iOS 26 that looks like
-    /// Android hanging on its boot screen. The RX pages stay valid after detach
-    /// (AetherPS4 runs this way on TXM devices), so detaching once the region is
-    /// held removes the debugger from the picture.
+    /// The detach is a real decision and its cost is now known: the region's execute is the
+    /// debugger's per-entry grant, and it does not survive the detach (measured — see prewarm).
+    /// So the default of this build is the run-scoped hold below, and this setting is the blunt
+    /// override: with it on, the debugger is never detached even when no run is live.
+    ///
+    /// What the detach protected against, and still does: while a debugger is attached, every stop
+    /// event (a `brk`, a signal, a Mach exception) halts the whole process until the servicer
+    /// answers. iOS suspends StikDebug soon after it hands the foreground back, so the next stop
+    /// froze Husk with nothing in the log — on iOS 26 that read as Android hanging on its boot
+    /// screen. Detaching removed the debugger from the picture; holding it is now paid for by
+    /// giving it up at the first moment no run is live, and by never starting a run with a
+    /// servicer that has gone (JITCoordinator.reassertForRun).
     static var keepDebuggerAttached: Bool {
         get { UserDefaults.standard.bool(forKey: "husk.keepDebuggerAttached") }
         set { UserDefaults.standard.set(newValue, forKey: "husk.keepDebuggerAttached") }
+    }
+
+    /// Whether a run is holding the debugger's execute grant.
+    ///
+    /// The JIT region is claimed ONCE and cannot be claimed again; the grant is not the region,
+    /// it is the debugger's *presence*, and presence can be had again. So the hold is scoped to a
+    /// run: taken when the region is claimed and when a run starts, given up the moment no run is
+    /// live — the window in which a suspended servicer could stall anything is exactly the window
+    /// in which the grant is needed.
+    nonisolated(unsafe) static private(set) var grantHeldForRun = false
+
+    /// Hold the debugger's execute grant for the life of a run.
+    ///
+    /// Cheap and idempotent: it only raises a flag and says so once. Nothing is allocated and no
+    /// `brk` is executed here, so it is safe to call from the engine's start path.
+    static func holdGrantForRun(_ reason: String) {
+        guard prewarmed, !detached else { return }
+        if !grantHeldForRun {
+            grantHeldForRun = true
+            HuskLog.log("jit", "holding the debugger's execute grant (\(reason)): the per-entry "
+                             + "grant does not survive a detach, so the debugger stays attached "
+                             + "while a game can run; it is given up when no run is live")
+        }
+    }
+
+    /// No run is live: the one moment it is safe to let the debugger go.
+    ///
+    /// Called when the layer has cleared its session (`NativeSession.close`) and no engine is
+    /// loaded, so nothing can execute guest code and no `brk` can be issued until a new run
+    /// starts — and a new run renews the grant first (`JITCoordinator.reassertForRun`).
+    static func releaseGrantWhenIdle() {
+        guard grantHeldForRun else { return }
+        grantHeldForRun = false
+        HuskLog.log("jit", "no run is live; releasing the debugger so a suspended servicer cannot "
+                         + "stall the process while nothing needs the grant")
+        detachIfIdle()
     }
 
     /// Whether StikDebug's script may be the debugger: the only one that answers a brk.
@@ -151,12 +200,15 @@ enum JITBootstrap {
     /// True once this process has told StikDebug to let go.
     nonisolated(unsafe) static private(set) var detached = false
 
-    /// Release the debugger once the JIT region is held. It is no longer
-    /// needed for anything, and leaving it attached is what froze the app.
-    private static func detachIfDone() {
-        guard prewarmed, !detached, !keepDebuggerAttached else { return }
-        HuskLog.log("jit", "JIT region held; detaching StikDebug so a suspended "
-                         + "debugger cannot stall the process later")
+    /// Release the debugger, but only when nothing needs the grant.
+    ///
+    /// Two guards, and both matter. `grantHeldForRun` is the run scope: while a run can still
+    /// execute guest code the grant is the only route the guest has to executable memory on this
+    /// device (jailbreak: false, "can grant its own JIT": false, TXM enforced), so it is not given
+    /// up. `keepDebuggerAttached` is the user's blunt override.
+    private static func detachIfIdle() {
+        guard prewarmed, !detached, !keepDebuggerAttached, !grantHeldForRun else { return }
+        HuskLog.log("jit", "JIT region held and no run is live; detaching the debugger")
         husk_ios_jit_detach()
         detached = true
     }

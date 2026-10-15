@@ -361,6 +361,11 @@ struct ContentView: View {
             HuskLog.log("jit", "no dual mapping, but MAP_JIT executes -- letting "
                              + "QEMU map its own buffer")
         }
+        // A run is starting: the debugger's execute grant has to be in force for the whole of it
+        // (the region's execute does not survive a detach — JITBootstrap.prewarm), and if the
+        // debugger has gone since the claim, ask for it again before the guest's first JIT write.
+        JITBootstrap.holdGrantForRun("the guest start")
+        jit.reassertForRun()
         started = true
         router.androidStarted = true
         QemuRunner.shared.start()

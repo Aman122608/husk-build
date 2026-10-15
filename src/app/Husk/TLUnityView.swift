@@ -262,6 +262,21 @@ final class TLUnityUIView: UIView, UIKeyInput {
 
     private func launch(width: Int, height: Int) {
         launched = true
+        // This run needs the debugger's execute grant for as long as it can execute guest code:
+        // the JIT region's execute is granted per mapping entry and only while a debugger is
+        // attached, and it is gone the moment that debugger detaches (JITBootstrap.prewarm). So
+        // the grant is held here, before the engine's first generated block, and given up when
+        // the run's session closes (NativeSession.close → JITBootstrap.releaseGrantWhenIdle).
+        // Cheap and synchronous: it raises a flag and logs; it never issues a brk.
+        JITBootstrap.holdGrantForRun("a native run")
+        // And if the debugger is not attached at all (the helper was interrupted, or the attach
+        // ended since the claim), ask for it again before the guest's first JIT write. Decided
+        // from the free CS_DEBUGGED flag, never from a brk (a brk into a suspended servicer is the
+        // stall itself — JITCoordinator.reassertForRun). Deferred rather than blocking the layout
+        // pass, and it only renews an attach: nothing is allocated or re-claimed.
+        if !JITBootstrap.debuggedFlag {
+            Task { @MainActor in JITCoordinator.shared.reassertForRun() }
+        }
         // A new run's own input accounting: the previous game's four lines are not this one's.
         touchesLogged = 0; websTookTouch = 0
         launchedSize = bounds.size

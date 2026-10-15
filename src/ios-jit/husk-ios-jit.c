@@ -453,7 +453,9 @@ HUSK_EXPORT bool husk_ios_jit_prewarm(size_t bytes)
     }
     husk_prewarm_done = true;
     husk_prewarmed = husk_ios_jit_allocate_real(bytes);
-    fprintf(stderr, "[husk-jit] prewarm %s: %zu bytes\n",
+    fprintf(stderr, "[husk-jit] prewarm %s: %zu bytes -- the region's execute is the debugger's "
+                    "per-entry grant and does not survive a detach (JITBootstrap holds it for the "
+                    "run instead of letting it go at the claim)\n",
             husk_prewarmed.rw_addr ? "OK" : "FAILED", bytes);
     return husk_prewarmed.rw_addr != NULL;
 }
@@ -646,11 +648,22 @@ void husk_ios_jit_release(HuskDualMapping *m)
 
 void husk_ios_jit_detach(void)
 {
-    HUSK_LOG("detaching debugger; RX mappings persist after this");
+    /*
+     * This is a decision, not housekeeping, and the log has to say so: the region's execute is
+     * the debugger's per-entry grant, and it does not survive this call. In the 085540 run the
+     * boot selftest executed generated code through the RX alias while the debugger was attached;
+     * every entry of the same region read `prot 1 max 3` afterwards, `vm_protect(RWX)` on the
+     * executable view was refused with 2, and a fetch at 0x1184bc000 faulted. The old line here
+     * ("RX mappings persist after this") asserted the opposite and was not borne out.
+     */
+    HUSK_LOG("detaching the debugger: the region's per-entry execute grant goes with it "
+             "(measured -- every entry reads prot 1 max 3 after this and a fetch faults), so no "
+             "guest that needs its own JIT arena can run after this point");
     g_expecting_jit_trap = true;
     husk_brk_jit_detach();
     g_expecting_jit_trap = false;
-    HUSK_LOG("debugger detached");
+    HUSK_LOG("debugger detached; the JIT region stays mapped and writable through its twin, but "
+             "its entries are no longer executable");
 }
 
 bool husk_ios_jit_is_available(void)

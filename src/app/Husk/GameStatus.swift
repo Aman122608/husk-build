@@ -228,6 +228,16 @@ enum NativeSession {
     /// having to remember anything.
     static var isOpen: Bool { husk_native_loaded_apk() != nil }
 
+    /// Whether any engine that can execute guest code is still live, so the JIT grant must stay held.
+    ///
+    /// This is the guard on releasing the debugger. The Android guest's TCG translation buffer IS
+    /// the prewarmed JIT region (`husk_ios_jit_allocate` hands it over), so QEMU needs the
+    /// debugger's execute grant exactly as a native engine does — and the guest keeps running
+    /// after its surface is left (`ContentView`: "the guest runs continuously once started").
+    /// Releasing the grant while either is live would take execute away from generated code
+    /// mid-run, which is the very failure the hold exists to end.
+    static var guestOrEngineLive: Bool { QemuRunner.shared.isRunning || isOpen }
+
     /// The APK the layer is holding, if any.
     static var loadedAPK: String? { husk_native_loaded_apk().map { String(cString: $0) } }
 
@@ -262,9 +272,17 @@ enum NativeSession {
                           message: Toast(title: "Close and reopen Husk", detail: detail.map { "\($0). \(tail)" } ?? tail, good: false))
         case .partial:
             let tail = "The next game can start, but something from this session was left behind."
-            return finish(appID, .leaked, detail: detail,
-                          message: Toast(title: "Swapped, with a leak", detail: detail.map { "\($0). \(tail)" } ?? tail, good: false))
+            let outcome = finish(appID, .leaked, detail: detail,
+                                 message: Toast(title: "Swapped, with a leak", detail: detail.map { "\($0). \(tail)" } ?? tail, good: false))
+            // The layer replaced the session (with a leak): no native run is live. The Android
+            // guest may still be, and QEMU shares this grant, so release only when nothing is.
+            if !guestOrEngineLive { JITBootstrap.releaseGrantWhenIdle() }
+            return outcome
         case .clean:
+            // The layer cleared its session: nothing can execute guest code now, so this is the
+            // moment the debugger's execute grant can be given up (JITBootstrap.holdGrantForRun).
+            // Only when the Android guest is not up too: QEMU's TCG buffer is this same region.
+            if !guestOrEngineLive { JITBootstrap.releaseGrantWhenIdle() }
             return Outcome(verdict: .clean, message: nil)
         }
     }
@@ -305,6 +323,7 @@ enum NativeSession {
             // A session we cannot match to an app still deserves closing; there is just nowhere honest to write a verdict,
             // so this close is silent rather than promising an outcome nobody can be shown.
             _ = husk_tl_session_close()
+            if !guestOrEngineLive { JITBootstrap.releaseGrantWhenIdle() }
             return nil
         }
         return close(appID: app.id, apk: apk, package: app.packageName, engine: app.screenEngine)

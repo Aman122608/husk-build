@@ -343,6 +343,40 @@ final class JITCoordinator: ObservableObject {
             })
     }
 
+    /// Renew the debugger's presence before a run starts, when it is no longer there.
+    ///
+    /// The JIT region is one-shot; the grant is not. The grant is the debugger's *presence*, and a
+    /// fresh attach is how presence is obtained, so this asks for an attach and nothing else — no
+    /// allocation, no re-claim, no `brk`. It is deliberately decided from the free
+    /// `CS_DEBUGGED` flag (`JITBootstrap.debuggedFlag`, a `csops`, no trap) and never from the
+    /// `brk #0x69` probe: a probe into a debugger that is attached but suspended is exactly the
+    /// stall this whole hold has to avoid, and it would freeze on the first call.
+    ///
+    /// Started before a run rather than blocking it: the grant matters at the guest's *first JIT
+    /// write*, which is well after the engine's start. If it cannot be renewed, the run still
+    /// starts and the layer says honestly that the guest's own arena cannot be made executable
+    /// (`tl_xmem_allow_exec`'s refusal), which is better than a run that freezes on a `brk` no
+    /// one is answering.
+    func reassertForRun() {
+        guard JITBootstrap.prewarmed, !JITBootstrap.detached else { return }
+        guard !JITBootstrap.debuggedFlag else { return }   // still attached: nothing to renew
+        log("a run is about to start with no debugger attached; asking for one again "
+            + "(the region is kept, only the attach is renewed)")
+        guard !busy else { return }
+        switch resolvedMethod {
+        case .builtIn:
+            // Husk's own helper: an extension request, no foreground hand-off, so it is safe to
+            // ask for mid-session. It attaches and services traps exactly as the first one did.
+            enableBuiltIn()
+        case .stikDebug, .trollStore, .jailbreak, .automatic:
+            // These hand the foreground to another app (StikDebug) or need something Husk cannot
+            // start itself, so they are not asked for mid-session: the run proceeds on the honest
+            // refusal and the UI says what to do.
+            log("the \(resolvedMethod.title) method cannot renew the attach in-session; the run "
+                + "will start and the guest's arena will be refused honestly")
+        }
+    }
+
     func resetDDI() {
         busy = true
         error = nil

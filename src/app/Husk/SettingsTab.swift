@@ -526,6 +526,14 @@ struct JITSettings: View {
                                : JITBootstrap.mapJITResult.map { $0 ? "executes" : "refused" }
                                  ?? "not tested",
                           mono: false)
+                // The grant is the thing that actually decides whether a guest's own arena can
+                // run: the region's execute is granted per mapping entry and only while a
+                // debugger is attached, and it does not survive a detach (JITBootstrap.prewarm).
+                DetailRow(label: "Execute grant",
+                          value: JITBootstrap.grantHeldForRun ? "held for the run"
+                               : JITBootstrap.detached ? "given up (no run is live)"
+                               : JITBootstrap.prewarmed ? "held" : "not claimed",
+                          mono: false)
                 DetailRow(label: "Debugger after setup",
                           value: JITBootstrap.detached ? "detached" : "attached",
                           mono: false)
@@ -579,10 +587,12 @@ struct JITSettings: View {
                 Toggle("Keep debugger attached", isOn: $keepAttached)
                     .onChange(of: keepAttached) { v in JITBootstrap.keepDebuggerAttached = v }
             } footer: {
-                Text("Off by default. Husk detaches StikDebug as soon as the "
-                   + "JIT region is held, because a debugger that iOS has suspended "
-                   + "stops the whole app the next time it is needed. Turn this on "
-                   + "only to collect StikDebug's own logs.")
+                Text("Husk holds the debugger's execute grant for as long as a game can run, "
+                   + "because that grant — not the region — is what makes the region executable, "
+                   + "and it does not survive a detach. It gives the debugger up the moment no "
+                   + "run is live, so a debugger iOS has suspended cannot stop the app while "
+                   + "nothing needs it. Turn this on to keep it attached even then (useful only "
+                   + "to collect the servicer's own logs).")
             }
 
             Section {
