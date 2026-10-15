@@ -248,3 +248,35 @@ instead of dying with the app.
 | files-dir path mapping | `husk-tl-bionic-io.c:268-292`; `husk-tl-jni-hle.c:133` |
 | jar:file: is APK-only | `husk-tl-bionic-io.c:523-556` |
 | /sdcard + OBB mapping | `husk-tl-bionic-io.c:198-215`, `:305-315` |
+
+---
+
+## The instrumentation landed (Task B)
+
+`fault_address_region` (husk-tl-unity-app.c) now calls a new static `arena_page_span(addr)` after each of
+its existing report lines, and `tl_xmem_region_base()` (husk-tl-xmem.c, declared in husk-tl-xmem.h) is a
+one-line read-only accessor for the executable view's base `g_x.rx` -- the base the bump allocator's span
+is measured from, so the offset and `tl_xmem_used()` are in the same units. On the fatal path when
+`tl_xmem_contains(si_addr)` is true the next run prints, in addition to the unchanged "fetch fault at
+… entry …" line:
+
+```
+husk: arena page backing: fault offset +%#lx from the arena base %p; the bump allocator has handed out %zu KiB of %zu KiB (used=%zu size=%zu) -> INSIDE the emitted span … | BEYOND the emitted span …
+```
+
+Filled in for `robot gf`'s known fault (offset `+0xb589b90` `= +181.5 MiB` from base `0x1174c8000`), the
+line reads for example `fault offset +0xb589b90 from the arena base 0x1174c8000; the bump allocator has
+handed out … KiB of 524288 KiB (used=… size=536870912) -> INSIDE the emitted span …` when the loader had
+emitted past that page, or `-> BEYOND the emitted span …` when it had not.
+
+Reading `offset < used` (the line says **INSIDE the emitted span**) means the page the guest touched was handed
+out by the loader/allocator with its own bump pointer, so the layer owns it and is obliged to back it:
+the fix is to back the WHOLE `tl_xmem_alloc` span once, at alloc time, through the writable twin (the
+loader already `memset`s every image through the twin; the allocator's tail -- stub pages, the JIT arena
+-- is what is left unbacked). Reading `offset >= used` (**BEYOND the emitted span**) means nothing the
+loader wrote ever touched that page, so the region's reserved-but-unbacked nature is the whole cause and
+no loader change helps: the fix is to refuse StikDebug's region as the guest arena when its backing
+cannot be proven (make `grant_own_arena()` a requirement rather than a preference) or to have
+`husk_ios_jit_prewarm` verify the per-page `M<addr>,1:69` sweep actually ran. Either way the widened
+fault rule (Task A) is what lets the run survive to print this line instead of dying with the app. No
+guard relaxed, nothing unmapped, no thread ended, the honest refusal unchanged.

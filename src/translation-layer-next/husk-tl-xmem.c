@@ -1048,6 +1048,7 @@ bool tl_xmem_allow_exec(void *p, size_t n)
 
 size_t tl_xmem_used(void) { return g_x.used; }
 size_t tl_xmem_size(void)  { return g_x.size; }
+const void *tl_xmem_region_base(void) { return g_x.rx; }
 
 bool tl_xmem_guest_view_is_jit(void) { return g_x.open && g_x.guest_view_jit; }
 

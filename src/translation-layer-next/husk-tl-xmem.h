@@ -174,6 +174,13 @@ void tl_xmem_flush(const void *rx, size_t bytes);
 size_t tl_xmem_used(void);
 size_t tl_xmem_size(void);
 
+/*
+ * The base of the EXECUTABLE (guest-code) view of the region -- the address tl_xmem_alloc carves
+ * its bump span from, so (addr - tl_xmem_region_base()) and tl_xmem_used() are in the same units
+ * and directly comparable. Read-only; no side effects, safe on the fatal path.
+ */
+const void *tl_xmem_region_base(void);
+
 /* Whether p is within dist bytes of the executable region (a JIT asking for code memory near its own code). */
 bool tl_xmem_near(const void *p, size_t dist);
 

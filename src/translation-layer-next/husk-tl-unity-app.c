@@ -147,6 +147,43 @@ static void write_view_pointer(uintptr_t pc, uintptr_t lr)
  * and "the first page of the region executes" is not proof that 177 MiB in does. One query, no side
  * effects, on the fatal path only.
  */
+/*
+ * One line that answers the ONE question robot gf's SIGBUS cannot yet answer: is the unbacked page
+ * the fault address lands on INSIDE the span the loader/allocator emitted (so the layer owns that
+ * page and is obliged to back it), or BEYOND that span (so nothing the loader wrote ever touched it
+ * and this reserved StikDebug region cannot serve as the guest arena)?
+ *
+ * The fault address is in the EXECUTABLE view; the bump allocator's span is measured from that
+ * view's base (tl_xmem_region_base()), which is the base tl_xmem_alloc carves from -- so the offset
+ * printed here and tl_xmem_used() are in the same units and directly comparable. No side effects;
+ * safe on the fatal path, and the whole reason the widened guest-fault rule exists is so the next
+ * run survives long enough to print this line.
+ *
+ *   offset <  used  -> the page is INSIDE the emitted span: the loader/allocator handed out this
+ *                     page with its own bump pointer, so the layer must back the WHOLE tl_xmem_alloc
+ *                     span once, at alloc time, through the writable twin (the loader already memsets
+ *                     every image through the twin; the allocator's tail -- stub pages, the JIT arena
+ *                     -- is what is left unbacked).
+ *   offset >= used  -> the page is BEYOND the emitted span: nothing the loader wrote, so the region's
+ *                     reserved-but-unbacked nature is the whole cause and no loader change helps --
+ *                     refuse StikDebug's region as the guest arena when its backing cannot be proven
+ *                     (make grant_own_arena a requirement, not a preference), or have
+ *                     husk_ios_jit_prewarm verify the per-page M<addr>,1:69 sweep actually ran.
+ */
+static void arena_page_span(uintptr_t addr)
+{
+    if (!tl_xmem_contains((const void *)addr)) return;
+    uintptr_t base = (uintptr_t)tl_xmem_region_base();
+    unsigned long off = (unsigned long)(addr - base);
+    size_t used = tl_xmem_used(), size = tl_xmem_size();
+    tl_log_line("husk: arena page backing: fault offset +%#lx from the arena base %p; the bump allocator has handed out "
+                "%zu KiB of %zu KiB (used=%zu size=%zu) -> %s",
+                off, (void *)base, used >> 10, size >> 10, used, size,
+                off < used
+                    ? "INSIDE the emitted span -- the loader/allocator owns this page, so the layer is obliged to back it"
+                    : "BEYOND the emitted span -- nothing the loader wrote, so this reserved region cannot be the guest arena (or the per-page M<addr>,1:69 sweep did not run)");
+}
+
 static void fault_address_region(uintptr_t pc)
 {
     bool in_rx = tl_xmem_is_rx((const void *)pc);
@@ -159,6 +196,7 @@ static void fault_address_region(uintptr_t pc)
     if (kr != KERN_SUCCESS) {
         tl_log_line("husk: fetch fault at %p (%s): vm_region_recurse_64 returned %d (%s) -- nothing is mapped there, so the target was never code (or the region has a hole)",
                     (void *)pc, view, (int)kr, mach_error_string(kr));
+        arena_page_span(pc);
         return;
     }
     tl_log_line("husk: fetch fault at %p (%s): entry %p..%p prot %d max %d depth %u tag %u -> %s",
@@ -166,8 +204,10 @@ static void fault_address_region(uintptr_t pc)
                 (int)info.max_protection, (unsigned)depth, info.user_tag,
                 (info.protection & 0x4) ? "names execute, so this fault is NOT a permission (the page is mapped executable and still did not fetch)"
                                         : "no execute (the page is mapped but not executable)");
+    arena_page_span(pc);
 #else
     tl_log_line("husk: fetch fault at %p (%s)", (void *)pc, view);
+    arena_page_span(pc);
 #endif
 }
 
