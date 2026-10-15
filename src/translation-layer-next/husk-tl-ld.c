@@ -21,9 +21,8 @@ void  tl_log_line(const char *fmt, ...);
 void *tl_bionic_find(const char *name);
 bool  tl_bionic_is_system_lib(const char *soname);
 
-/* The HLE's "this library's JNI_OnLoad has run" list (husk-tl-jni-hle.c), whose entries are
- * tl_lib*. A session boundary frees those nodes, so the list must be emptied then. Declared
- * weak so this file compiles and links whether or not the tree provides the hook. */
+/* The HLE's "this library's JNI_OnLoad has run" list (husk-tl-jni-hle.c), whose entries are tl_lib*. A session
+ * boundary frees those nodes, so the list must be emptied then. Declared weak so this file links either way. */
 extern void tl_jni_hle_reset_onload(void) __attribute__((weak));
 
 /* ------------------------------------------------------------------ ELF */
@@ -124,8 +123,8 @@ static inline const void *at(const tl_lib *L, uint64_t vaddr) { return L->rw + (
 
 /* ------------------------------------------------------------- the APKs */
 
-/* The app's split APKs (its 64-bit libraries, its asset packs), given before the engine starts: they are added right after
- * the base, whichever engine adds that, as Android puts a split's libraries and assets beside the base's. */
+/* The app's split APKs (libraries, asset packs), given before the engine starts: added right after the base, as Android
+ * puts a split's libraries and assets beside the base's. */
 static char g_splits[15][1024];
 static int g_nsplits;
 static char g_apk_paths[TL_LD_MAX_APKS][1024];
@@ -257,14 +256,10 @@ static const elf_sym *sym_at(const tl_lib *L, uint32_t i)
 
 static bool in_code(const tl_lib *L, uint64_t vaddr);   /* below: the executable sections, where instructions live */
 
-/* The address a defined symbol is known by: the executable view for code, the writable view for data.
- * The symbol's type alone does not tell them apart -- a hand-written or stripped library marks a
- * function STT_NOTYPE, and this test used to give that function the writable view, which is not a
- * page the CPU will fetch (the address-provenance crash: a call into the writable view with no
- * mprotect anywhere in the log). The section the symbol's vaddr falls in is what decides, exactly as
- * it does for a relocated pointer in image_addr below: a symbol inside an executable section is code
- * whatever its type says, and stays in the executable view. A non-code symbol on a writable page is
- * data and keeps the writable view. */
+/* The address a defined symbol is known by: the executable view for code, the writable view for data. The symbol's TYPE
+ * alone is not enough -- a hand-written or stripped library marks a function STT_NOTYPE, and giving that the writable
+ * view is not a page the CPU fetches (the address-provenance crash). The SECTION the vaddr falls in decides, as it does
+ * for image_addr below: a symbol inside an executable section is code whatever its type says. */
 static void *sym_value(const tl_lib *L, const elf_sym *s)
 {
     uint64_t off = s->st_value - L->base_vaddr;
@@ -330,11 +325,9 @@ static uint32_t count_dynsyms(const tl_lib *L)
     return last + 1;
 }
 
-/*
- * How long the dynamic symbol table can be. The hash tables cover the symbols that are defined here, and a linker may put the imports after them
- * (libEOSSDK does: its relocations name symbols 813 and up of a table the hash counts as 813 long), so the count is the larger of that and the
- * distance to whichever table follows the symbols in the file.
- */
+/* How long the dynamic symbol table can be. The hash tables cover only the DEFINED symbols, and a linker may put the
+ * imports after them (libEOSSDK does), so the count is the larger of the hashed count and the distance to whichever table
+ * follows the symbols in the file. */
 static uint32_t dynsym_bound(const tl_lib *L, uint32_t hashed)
 {
     uint64_t next = ~0ull;
@@ -353,20 +346,17 @@ static const char *base_name(const char *path) { const char *b = strrchr(path, '
 /*
  * ------------------------------------------------------------- session scope
  *
- * The registry (G.libs) is process-wide and only ever grows: a game's libraries are mapped
- * into Husk's own process and there is no unload. So without a scope a second app's shared
- * sonames -- libc++_shared.so, libmain.so, libunity.so -- would resolve through find_loaded
- * here, and its addresses through tl_ld_lib_of below, to the FIRST app's mappings: it would
- * be the first app's code that ran. Every node carries the session that mapped it, and every
- * walk of the registry skips nodes from another session. The mappings themselves are never
- * touched (see tl_ld_end_session). A session of 0 -- before tl_ld_begin_session is first
- * called -- matches every node, so a process that never uses sessions is unaffected.
+ * The registry (G.libs) is process-wide and only grows (a game's libraries are mapped into Husk's own process and
+ * nothing is unloaded). So without a scope a second app's shared sonames would resolve through find_loaded here, and its
+ * addresses through tl_ld_lib_of, to the FIRST app's mappings -- the first app's code would run. Every node carries the
+ * session that mapped it, and every walk skips nodes from another session; the mappings themselves are never touched
+ * (tl_ld_end_session). A session of 0 (before tl_ld_begin_session) matches every node.
  */
 static inline bool lib_in_session(const tl_lib *L) { return L && L->session == G.session; }
 
-/* Whether `lib` is a node the current session's registry holds. A handle a guest kept (a Java
- * static, Geode's cache, g_onload_done) may point at a node an earlier session's end freed:
- * compare the pointer first, so a stale handle is refused rather than dereferenced. */
+/* Whether `lib` is a node the current session's registry holds. A handle a guest kept (a Java static, Geode's cache) may
+ * point at a node an earlier session's end freed: compare the pointer first, so a stale handle is refused, not
+ * dereferenced. */
 static bool lib_live(const tl_lib *lib)
 {
     for (int i = 0; i < G.nlibs; i++) if (G.libs[i] == lib) return lib->session == G.session;
@@ -439,11 +429,9 @@ void tl_ld_interpose(const char *name, void *fn)
     if (g_ninterpose < MAX_INTERPOSE) { snprintf(g_interpose[g_ninterpose].name, sizeof(g_interpose[0].name), "%s", name); g_interpose[g_ninterpose++].fn = fn; }
 }
 
-/*
- * The C++ runtime's exception machinery. Geometry Dash carries its own copy and exports it; Geode and its mods are built
- * against libc++_shared, and an exception thrown by one runtime cannot be caught by the other. So everything but the game
- * itself takes these from libc++_shared, as Geode's own Android launcher arranges by renaming the game's copies.
- */
+/* The C++ runtime's exception machinery. Geometry Dash carries its own copy; Geode and its mods are built against
+ * libc++_shared, and an exception thrown by one runtime cannot be caught by the other. So everything but the game itself
+ * takes these from libc++_shared, as Geode's own Android launcher arranges. */
 static bool is_cxx_runtime_symbol(const char *name)
 {
     static const char *const names[] = { "__gxx_personality_v0", "__cxa_throw", "__cxa_rethrow", "__cxa_allocate_exception",
@@ -454,20 +442,12 @@ static bool is_cxx_runtime_symbol(const char *name)
 }
 
 /*
- * The C++ unwinder. The guest's libc++ throws the Itanium way: it calls _Unwind_RaiseException, and the
- * personality routine named in every frame's .eh_frame calls the _Unwind_* accessors (GetIP, SetIP, SetGR,
- * GetLanguageSpecificData, GetRegionStart) to find and enter a catch. On a phone these come from
- * libunwind.so, which bionic's libc pulls in. On Darwin the SAME unwinder is already in the process -- iOS
- * ships libunwind because Objective-C exceptions need it -- but it is exported under Darwin's own spelling:
- * the Itanium ABI's function is `_Unwind_RaiseException`, and Darwin's C export of that name carries one
- * more leading underscore. So the guest's name is not necessarily the host's name, and the lookup has to
- * probe both and take what dlsym actually returns, not what we assume.
- *
- * A stub is not an option here. The logging stub a missing import otherwise gets RETURNS: libc++ would call
- * it, get its zero back, and go on to walk a frame the unwinder never built. The throw then becomes a
- * corrupted unwind and a fault inside libc++ far from the cause -- which is exactly the `blr x8` to a
- * computed target that killed this run (pc == x8 == the fault address, libc++.so+0x7ec4c). So an unwinder
- * symbol is either bound to the host's real one or refused, loudly, by name.
+ * The C++ unwinder. The guest's libc++ throws the Itanium way (_Unwind_RaiseException + the personality routine's
+ * _Unwind_* accessors). On a phone these come from libunwind.so; on Darwin the SAME unwinder is already in the process,
+ * but exported under Darwin's spelling (an extra leading underscore), so the lookup probes both and takes what dlsym
+ * returns. A stub is not an option: a logging stub RETURNS, so libc++ would walk a frame the unwinder never built -- a
+ * corrupted unwind and a fault far from the cause. An unwinder symbol is either bound to the host's real one or refused
+ * loudly by name. See loader-internals.md.
  */
 static const char *const k_unwind_names[] = {
     "_Unwind_RaiseException", "_Unwind_DeleteException", "_Unwind_Resume", "_Unwind_SetGR",
@@ -487,9 +467,9 @@ static int unwind_index(const char *name)
     return -1;
 }
 
-/* Ask the host for the unwinder under the guest's spelling and, failing that, under Darwin's own (an extra
- * leading underscore). dladdr says which image it came from, so the next log states plainly whether the
- * unwinder is real and where it lives. A miss is logged too; bind_symbol turns it into a refusal, not a stub. */
+/* Ask the host for the unwinder under the guest's spelling and, failing that, Darwin's own (an extra leading
+ * underscore). dladdr names the image, so the log says whether it is real and where it lives. A miss is logged; bind_symbol
+ * turns it into a refusal, not a stub. */
 static void *unwind_host_lookup(int idx)
 {
     if (idx < 0 || idx >= 8) return NULL;
@@ -514,15 +494,15 @@ static void *unwind_host_lookup(int idx)
     return a;
 }
 
-/* _Unwind_RaiseException is where a throw enters the unwinder: a thin shim logs that it did, once, then
- * calls the real one, so the ABI (same argument, same _Unwind_Reason_Code return) is untouched. */
+/* Where a throw enters the unwinder: a thin shim logs that it did, once, then calls the real one (same argument and
+ * return, so the ABI is untouched). */
 static int unwind_raise_shim(void *exc)
 {
     static int said;
     if (!said++) tl_log_line("unwind: a C++ throw reached the unwinder (_Unwind_RaiseException) -- the unwinder is real and running");
     return ((int (*)(void *))g_unwind_raise)(exc);
 }
-/* _Unwind_Resume never returns: a frame that did not accept the exception resumes it into the frame below. */
+/* _Unwind_Resume never returns: it resumes the exception into the frame below. */
 static void unwind_resume_shim(void *exc)
 {
     static int said;
@@ -638,8 +618,7 @@ const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void 
     return sym_name(L, best);
 }
 
-/* /proc/self/maps as the app's code sees it: each library it loaded, at its address, under the path it was loaded by (Unity and
- * IL2CPP find their own library there; crash reporters list them). */
+/* /proc/self/maps as the app's code sees it: each loaded library, at its address, under the path it was loaded by. */
 size_t tl_ld_maps(char *buf, size_t n, const char *libdir)
 {
     size_t k = 0;
@@ -671,12 +650,8 @@ int tl_ld_iterate(tl_ld_phdr_cb cb, void *user)
 
 /* ------------------------------------------------- unresolved-import stubs */
 
-/*
- * An import nothing provides is bound to a 32-byte stub in the executable region
- * that loads its own name and jumps to the logger, so the first call announces
- * exactly what was missing. Failing the whole load would hide every import after
- * the first one; most of these are never called.
- */
+/* An import nothing provides is bound to a 32-byte stub that loads its own name and jumps to the logger, so the first
+ * call announces what was missing. Failing the whole load would hide every import after the first; most are never called. */
 static void tl_unresolved_called(const char *name, void *lr)
 {
     static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
@@ -738,15 +713,10 @@ static void *make_stub(const char *name)
 
 /* ------------------------------------------------------- raw system calls */
 
-/*
- * Some libraries make Linux system calls themselves: `mov x8, #nr; svc #0`. On Darwin
- * that traps into a different kernel's table. Each such site is rewritten to branch to
- * a small stub in the library's own stub page, which saves the two scratch registers
- * the host might clobber, calls tl_svc_common, and branches back to the instruction
- * after the site. tl_svc_common saves everything else the C handler may disturb --
- * the kernel preserves all registers but x0 across a system call, so code around a
- * raw `svc` relies on that -- and calls tl_linux_syscall with the arguments and number.
- */
+/* Some libraries make Linux system calls themselves (`mov x8, #nr; svc #0`), which on Darwin traps into a different
+ * kernel's table. Each site branches to a small stub that saves the scratch registers, calls tl_svc_common, and branches
+ * back. tl_svc_common saves everything the C handler may disturb (the kernel preserves every register but x0 across a
+ * system call, and code around a raw `svc` relies on that) and calls tl_linux_syscall. */
 long tl_linux_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long nr);
 
 __attribute__((naked, used)) void tl_svc_common(void)
@@ -867,11 +837,8 @@ static bool stub_in_range(const uint8_t *site, const uint8_t *stub)
     return to > -(1 << 25) && to < (1 << 25);
 }
 
-/*
- * A 32-byte slot for a site, as writable and executable addresses, from whichever of the library's two stub pools is
- * within branch range of the site (a branch reaches 128 MiB, and Minecraft's code spans 220 MiB). `*lit` is the
- * pool's literal slot, which holds the address of the shared handler.
- */
+/* A 32-byte slot for a site, from whichever of the library's two stub pools is within branch range (a branch reaches 128
+ * MiB, and Minecraft's code spans 220 MiB). `*lit` is the pool's literal slot, holding the shared handler's address. */
 static bool stub_slot(tl_lib *L, const uint8_t *site_rx, uint8_t **rx, uint8_t **rw, const uint8_t **lit)
 {
     if (L->stub_used + 32 <= L->stub_cap && stub_in_range(site_rx, L->stub_rx + L->stub_used)) {
@@ -887,12 +854,9 @@ static bool stub_slot(tl_lib *L, const uint8_t *site_rx, uint8_t **rx, uint8_t *
     return false;
 }
 
-/*
- * `adr Xd, label` where the label is writable data. adr reaches only a megabyte, and the writable view of the
- * image is somewhere else entirely, so the instruction is replaced by a branch to a stub that builds the writable
- * view's address in Xd (four moves) and branches back. Linkers turn adrp+add pairs into adr when the target is
- * close, which is why small libraries have these and Unity's did not.
- */
+/* `adr Xd, label` where the label is writable data. adr reaches only a megabyte and the writable view is elsewhere, so
+ * the instruction branches to a stub that builds the writable view's address in Xd (four moves) and branches back.
+ * Linkers turn adrp+add pairs into adr when the target is close. */
 static bool adr_stub(tl_lib *L, const uint8_t *site_rx, uint32_t rd, uint64_t target, uint32_t *branch)
 {
     uint8_t *rx, *rw; const uint8_t *lit;
@@ -1169,7 +1133,7 @@ emitted:
 
 static uint8_t *build_data_map(const tl_lib *L, const uint32_t *w, size_t n, uint64_t vstart, size_t *n_data);   /* below, with the unwind tables it reads */
 
-/* The cheap test x18_rewrite starts with, and what it would go on to decide: whether this word is an instruction that names x18. */
+/* The cheap test x18_rewrite starts with: whether this word is an instruction that names x18. */
 static bool x18_rewrite_would_apply(uint32_t insn)
 {
     if ((insn & 31u) != 18 && ((insn >> 5) & 31u) != 18 && ((insn >> 10) & 31u) != 18 && ((insn >> 16) & 31u) != 18) return false;
@@ -1190,15 +1154,10 @@ static uint32_t encode_adrp(uint32_t rt, const void *pc, const void *target)
 
 /*
  * Two rewrites in executable pages, both on the writable view:
- *
- *  - `mrs Xt, tpidr_el0` becomes `adrp Xt, <fake thread block>`. Android code
- *    reads its stack-protector cookie from [tpidr_el0 + 0x28]; Darwin keeps its
- *    own thread pointer elsewhere and leaves this register for nothing in
- *    particular. Every thread sharing one cookie is harmless: the cookie only has
- *    to be the same at a function's entry and exit.
- *  - an `adrp` that points into this image's writable pages is retargeted at the
- *    writable view, because code reaches its globals pc-relatively and the page
- *    the executable view shows is not writable.
+ *  - `mrs Xt, tpidr_el0` becomes `adrp Xt, <fake thread block>` (Android reads its stack cookie from [tpidr_el0+0x28];
+ *    every thread sharing one cookie is harmless -- it only has to be equal at a function's entry and exit).
+ *  - an `adrp` into this image's writable pages is retargeted at the writable view (code reaches globals pc-relatively,
+ *    and the page the executable view shows is not writable).
  */
 /* Whether a vaddr is in one of the library's executable sections. */
 static bool in_code(const tl_lib *L, uint64_t vaddr)
@@ -1207,10 +1166,8 @@ static bool in_code(const tl_lib *L, uint64_t vaddr)
     return false;
 }
 
-/* Whether an address (in either view) is inside one of the library's executable sections: what the
- * loader knows about a vaddr being code, exposed so a diagnostic can say what a faulting branch
- * target is. 1 = yes, 0 = in a library but not in an executable section, -1 = not in any library
- * (an address in the region but outside every image, e.g. a JIT arena the guest carved out). */
+/* Whether an address (in either view) is inside one of the library's executable sections, so a diagnostic can say what a
+ * faulting branch target is: 1 = yes, 0 = in a library but not executable, -1 = not in any library. */
 int tl_ld_va_is_code(const void *addr)
 {
     tl_lib *L = tl_ld_lib_of(addr);
@@ -1220,9 +1177,9 @@ int tl_ld_va_is_code(const void *addr)
     return in_code(L, off + L->base_vaddr) ? 1 : 0;
 }
 
-/* An adrp into a page that holds code and data both (a small library built for 4 KiB pages): what the next instructions make of it.
- * "add Xd, Xn, #imm" with Xn the adrp's register forms an address; when that address is in code (a callback handed to someone),
- * the adrp must keep naming the executable view. Loads and stores through it are data, and get the writable view. */
+/* An adrp into a page holding code and data both: what the next instructions make of it. "add Xd, Xn, #imm" with Xn the
+ * adrp's register forms an address; if that address is code (a callback handed out) the adrp keeps the executable view.
+ * Loads and stores through it are data, and get the writable view. */
 static bool adrp_targets_code(const tl_lib *L, const uint32_t *w, size_t i, size_t nwords, uint32_t rd, uintptr_t tp)
 {
     if (!(L->pflags[(tp - (uintptr_t)L->rx) / PAGE] & TL_PAGE_X)) return false;
@@ -1254,9 +1211,8 @@ static void patch_image(tl_lib *L, size_t *n_tpidr, size_t *n_adrp, size_t *n_ad
         for (size_t i = 0; i < nwords; i++) {
             uint32_t insn = w[i];
             const uint8_t *pc = x + i * 4;
-            /* a constant in the code section is not an instruction that happens to name x18 */
-            /* Only the x18 rewrite is held back: it matches a word on a handful of ordinary bit fields, and a quarter of a constant table does. The
-             * others (adrp, adr, mrs, svc) match fixed patterns that a constant almost never has, and the code beside a table needs them. */
+            /* Only the x18 rewrite is held back for a data word: it matches on a handful of ordinary bit fields, which a quarter
+     * of a constant table does. The others (adrp, adr, mrs, svc) match fixed patterns a constant almost never has. */
             bool is_data = dmap && ((dmap[i >> 3] >> (i & 7)) & 1);
             /* TL_X18_RANGE=<lo>-<hi> (hex vaddrs) or TL_X18_OFF: rewrite fewer sites, to find one that is mishandled. A Mac does not clear x18, so leaving it is safe to test with. */
             static int dbg = -1; static uint64_t dbg_lo, dbg_hi;
@@ -1326,25 +1282,19 @@ static void patch_image(tl_lib *L, size_t *a, size_t *b, size_t *c, size_t *d) {
 
 /* ------------------------------------------------------- thread-local storage */
 
-/*
- * A library's PT_TLS segment is a template for a block every thread has its own copy of. Android code reaches its thread-local variables in
- * one of two ways that matter here: through a "TLS descriptor" (the newer, and what libUE4 uses) or through __tls_get_addr(module, offset). Both end
- * in the same place -- a per-thread block for the library, allocated and filled from the template the first time a thread asks.
- *
- * A descriptor is a pair in the library's GOT: a function to call and an argument. The code calls the function with the descriptor's address and
- * expects the variable's offset from the thread pointer, which it adds to the thread pointer (`mrs x1, tpidr_el0`) itself. Here that register is read as a
- * fixed address (see the tpidr patch), so the function answers with the distance from that fixed address to this thread's copy of the variable. It is called
- * where the compiler expects an ordinary instruction, so it must leave every register but x0 and x1 as it found them -- hence the assembly.
- */
+/* A library's PT_TLS segment is a template for a block every thread copies. Android code reaches thread-local variables
+ * through a "TLS descriptor" (a GOT pair: a function and an argument, what libUE4 uses) or __tls_get_addr(module,
+ * offset). Both end at a per-thread block, allocated and filled from the template on first ask. The descriptor's function
+ * is called where the compiler expects an ordinary instruction, so it must leave every register but x0/x1 as it found
+ * them -- hence the assembly -- and answers with the distance from the (fixed) thread pointer to this thread's copy. */
 #define MAX_TLS_MODULES 16
 static struct { tl_lib *lib; uint64_t init_vaddr, filesz, memsz, align; } g_tlsmod[MAX_TLS_MODULES + 1];
 static int g_ntls;
 static pthread_key_t g_tls_key;
 static pthread_once_t g_tls_once = PTHREAD_ONCE_INIT;
 
-/* A thread's blocks for the modules, each tagged with the session it was filled from: a module
- * number is reused every session, so a block left over from an earlier app must not be handed
- * out again (see tls_block). */
+/* A thread's blocks for the modules, each tagged with the session it was filled from: a module number is reused every
+ * session, so a block from an earlier app must not be handed out again (tls_block). */
 typedef struct { void *blk[MAX_TLS_MODULES + 1]; int gen[MAX_TLS_MODULES + 1]; } tls_thread;
 static void tls_thread_free(void *p) { tls_thread *t = p; for (int i = 0; i <= MAX_TLS_MODULES; i++) free(t->blk[i]); free(t); }
 static void tls_key_init(void) { pthread_key_create(&g_tls_key, tls_thread_free); }
@@ -1355,13 +1305,10 @@ static void *tls_block(unsigned module)
     if (module == 0 || module > (unsigned)g_ntls) return NULL;
     tls_thread *t = pthread_getspecific(g_tls_key);
     if (!t) { t = calloc(1, sizeof(*t)); pthread_setspecific(g_tls_key, t); }
-    /* Module numbers are per session (g_ntls is reset at tl_ld_begin_session). A thread that
-     * survived the last app still carries blocks under those numbers, filled from that app's
-     * template; asking for the number now must give THIS session's copy, so a block from another
-     * session is dropped and rebuilt. This is safe only because a thread of a finished app never
-     * runs guest code again -- the launch thread is pause()-parked and guest threads are left
-     * quarantined -- so nothing reads the block that is dropped. If that ever stops holding, the
-     * numbers must not be reused (raise MAX_TLS_MODULES and never reset g_ntls). */
+    /* Module numbers are per session. A thread that survived the last app still carries blocks under those numbers; asking
+     * now must give THIS session's copy, so a block from another session is dropped and rebuilt. Safe only because a thread
+     * of a finished app never runs guest code again (launch thread parked, guest threads quarantined), so nothing reads the
+     * dropped block -- if that stops holding, do not reuse the numbers (raise MAX_TLS_MODULES, never reset g_ntls). */
     if (t->gen[module] != G.session) {
         free(t->blk[module]);
         t->blk[module] = NULL;
@@ -1423,9 +1370,9 @@ static void tl_tlsdesc_entry(void) {}
 
 static inline uint64_t rd64(const uint8_t *p) { uint64_t v; memcpy(&v, p, 8); return v; }
 
-/* An address inside the image as pointer data records it: writable view for data, executable view for code. A small library built
- * for 4 KiB pages has code and data on one 16 KiB page, which is then writable; a pointer into its executable sections (a Python
- * module's exec slot, a vtable entry) is still code and must be called through the executable view. */
+/* An address inside the image as pointer data records it: writable view for data, executable view for code. A small library
+ * has code and data on one page, which is then writable; a pointer into its executable sections is still code and must be
+ * called through the executable view. */
 static uint64_t image_addr(const tl_lib *L, uint64_t vaddr)
 {
     uint64_t off = vaddr - L->base_vaddr;
@@ -1447,9 +1394,7 @@ static uint64_t bind_symbol(tl_lib *L, uint32_t symidx, bool *failed)
     const char *name = sym_name(L, s);
     uint64_t val = 0;
     if (s->st_shndx != SHN_UNDEF_ && (s->st_info >> 4) != STB_WEAK_) {
-        /* Defined here. Search the scope anyway so an earlier library's definition
-         * wins, as it does under ELF interposition... except that a library's own
-         * definition is what Android's linker uses first for its own symbols. */
+        /* Defined here: Android's linker uses a library's own definition first for its own symbols (not ELF interposition). */
         if ((s->st_info & 0xf) == STT_GNU_IFUNC_) { *failed = true; return 0; }
         val = (uint64_t)(uintptr_t)sym_value(L, s);
     } else {
@@ -1560,13 +1505,9 @@ static int64_t rd_sleb(sleb *s)
 
 static bool do_packed(tl_lib *L, size_t *count)
 {
-    /*
-     * Android's APS2 encoding, read the way bionic's linker reads it. Offsets and
-     * addends are running totals, not absolute values: each entry adds a signed
-     * delta to the previous one. Within a group the order is: offset delta (if the
-     * group shares one), info (if shared), shared-addend delta, then per entry its
-     * own offset delta, info and addend delta as the flags leave them unshared.
-     */
+    /* Android's APS2 encoding, as bionic's linker reads it. Offsets and addends are running totals: each entry adds a signed
+     * delta to the previous. Within a group the order is: offset delta (if shared), info (if shared), shared-addend delta,
+     * then per entry its own offset delta, info and addend delta as the flags leave them unshared. */
     if (!L->arela || !L->arelasz) return true;
     const uint8_t *d = at(L, L->arela);
     if (memcmp(d, "APS2", 4) != 0) { tl_log_line("ld: %s: packed relocations lack APS2 magic", L->name); return false; }
@@ -1669,11 +1610,10 @@ static bool ensure_tcb(void)
 /* ------------------------------------------------------------------ unwind ranges */
 
 /*
- * Which words of the executable sections are code. Assembly files put their constant tables in .text (OpenSSL's SHA-256 and SHA-512 keep
- * theirs right after the function), and a table word that happens to name x18 -- one constant in 40 does -- would be "rewritten" into a branch to
- * a stub, which turns the constant into garbage and the hash into a wrong answer. The unwind tables list the extent of every function the
- * compiler emitted, which is exactly the code; a word outside all of them is data, and the rewrites that only code deserves leave it alone.
- * A library with no unwind tables, or tables this cannot read, is treated as code throughout, as before.
+ * Which words of the executable sections are code. Assembly files put constant tables in .text (OpenSSL keeps its SHA
+ * tables right after the function), and a table word that names x18 would be rewritten into a branch to a stub, turning
+ * the constant into garbage. The unwind tables list the extent of every compiler-emitted function -- exactly the code; a
+ * word outside them is data. A library with no readable unwind tables is treated as code throughout, as before.
  */
 static bool read_enc(const uint8_t *p, const uint8_t *end, uint8_t enc, uint64_t field_vaddr, int64_t *out, size_t *size)
 {
@@ -1784,13 +1724,10 @@ fail:
     free(r);
 }
 
-/*
- * Which words of an executable range are data. A word inside a function the unwind tables know of is code, always. Elsewhere (a library built without
- * unwind tables has long stretches of code there, as well as the constant tables assembly files keep in .text) it is data when it lies in a cluster
- * of words that no instruction can have: a table of 32-bit constants is a quarter unallocated encodings, so any 17 words of it hold three or more such
- * words, while compiled code holds none. A word within 8 of such a cluster is counted in it, which takes in the edges of the table. Returns a bitmap, one bit
- * per word, or NULL when no word is data.
- */
+/* Which words of an executable range are data. A word inside a known function is code, always. Elsewhere (a library with
+ * no unwind tables has code there too, beside assembly constant tables) it is data when it lies in a cluster no
+ * instruction can have: a table of 32-bit constants is a quarter unallocated encodings, so any 17 words hold three or
+ * more, while compiled code holds none. Returns a bitmap, one bit per word, or NULL when no word is data. */
 static bool plausible_word(uint32_t w)
 {
     if ((w >> 16) == 0) return true;                 /* udf: the zero padding between functions, and traps */
@@ -1819,9 +1756,8 @@ static uint8_t *build_data_map(const tl_lib *L, const uint32_t *w, size_t n, uin
         if (i >= 9) sum -= BIT(bad, i - 9);
         if (sum >= 3 && BIT(bad, i)) SETBIT(hot, i);
     }
-    /* A table is the run of words between the first and last such word, as long as they come within 64 of each other (in a table of constants three
-     * in four words are fine on their own, but a gap of 64 without a bad one has odds of one in 20 million); and 32 words either side, which is as far
-     * as the first words of a table can be from its first bad one with any likelihood. */
+    /* A table is the run between the first and last such word while they come within 64 of each other (a gap of 64 with
+     * no bad word has odds of one in 20 million), plus 32 words either side. */
     long last = -1;
     for (size_t i = 0; i < n; i++) {
         if (!BIT(hot, i)) continue;
@@ -1897,8 +1833,7 @@ static tl_lib *map_library(const char *name, uint8_t *file, size_t flen)
     uint8_t *flags = malloc(npages);
     tl_page_plan(loads, (size_t)nloads, has_relro ? &relro : NULL, PAGE, flags, npages, &base_vaddr);
 
-    /* The executable sections, from the section headers when the file has them (it almost always does);
-     * otherwise whole executable segments, which is correct for a library with nothing but code in them. */
+    /* The executable sections, from the section headers when present, else whole executable segments. */
     struct { uint64_t vaddr, size, foff; } code[16]; int ncode = 0;
     if (eh->e_shoff && eh->e_shentsize >= 64 && eh->e_shnum && eh->e_shoff + (uint64_t)eh->e_shnum * eh->e_shentsize <= flen) {
         for (unsigned i = 0; i < eh->e_shnum && ncode < 16; i++) {
@@ -1910,9 +1845,9 @@ static tl_lib *map_library(const char *name, uint8_t *file, size_t flen)
             }
         }
     }
-    /* Bytes of an executable segment that no section claims: protectors (app shields, packers) keep their unpacking code there,
-     * out of the section headers, and it reads tpidr_el0 like any other code. Every allocated section counts as claimed, so
-     * .rodata and .eh_frame stay data. */
+    /* Bytes of an executable segment no section claims: protectors keep their unpacking code there, out of the section
+     * headers, and it reads tpidr_el0 like any other code. Every allocated section counts as claimed, so .rodata and
+     * .eh_frame stay data. */
     if (ncode && eh->e_shoff && eh->e_shentsize >= 64) {
         struct { uint64_t lo, hi; } claimed[64]; int nclaimed = 0;
         for (unsigned i = 0; i < eh->e_shnum && nclaimed < 64; i++) {
@@ -2040,8 +1975,8 @@ static bool relocate(tl_lib *L)
     free(L->symcache);
     L->symcache = NULL;
     if (!ok) { tl_log_line("ld: %s: relocation failed", L->name); return false; }
-    /* The relocation table is dead now that the image is relocated. Its tail becomes a second pool of stubs, for the
-     * sites that are out of branch range of the stub pages after a very large image. */
+    /* The relocation table is dead now. Its tail becomes a second stub pool, for sites out of branch range of the stub
+     * pages after a very large image. */
     if (L->relasz >= (1u << 20) && L->rela >= L->base_vaddr) {
         uint64_t end = (L->rela + L->relasz) & ~(uint64_t)(PAGE - 1), cap = 256u << 10;
         if (end - L->rela > cap + PAGE) {
@@ -2186,15 +2121,13 @@ bool tl_ld_init(tl_lib *lib)
 /* ---------------------------------------------------- the session, as a pair */
 
 /*
- * One session is one app's run. What it buys: a second app in the same process cannot resolve a
- * library, a symbol or an address through the first app's mappings -- which are still there,
- * because the executable region is a one-shot bump allocator and nothing is ever unmapped. The
- * tag makes them unreachable; the mapping stays put.
+ * One session is one app's run. A second app cannot resolve a library, symbol or address through the first app's
+ * mappings -- still there, because the region is a one-shot bump allocator and nothing is ever unmapped. The tag makes
+ * them unreachable; the mapping stays put.
  *
- * The node frees only the layer's own allocations. Everything that points into the region --
- * rx/rw, the stub pools, isl_*, the pages the FDE tables describe -- is left alone: unmapping a
- * slice would break the fixed rw<->rx delta every retargeted adrp, image_addr and the code-write
- * emulator rely on, and a thread the app left running may still be standing on those pages.
+ * The node frees only the layer's own allocations. Everything pointing into the region (rx/rw, the stub pools, isl_*,
+ * the FDE-described pages) is left alone: unmapping a slice would break the fixed rw<->rx delta every retargeted adrp,
+ * image_addr and the code-write emulator rely on, and a thread the app left running may still be on those pages.
  */
 static void free_registry_node(tl_lib *L)
 {
@@ -2245,10 +2178,9 @@ void tl_ld_end_session(void)
     int dropped = drop_other_sessions();
     int kept = G.nlibs;
 
-    /* Our own file bookkeeping, which is append-only and would otherwise run out. Each APK handle
-     * holds a whole-file mapping and a descriptor and TL_LD_MAX_APKS is 16, so a handful of launches
-     * exhaust the cap; the search dirs are strdup'd; the queued splits are the ended app's. All of
-     * it is the layer's own -- none of it is guest memory, and none of it is the mappings. */
+    /* Our own append-only file bookkeeping. Each APK handle holds a whole-file mapping and a descriptor and
+     * TL_LD_MAX_APKS is 16, so a handful of launches exhaust the cap; the search dirs are strdup'd; the queued splits are
+     * the ended app's. All of it is the layer's own -- none is guest memory or a mapping. */
     int napks = 0, ndirs = g_nsearch, nsplits = g_nsplits;
     pthread_mutex_lock(&G.lock);
     for (int i = 0; i < G.napks; i++) { tl_zip_close(&G.apks[i]); napks++; }
@@ -2258,10 +2190,9 @@ void tl_ld_end_session(void)
     for (int i = 0; i < g_nsearch; i++) { free(g_search[i]); g_search[i] = NULL; }
     g_nsearch = 0;
     g_nsplits = 0;
-    /* Module numbers are reset here too, not only at begin: the state machine may wire only one of the
-     * pair (tl_ld_end_session is already called from husk_tl_session_close), and the 16-module cap must
-     * not accumulate across apps either way. The session id has already advanced, so a thread that
-     * survived the run rebuilds its blocks under the reused numbers (tls_block). */
+    /* Module numbers are reset here too, not only at begin: the state machine may wire only one of the pair, and the
+     * 16-module cap must not accumulate. The session id has advanced, so a surviving thread rebuilds its blocks under
+     * the reused numbers (tls_block). */
     g_ntls = 0;
     if (tl_jni_hle_reset_onload) tl_jni_hle_reset_onload();
 

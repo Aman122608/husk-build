@@ -4,21 +4,19 @@
  * functions and building trampolines in executable memory it maps for itself.
  *
  * On a phone, memory can be executable or writable, never both: every library's code is in the executable view of the JIT
- * region (husk-tl-xmem.c), and the same pages are writable only through the second view, a fixed distance away. A hooking
- * library does not know that; it asks mprotect for write access and then stores straight into the code. So:
+ * region (husk-tl-xmem.c), and the same pages are writable only through a second view a fixed distance away. A hooking
+ * library does not know that: it mprotects for write and stores straight into the code. So:
  *
- *   - mprotect on the JIT region says yes and changes nothing (the real permissions must stay as they are);
+ *   - mprotect on the JIT region says yes and changes nothing (its permissions must stay as they are);
  *   - mmap for executable memory hands out a piece of the JIT region;
- *   - a store into the executable view faults, and the fault handler performs it through the writable view -- the store
- *     instruction is decoded from the faulting PC, its value read from the saved registers -- flushes the instruction cache
- *     for the bytes it changed, and resumes after the instruction. It is landed there and NOT by making the page writable:
- *     a vm_protect naming WRITE on these pages is what revokes the debugger's per-entry execute grant for the whole region
- *     (husk-tl-xmem.c, adopt_exec_view), so the executable page is left executable and the value goes through the twin.
- *     A store into the GUEST-FACING view when that view is not writable at all is refused honestly rather than guessed at.
+ *   - a store into the executable view faults, and this guard performs it through the writable twin -- decoding the
+ *     instruction from the faulting PC, reading its value from the saved registers -- flushes the instruction cache and
+ *     resumes after it. Land it there, NEVER by making the page writable: a vm_protect naming WRITE on these pages is what
+ *     revokes the debugger's per-entry execute grant for the whole region (husk-tl-xmem.c, adopt_exec_view;
+ *     jit-grant-and-detach.md). A store into a view that is not writable at all is refused honestly, not guessed at.
  *
- * Patching happens a few hundred times while a mod loader starts, so a fault per store costs nothing that shows. Off unless
- * a driver turns it on (tl_codewrite_enable) OR the arena opens on the executable view, which is exactly the engine that
- * needs it (husk-tl-xmem.c arms it there), so no other game's crash ever passes through here.
+ * Off unless a driver turns it on (tl_codewrite_enable) OR the arena opens on the executable view, which is exactly the
+ * engine that needs it (husk-tl-xmem.c arms it there), so no other game's crash passes through here.
  */
 #define _XOPEN_SOURCE 700
 #define _DARWIN_C_SOURCE
@@ -62,35 +60,18 @@ static void set_xreg(struct __darwin_arm_thread_state64 *ss, unsigned r, uint64_
 
 /* Store `bytes` of a register's value at `addr`, through whichever view is writable.
  *
- * An address in the EXECUTABLE view (what a hooking library patches: library code) is written through
- * the writable view at a fixed distance. An address in the GUEST-FACING view -- a JIT's own arena, which
- * the loader's adrp retarget hands it in writable-view form -- is written in place, with the thread
- * briefly in write mode: under Fix A that view is the MAP_JIT mapping, so on a device that enforces W^X
- * a store there needs write mode and the code that follows needs execute mode back (tl_xmem_emit_begin
- * / end are no-ops where no write protection is enforced, and where the guest-facing view is not the
- * authorised one this branch is never taken for a store that already faulted in the other view).
- *
- * Either way the instruction cache is dropped for the bytes changed, so the CPU fetches what was stored. */
+ * An address in the EXECUTABLE view (library code a hooking library patches) is written through the writable twin at the
+ * fixed delta. An address in the GUEST-FACING view (a JIT's own arena) is written in place, with the thread briefly in
+ * write mode where W^X is enforced (tl_xmem_emit_begin/end are no-ops otherwise). Either way the instruction cache is
+ * dropped for the bytes changed. */
 static bool put(uint64_t addr, const void *value, unsigned bytes)
 {
     if (tl_xmem_is_rx((const void *)addr) && tl_xmem_is_rx((const void *)(addr + bytes - 1))) {
-        /* The store already faulted here: the address is in the EXECUTABLE view, which is RX and which
-         * the layer will NOT make writable, because a vm_protect naming WRITE on these pages is exactly
-         * what revoked the debugger's per-entry execute grant for the whole region (husk-tl-xmem.c,
-         * adopt_exec_view -- two consecutive runs, same guest view, same delta, the only difference the
-         * ask; the first read `512 MiB executable` and rendered the game, the second read `0 MiB
-         * executable` and died on its first arena fetch).
-         *
-         * So the store is landed the way a JIT substrate does it: the equivalent write through the
-         * OTHER view of the same physical pages, one fixed delta away, which is a genuinely writable
-         * mapping -- and the executable page is left executable, so the guest's next fetch at this
-         * address still runs. Nothing is copied twice and no bytes differ: the two views are one set
-         * of pages.
-         *
-         * The per-page vm_protect(RW)/vm_protect(RX) flip that used to be here for the W^X fallback is
-         * gone with the flag's old meaning: it was the same ask in miniature, and it was never needed,
-         * because the twin is writable. A refusal cannot happen here -- if it does, the write is a
-         * no-op rather than a guess. */
+        /* The address is in the EXECUTABLE view (RX). Land the store through the writable twin at the fixed delta,
+         * the way a JIT substrate does, and leave the executable page executable so the guest's next fetch still runs.
+         * Do NOT vm_protect WRITE here -- that ask is what revokes the debugger's per-entry execute grant (the
+         * two-run control and the old per-page flip are in jit-grant-and-detach.md). The two views are one set of
+         * pages, so no bytes differ; a refusal is a no-op, not a guess. */
         memcpy((void *)(addr + (uint64_t)tl_xmem_delta()), value, bytes);
         tl_xmem_flush((const void *)addr, bytes);
         {
@@ -143,8 +124,8 @@ static bool emulate(mcontext_t mc, const char **why)
     unsigned rt = insn & 31, rn = (insn >> 5) & 31;
     bool simd = (insn >> 26) & 1;
 
-    /* Atomics, as compiled for the C++ runtime's std::atomic and Dart's BSS set-up. A fault means the address is in the executable
-     * view, which only this thread is writing at that moment in practice (start-up initialisation), so the store is done plainly. */
+    /* Atomics (the C++ runtime's std::atomic, Dart's BSS set-up). A fault here is start-up initialisation on one thread,
+     * so the store is done plainly. */
     {
         unsigned bytes = 1u << (insn >> 30);
         uint64_t a = xreg(ss, rn, true);
@@ -172,29 +153,16 @@ static bool emulate(mcontext_t mc, const char **why)
         }
     }
 
-    /* --------------------------------------------------------- Advanced SIMD structure stores (ST1 / ST2 / ST3 / ST4)
+    /* ----------------------------------------------------- Advanced SIMD structure stores (ST1 / ST2 / ST3 / ST4)
      *
-     * A compiler that moves more than one register's worth of data -- a vector spill, a struct field taken out of one
-     * lane, a struct or a matrix held in v0..v3 -- emits an Advanced SIMD STRUCTURE store, and BOTH of their encodings
-     * live outside the "load/store register" class every case below covers, so none of the masks beneath this block
-     * matches them. That is the form the guard refused:
-     *
-     *     st1 {v1.s}[1], [x9]      bytes 21 91 00 0d   (word 0x0d009121)
-     *
-     * x9 is exactly the fault address (robot gf, husk-20261015-123117: si_addr 0x124a51b90 = arena base + 0xb589b90,
-     * pc App+0x4c5e8e4). The decoder returned false, the guard chained the fault and the run died there -- an honest
-     * refusal of a store the guard could have carried.
-     *
-     * Both families share one shape: Rn holds the address, the register(s) hold the value(s), there is no pre-index
-     * form, and the post-index bit (23) either names a register (Rm, bits[20:16]) or, with Rm == 31, an immediate of
-     * exactly the bytes transferred. The single-structure (one lane) form spreads its lane index over Q (bit 30, which
-     * is why Q may not be read as a vector width here), S (bit 12) and size (bits[11:10]); the multiple-structure form
-     * writes whole vectors of Q ? 16 : 8 bytes and takes its register count from the opcode field (bits[15:12]). Only
-     * the store direction is carried: a load that faults is not this guard's to serve.
-     *
-     * The encodings and every validity rule below were checked against capstone over the whole of both families' bit
-     * spaces (5709 encodings: element, lane index, register count, post-index form and address all agree; every
-     * unallocated word in the same space is still refused). See .hermes/plans/engine-reset/store-guard-refusal.md. */
+     * Both families live outside the "load/store register" class the cases below cover, so none of their masks matches
+     * them; that is the form this guard once refused (e.g. `st1 {v1.s}[1], [x9]`). They share one shape: Rn holds the
+     * address, the register(s) the value(s), there is no pre-index form, and the post-index bit (23) either names a
+     * register (Rm, bits[20:16]) or, with Rm == 31, an immediate of exactly the bytes transferred. Single structure (one
+     * lane) spreads its lane index over Q (bit 30 -- so Q is not a vector width here), S (bit 12) and size
+     * (bits[11:10]); multiple structure writes whole vectors of Q ? 16 : 8 bytes and takes its register count from
+     * bits[15:12]. Only the store direction is carried. The validity rules encoded below were checked with capstone
+     * over both families' whole bit space (5709 encodings). See codewrite-store-guard.md. */
     {
         unsigned fam = insn & 0xBF000000u;
         if (fam == 0x0C000000u || fam == 0x0D000000u) {
@@ -307,18 +275,11 @@ static bool emulate(mcontext_t mc, const char **why)
 /*
  * ------------------------------------------------------------------ the refusal names itself
  *
- * A refusal used to be ANONYMOUS. The guard declines an instruction it cannot carry, chains to the previous handler,
- * and the process dies -- which is the honest thing to do, but it left the log saying only that the app faulted in
- * its arena. The layer's rule is that a failure must say what it is, so a refusal now NAMES the instruction: the pc,
- * WHICH GUEST IMAGE it lies in (the same "+0x..." the crash report prints), the raw bytes, the mnemonic and operands
- * where the decoder recognises the form, and the decoder's own reason for refusing. The next occurrence then needs
- * no probe build at all -- the log answers it.
- *
- * It is named ONCE per distinct refusal, NOT once per store: a hook loop can fault on the same instruction hundreds
- * of times, and a line per store would bury the log it exists to make readable. The table is fixed-size and static
- * because this runs on the fault path, where nothing may allocate.
- *
- * NOTHING here changes the path: `chain` below is the same call it was, with the same arguments, at the same place.
+ * A refusal NAMES the instruction it declines: the pc, WHICH GUEST IMAGE it lies in (the same "+0x..." the crash
+ * report prints), the raw bytes, the mnemonic where the decoder knows the form, and the decoder's own reason. So the
+ * next occurrence needs no probe build. Named ONCE per distinct refusal -- a hook loop faults on the same instruction
+ * hundreds of times -- in a fixed static table, because this runs on the fault path where nothing may allocate. The
+ * path itself is unchanged: `chain` below is the same call, with the same arguments, at the same place.
  */
 #define TL_CW_REFUSALS 8
 static struct { uintptr_t pc; uint32_t insn; } g_refused[TL_CW_REFUSALS];
@@ -338,11 +299,8 @@ static bool refusal_is_new(uintptr_t pc, uint32_t insn)
     return true;
 }
 
-/*
- * The instruction as one short line: the bytes always, and the mnemonic and operands where THIS decoder knows the
- * form (the two structure families above, the pairs, the atomics, the ordinary loads/stores). Appended by hand into
- * the caller's buffer -- the fault path allocates nothing and may not call anything that does.
- */
+/* The instruction as one short line, appended by hand into the caller's buffer (the fault path allocates nothing): the
+ * bytes always, and the mnemonic and operands where THIS decoder knows the form. */
 static void describe_insn(uint32_t insn, char *out, size_t n)
 {
     static const char *const elem[4] = { "b", "h", "s", "d" };
@@ -440,9 +398,8 @@ static void chain(struct sigaction *prev, int sig, siginfo_t *info, void *uc)
 static void on_fault(int sig, siginfo_t *info, void *uc)
 {
     ucontext_t *u = uc;
-    /* A store into the JIT region faults in either view: the executable view (library code a hooking
-     * library patches) or the guest-facing view (a JIT's own arena, which under Fix A is the authorised
-     * mapping and needs only the thread put back in write mode). Outside the region it is not ours. */
+    /* A store into the JIT region faults in either view: the executable view (library code a hooking library patches)
+     * or the guest-facing view (a JIT's own arena, needing only the thread back in write mode). Elsewhere it is not ours. */
     if (g_on && info) {
         uintptr_t pc = (uintptr_t)u->uc_mcontext->__ss.__pc;
         bool have_insn = (pc & 3) == 0;
@@ -456,8 +413,7 @@ static void on_fault(int sig, siginfo_t *info, void *uc)
         } else {
             why = "the fault address is in neither view of the JIT region, so there is no twin to write through";
         }
-        /* A refusal NAMES the instruction it declined, once per distinct one, and then chains exactly as it
-         * always has: the line is the only thing added to this path. */
+        /* A refusal names the instruction it declined, once per distinct one, then chains exactly as before. */
         name_refusal(pc, have_insn ? *(const uint32_t *)pc : 0u, have_insn, why, (uintptr_t)info->si_addr);
     }
     chain(sig == SIGBUS ? &g_prev_bus : &g_prev_segv, sig, info, uc);

@@ -28,12 +28,11 @@
 void tl_log_line(const char *fmt, ...);
 static void xmem_report_open(void);
 #if defined(__APPLE__)
-/* The guarded write-then-execute, defined beside the other mach probes far below; declared here so
- * the StikDebug path's adopt_exec_view (just above open_platform) can be written before it. */
+/* The guarded write-then-execute, defined with the other mach probes below; declared here so adopt_exec_view can
+ * precede it. */
 static bool xmem_writable_fetches(uintptr_t at, int *stage);
-/* The codewrite store-fault guard, which services a store into the executable view one page at a
- * time in the W^X fallback. Declared weak so this file still links without husk-tl-codewrite.c
- * (tools/a32/step0_xmem.c), where the fallback cannot engage and the open line says so. */
+/* The codewrite store-fault guard (a store into the executable view, carried through the writable twin). Declared weak
+ * so this file still links without husk-tl-codewrite.c (tools/a32/step0_xmem.c). */
 extern bool tl_codewrite_enabled(void) __attribute__((weak));
 #endif
 
@@ -41,67 +40,45 @@ static struct {
     uint8_t *rx, *rw;
     size_t size, used;
     bool open;
-    /* True when the guest-facing view (g_x.rw) is the mapping that carries the JIT authorisation
-     * (Fix A). It is the whole point of this file's two-view ordering: see tl_xmem_guest_view_is_jit. */
+    /* True when the guest-facing view (g_x.rw) carries the JIT authorisation (Fix A): see tl_xmem_guest_view_is_jit. */
     bool guest_view_jit;
-    /* How the guest-facing view's authorisation was obtained, for the one-line report:
-     * "MAP_JIT" when the mapping the guest addresses is a MAP_JIT mmap, "plain" when it is
-     * plain RWX, NULL when the guest-facing view is a vm_remap (no authorisation of its own). */
+    /* How the guest-facing view's authorisation was obtained, for the report: "MAP_JIT", "plain RWX", or NULL when it
+     * is a vm_remap (no authorisation of its own). */
     const char *route;
-    /* True when the guest was handed the EXECUTABLE view of the debugger's region, held RX: its code
-     * arena address is one that executes and that the layer will NOT write. A store into it faults and
-     * is carried through the writable twin by the codewrite guard, on the same physical pages, with no
-     * vm_protect anywhere -- which is the whole point: the ask for RWX on this view is what revokes the
-     * debugger's per-entry execute grant (see adopt_exec_view). False everywhere the guest has a
-     * genuinely writable-and-executable address of its own (Fix A on a host that grants one). */
+    /* True when the guest was handed the EXECUTABLE view of the debugger's region, held RX: its code arena executes and
+     * the layer will NOT write it, so a store there faults and is carried through the writable twin -- with NO
+     * vm_protect anywhere, because the ask for RWX revokes the debugger's per-entry execute grant (adopt_exec_view). */
     bool wx_fallback;
-    /* The WRITABLE view the layer emits its OWN bytes through: library images, stubs, and the
-     * codewrite/kernel-write mirror. It is the same as g_x.rw everywhere the guest-facing view is
-     * itself writable (Fix A, the own arena, the plain two-view fallback). In the W^X fallback the
-     * guest-facing view is the EXECUTABLE one and is RX, so this is the debugger's writable vm_remap
-     * instead -- the loader still writes every library image through a genuinely writable address,
-     * and tl_xmem_delta() (writable view - executable view) is what the adrp retarget and the mirror
-     * use to reach it. NULL means "the same as g_x.rw". */
+    /* The WRITABLE view the layer emits its OWN bytes through (library images, stubs, the codewrite/kernel-write
+     * mirror). Same as g_x.rw where the guest-facing view is itself writable; in the W^X fallback it is the debugger's
+     * writable vm_remap instead, and tl_xmem_delta() reaches it. NULL means "the same as g_x.rw". */
     uint8_t *wrw;
     pthread_mutex_t lock;
-    /* The verdict of the guarded write-then-execute on the address the GUEST both writes and
-     * executes, taken when the arena opens (see tl_xmem_exec_verdict). It is the measurement the
-     * app's "JIT is on" indicator is backed by, because the app's own prewarmed flag can be true
-     * while the pages cannot be fetched. Zero-initialised: exec_measured is TL_XMEM_EXEC_UNMEASURED
-     * and exec_detail is the empty string until a measurement is taken. */
+    /* The verdict of the guarded write-then-execute when the arena opened (tl_xmem_exec_verdict); the app's "JIT is
+     * on" indicator is backed by it, not by the app's prewarmed flag. Zero-initialised = UNMEASURED. */
     int exec_measured;
     char exec_detail[240];
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
 
 #if defined(__APPLE__)
 /*
- * The last GUEST FAULT the crash reporter handed in (tl_xmem_note_guest_fault), and whether the
- * fatal-time verdicts have been taken for it yet.
- *
- * The fault arrives in a SIGNAL HANDLER, where nothing but a plain record is safe: no mach probe,
- * and NEVER a sigsetjmp guard for the signal being handled (installing a guard and longjmping out of
- * a handler for the signal already being handled is re-entrancy risk). So the handler only STORES
- * the address here; the three verdicts are taken LATER, ONCE, on the normal thread that runs the
- * app-fault/session-close path (tl_xmem_report_fault_time), after the handler has returned and the
- * faulting thread has ended. The record happens-before the run is marked FAILED (a seq_cst CAS in
- * on_fatal) and the report happens-after the close observes that state, so the plain stores and
- * loads below are ordered by the state machine. Nothing is unmapped by the layer, so the arena pages
- * are still there when the report runs.
+ * The last GUEST FAULT the crash reporter handed in (tl_xmem_note_guest_fault), and whether the fatal-time verdicts
+ * have been taken for it yet. The fault arrives in a SIGNAL HANDLER, where nothing but a plain record is safe: no mach
+ * probe, and NEVER a sigsetjmp guard for the signal being handled (re-entrancy risk). So the handler only STORES the
+ * address here; the three verdicts are taken LATER, ONCE, on the normal thread that runs the app-fault/session-close
+ * path (tl_xmem_report_fault_time), after the handler returned. The record happens-before the run is marked FAILED and
+ * the report happens-after the close observes that state, so the plain stores and loads are ordered by the state
+ * machine. Nothing is unmapped, so the arena pages are still there when the report runs.
  */
 static uintptr_t g_fault_addr;
 static bool      g_fault_have;
 static bool      g_fault_reported;
 #endif
 
-/* Record the guarded write-then-execute's outcome, so the app can report a measurement rather than
- * the flag it set. Called only with a real verdict (RAN or FAULTED); `detail` is copied, so the
- * caller's stack buffer need not outlive the call. Apple-only because every call site is: the
- * guarded probes are the mach ones below.
- *
- * The verdict is ALSO written to the app's container here, in the same breath, because the guest's
- * next fault may take the process down before the UI can ask: the row that reports the measurement
- * has to be readable on the NEXT launch, so the measurement must outlive this process. See
- * xmem_persist_verdict and tl_xmem_set_verdict_path. */
+/* Record the guarded write-then-execute's outcome (RAN or FAULTED only); `detail` is copied, so the caller's buffer
+ * need not outlive the call. Apple-only: the guarded probes are the mach ones below. The verdict is ALSO written to the
+ * app's container here, because the guest's next fault may take the process down before the UI can ask, so the row must
+ * be readable on the NEXT launch (xmem_persist_verdict, tl_xmem_set_verdict_path). */
 #if defined(__APPLE__)
 static void xmem_persist_verdict(void);      /* below, beside xmem_probe_entry (it reads the entry) */
 static void xmem_note_exec(int verdict, const char *detail)
@@ -113,31 +90,21 @@ static void xmem_note_exec(int verdict, const char *detail)
 }
 #endif
 
-/* The view the layer WRITES through. Everything that mirrors a guest/executable address to a
- * writable one -- the loader's bulk emission (tl_xmem_alloc), the codewrite redirect (tl_xmem_delta)
- * and the kernel-write redirect (kernel_dst) -- goes through this, never through g_x.rw directly,
- * because in the W^X fallback g_x.rw is the EXECUTABLE (read-only) view. */
+/* The view the layer WRITES through: everything that mirrors a guest/executable address to a writable one goes
+ * through this, never g_x.rw directly, because in the W^X fallback g_x.rw is the EXECUTABLE (read-only) view. */
 static uint8_t *xmem_writable_view(void) { return g_x.wrw ? g_x.wrw : g_x.rw; }
 
-/* Set while building the translation layer's OWN arena: make_views then adopts ONLY the order
- * where the guest-facing view is the mapping that carries the JIT authorisation (the address the
- * guest both writes and executes). The fallback order -- guest-facing view a vm_remap -- is
- * exactly what the two phone crashes proved iOS will not execute (PvZ's A64HookFunction arena,
- * robot gf's UnityMain bus error), so when the layer can have an authorised view of its own it
- * must not silently accept the fallback; if it cannot, the caller falls back to the debugger's
- * region and says so. */
+/* Set while building the translation layer's OWN arena: make_views then adopts ONLY the order where the guest-facing
+ * view carries the JIT authorisation (the address the guest both writes and executes). The fallback order -- a vm_remap
+ * -- is what the two phone crashes proved iOS will not execute, so when the layer can have an authorised view of its own
+ * it must not silently accept the fallback; if it cannot, the caller falls back to the debugger's region and says so. */
 #if defined(__APPLE__)
 static bool g_own_arena_only;
 #endif
 
-/*
- * The per-thread W^X toggle for a MAP_JIT mapping. pthread_jit_write_protect_np() is in libsystem
- * but the iOS SDK marks it unavailable, so it is looked up at run time and nothing links against it.
- * With it, a thread's MAP_JIT pages are writable (write_mode(true)) or executable (write_mode(false));
- * where no write protection is enforced -- and for any mapping that is not MAP_JIT -- it is a no-op
- * and the mapping is plain RWX. (QEMU pokes the comm-page APRR registers itself inside tcg/; this is
- * the libsystem entry point that governs the same state, and the one reachable from here.)
- */
+/* The per-thread W^X toggle for a MAP_JIT mapping. pthread_jit_write_protect_np() is in libsystem but the iOS SDK
+ * marks it unavailable, so it is looked up at run time and nothing links against it: a thread's MAP_JIT pages are then
+ * writable (write_mode(true)) or executable (write_mode(false)). A no-op where no write protection is enforced. */
 static void xmem_write_mode(bool writable)
 {
 #if defined(__APPLE__)
@@ -157,14 +124,12 @@ static void xmem_write_mode(bool writable)
 
 #if defined(__APPLE__)
 /*
- * Executable memory a process makes for itself, on a device that does not need a debugger to hand it out: one where the kernel lets a process that is marked as debugged
- * (CS_DEBUGGED) run pages it wrote. That is what a jailbreak does when it is told to allow JIT in apps (Dopamine marks every app it launches as debugged), what
- * TrollStore's enable-jit does (its root helper attaches with ptrace and lets go, which leaves the flag set), and what a debugger's attach does on an iOS before TXM. It is
- * the way UTM gets its JIT there too: an anonymous read+execute mapping, and a read+write alias of the same pages made with vm_remap.
- *
- * The two views sit side by side, a fixed distance apart, because the loader reaches one from the other with adrp (+-4 GiB). Which one carries the JIT authorisation is settled by make_views below: the
- * view the guest addresses and calls is preferred, so that an arena the guest keeps at a writable-view address can really be made to execute. Nothing is trusted until a function written through one view
- * has been called through the other (and, for the preferred order, through itself); a guard turns a refusal into a failure rather than a crash.
+ * Executable memory a process makes for itself, where the kernel lets a process marked debugged (CS_DEBUGGED) run pages
+ * it wrote: what a jailbreak allowing JIT in apps, TrollStore's enable-jit, or a debugger's attach on an iOS before TXM
+ * gives. The two views sit a fixed distance apart (the loader reaches one from the other with adrp, +-4 GiB); which one
+ * carries the JIT authorisation is settled by make_views below. Nothing is trusted until a function written through one
+ * view has been CALLED through the other (and, for the preferred order, through itself); a guard turns a refusal into a
+ * failure rather than a crash.
  */
 extern int csops(pid_t pid, unsigned int ops, void *useraddr, size_t usersize);
 #define TL_CS_OPS_STATUS 0
@@ -224,26 +189,20 @@ static bool self_runs(uint8_t *call_at, uint8_t *write_at)
 }
 
 /*
- * Build the two views of one set of pages inside the reservation `base` (room for `base` and
- * `base + size`), and hand them to the loader as g_x.rw (the view the guest addresses and calls,
- * where the loader's adrp retarget and sym_value put writable content) and g_x.rx (the view guest
- * CODE is executed through). Which mapping carries the JIT authorisation is the whole question:
+ * Build the two views of one set of pages inside the reservation `base`, and hand them to the loader as g_x.rw (the view
+ * the guest addresses and calls) and g_x.rx (the view guest CODE runs through). Which mapping carries the JIT
+ * authorisation is the whole question:
  *
- *   - Fix A, tried first: the guest-facing view IS the `mmap`, created PROT_READ|PROT_WRITE|PROT_EXEC
- *     with MAP_JIT (or plain where the host allows a writable-and-executable mapping), and the code
- *     view is a `vm_remap` of it. The address a guest keeps for its own arena is then an authorised
- *     mapping, so adding execute to it -- which is all the guest does -- is real.
- *   - the fallback, exactly what shipped before: the `mmap` carries the authorisation as the CODE
- *     view and the guest-facing view is the `vm_remap`. A guest arena in the writable view is then a
- *     vm_remap alias that no vm_protect can make fetch (the phone's SIGBUS), which tl_xmem_allow_exec
+ *   - Fix A, tried first: the guest-facing view IS the mmap (PROT_READ|PROT_WRITE|PROT_EXEC, MAP_JIT, or plain where
+ *     the host allows RWX), and the code view is a vm_remap of it. A guest's own arena is then an authorised mapping, so
+ *     adding execute to it -- all the guest does -- is real.
+ *   - the fallback: the mmap carries the authorisation as the CODE view and the guest-facing view is the vm_remap. A
+ *     guest arena in the writable view is then a vm_remap alias no vm_protect can make fetch, which tl_xmem_allow_exec
  *     refuses honestly.
  *
- * The order is settled by MEASUREMENT, never by a guess: a pair is adopted only after both views have
- * been shown to execute code written through the other (and, for Fix A, the guest-facing view a
- * function written through itself). A host that refuses the Fix A mapping, or whose code view turns
- * out not to execute, is given the fallback; and a host that refuses both fails loudly rather than
- * returning a region that cannot run. Nothing is unmapped -- the next attempt overwrites the same
- * reservation with MAP_FIXED -- and no thread is ended or joined.
+ * The order is settled by MEASUREMENT, never a guess: a pair is adopted only after both views have been shown to run a
+ * function written through the other (and, for Fix A, the guest-facing view one written through itself). A host that
+ * refuses both fails loudly. Nothing is unmapped (the next attempt overwrites with MAP_FIXED) and no thread is ended.
  */
 static bool make_views(uint8_t *base, size_t size, char *err, size_t errlen)
 {
@@ -346,24 +305,13 @@ static bool grant_self(size_t host_bytes, char *err, size_t errlen)
 }
 
 /*
- * The translation layer's OWN arena: a mapping the APP owns, obtained here (not the debugger's
- * region, whose owner is QEMU), whose guest-facing view is the address the guest both writes and
- * executes. Two phone crashes are the reason this is preferred over the debugger's region:
- *
- *   PvZ (083605): the guest computed a code pointer off the writable base the layer handed it
- *   (0x13b012e10 in the writable view, `blr x8` from libRFLib.so A64HookFunction) and branched;
- *   the page was mapped, vm_protect returned 0, and it still had no execute -- a vm_remap alias
- *   that iOS will not run. The two-address scheme fails in the field whenever the guest derives an
- *   address from the writable base.
- *
- *   robot gf (083442/083605): a fetch at a page whose entry NAMED execute (prot 5) still took a
- *   bus error -- the page was not backed at all. That region is StikDebug's, reserved rather than
- *   populated, and only a few MiB of it is ever mapped.
- *
- * An mmap of the app's own is fully backed and, with CS_DEBUGGED set, MAP_JIT is honoured here. It
- * is proven by measurement, never by the version: make_views runs the function written through one
- * view and called through the other (and through itself) before this returns true. When it cannot
- * be had, the caller keeps the honest refusal and falls back to the debugger's region, naming why.
+ * The translation layer's OWN arena: a mapping the APP owns, obtained here (not the debugger's region, whose owner is
+ * QEMU), whose guest-facing view is the address the guest both writes and executes. Two phone crashes are why this is
+ * preferred: a guest that derives a code pointer from the writable base cannot use the two-address scheme, and
+ * StikDebug's region is reserved rather than populated, so a fetch at a page that NAMED execute can still bus-error
+ * (xmem-arena-and-wx.md). An mmap of the app's own is fully backed, and with CS_DEBUGGED set MAP_JIT is honoured. It is
+ * proven by measurement (make_views) before this returns true; when it cannot be had, the caller keeps the honest
+ * refusal and falls back to the debugger's region, naming why.
  */
 static bool grant_own_arena(size_t host_bytes, char *err, size_t errlen)
 {
@@ -375,9 +323,9 @@ static bool grant_own_arena(size_t host_bytes, char *err, size_t errlen)
 #endif
 
 #if defined(__APPLE__) && !TARGET_OS_OSX
-/* The loader retargets code at the writable view with adrp (+-4 GiB). A region whose writable alias the kernel placed anywhere
- * (VM_FLAGS_ANYWHERE: hundreds of GiB away on iOS 27) gets a second alias of the same pages next to the executable view: a local
- * vm_remap, which needs no debugger. Free addresses after the region, then before it, in 16 MiB steps out to 2 GiB. */
+/* The loader retargets code at the writable view with adrp (+-4 GiB). A region whose writable alias the kernel placed far
+ * away gets a second alias of the same pages next to the executable view: a local vm_remap, which needs no debugger. Free
+ * addresses after the region, then before it, in 16 MiB steps out to 2 GiB. */
 static bool near(uintptr_t a, uintptr_t rx) { intptr_t d = (intptr_t)(a - rx); return d < ((intptr_t)2 << 30) && d > -((intptr_t)2 << 30); }
 static bool adopt_alias(vm_address_t a, uintptr_t rx, size_t size, const char *how, ptrdiff_t was)
 {
@@ -446,14 +394,13 @@ static void near_alias(void)
     tl_log_line("xmem: the writable view is %td MiB from the executable one and no address near it is free", d >> 20);
 }
 
-/* The StikDebug executable view, made writable-in-place and proven by a guarded write-then-execute
- * before it is adopted as the guest's arena; defined beside the mach probes below. */
+/* Hand the guest the StikDebug EXECUTABLE view, proven by a guarded write-then-execute; defined with the mach probes
+ * below. */
 static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen);
 
-/* The phone: an arena the layer makes for ITSELF if the device allows it (with CS_DEBUGGED set, MAP_JIT is honoured), and only
- * then StikDebug's region -- whose owner is QEMU, which is reserved rather than populated and whose guest-facing view is a
- * vm_remap iOS will not execute. Nothing is trusted by version: both routes are proven by running a function written into the
- * view the guest addresses (make_views), and whichever is taken is named in one line. */
+/* The phone: an arena the layer makes for ITSELF if the device allows it, and only then StikDebug's region. Nothing is
+ * trusted by version: both routes are proven by running a function written into the view the guest addresses (make_views),
+ * and whichever is taken is named in one line. */
 static bool open_platform(size_t host_bytes, char *err, size_t errlen)
 {
     g_x.wrw = NULL;                    /* "writable view == g_x.rw"; the W^X fallback below sets it */
@@ -470,11 +417,10 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
         if (m && m->rw_addr && m->rx_addr)
             tl_log_line("xmem: no arena of the layer's own (%s); falling back to StikDebug's region", own[0] ? own : "refused");
         else {
-            /* No debugger region: the old path applies -- the layer makes its own and accepts the two-view
-             * fallback where Fix A is not granted (libraries still load and run through the code view; only a
-             * guest JIT arena is refused, and tl_xmem_allow_exec says so). From iOS 26 the Trusted Execution
-             * Monitor decides what may execute and an attempt to run unblessed memory can end the process, so
-             * without a debugger nothing is tried there. */
+            /* No debugger region: the layer makes its own and accepts the two-view fallback where Fix A is not granted
+             * (libraries still load; only a guest JIT arena is refused, and tl_xmem_allow_exec says so). From iOS 26 the
+             * Trusted Execution Monitor can end a process that runs unblessed memory, so without a debugger nothing is
+             * tried there. */
             if (__builtin_available(iOS 26.0, *)) {
                 snprintf(err, errlen, "no arena of the layer's own (%s), and no StikDebug JIT region: this iOS enforces TXM, where only a debugger (StikDebug or Built-in StikJIT) can grant executable memory", own[0] ? own : "refused");
                 return false;
@@ -484,33 +430,25 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
     }
 
     if (m && m->rw_addr && m->rx_addr) {
-        /* The instrument that ends the guessing, taken FIRST -- before the layer has made a single
-         * protection-changing call on this region. If this line says RAN and the one after the open
-         * says FAULTED, one of the calls between them cost the execute; if both say RAN, none of ours
-         * did and the loss is outside the layer (the debugger's presence going away -- the hazard the
-         * old detach was written for). Either way the next run says which. */
+        /* Taken FIRST -- before a single protection-changing call on this region. If this says RAN and the one after
+         * the open says FAULTED, one of the calls between them cost the execute; if both say RAN, none of ours did and
+         * the loss is outside the layer (the debugger's presence going away). */
         tl_xmem_exec_gate("the arena opening, before ANY protection-changing call of the layer's", m->rw_addr, m->rx_addr);
         char why[240] = "";
-        /* adopt_exec_view issues NO vm_protect on this region, ever: the ask for RWX is what revoked
-         * the debugger's per-entry execute grant (see its comment for the two-run control). It proves
-         * the executable view with the boot selftest's own shape -- write through the writable twin,
-         * call at the executable view -- and hands the guest the EXECUTABLE view as its one arena
-         * address (RX), exactly as b_mmap hands a guest that asks for code memory. */
+        /* adopt_exec_view issues NO vm_protect on this region, ever (that ask is what revoked the grant; the two-run
+         * control is in jit-grant-and-detach.md). It proves the executable view with the boot selftest's shape -- write
+         * through the writable twin, call at the executable view -- and hands the guest the EXECUTABLE view (RX). */
         (void)adopt_exec_view(m, why, sizeof(why));
         near_alias();                    /* keep the writable twin within adrp range of the executable view */
         tl_log_line("xmem: open: StikDebug's prewarmed region -- guest arena %p is the EXECUTABLE view %p (RX), the one whose generated code provably ran at boot; the layer emits and carries guest stores through the writable twin %p (delta %td). The guard verdict: %s",
                     (void *)g_x.rw, (void *)g_x.rx, (void *)g_x.wrw, tl_xmem_delta(),
                     g_x.exec_measured == TL_XMEM_EXEC_RAN ? "the guarded write-then-execute RAN" : "the guarded write-then-execute FAULTED (see the line above and the honest refusal below)");
-        /* The DECISIVE line of the whole file, now that no call of ours can have changed anything:
-         * measure again, after the open. This pair is the discriminator. */
+        /* Measure again, after the open: the pair with the gate above is the discriminator. */
         tl_xmem_exec_gate("the arena open (adopt_exec_view issues no vm_protect on this region)", m->rw_addr, m->rx_addr);
-        /* A store into the executable view faults (it is RX); the only thing that can carry it through
-         * the writable twin is the JIT guard, and a guard that was never armed services nothing. The
-         * guest holds a JIT arena in this region, so this is exactly the engine that needs it -- arm
-         * it here rather than waiting for a driver that may never call (measured: husk-20261015-091911
-         * opened the arena with the guard NOT ARMED, so the guest's first store there could only
-         * fault). Safe for any engine: on_fault acts only inside this region and only on a store it
-         * can decode, and chains to the previous handler otherwise. */
+        /* A store into the executable view faults (it is RX), and only the JIT guard can carry it through the writable
+         * twin. The guest holds a JIT arena here, so arm it now rather than wait for a driver that may never call
+         * (xmem-arena-and-wx.md). Safe for any engine: on_fault acts only inside this region and only on a store it can
+         * decode, and chains to the previous handler otherwise. */
         {
             const char *guard = !tl_codewrite_enabled ? "UNKNOWN (the codewrite module is not linked here)"
                               : tl_codewrite_enabled() ? "ARMED (a driver had already enabled it)"
@@ -541,20 +479,16 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
     if (getenv("TL_XMEM_SELF")) return grant_self(host_bytes, err, errlen);
 #endif
     size_t size = (host_bytes + TL_XMEM_PAGE - 1) & ~(size_t)(TL_XMEM_PAGE - 1);
-    /* Reserve twice the span and put the two views side by side. adrp reaches +-4 GiB, and
-     * the loader retargets code at the writable view with it, so the views must stay close:
-     * left to place the alias anywhere, the kernel can put it more than 3 GiB away. */
+    /* Reserve twice the span, views side by side: adrp reaches +-4 GiB and the loader retargets code at the writable
+     * view with it, so the views must stay close. */
     uint8_t *base = mmap(NULL, size * 2, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0);
     if (base == MAP_FAILED) {
         snprintf(err, errlen, "mmap of %zu MiB failed: %s", (size * 2) >> 20, strerror(errno));
         return false;
     }
 #if defined(__APPLE__)
-    /* The same builder the phone's self-grant path uses, so the Mac runs the code the phone runs --
-     * including the Fix A ordering: where this host grants a writable-and-executable mapping (a Mac
-     * with the JIT entitlement, or one that does not enforce W^X), the guest-facing view carries the
-     * authorisation; where it does not, the two-view fallback is adopted and the negative control
-     * keeps the shape it asserts. */
+    /* The same builder the phone's self-grant path uses, so the Mac runs the code the phone runs -- including the Fix A
+     * ordering and the two-view fallback. */
     if (!make_views(base, size, err, errlen)) { munmap(base, size * 2); return false; }
     return true;
 #else
@@ -574,8 +508,7 @@ bool tl_xmem_open(size_t host_bytes, char *err, size_t errlen)
         ok = open_platform(host_bytes, local, sizeof(local));
         if (ok) {
             g_x.open = true;
-            /* One run must be able to end the guessing: what the kernel says the region's entries
-             * are, entry by entry, and whether the view the guest addresses and calls will fetch. */
+            /* What the kernel says the region's entries are, and whether the guest's view fetches. */
             xmem_report_open();
         } else if (err && errlen) {
             snprintf(err, errlen, "%s", local);
@@ -586,25 +519,10 @@ bool tl_xmem_open(size_t host_bytes, char *err, size_t errlen)
 }
 
 /*
- * ONE guarded read through a named view -- the measurement the two-view read-back in tl_xmem_alloc
- * needs.
- *
- * The open question this answers: the layer backs pages by WRITING through the writable twin
- * (xmem_writable_view()), but the guest's own accesses go through the EXECUTABLE view (g_x.rx, the
- * address it is handed as its address space). The store-carry tests prove the executable view sees
- * bytes written through the twin FOR THE STUB PAGES the layer itself writes and fetches -- that is
- * evidence about the pages the layer exercises, NOT about a page that is only ever written through
- * the twin. So: for a page the allocator handed out and backed only through the twin, does a READ
- * through the executable view succeed? Writing through the twin cannot answer it.
- *
- * So read one byte under the SAME signal guard self_runs and xmem_write_fetch use (self_fault_info +
- * sigsetjmp): the read either returns a value or faults into the guard, and the verdict is which. It
- * touches nothing else -- no store, no vm_protect, nothing unmapped, no thread ended -- so a fault
- * here is caught, not fatal, and leaves the region exactly as it was. No second guard is invented:
- * this is the one the file already carries.
- *
- * Apple-only, like every guarded probe here (they are mach ones); the host build, which has no guard
- * and no mach probes, does the plain read so this file still compiles and links (tools/a32/step0).
+ * ONE guarded read through a named view, under the SAME signal guard self_runs and xmem_write_fetch use
+ * (self_fault_info + sigsetjmp): the read returns a value or faults into the guard, and the verdict is which. It touches
+ * nothing else -- no store, no vm_protect, nothing unmapped, no thread ended -- so a fault here is caught, not fatal.
+ * Apple-only, like every guarded probe here; the host build does the plain read so this file still links (tools/a32/step0).
  */
 #if defined(__APPLE__)
 static bool xmem_guarded_read(const unsigned char *p, unsigned char *got, int *sig, int *code)
@@ -623,8 +541,8 @@ static bool xmem_guarded_read(const unsigned char *p, unsigned char *got, int *s
     return ok;
 }
 #else
-/* No guard on the host (no mach probes, no signal guard here): the read is plain, and there is no
- * signal to name. `sig`/`code` are provided so the caller's line is written the same way everywhere. */
+/* No guard on the host: the read is plain, and there is no signal to name (`sig`/`code` are still filled so the
+ * caller's line is the same everywhere). */
 static bool xmem_guarded_read(const unsigned char *p, unsigned char *got, int *sig, int *code)
 { *got = *p; if (sig) *sig = 0; if (code) *code = 0; return true; }
 #endif
@@ -632,26 +550,14 @@ static bool xmem_guarded_read(const unsigned char *p, unsigned char *got, int *s
 /*
  * Hand out a span of the arena -- and BACK it.
  *
- * The span is carved by bumping g_x.used and the address it returns is MAPPED (an entry the kernel
- * names, here even naming execute), but on this device the pages behind it are not necessarily
- * RESIDENT until something WRITES them -- the same way the loader's own emission is what makes the
- * kernel back an image's pages: it memsets every image through the writable twin right after this
- * returns (husk-tl-ld.c). A span handed out but never written -- a stub page, the JIT arena, any tail
- * the emitter did not reach -- is therefore mapped-but-unbacked, and a later guest DATA access (a
- * load or a store) to one of its pages takes SIGBUS on a page whose entry NAMED execute. robot gf's
- * fault (offset +0xb589b90 from the arena base, INSIDE the bump allocator's 184.9 MiB high-water
- * mark, entry 0x1217b8000..0x1217bc000 prot 5 max 7) is exactly that shape: the page is the layer's
- * to back and nothing had backed it. See .hermes/plans/engine-reset/fault-is-not-permission.md.
+ * The span bumping g_x.used returns is MAPPED but the pages behind it are not necessarily RESIDENT until something
+ * WRITES them (the same way the loader's memset is what makes the kernel back an image's pages). A span handed out but
+ * never written -- a stub page, the JIT arena, any tail the emitter did not reach -- is mapped-but-unbacked, and a later
+ * guest DATA access to one of its pages takes SIGBUS on a page whose entry NAMED execute (xmem-arena-and-wx.md).
  *
- * So back it here, the moment it is handed out, the SAME way the loader does -- a write through the
- * WRITABLE view (xmem_writable_view(); NEVER the executable view, which is RX and whose pages must
- * stay executable). One byte per 4 KiB page is enough to force the kernel to back the page; a full
- * memset of the whole span is NOT required and would be wasteful -- the callers that keep content
- * write it before use, and the loader memsets the whole image right after this returns, so the byte
- * is written as zero into a span that is freshly handed out and holds nothing yet. Exactly the span
- * THIS call handed out is backed -- never the whole 512 MiB reservation (tl_xmem_used()/tl_xmem_size()
- * already track the span, so no second accounting is invented) -- and NO vm_protect is issued on the
- * region: the ask for RWX on these pages is what revoked the debugger's per-entry execute grant (see
+ * So back it here, the moment it is handed out, a write through the WRITABLE view (NEVER the executable view, which is
+ * RX). One byte per 4 KiB page forces the kernel to back the page; a full memset is not required. Exactly the span THIS
+ * call handed out is backed, and NO vm_protect is issued (the ask for RWX is what revoked the debugger's grant, see
  * adopt_exec_view). Nothing is unmapped and no thread is ended.
  */
 bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
@@ -665,22 +571,15 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
         if (rw) *rw = xmem_writable_view() + start;
         g_x.used += n;
         ok = true;
-        /* Back the span just handed out: one store per 4 KiB page, through the writable view. A store
-         * (not a read) is what makes the kernel publish the page; writing zero is safe because the span
-         * is fresh, as above.
+        /* Back the span just handed out: one store per 4 KiB page through the writable view (a store, not a read, makes
+         * the kernel publish the page; the span is fresh, so writing zero is safe).
          *
-         * The store MUST be volatile. A store of zero to memory that is only ever written and never
-         * read is a DEAD STORE: in a Release build the optimizer is entitled to delete the entire loop
-         * body, and it did -- the loop still ran, the log line still printed "backed", and no page was
-         * backed, which is why the guest faulted at the identical offset after the previous build. The
-         * volatile-qualified lvalue forbids that: a volatile access is an observable side effect and
-         * cannot be removed or elided. So the write below is real.
+         * The store MUST be volatile: a store of zero to memory only ever written and never read is a DEAD STORE the
+         * optimizer may delete in a Release build -- and did, leaving the guest to fault at the identical offset. A
+         * volatile access is an observable side effect and cannot be elided.
          *
-         * And it is PROVEN, not assumed. Each page is then READ BACK through the SAME writable view and
-         * its value folded into a checksum whose result the log line prints. A read whose result is USED
-         * cannot be optimized away either, so a page that was never backed faults HERE, inside the layer
-         * where the fault is honest and named -- not later, inside the guest. If a page cannot be read
-         * back, the line says so instead of claiming success. */
+         * And it is PROVEN: each page is READ BACK through the same writable view and folded into a checksum the log
+         * prints, so a page that was never backed faults HERE, inside the layer, instead of later inside the guest. */
         {
             uint8_t *wv = xmem_writable_view() + start;
             volatile unsigned char *vb = (volatile unsigned char *)wv;
@@ -697,17 +596,11 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
             const char *rb = readback_ok
                 ? "read back OK -- every page re-read through the same writable view returned the value just written"
                 : "read back FAILED -- a page did not return the value just written, so it may not be backed";
-            /* The DECISIVE next measurement, one page, one read per view: read back a page THIS call
-             * handed out and backed ONLY through the writable twin -- never written as a stub -- through
-             * the EXECUTABLE view, and print the writable-view read on the SAME line so the two verdicts
-             * sit together. The page chosen deterministically is the span's FIRST page (offset 0 in the
-             * span: the very byte the volatile store above just backed), so every backing pass reports
-             * the same relative page and it is genuinely twin-backed, not a page the layer happens to
-             * write code into. If the executable view can READ this twin-backed page the two views share
-             * readable backing and the guest's fault is elsewhere; if it FAULTS here (caught by the
-             * guard, never fatal) then pages only ever written through the twin are not readable through
-             * the executable view, which is the fault. Nothing is written to the executable view, no
-             * vm_protect is issued, nothing is unmapped and no thread is ended. */
+            /* Read back the span's FIRST page (the byte the volatile store just backed, so it is genuinely twin-backed
+             * and not a page the layer writes code into) through BOTH views and print the two verdicts on one line. If
+             * the executable view READS it, the views share readable backing; if it FAULTS (caught, never fatal), pages
+             * written only through the twin are not readable through the executable view, which is the fault. Nothing
+             * is written to the executable view, no vm_protect is issued, nothing is unmapped, no thread is ended. */
             uint8_t xb = 0, wb = 0;
             int xsig = 0, xcode = 0, wsig = 0, wcode = 0;
             bool xok = xmem_guarded_read((const unsigned char *)(g_x.rx + start), &xb, &xsig, &xcode);  /* g_x.rx + start: the span's first page in the EXECUTABLE view */
@@ -733,8 +626,8 @@ ptrdiff_t tl_xmem_delta(void) { return xmem_writable_view() - g_x.rx; }
 bool tl_xmem_near(const void *p, size_t dist)
 {
     if (!g_x.open || !p) return false;
-    /* Two views of one set of pages, and in the Fix A order the guest-facing one is the LOWER address,
-     * so the span is taken from the two views rather than assumed to start at rx. */
+    /* Two views of one set of pages; in the Fix A order the guest-facing one is the LOWER address, so the span is taken
+     * from both views rather than assumed to start at rx. */
     uintptr_t a = (uintptr_t)p, lo = (uintptr_t)g_x.rx, hi = lo + g_x.size;
     uintptr_t views[2] = { (uintptr_t)g_x.rw, (uintptr_t)xmem_writable_view() };
     for (int i = 0; i < 2; i++) {
@@ -767,37 +660,22 @@ void tl_xmem_flush(const void *rx, size_t bytes)
 #endif
 }
 
-/*
- * b_mprotect, in the bionic shim, owns the guest's errno. step0 links only this file and carries
- * no shim, so this is declared weak: allow_exec sets EACCES where the shim is present and still
- * links where it is not.
- */
+/* b_mprotect, in the bionic shim, owns the guest's errno. step0 links only this file, so this is declared weak:
+ * allow_exec sets EACCES where the shim is present and still links where it is not. */
 extern void tl_set_guest_errno(int guest_errno) __attribute__((weak));
 
 #if defined(__APPLE__)
 /*
- * The two questions vm_protect's return code does not answer.
- *
- * vm_protect returning KERN_SUCCESS means only that the request was within the entry's
- * max_protection and that the entry's protection field now names EXECUTE -- it says nothing about
- * whether the pmap will publish a fetchable PTE. On iOS an alias made with vm_remap of pages whose
- * defining mapping was never granted JIT authorisation (MAP_JIT) names execute and still will not
- * fetch: that is the SIGBUS (pc == fault address) the writable-view path exists to end. So the
- * verdict is taken from the two things that decide it, never from the return code.
+ * The two questions vm_protect's return code does not answer. KERN_SUCCESS means only that the request was within the
+ * entry's max_protection and the protection field now names EXECUTE -- not that the pmap will publish a fetchable PTE.
+ * On iOS a vm_remap alias of pages never granted JIT authorisation names execute and still will not fetch: the SIGBUS
+ * (pc == fault address) the writable-view path exists to end. So the verdict is never taken from the return code.
  */
 
-/*
- * What the map entry that holds `p` actually says.
- *
- * The yes/no this used to be (xmem_entry_is_exec) collapsed three different answers into "no
- * execute": the probe failing outright (vm_region_recurse_64 returning non-success), the probe
- * naming an entry that genuinely does not carry VM_PROT_EXECUTE, and the probe naming a DIFFERENT
- * entry than the one vm_protect changed (a submap level, see `depth`). Only the first two mean the
- * page cannot be executable. Keeping the raw answer -- the call's own return code plus the entry
- * the kernel named, its range, protection, max_protection, nesting depth and user tag -- is the
- * difference between a truthful refusal and a false negative, and it is what the phone's log could
- * not say (exec-on-device-csdebugged.md).
- */
+/* What the map entry that holds `p` actually says. Keeping the RAW answer -- the call's own return code plus the entry
+ * the kernel named, its range, protection, max_protection, depth and tag -- distinguishes a truthful refusal from a
+ * false negative: a probe that failed, an entry with no VM_PROT_EXECUTE, and an entry DIFFERENT from the one
+ * vm_protect changed are three different answers, and only two of them mean the page cannot be executable. */
 typedef struct {
     kern_return_t kr;       /* vm_region_recurse_64's own return code */
     vm_address_t  start;    /* start of the entry the kernel named */
@@ -822,15 +700,11 @@ static xmem_entry xmem_probe_entry(uintptr_t p)
 }
 
 /*
- * The fetch itself: write a movz/ret through the writable view at `at` and call it there, under the
- * same sigsetjmp guard self_runs uses, so a page that names execute but will not fetch is caught
- * rather than fatal. Nothing but a real fetch can answer the question, because a protection field
- * can name EXECUTE while the pmap refuses the fetch. `at` is the guest's own arena, so its bytes are
- * saved and put back whether the call returns or faults -- a thread that reached that address between
- * the two writes must find the code it had, and nothing here unmaps or leaves a stub behind. The two
- * writes are bracketed with the W^X toggle so the store lands on a MAP_JIT view (writable), and the
- * call happens in execute mode -- the two states a guest's arena passes through as it writes and then
- * runs its own trampoline.
+ * The fetch itself: write a movz/ret through the writable view at `write_at` and call it at `fetch_at`, under the same
+ * sigsetjmp guard self_runs uses, so a page that names execute but will not fetch is caught rather than fatal. Only a
+ * real fetch answers the question. `write_at` is the guest's own arena, so its bytes are saved and put back whether the
+ * call returns or faults; nothing is unmapped or left behind. The writes are bracketed with the W^X toggle so the store
+ * lands on a MAP_JIT view (writable) and the call happens in execute mode.
  */
 static bool xmem_write_fetch(uintptr_t write_at, uintptr_t fetch_at, int *stage)
 {
@@ -855,10 +729,8 @@ static bool xmem_write_fetch(uintptr_t write_at, uintptr_t fetch_at, int *stage)
     }
     g_self_running = 0;
     sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
-    /* Put the guest's bytes back ONLY if the store actually landed. A store that itself faulted (the
-     * page cannot be written at all -- W^X) must not be retried here: the guard has been left, and a
-     * second fault would end the process. Nothing was changed in that case, so there is nothing to
-     * restore. */
+    /* Put the guest's bytes back ONLY if the store landed: a store that itself faulted (W^X) must not be retried
+     * outside the guard, and nothing was changed then anyway. */
     if (g_self_stage != 1) {
         xmem_write_mode(true);
         memcpy((void *)write_at, saved, sizeof(saved));
@@ -869,8 +741,7 @@ static bool xmem_write_fetch(uintptr_t write_at, uintptr_t fetch_at, int *stage)
     return ok;
 }
 
-/* Write the stub at `at` and call it at `at` (the same view named twice): the question a single
- * address answers, when that address is the one the guest both writes and executes. */
+/* Write the stub at `at` and call it at `at` (the same view named twice): the question a single address answers. */
 static bool xmem_writable_fetches(uintptr_t at, int *stage)
 {
     return xmem_write_fetch(at, at, stage);
@@ -880,41 +751,25 @@ static bool xmem_writable_fetches(uintptr_t at, int *stage)
 /*
  * Hand the guest the StikDebug EXECUTABLE view and PROVE it fetches -- WITHOUT EVER ASKING FOR RWX.
  *
- * This function is where the execute grant was being destroyed. It used to raise the entry's maximum
- * to RWX and vm_protect the whole 512 MiB view to RWX, then guard-probe it. The probe always faulted
- * and the run always read `prot 1 max 3` afterwards -- and the control is exact: the run that
- * rendered this game (`husk-20261013-142607`, build b0c3965, `unity: alive: 123 frames`) had no such
- * call and its arena walk read `512 MiB executable`; the very next build to open an arena
- * (`husk-20261014-204553`, build 18da8b3) added ONLY this call, handed the guest the SAME writable
- * view with the SAME delta 536870912, and its walk read `0 MiB executable` and the guest died on its
- * first arena fetch at libc++.so+0x7ec4c. Nothing else about the region changed between those two
- * runs. So the ask for RWX is the thing that costs the execute: on this device the kernel will not
- * hold WRITE and EXECUTE together on these pages and the request collapses the entry to `prot 1
- * max 3`, which is the state every later run reads. The debugger's grant -- one prepared 16 KiB page
- * per entry -- cannot be re-made in-process.
+ * This used to raise the entry's maximum to RWX and vm_protect the whole view to RWX, then probe it: the ask for RWX is
+ * what collapses the entry to `prot 1 max 3` and revokes the debugger's execute grant (two-run control:
+ * jit-grant-and-detach.md). It now makes NO protection-changing call on this region, ever:
  *
- * So this function now makes NO protection-changing call at all, on this region, ever:
+ *   1. read the entry back raw (diagnostic only -- the field, not the pmap);
+ *   2. write a movz/ret through the WRITABLE twin and CALL it at the executable view, under the same signal guard
+ *      self_runs uses (xmem_write_fetch) -- the boot selftest's own shape.
  *
- *   1. read the entry back raw (diagnostic only, and it is the field, not the pmap);
- *   2. write a movz/ret through the WRITABLE twin and CALL it at the executable view, under the same
- *      signal guard self_runs uses (xmem_write_fetch). That is the boot selftest's own shape, so it
- *      is the measurement the log already trusts.
- *
- * The address the guest is given is the executable view (RX) -- the one whose generated code provably
- * ran at boot, and the same view b_mmap hands a guest that asks for code memory, so the single address
- * a guest both writes and executes is the one it already holds. Because it is RX, a guest STORE into
- * it faults and is carried through the writable twin by the JIT guard (husk-tl-codewrite.c), one page
- * at a time, never by making the page writable. The executable page stays executable.
- *
- * The verdict is that call, and it is carried out in `err` so the caller's one line says what the
- * fetch did. Nothing is unmapped and no thread is ended.
+ * The guest is given the executable view (RX), the same view b_mmap hands a guest asking for code memory. Because it is
+ * RX, a guest STORE into it faults and is carried through the writable twin by the JIT guard (husk-tl-codewrite.c),
+ * never by making the page writable. The verdict is that call, carried out in `err`. Nothing is unmapped, no thread
+ * ended.
  */
 static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen)
 {
     xmem_entry e = xmem_probe_entry((uintptr_t)m->rx_addr);
     int stage = 0;
-    /* Write through the debugger's writable view, call at the executable one: the boot selftest's
-     * shape, and the only question that matters. NO vm_protect precedes it. */
+    /* Write through the debugger's writable view, call at the executable one: the boot selftest's shape. NO vm_protect
+     * precedes it. */
     bool fetched = xmem_write_fetch((uintptr_t)m->rw_addr, (uintptr_t)m->rx_addr, &stage);
     g_x.rx = m->rx_addr;             /* guest code executes here */
     g_x.rw = m->rx_addr;             /* the ONE address the guest both writes and executes (RX) */
@@ -942,15 +797,10 @@ static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen)
 }
 
 /*
- * One guarded write-then-execute, naming what was happening when it ran. This is the instrument that
- * makes the next run say exactly which call cost the execute: call it BEFORE the layer's first
- * protection-changing call and after each one, and the pair of lines names the moment the fetch stops
- * running -- or proves that none of our calls is the one (both RAN, so something outside the layer
- * took the grant: the debugger's presence going away, the hazard the detach existed for).
- *
- * `write_at`/`fetch_at` are the two views of one page, or one view named twice when the question is
- * whether a single view both takes a write and executes (what a guest's own JIT arena asks). True if
- * the fetch ran and returned the marker.
+ * One guarded write-then-execute, naming what was happening when it ran: call it BEFORE the layer's first
+ * protection-changing call and after each one, and the pair of lines names the moment the fetch stops running -- or
+ * proves none of our calls is the one (both RAN -> the grant was taken outside the layer). `write_at`/`fetch_at` are the
+ * two views of one page, or one view named twice to ask whether a single view both takes a write and executes.
  */
 bool tl_xmem_exec_gate(const char *after, void *write_at, void *fetch_at)
 {
@@ -968,13 +818,10 @@ bool tl_xmem_exec_gate(const char *after, void *write_at, void *fetch_at)
 
 
 /*
- * The one line that must end the guessing: the arena's own address and size, how many MiB of it the kernel says are MAPPED and
- * how many EXECUTABLE, which route gave the guest its view (MAP_JIT, plain RWX, or a vm_remap that has no authorisation of its
- * own), the delta between the two views, and -- separately below -- whether the guest-facing view really fetched a function
- * written into it. Both phone crashes would have been one line instead of weeks: robot gf faulted on a page whose entry NAMED
- * execute (prot 5) but was not backed, and PvZ's writable view was mapped but never executable. The old walk stopped at 128
- * entries, which is exactly why a 512 MiB region could read as "2 MiB mapped" and hide an unbacked page; this walks the whole
- * span.
+ * The one line that must end the guessing: the arena's own address and size, how many MiB of it the kernel says are MAPPED
+ * and how many EXECUTABLE, which route gave the guest its view, the delta between the views, and separately whether the
+ * guest-facing view really fetched a function written into it. The old walk stopped at 128 entries, which is why a 512 MiB
+ * region could read as "2 MiB mapped" and hide an unbacked page; this walks the whole span.
  */
 static void xmem_report_region(void)
 {
@@ -1003,15 +850,9 @@ static void xmem_report_region(void)
                 (gaps || noexec || a < end)
                     ? "a fetch in an unmapped or non-executable entry is a requestless fault, not a permission the guest asked for"
                     : "the whole arena is mapped and executable");
-    /* Reconcile the walk's own contradiction, and correct it: this file used to say the protection
-     * field was "lying" where the boot selftest had executed generated code at this view's first
-     * page. It was not lying. The field read `prot 1 max 3` because the layer's OWN ask for RWX on
-     * this view had already collapsed it -- the run that rendered the game read `512 MiB executable`
-     * and the very next build to open an arena read `0 MiB executable`, and the only difference was
-     * that ask (see adopt_exec_view). The selftest above ran BEFORE it. So: when execute is named
-     * here, the grant is intact and the arena will run; when it is not, the layer's ask is the prime
-     * cause and this build no longer makes it. The guarded fetch printed next is the verdict either
-     * way, and the EXEC GATE pair above is what names the moment it changed. */
+    /* When execute is named here the grant is intact and the arena will run; when it is not, the layer's own ask for RWX
+     * is the prime cause and this build no longer makes it. The guarded fetch printed next is the verdict either way, and
+     * the EXEC GATE pair above names the moment it changed (the two-run control is in jit-grant-and-detach.md). */
     if (execut == 0)
         tl_log_line("xmem: the walk above names NO execute anywhere in the executable view. That is the state the layer's own vm_protect(RWX) used to leave behind: the run that rendered this game read `512 MiB executable` (build b0c3965, no such call) and the first build to open an arena with that call read `0 MiB executable` (build 18da8b3). This build issues no vm_protect on this region, so if execute is still absent here, the grant was gone before the arena opened -- read the EXEC GATE pair above, which is what says when");
     if (g_x.wx_fallback)
@@ -1019,25 +860,17 @@ static void xmem_report_region(void)
                     (void *)g_x.rw, (void *)g_x.wrw, (ptrdiff_t)(g_x.wrw - g_x.rx));
 }
 
-/*
- * Ask the guest-facing view the question the guest will ask it: write a stub there and call it
- * there, guarded. This is the same shape self_runs uses, pointed at the one view the phone died on,
- * and it runs once per open on bytes nothing has written yet (the region is empty at this point).
- * The read-back is printed beside it, raw, so the next run says which of the two answers is real.
- */
+/* Ask the guest-facing view the question the guest will ask it: write a stub there and call it there, guarded, once per
+ * open on bytes nothing has written yet. The read-back is printed beside it, raw. */
 static void xmem_probe_guest_view(void)
 {
     uintptr_t at = (uintptr_t)g_x.rw;
     xmem_entry e = xmem_probe_entry(at);
     if (g_x.wx_fallback) {
-        /* The guest's view is the EXECUTABLE one and is RX, so a store into it faults (that is what
-         * the codewrite guard exists to carry through the writable twin). The question "does the
-         * guest's view FETCH" is therefore answered the way the boot selftest answered it: write the
-         * stub through the WRITABLE TWIN and call it at the guest's address. This is the decisive
-         * measurement -- and it is taken WITHOUT any vm_protect, which is the fix: the ask for RWX on
-         * this view is what revoked the debugger's per-entry execute grant. If it faults on the fetch,
-         * the executable view names no execute and will not run, and no store service can change that:
-         * the FETCH itself is what the device is refusing. */
+        /* The guest's view is the EXECUTABLE one (RX), so a store into it faults (the codewrite guard carries it through
+         * the writable twin). The question "does the guest's view FETCH" is answered the boot selftest's way: write the
+         * stub through the WRITABLE TWIN and call it at the guest's address -- WITHOUT any vm_protect, which is the fix.
+         * If it faults on the fetch, the FETCH itself is what the device refuses, and no store service can change that. */
         int stage = 0;
         bool f = xmem_write_fetch((uintptr_t)xmem_writable_view(), at, &stage);
         xmem_note_exec(f ? TL_XMEM_EXEC_RAN : TL_XMEM_EXEC_FAULTED,
@@ -1071,14 +904,11 @@ static void xmem_probe_guest_view(void)
 /* ------------------------------------------- the three verdicts: ONE body, shared by BOTH probes */
 
 /*
- * ONE page's three verdicts and the pmap entry that holds them -- the SAME body the open-time probe
- * and the fatal-time probe both call, so a page is never judged by two different pieces of code.
- * `offset` is the page's offset from the executable view's base (tl_xmem_region_base()), the same unit
- * tl_xmem_alloc's bump span is measured in, so the open-time offset and a fatal fault's offset are
- * directly comparable. Guarded probes only: no store to the executable view, no vm_protect, nothing
- * unmapped, no thread ended. The CALL is taken ONLY if the writable view read the page, because
- * xmem_write_fetch saves the guest's bytes with an unguarded read before it arms the guard -- calling
- * it on a page that view cannot read would end the process instead of reporting.
+ * ONE page's three verdicts and the pmap entry that holds them -- the SAME body the open-time and fatal-time probes both
+ * call, so a page is never judged by two pieces of code. `offset` is the page's offset from the executable view's base
+ * (tl_xmem_region_base()), the unit tl_xmem_alloc's bump span is measured in, so an open-time offset and a fatal fault's
+ * offset are directly comparable. Guarded probes only. The CALL is taken ONLY if the writable view read the page,
+ * because xmem_write_fetch saves the guest's bytes with an UNGUARDED read before it arms the guard.
  */
 typedef enum {
     XMEM_PAGE_UNBACKED,             /* both reads FAULTED: the page has no backing at this offset */
@@ -1149,47 +979,26 @@ static xmem_page_class g_open_page_class;
 static bool            g_open_page_have;
 
 /*
- * The deterministic fault offset, measured exhaustively on ONE page, ONCE per open.
+ * The deterministic fault offset, measured exhaustively on ONE page, ONCE per open. Every previous read-back tested a
+ * span's first page; nothing had tested the page the guest actually dies on, nor separated "unbacked there" from
+ * "readable but not executable there". This does both and prints the pmap's own entry on the same line. The offset is
+ * the OBSERVED fault offset (robot gf's fatal SIGBUS is always at arena base + 0xb589b90), not a guess.
  *
- * Every previous read-back tested a span's FIRST page (offset +0x0 of whatever tl_xmem_alloc had just
- * handed out). Nothing had ever tested the one page the guest actually dies on, and nothing had
- * separated "the page is unbacked there" from "the page is readable but not executable there". This
- * does both, on the page at the fault offset, and prints the pmap's own entry for that page on the SAME
- * line, so the entry's fields and the three verdicts sit together.
+ * Three measurements on that one page: (1) a guarded READ through the EXECUTABLE view; (2) a guarded READ through the
+ * WRITABLE view (the control); (3) a guarded CALL of a movz/ret stub at that offset, written through the writable view
+ * and called through the executable view. The CALL is taken ONLY if measure 2 read the page (see xmem_take_three).
  *
- * The offset is the OBSERVED fault offset, not a guess: robot gf takes its fatal SIGBUS at arena base +
- * 0xb589b90 in every run (this run's log, husk-20261015-120923: `fault address 0x123e51b90` on base
- * `0x1188c8000` -> +0xb589b90, entry 0x123e50000..0x123e54000 prot 5 max 7; the same offset in the runs
- * before it). It is a named constant with this comment rather than a bare number.
- *
- * Three measurements on that one page:
- *   1. a guarded READ through the EXECUTABLE view at that offset -- the view the guest's own accesses use;
- *   2. a guarded READ through the WRITABLE view at the same page -- the control (the view the layer's
- *      backing writes through);
- *   3. a guarded CALL of a movz/ret stub at that offset, the EXEC GATE's own shape: the stub is written
- *      through the writable view and called through the executable view (xmem_write_fetch). The call is
- *      taken ONLY if measure 2 read the page: xmem_write_fetch SAVES the guest's bytes at the write view
- *      with an UNGUARDED memcpy before it arms the guard, so calling it on a page the writable view
- *      cannot read would end the process instead of reporting -- and a faulted measure 2 already says
- *      the page is unbacked, which is the CALL's answer too.
- *
- * The three verdicts name the state directly: both reads FAULTED = the page is UNBACKED at this offset
- * (the fix is to back it there); the reads READ but the CALL FAULTED ON THE FETCH = the page is readable
- * but NOT EXECUTABLE (the fix is the per-16-KiB execute preparation, which did not take here); all three
- * ok = the page is readable AND executable, so this page's backing and its execute are both fine and the
- * guest's fault must be explained by something else (named in the plan note). Nothing is relaxed: no
- * vm_protect on the region, the executable view is never written (the stub goes through the writable view
- * and its bytes are put back), nothing is unmapped and no thread is ended. It runs once, at the open
- * (xmem_report_open), never on an alloc.
+ * Both reads faulted = UNBACKED; reads served but the CALL faulted on the fetch = READABLE-NOT-EXECUTABLE; all three ok
+ * = readable AND executable. Nothing is relaxed: no vm_protect, the executable view is never written, nothing unmapped,
+ * no thread ended. Runs once at the open, never on an alloc.
  */
 static void xmem_probe_fault_offset(void)
 {
     static const size_t TL_XMEM_FAULT_OFFSET = (size_t)0xb589b90u;   /* the observed fault offset: arena base + 0xb589b90, every run */
     xmem_three t;
     xmem_take_three(TL_XMEM_FAULT_OFFSET, &t);   /* the SAME body the fatal-time probe uses: guarded, nothing relaxed */
-    /* Keep THIS page's verdict, so the fatal-time probe can say plainly whether the same three
-     * verdicts still hold when the guest actually faults (a transient loss of backing or of the
-     * execute grant between here and the fatal access is what that comparison catches). */
+    /* Keep THIS page's verdict so the fatal-time probe can say whether the same three verdicts still hold when the guest
+     * faults. */
     g_open_page_offset = TL_XMEM_FAULT_OFFSET;
     g_open_page_class  = t.cls;
     g_open_page_have   = true;
@@ -1202,24 +1011,17 @@ static void xmem_probe_fault_offset(void)
 }
 
 /*
- * THE FATAL-TIME MEASUREMENT: take the SAME three verdicts the open-time probe takes -- a guarded READ
- * through the executable view, a guarded READ through the writable view, and a guarded CALL of a
- * movz/ret stub -- on the page the guest ACTUALLY faulted on, ONCE per fault, on a NORMAL THREAD, and
- * print them on ONE line with a plain MATCH / DIFFER against the open-time verdicts.
+ * THE FATAL-TIME MEASUREMENT: the SAME three verdicts the open-time probe takes, on the page the guest ACTUALLY faulted
+ * on, ONCE per fault, on a NORMAL THREAD, printed on ONE line with a plain MATCH / DIFFER against the open-time ones.
  *
- * Why not in the handler: on_fatal is a signal handler for the very signal being handled, and
- * installing a sigsetjmp guard and longjmping out of it THERE is re-entrancy risk. So the handler
- * only RECORDS the fault (tl_xmem_note_guest_fault); this runs LATER, on the normal thread that runs
- * the app-fault/session-close path (husk_tl_session_close calls it), after the handler has returned
- * and only the faulting thread has ended. Nothing is unmapped by the layer, so the arena pages are
- * still there; only g_x.open is required. A no-op unless an unreported guest fault was recorded.
+ * Why not in the handler: on_fatal is a signal handler for the very signal being handled, and installing a sigsetjmp
+ * guard and longjmping out of it THERE is re-entrancy risk. The handler only RECORDS the fault
+ * (tl_xmem_note_guest_fault); this runs LATER on the normal thread that runs the app-fault/session-close path
+ * (husk_tl_session_close). A no-op unless the arena is open and an unreported guest fault was recorded.
  *
- * THE COMPARISON IS THE POINT: the open-time probe measured this page ONCE at arena open, ~12 s
- * before a faulting DATA access. If the page's backing or its execute grant was lost in between (a
- * later vm_protect, a debugger detach costing the per-entry grant, a jetsam/CoW event), the verdicts
- * taken HERE differ from the open-time ones -- and the line says so in one word (MATCH / DIFFER)
- * rather than leaving a human to diff two log lines. Nothing is relaxed: no vm_protect, the
- * executable view is never written, nothing is unmapped, no thread is ended.
+ * THE COMPARISON IS THE POINT: the open-time probe measured this page ONCE at arena open. If its backing or its execute
+ * grant was lost in between (a later vm_protect, a debugger detach, a jetsam/CoW event) the verdicts here differ, and
+ * the line says so in one word instead of leaving a human to diff two log lines. Nothing is relaxed.
  */
 void tl_xmem_report_fault_time(void)
 {
@@ -1284,38 +1086,20 @@ bool tl_xmem_exec_gate(const char *after, void *write_at, void *fetch_at)
 #endif
 
 /*
- * Make the writable view's pages executable where the guest named them with PROT_EXEC.
+ * Make the writable view's pages executable where the guest named them with PROT_EXEC. A JIT (the game's own
+ * A64HookFunction) writes a trampoline into memory it holds and calls it by the address that view gave it (the loader
+ * retargets its adrp at the writable view -- the page has no TL_PAGE_X, husk-tl-ld.c). The executable view of the same
+ * pages already runs, but the guest holds the guest-facing one, so execute must be added to THAT view. Fix A makes it
+ * the view carrying the JIT authorisation (make_views); where the kernel will not grant that it is a vm_remap alias and
+ * adding execute is legal-looking but ineffective.
  *
- * A JIT -- here the game's own A64HookFunction -- writes a trampoline into memory it holds and calls
- * it by the address that view gave it (the loader retargets its adrp at the writable view because the
- * page has no TL_PAGE_X, husk-tl-ld.c). The executable view of the same pages already runs, but the
- * address the guest holds is the guest-facing one, so execute has to be added to THAT view -- and then
- * flushed, so the bytes just written are what the CPU fetches. Fix A makes that view the one that
- * carries the JIT authorisation (make_views); where the kernel will not grant that, it is a vm_remap
- * alias and adding execute to it is legal-looking but ineffective.
- *
- * The verdict is the GUARDED FETCH, and the read-back is a diagnostic. In the Fix A order the
- * guest-facing view is the mapping that carries the JIT authorisation, so adding execute to it is
- * real and the fetch runs. In the fallback order it may be a vm_remap whose defining mapping was
- * never granted that authorisation, in which case the fetch faults and the refusal is honest.
- *
- * WHY THE FETCH DECIDES AND NOT THE READ-BACK (exec-on-device-csdebugged.md): the phone's runs are
- * self-contradictory for the read-back. vm_protect returned KERN_SUCCESS -- which by XNU's contract
- * means the request was inside the entry's max_protection and the entry's protection was set -- and
- * then the read-back of the SAME page said it did not name execute. A successful vm_protect cannot
- * both have happened and not have happened, so either the read-back failed outright (its own
- * return code is now kept and printed) or it named a different entry/level than the one vm_protect
- * changed. The old code hid all of that: it only ran the fetch when the read-back agreed, so a
- * read-back that lies was indistinguishable from a page that will not fetch, and the phone refused
- * a page that may well have executed. Now the fetch always runs and its result is the answer; the
- * read-back is printed raw beside it. The fetch is guarded (sigsetjmp + SIGBUS/SIGSEGV/SIGILL) and
- * this device demonstrably delivers an unblessed fetch as a CATCHABLE SIGBUS -- the guest's own
- * jump into the arena produced signal 10, caught by the crash reporter -- so a page that really
- * will not fetch is a caught fault and an honest EACCES, never a dead process. TL_XMEM_NO_FETCH_VERDICT=1
- * restores the old gating (fetch only when the read-back agrees) for a device that ends the process
- * rather than faulting.
- *
- * TL_NO_XMEM_RW_EXEC=1 never adds execute here, to force the store-emulation fallback.
+ * The verdict is the GUARDED FETCH; the read-back is a diagnostic -- the phone's runs are self-contradictory for it
+ * (vm_protect returned KERN_SUCCESS and the read-back still did not name execute; xmem-arena-and-wx.md). The old code
+ * only ran the fetch when the read-back agreed, so a lying read-back was indistinguishable from a page that will not
+ * fetch. Now the fetch always runs and is the answer. It is guarded (sigsetjmp + SIGBUS/SIGSEGV/SIGILL), and this
+ * device delivers an unblessed fetch as a CATCHABLE SIGBUS, so a page that will not fetch is a caught fault and an
+ * honest EACCES, never a dead process. TL_XMEM_NO_FETCH_VERDICT=1 restores the old gating. TL_NO_XMEM_RW_EXEC=1 never
+ * adds execute, to force the store-emulation fallback.
  */
 bool tl_xmem_allow_exec(void *p, size_t n)
 {
@@ -1338,23 +1122,14 @@ bool tl_xmem_allow_exec(void *p, size_t n)
     bool ok;
     char why[200];
 #if defined(__APPLE__)
-    /* NOTHING HERE ASKS FOR RWX, AND THAT IS THE POINT. This used to be
-     * vm_protect(page, VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE) on the page the guest named.
-     * Measured, that ask is what revoked the debugger's per-entry execute grant for the whole region
-     * (see adopt_exec_view's comment for the two-run control), so the layer no longer issues it --
-     * not here, not anywhere. What is left is a MEASUREMENT: write a stub through the view that is
-     * writable at this address and call the stub at the address the guest will fetch from. The
-     * verdict is that call.
-     *
-     * Two shapes, and the honest answer differs:
-     *   - the guest named the EXECUTABLE view (what b_mmap hands a guest asking for code memory):
-     *     the stub is written through the writable twin at +delta and called at the guest's own
-     *     address, which is exactly what the boot selftest and the arena open already measured;
-     *   - the guest named the WRITABLE view (a vm_remap alias): the stub is written in place there
-     *     and called at that same address, which faults -- iOS authorises execute per mapping ENTRY
-     *     and an alias never inherits it. That is a refusal, and it is EACCES, and the line says
-     *     where the same code DOES run.
-     */
+    /* NOTHING HERE ASKS FOR RWX, AND THAT IS THE POINT. It used to be vm_protect(page, RWX); that ask is what revoked
+     * the debugger's per-entry execute grant for the whole region (jit-grant-and-detach.md), so the layer no longer
+     * issues it anywhere. What is left is a MEASUREMENT: write a stub through the view that is writable at this address
+     * and call it at the address the guest will fetch from. Two shapes:
+     *   - the guest named the EXECUTABLE view: the stub is written through the writable twin at +delta and called at the
+     *     guest's address (what the boot selftest and the arena open already measured);
+     *   - the guest named the WRITABLE view (a vm_remap alias): written in place and called there, which faults -- iOS
+     *     authorises execute per mapping ENTRY and an alias never inherits it. That is a refusal, and it is EACCES. */
     xmem_entry e = xmem_probe_entry(page);
     bool in_exec = page >= (uintptr_t)g_x.rx && page + len <= (uintptr_t)g_x.rx + g_x.size;
     uintptr_t write_at = in_exec ? page + (uintptr_t)tl_xmem_delta() : page;
@@ -1397,40 +1172,28 @@ bool tl_xmem_guest_view_is_jit(void) { return g_x.open && g_x.guest_view_jit; }
 int tl_xmem_exec_verdict(void) { return g_x.exec_measured; }
 const char *tl_xmem_exec_detail(void) { return g_x.exec_detail[0] ? g_x.exec_detail : NULL; }
 
-/* True only in the W^X fallback: the guest was handed the executable view but it could not be HELD
- * writable-and-executable, so a store into it is serviced page by page (below). */
+/* True only in the W^X fallback: the guest was handed the executable view but it could not be held writable-and-
+ * executable, so a store into it is serviced page by page (below). */
 bool tl_xmem_wx_fallback(void) { return g_x.open && g_x.wx_fallback; }
 
 /*
- * The per-page protection bracket that used to live here -- tl_xmem_page_set_writable /
- * _set_executable, vm_protect(RW) then vm_protect(RX) on a page of the guest's arena -- is GONE, and
- * its removal is the fix, not a tidy-up. A vm_protect that names WRITE on a page of this region is
- * the same ask that revoked the debugger's execute grant for the whole region (adopt_exec_view), and
- * a store into the executable view does not need it: the value is written through the writable twin,
- * which is a genuinely writable mapping, and the executable page is left executable. The store
- * service in husk-tl-codewrite.c now writes through the twin and never flips a page.
+ * The per-page protection bracket that used to live here (vm_protect(RW) then vm_protect(RX) on a page of the guest's
+ * arena) is GONE, and its removal is the fix: a vm_protect that names WRITE is the same ask that revoked the debugger's
+ * grant (adopt_exec_view), and a store into the executable view does not need it -- the value goes through the writable
+ * twin and the executable page is left executable (husk-tl-codewrite.c never flips a page).
  */
 
-/*
- * The layer's own emission into the region, bracketed so a device that enforces W^X lets the store
- * and the fetch both happen. Only the Fix A order has a host-facing view that is simultaneously the
- * one the guest executes, so only there does the state matter; a no-op everywhere else.
- */
+/* The layer's own emission into the region, bracketed so a device that enforces W^X lets the store and the fetch both
+ * happen. Only the Fix A order matters; a no-op everywhere else. */
 void tl_xmem_emit_begin(void) { if (g_x.guest_view_jit) xmem_write_mode(true); }
 void tl_xmem_emit_end(void)   { if (g_x.guest_view_jit) xmem_write_mode(false); }
 
 /* ============================================================ the verdict, persisted
  *
- * The measurement above is useless if it cannot be read: robot gf's guest branched into a page of
- * its arena that would not fetch, and the fault took the PROCESS down -- with it the UI row that
- * would have shown why. So the verdict is written to a file in the app's container at measurement
- * time, and the Settings "Guest arena" row reads the last one on the next launch. This is the same
- * shape the app already uses for "that game closed Husk" (a marker written when a game starts and
- * read at the next launch): the fact is recorded while it is known, because nobody is alive to ask
- * afterwards.
- *
- * The path is the app's to give (tl_xmem_set_verdict_path), so the layer never guesses at a sandbox
- * layout; empty means nothing is written (the host test harness sets nothing).
+ * The measurement is useless if it cannot be read: a guest fault can take the PROCESS down, with it the UI row that
+ * would have shown why. So the verdict is written to a file in the app's container at measurement time, and the
+ * Settings "Guest arena" row reads the last one on the next launch -- the fact is recorded while it is known, because
+ * nobody is alive to ask afterwards. The path is the app's to give (tl_xmem_set_verdict_path); empty writes nothing.
  */
 static char g_verdict_path[1024];
 
@@ -1453,9 +1216,8 @@ static struct {
     long long fault_when;
 } g_verdict_rec;
 
-/* Write the whole record. Written to a sibling `.tmp` and renamed into place, so a reader -- the app
- * on its next launch, or a second measurement in the same run -- never sees a half-written file
- * (the layer already writes its prefs this way; husk-tl-prefs.c). */
+/* Write the whole record, to a sibling `.tmp` then renamed into place, so a reader never sees a half-written file (the
+ * layer writes its prefs this way too; husk-tl-prefs.c). */
 static void xmem_write_verdict_file(void)
 {
     if (!g_verdict_path[0]) return;
@@ -1494,8 +1256,7 @@ static void xmem_write_verdict_file(void)
                 g_x.exec_measured == TL_XMEM_EXEC_RAN ? "RAN" : "FAULTED", g_verdict_path);
 }
 
-/* The hook xmem_note_exec calls: fill the record with what was just measured (the verdict and its
- * reason are already in g_x) plus the arena's map entry, then write it. */
+/* The hook xmem_note_exec calls: fill the record with what was just measured plus the arena's map entry, then write. */
 static void xmem_persist_verdict(void)
 {
     if (!g_verdict_path[0]) return;
@@ -1512,28 +1273,17 @@ static void xmem_persist_verdict(void)
 }
 
 /*
- * Whether this fault is the GUEST failing in the region it runs from. That region is where ALL of the
- * guest's code AND data-adjacent memory lives: the loader emits the app's libraries into it
- * (husk-tl-ld.c, tl_xmem_alloc + memset of every image) and the guest's JIT arena is carved from it,
- * so an address the kernel places inside the region is the guest's memory, and a fault at such an
- * address is the APP's memory failing, not Husk's. The crash reporter (husk-tl-unity-app.c, on_fatal)
- * treats it as a guest failure -- the app is unwound and Husk stays -- rather than a host crash, so
- * the user can read why the run died.
+ * Whether this fault is the GUEST failing in the region it runs from, where ALL of the guest's code and its JIT arena
+ * live (the loader emits the app's libraries there and tl_xmem_alloc carves the arena from it), so a fault at such an
+ * address is the APP's memory failing, not Husk's. The crash reporter treats it as a guest failure -- the app is
+ * unwound and Husk stays -- rather than a host crash.
  *
- * THE TEST IS THE FAULT ADDRESS, NOT THE PROGRAM COUNTER, and that is the whole widening. A fetch
- * fault reports pc == the fault address, but a DATA fault reports the pc of the instruction that did
- * the access -- and that instruction is in the guest's own library, OUTSIDE the region. Robot gf's
- * second crash (husk-20261015-101057) is exactly this shape:
- *     === FATAL signal 10 on thread 'UnityMain': fault address 0x122a51b90
- *     pc .../Documents/Data/App+0x4c5e8e4   (the guest's il2cpp, not the region)
- *     si_addr 0x122a51b90                   (INSIDE the region, entry 0x122a50000 prot 5 max 7)
- * The old test (`pc == addr && contains(pc)`) read false, on_fatal re-raised, and the process died --
- * the app's failure taking the host with it, which is the one thing this rule exists to prevent.
- * Whether a fetch or a load/store, the region is guest memory however the pc is reported, so the
- * address alone decides; the caller keeps pc only to name the faulting instruction in the log.
+ * THE TEST IS THE FAULT ADDRESS, NOT THE PROGRAM COUNTER: a fetch fault reports pc == fault address, but a DATA fault
+ * reports the pc of the instruction that did the access, which is in the guest's own library OUTSIDE the region
+ * (xmem-arena-and-wx.md). Whether a fetch or a load/store, the region is guest memory however the pc is reported; the
+ * caller keeps pc only to name the faulting instruction in the log.
  *
- * A fault whose address is OUTSIDE the region is still a host crash and keeps the old behaviour
- * exactly -- the refusal is one-sided and stays.
+ * A fault whose address is OUTSIDE the region is still a host crash and keeps the old behaviour exactly.
  */
 bool tl_xmem_arena_fetch_fault(uintptr_t pc, uintptr_t addr)
 {
@@ -1541,20 +1291,16 @@ bool tl_xmem_arena_fetch_fault(uintptr_t pc, uintptr_t addr)
     return g_x.open && tl_xmem_contains((const void *)addr);
 }
 
-/*
- * Record why the last run died, in the same container file as the verdict, so the reason survives
- * even a fault that keeps the process alive only long enough to write it. Called from the crash
- * reporter's guest-fault path with a one-line reason.
- */
+/* Record why the last run died, in the same container file as the verdict, so the reason survives a fault that keeps
+ * the process alive only long enough to write it. */
 void tl_xmem_note_guest_fault(const char *reason, uintptr_t pc)
 {
     snprintf(g_verdict_rec.fault, sizeof(g_verdict_rec.fault), "%s", reason ? reason : "the guest faulted in its arena");
     g_verdict_rec.fault_pc = pc;
     g_verdict_rec.fault_when = (long long)time(NULL);
-    /* RECORD the fault for the fatal-time probe -- and NOTHING more. This runs in the signal handler,
-     * where no mach probe and no sigsetjmp guard for the signal being handled is safe. The three
-     * verdicts are taken later, once, on the normal thread that runs the session close
-     * (tl_xmem_report_fault_time). A NEW fault clears `reported` so the next close re-takes them. */
+    /* RECORD the fault for the fatal-time probe -- nothing more: this runs in the signal handler, where no mach probe
+     * and no sigsetjmp guard for the signal being handled is safe. The three verdicts are taken later, once, on the
+     * normal thread that runs the session close. A NEW fault clears `reported` so the next close re-takes them. */
     g_fault_addr = pc;
     g_fault_have = true;
     g_fault_reported = false;
@@ -1567,19 +1313,14 @@ void tl_xmem_note_guest_fault(const char *reason, uintptr_t pc) { (void)reason; 
 #endif
 
 /*
- * husk_ios_jit_exec_gate -- the app's EXEC GATE (declared in src/app/Husk/HuskBridge.h).
+ * husk_ios_jit_exec_gate -- the app's EXEC GATE (declared in src/app/Husk/HuskBridge.h). The app calls this to bracket
+ * the moments that could cost the debugger's execute grant: the claim at boot, and the detach. It must live here, in
+ * the layer, because this is where the arena and its measurement machinery are -- the layer is what the app links.
  *
- * The app calls this to bracket the moments that could cost the debugger's execute grant: the claim
- * at boot, and the detach. It must live here, in the layer, because THIS is where the arena and its
- * measurement machinery are -- the layer is what the app links. (The same routine exists inside
- * src/ios-jit/husk-ios-jit.c, but that library's objects are not all in the app's link, which is why
- * a call to it from Swift was an undefined symbol.)
- *
- * One guarded write-then-execute, exactly the boot selftest's shape: a movz/ret stub written through
- * the writable view and CALLED at the executable view the guest holds. The call is the verdict --
- * no protection field is consulted, because the field is the thing that can lie. Nothing is
- * unmapped, no page is made writable, no thread is ended, and the bytes found at the address are
- * put back either way, so a gate run leaves the arena exactly as it found it.
+ * One guarded write-then-execute, the boot selftest's shape: a movz/ret stub written through the writable view and
+ * CALLED at the executable view. The call is the verdict -- no protection field is consulted, because the field is the
+ * thing that can lie. Nothing is unmapped, no page is made writable, no thread is ended, and the bytes found there are
+ * put back either way, so a gate run leaves the arena as it found it.
  */
 bool husk_ios_jit_exec_gate(const char *after)
 {

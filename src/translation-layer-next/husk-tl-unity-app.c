@@ -50,12 +50,9 @@ static char g_geode_zip[1024], g_geode_launcher[1024];
 void tl_hle_set_ca_bundle(const char *path);
 extern int tl_log_sink_fd;
 
-/*
- * The session-reset contract is being added in parallel to these headers (plan §3/§4). Declared
- * here so this file is correct by construction until those land; a later, identical declaration in
- * the header is a harmless redeclaration in C. Do NOT implement these here -- they belong to the
- * engines that own them (husk-tl-dvm.c, husk-tl-dvm-android.c, husk-tl-ld.c).
- */
+/* The session-reset contract (declared in the owning engines' headers: husk-tl-dvm*.c, husk-tl-ld.c). Declared here too
+ * so this file is correct by construction until those land -- a later identical declaration is a harmless redeclaration
+ * in C. Do NOT implement these here. */
 extern int  tl_javaapp_reset(void);     /* husk-tl-dvm-javaapp.h: stop the Java app's threads and drain its per-app state */
 extern bool tl_dvm_end_app(void);       /* husk-tl-dvm.h: drop the app's dexes and detach the classes they defined */
 extern void tl_ld_end_session(void);    /* husk-tl-ld.h: new linker session generation; stale mappings unreachable by name */
@@ -112,16 +109,11 @@ static void where(char *out, size_t n, uintptr_t addr)
 
 static struct sigaction g_prev[32];
 
-/*
- * One line, once, that names a branch target the guest fetched in the WRITABLE view: the target, its
- * executable-view equivalent, the library+offset of the code that called it, and the loader's own
- * verdict on whether that target is code. A writable-view address is not a page the CPU fetches -- the
- * executable view of the same pages is -- so a fetch there is a pointer-provenance bug (a code pointer
- * the loader produced in the wrong view), not a permission the guest asked for and the layer got wrong.
- * The two crashes so far were identical in the log and differ only here, so one run settles it: the
- * caller names who handed the address out, and known_code says whether it was a real function reached
- * in the wrong view (a layer bug) or an address that was never code at all (a guest bug).
- */
+/* One line, once, naming a branch target the guest fetched in the WRITABLE view: the target, its executable-view
+ * equivalent, the caller (library+offset), and whether the loader considers that target code. A writable-view address is
+ * not a page the CPU fetches, so a fetch there is a pointer-provenance bug (a code pointer produced in the wrong view),
+ * not a permission the guest asked for: the caller names who handed it out, known_code says whether it was a real
+ * function reached in the wrong view (a layer bug) or never code at all (a guest bug). */
 static void write_view_pointer(uintptr_t pc, uintptr_t lr)
 {
     if (!tl_xmem_contains((const void *)pc) || tl_xmem_is_rx((const void *)pc)) return;   /* not a writable-view fetch */
@@ -137,39 +129,15 @@ static void write_view_pointer(uintptr_t pc, uintptr_t lr)
                 sa ? (unsigned long)(lr - (uintptr_t)sa) : 0ul, tl_ld_va_is_code((const void *)rx));
 }
 
-/*
- * What the kernel says about the map entry that holds the address a REQUESTLESS fetch died at.
+/* One line answering the one question robot gf's SIGBUS cannot: is the unbacked page the fault address lands on INSIDE
+ * the span the loader/allocator emitted (the layer owns it and must back it), or BEYOND it (nothing the loader wrote
+ * touched it, so this reserved StikDebug region cannot serve as the guest arena)? The offset is measured from the
+ * executable view's base, the same unit tl_xmem_used() is in. No side effects, fatal path only.
  *
- * The write-view diagnostic above stays silent for a fault in the EXECUTABLE view (its first line
- * returns), which is where robot gf's UnityMain fault was: 0x1234ee430, 177 MiB into the region's
- * executable view, pc == fault == x8, with no mprotect request anywhere in the log. The write-view
- * check alone could not say whether that page is executable, unmapped, or a hole in the region --
- * and "the first page of the region executes" is not proof that 177 MiB in does. One query, no side
- * effects, on the fatal path only.
- */
-/*
- * One line that answers the ONE question robot gf's SIGBUS cannot yet answer: is the unbacked page
- * the fault address lands on INSIDE the span the loader/allocator emitted (so the layer owns that
- * page and is obliged to back it), or BEYOND that span (so nothing the loader wrote ever touched it
- * and this reserved StikDebug region cannot serve as the guest arena)?
- *
- * The fault address is in the EXECUTABLE view; the bump allocator's span is measured from that
- * view's base (tl_xmem_region_base()), which is the base tl_xmem_alloc carves from -- so the offset
- * printed here and tl_xmem_used() are in the same units and directly comparable. No side effects;
- * safe on the fatal path, and the whole reason the widened guest-fault rule exists is so the next
- * run survives long enough to print this line.
- *
- *   offset <  used  -> the page is INSIDE the emitted span: the loader/allocator handed out this
- *                     page with its own bump pointer, so the layer must back the WHOLE tl_xmem_alloc
- *                     span once, at alloc time, through the writable twin (the loader already memsets
- *                     every image through the twin; the allocator's tail -- stub pages, the JIT arena
- *                     -- is what is left unbacked).
- *   offset >= used  -> the page is BEYOND the emitted span: nothing the loader wrote, so the region's
- *                     reserved-but-unbacked nature is the whole cause and no loader change helps --
- *                     refuse StikDebug's region as the guest arena when its backing cannot be proven
- *                     (make grant_own_arena a requirement, not a preference), or have
- *                     husk_ios_jit_prewarm verify the per-page M<addr>,1:69 sweep actually ran.
- */
+ *   offset <  used  -> INSIDE the emitted span: the allocator handed out this page with its bump pointer, so the layer
+ *                     must back the WHOLE tl_xmem_alloc span at alloc time through the writable twin.
+ *   offset >= used  -> BEYOND the emitted span: nothing the loader wrote, so refuse StikDebug's region as the guest
+ *                     arena (make grant_own_arena a requirement) or verify the per-page M<addr>,1:69 sweep ran. */
 static void arena_page_span(uintptr_t addr)
 {
     if (!tl_xmem_contains((const void *)addr)) return;
@@ -212,28 +180,20 @@ static void fault_address_region(uintptr_t pc)
 }
 
 /*
- * Is this fault the GUEST failing in its own arena -- the shape robot gf died on (twice)?
+ * Is this fault the GUEST failing in its own arena -- the shape robot gf died on? The region the layer makes for the
+ * guest holds ALL of the guest's code and its JIT arena, so a fault whose FAULT ADDRESS is inside that region is the
+ * APP's memory failing, not Husk's, whichever thread reported it. Two shapes reach here:
  *
- * The region the layer makes for the guest is where ALL of the guest's code and its JIT arena live
- * (the loader emits the app's libraries there and tl_xmem_alloc carves the arena from it), so a fault
- * whose FAULT ADDRESS is inside that region is the APP's memory failing, not Husk's, whichever thread
- * reported it. Two shapes reach here, and the second is why the test is the address and not the pc:
+ *   - a FETCH: the guest's compiled code branched (a computed `blr x8`) to an address in the arena that will not
+ *     fetch; pc == fault address, both inside the region.
+ *   - a DATA access: the guest's own code does a load or store to an address inside the region and that page will not
+ *     be served; the pc is the guest library OUTSIDE the region, so a test that required pc == addr let it through as
+ *     a host crash and the process died.
  *
- *   - a FETCH: the guest's compiled code branched (a computed `blr x8`) to an address in the arena
- *     that will not fetch; pc == fault address, both inside the region.
- *   - a DATA access: the guest's own code in its library does a load or store to an address inside
- *     the region and that page will not be served. Here the pc is the guest library OUTSIDE the region
- *     (robot gf's second crash: fault address 0x122a51b90, pc Documents/Data/App+0x4c5e8e4), so a test
- *     that required pc == addr let it through as a host crash and the process died.
- *
- * Either way it is the APP's failure, not Husk's: it was the app's own code that ran, and iOS is
- * refusing the page it touched. So it must end the game SESSION and leave Husk standing -- the same
- * rule the guest exit family already follows (tl_guest_exit_unwind: A GUEST'S FAILURE MUST NOT KILL
- * THE HOST). Otherwise the one thing built to explain the run -- the "Guest arena" row and this very
- * report -- goes down with the process, and the user cannot read why.
- *
- * A fault whose address is NOT in the region is still a host crash and keeps the old behaviour
- * exactly. `why` is filled with a one-line reason for the log, the UI and the persisted verdict file.
+ * Either way it is the APP's failure: it must end the game SESSION and leave Husk standing -- the rule the guest exit
+ * family already follows (A GUEST'S FAILURE MUST NOT KILL THE HOST). Otherwise the report built to explain the run goes
+ * down with the process. A fault whose address is NOT in the region is still a host crash. `why` is filled with a
+ * one-line reason for the log, the UI and the persisted verdict file.
  */
 static bool guest_arena_fault(siginfo_t *info, ucontext_t *uc, char *why, size_t whyn)
 {
@@ -249,11 +209,8 @@ static bool guest_arena_fault(siginfo_t *info, ucontext_t *uc, char *why, size_t
     return true;
 }
 
-/*
- * A fault in guest code ends the process, as it would on Android, but not before the log says where:
- * the guest library and offset of the faulting instruction and of the code that called it. The app's
- * own crash handling (which keeps the log file) runs after.
- */
+/* A fatal fault prints where it happened -- the guest library and offset of the faulting instruction and of its caller
+ * -- before the app's own crash handling (which keeps the log file) runs. */
 static void on_fatal(int sig, siginfo_t *info, void *uctx)
 {
     ucontext_t *uc = uctx;
@@ -267,11 +224,8 @@ static void on_fatal(int sig, siginfo_t *info, void *uctx)
     tl_log_line("    lr %s", b);
     write_view_pointer((uintptr_t)uc->uc_mcontext->__ss.__pc, (uintptr_t)uc->uc_mcontext->__ss.__lr);
     fault_address_region((uintptr_t)info->si_addr);
-    /* Which register held the fault address, for the requestless family: a `blr xN` into a computed
-     * target is exactly how robot gf died (x8 == fault address, inside the executable view, no
-     * mprotect anywhere), and it is the register that says whether the target was "code" at all.
-     * Only when the fault IS the fetch (pc == fault address); otherwise a register holding the
-     * address is just an operand of a data fault and the claim would be wrong. */
+    /* Which register held the fault address: a `blr xN` into a computed target is how robot gf died. Only when the fault
+     * IS the fetch (pc == fault address), else a register holding the address is just an operand of a data fault. */
     if ((uintptr_t)info->si_addr == (uintptr_t)uc->uc_mcontext->__ss.__pc) {
         for (int i = 0; i <= 28; i++) {
             if ((uintptr_t)uc->uc_mcontext->__ss.__x[i] == (uintptr_t)info->si_addr) {
@@ -293,19 +247,14 @@ static void on_fatal(int sig, siginfo_t *info, void *uctx)
         tl_log_line("    x%d=%#llx x%d=%#llx x%d=%#llx x%d=%#llx", i, uc->uc_mcontext->__ss.__x[i], i + 1, uc->uc_mcontext->__ss.__x[i + 1],
                     i + 2, i + 2 < 29 ? uc->uc_mcontext->__ss.__x[i + 2] : 0ull, i + 3, i + 3 < 29 ? uc->uc_mcontext->__ss.__x[i + 3] : 0ull);
     /*
-     * A guest fault INSIDE THE ARENA -- a fetch that will not fetch, or a load/store the device will
-     * not serve -- is the GUEST's failure, not Husk's, so it ends the game session and not the process.
-     * The full report above is printed unchanged (the evidence is the point), then the run is unwound
-     * the way a guest exit() unwinds it (tl_guest_exit_unwind), and the reason is written to the
-     * container so the next launch can show it.
+     * A guest fault INSIDE THE ARENA is the GUEST's failure, not Husk's, so it ends the game session and not the
+     * process: the full report above is printed unchanged, then the run is unwound the way a guest exit() unwinds it
+     * (tl_guest_exit_unwind), and the reason is written to the container for the next launch.
      *
-     * Only the faulting thread ends, and only because it cannot continue: the page the guest touched
-     * supplies no readable content (for a fetch, the instruction at pc is unreadable; for a data access,
-     * the address is unserved), so there is NO "resume with a defined value" here the way an unserviced
-     * brk returns 0 -- that convention exists for brk (the debugger's answer register), and nothing
-     * defines bytes a page will not supply. So this is the honest behaviour available: end the calling
-     * thread (pthread_exit, exactly what tl_guest_exit_unwind does -- never a cancel or join of anyone
-     * else's thread), and leave Husk standing with the reason recorded. Nothing is unmapped by the layer.
+     * Only the faulting thread ends, and only because it cannot continue: the page the guest touched supplies no
+     * readable content, so there is NO "resume with a defined value" here the way an unserviced brk returns 0. So:
+     * end the calling thread (pthread_exit, exactly what tl_guest_exit_unwind does -- never a cancel or join of
+     * anyone else's thread), and leave Husk standing with the reason recorded. Nothing is unmapped by the layer.
      */
     {
         char gf[240];
@@ -354,23 +303,17 @@ static void install_crash_reporter(void)
 
 /* ------------------------------------------------------------------- launch */
 
-/*
- * A guest exit()/_exit() from a native engine ends the app, not Husk, and ends the thread that asked.
- * The layer's exit shim already named the call (husk_tl_guest_exit_requested). During a session close
- * the close owns the state machine, so this does not touch it -- the closing side treats the exit as
- * the app confirming it is done -- and only the calling thread is ended. The app's own teardown
- * (Ren'Py's Saving/Pausing audio/onStop) has already run by the time this is reached.
- */
+/* A guest exit()/_exit() ends the app, not Husk, and ends the thread that asked (the exit shim already named the call).
+ * During a session close the close owns the state machine, so this does not touch it; only the calling thread is ended.
+ * The app's own teardown has already run by the time this is reached. */
 static void guest_exit(int status)
 {
     tl_log_line("native: the app exited (%d)", status);
     tl_javaapp_request_exit();
     tl_javaapp_thread_leaving();
-    /* Promote this run to ENDED unless a session close already owns the state (its own marker is STOPPING or IDLE,
-     * and the close will open the gate itself -- see husk_tl_session_close). A blind store here would clobber the
-     * close's marker or re-close the gate it just opened, so CAS from the value just read and let a changed state
-     * win: the app asking to exit and the close that is tearing it down must agree, and the close finishes with the
-     * gate open and the next game startable. */
+    /* Promote to ENDED unless a session close already owns the state (STOPPING or IDLE, and the close will open the
+     * gate itself). A blind store would clobber the close's marker or re-close the gate it just opened, so CAS from the
+     * value just read. */
     if (!tl_guest_exit_close_in_flight()) {
         int cur = atomic_load(&A.state);
         if (cur != HUSK_UNITY_IDLE && cur != HUSK_UNITY_STOPPING) {
@@ -381,8 +324,8 @@ static void guest_exit(int status)
     pthread_exit(NULL);
 }
 
-/* Says every few seconds that the engine is alive, and how much memory the phone says is left: a silent death
- * leaves nothing else to tell a frozen game from a killed one, or a jetsam kill from a crash. */
+/* Says every few seconds that the engine is alive and how much memory the phone says is left: without it a silent death
+ * cannot be told from a frozen game, or a jetsam kill from a crash. */
 static void *heartbeat_thread(void *arg)
 {
     (void)arg;
@@ -391,9 +334,8 @@ static void *heartbeat_thread(void *arg)
     for (int tick = 0;; tick++) {
         if (tick < 40) usleep(500000); else sleep(3);          /* twice a second for the first twenty seconds */
         unsigned long f = engine_frames();
-        /* The frame counter is reset to 0 at a session close, so a heartbeat that logs one more time before it
-         * sees the state change would otherwise print a huge wrapped delta (0 - last). Clamp it: a drop to zero
-         * is "no new frames", never a negative. */
+        /* The frame counter resets to 0 at a session close, so clamp: a drop to zero is "no new frames", never a
+         * negative delta. */
         unsigned long delta = f >= last ? f - last : 0;
         last = f;
 #if TARGET_OS_IPHONE
@@ -410,11 +352,9 @@ static void *heartbeat_thread(void *arg)
               tl_log_line("unity: a variadic shim's implementation (%s) changed callee-saved registers (%llu times; x21 then %#llx, diff mask %#llx)",
                           nm, (unsigned long long)seen, (unsigned long long)tl_va_clobber.x21, (unsigned long long)tl_va_clobber.mask);
           } }
-        /* A run that is still RUNNING may be promoted to ENDED, and only by CAS -- never a blind store here.
-         * During a session close the state is STOPPING (the close's own marker); a blind store would clobber it,
-         * and the close's final gate CAS (which then finds a state it did not set) fails -- the log's
-         * "the gate was not opened (state ended)". It would also re-close the gate in the tick right after the
-         * close opened it. Promote RUNNING -> ENDED and nothing else; husk_unity_state() below does the same. */
+        /* A run still RUNNING may be promoted to ENDED, and only by CAS: a blind store would clobber the close's
+         * STOPPING marker (failing the close's gate CAS) or re-close the gate it just opened. RUNNING -> ENDED and
+         * nothing else; husk_unity_state() does the same. */
         if ((A.engine == ENGINE_COCOS && tl_cocos_ended()) || (A.engine == ENGINE_GODOT && tl_godot_ended()) || (A.engine == ENGINE_GAMEMAKER && tl_gm_ended()) || (A.engine == ENGINE_JAVA && tl_javaapp_ended())) {
             int expect_running = HUSK_UNITY_RUNNING;
             atomic_compare_exchange_strong(&A.state, &expect_running, HUSK_UNITY_ENDED);
@@ -426,10 +366,8 @@ static void *heartbeat_thread(void *arg)
     }
 }
 
-/*
- * The activity a launcher starts: the <activity> that holds <category android:name="android.intent.category.LAUNCHER">, as a JNI class name. A class named in the
- * manifest with a leading dot (or with no dot) belongs to the app's package.
- */
+/* The launcher <activity> (the one holding category LAUNCHER), as a JNI class name. A class named with a leading dot
+ * (or no dot) belongs to the app's package. */
 static uint32_t rd32(const uint8_t *p);
 static uint16_t rd16(const uint8_t *p);
 static bool pool_string(const uint8_t *pool, size_t pool_size, uint32_t index, char *out, size_t n);
@@ -480,11 +418,8 @@ static bool manifest_launcher_activity(const char *apk, const char *package, cha
     return ok;
 }
 
-/*
- * Start the Dalvik runtime on the bundled boot class path (libcore, ICU, conscrypt and Husk's framework) and load libcore's
- * natives. Java recursion is C recursion in the interpreter, and class initialisation runs deep, so this runs on its own
- * thread with a big stack rather than on the launch thread.
- */
+/* Start the Dalvik runtime on the bundled boot class path and load libcore's natives. Java recursion is C recursion in
+ * the interpreter, and class initialisation runs deep, so this runs on its own thread with a big stack. */
 static void *java_boot(void *arg)
 {
     bool *ok = arg;
@@ -648,12 +583,8 @@ static void *launch_thread(void *arg)
     atomic_store(&A.state, HUSK_UNITY_RUNNING);
     pthread_t hb;
     if (pthread_create(&hb, NULL, heartbeat_thread, NULL) == 0) pthread_detach(hb);
-    /*
-     * This thread loaded the game's libraries and ran their JNI_OnLoad, which on Android is the UI thread, and that thread
-     * never ends. Some code relies on it: Geode 5 takes this thread as the game's main thread and keeps thread-local state
-     * on it, and ending the thread ran that state's cleanup, which freed what was not its to free and took Husk down
-     * (Geometry Dash 2.2081, a SIGTRAP from libmalloc right after the sound started). So it stays, asleep.
-     */
+    /* This thread loaded the game's libraries and ran their JNI_OnLoad -- on Android the UI thread, which never ends.
+     * Some code relies on it (Geode 5 keeps thread-local state here and its cleanup took Husk down), so it stays, asleep. */
     for (;;) pause();
 }
 
@@ -852,12 +783,9 @@ const char *husk_native_loaded_apk(void) { return atomic_load(&A.state) == HUSK_
 
 /* ---------------------------------------------------------------- session swap */
 
-/*
- * The session boundary: one app at a time, and between two apps the old run is closed, its
- * bookkeeping reset and the gate opened again -- in that order (F-hazards-and-teardown.md §3).
- * Nothing here touches memory, a guest thread or the allocator: reset the BOOKKEEPING, never the
- * memory. The verdict of the last close/verification is kept for the UI.
- */
+/* The session boundary: one app at a time; between two apps the old run is closed, its bookkeeping reset and the gate
+ * opened again, in that order. Nothing here touches memory, a guest thread or the allocator -- reset the BOOKKEEPING,
+ * never the memory. The verdict of the last close/verification is kept for the UI. */
 static char g_swap_status[160] = "no session";
 static int  g_swap_verdict = -1;
 
@@ -891,24 +819,10 @@ static const char *state_name(int s)
     }
 }
 
-/*
- * Can this engine go on to a different app in this process? Static, per engine; the evidence is the
- * reconnaissance under .hermes/plans/engine-reset/ and the plan's §2/§2b tables:
- *   SWAP_OK            -- B-java-dvm.md §4: both long-lived Java threads have a cooperative stop
- *                         (quit the main Looper; set A.ended so the GL loop returns).
- *   SWAP_PARTIAL       -- the driver unwinds, but a guest engine singleton survives, so only a
- *                         DIFFERENT engine is safe next:
- *                           cocos2d-x  D-other-engines.md §1 (U.stop + tl_cocos_stop; libcocos2dcpp.so survives)
- *                           Godot      D-other-engines.md §4 (U.stop + tl_godot_stop; libgodot_android.so survives)
- *                           GameMaker  D-other-engines.md §5 (G.stop exists but is not exported; libyoyo.so survives)
- *                           Unity      C-native-engines.md §6 (tl_unity_stop exists but is unwired; IL2CPP re-init unproven)
- *   SWAP_NEEDS_RESTART -- no in-process unwind at all:
- *                           GameActivity D §2 (ui_main for(;;), owns a bionic ALooper TLS)
- *                           SDL3         D §3 (ui_main for(;;), the same looper-TLS hazard)
- *                           UE4          C §2.2 (ui_main for(;;); libUE4.so patched in place)
- *                           GTA          C §2.3 (game_main for(;;) with no stop flag)
- *                           Flutter      D §6 (--leak-vm=true; tl_codewrite is one-way)
- */
+/* Can this engine go on to a different app in this process? Static, per engine: SWAP_OK (cooperative stop), SWAP_PARTIAL
+ * (driver unwinds but a guest engine singleton survives, so only a DIFFERENT engine is safe next), or
+ * SWAP_NEEDS_RESTART (no in-process unwind). The per-engine evidence and the exact stop path are in
+ * engine-swap-capability.md, from the reconnaissance under .hermes/plans/engine-reset/. */
 int husk_tl_swap_capability(int engine)
 {
     switch (engine) {
@@ -960,8 +874,8 @@ int husk_tl_session_close(void)
         }
     }
 
-    /* Take the run out of its state so a launch cannot race the reset. STOPPING is not IDLE, so the
-     * launch CAS (husk-tl-unity-app.c:426) is refused while we work. */
+    /* Take the run out of its state so a launch cannot race the reset: STOPPING is not IDLE, so the launch CAS is
+     * refused while we work. */
     int from = state, taken = 0;
     for (int i = 0; i < 64; i++) {
         if (from == HUSK_UNITY_IDLE) { g_swap_verdict = SWAP_OK; snprintf(g_swap_status, sizeof(g_swap_status), "no session"); return SWAP_OK; }
@@ -983,17 +897,13 @@ int husk_tl_session_close(void)
                        : from == HUSK_UNITY_RUNNING ? "forced" : "starting";
     tl_log_line("husk: session close (%s, %s)", engine_name(engine), reason);
 
-    /* THE FATAL-TIME MEASUREMENT, taken HERE, on this normal thread -- NOT in the crash reporter's
-     * signal handler (see tl_xmem_report_fault_time). If on_fatal recorded a guest fault, the SAME
-     * three verdicts the open-time probe took are re-taken now, on the page the guest faulted on, and
-     * the one line says whether they MATCH the open-time ones -- so a transient loss of the page's
-     * backing or of its execute grant between arena open and the fatal access is caught, not invisible.
-     * A no-op when no guest fault was recorded (an ordinary close) and on a host with no arena. */
+    /* THE FATAL-TIME MEASUREMENT, taken HERE on this normal thread -- NOT in the crash reporter's signal handler (see
+     * tl_xmem_report_fault_time). A no-op when no guest fault was recorded and on a host with no arena. */
     tl_xmem_report_fault_time();
 
-    /* From here the close is in flight: a guest quit call (Runtime.exit, System.exit, Process.killProcess, exit()/_exit())
-     * that arrives now is the app confirming it is done, not a new request -- husk_tl_guest_exit_requested() sees this and
-     * the shim lets the app unwind instead of re-entering the close. Cleared on every way out below. */
+    /* From here the close is in flight: a guest quit call arriving now is the app confirming it is done, not a new
+     * request -- husk_tl_guest_exit_requested() sees this and the shim lets the app unwind instead of re-entering the
+     * close. Cleared on every way out below. */
     tl_guest_exit_set_close_in_flight(true);
 
     /* Re-arm the producers: no input reaches the old engine from here on. */
@@ -1002,25 +912,21 @@ int husk_tl_session_close(void)
     int verdict;
     switch (engine) {
     case ENGINE_JAVA:
-        /* Plan §4 Phase 2: unwind the Java app's own threads first, then trim the DVM. Both calls come
-         * from the parallel session-reset contract -- this file only drives them and reads the result.
-         * A DVM that would not trim leaves app A's dexes/classes in place, so a swap would run app B
-         * over app A's bytecode: that is a refusal, not a partial. A thread that would not stop was
-         * quarantined (logged, left parked), which is a partial, reported as such. */
+        /* Unwind the Java app's own threads first, then trim the DVM. A DVM that would not trim leaves app A's
+         * dexes/classes in place, so a swap would run app B over app A's bytecode: a refusal, not a partial. A thread
+         * that would not stop was quarantined (logged, left parked): a partial. */
         {
             int  app_ok = tl_javaapp_reset();
             bool dvm_ok = tl_dvm_end_app();
             tl_log_line("husk: session close step java: tl_javaapp_reset=%d, tl_dvm_end_app=%d", app_ok, dvm_ok ? 1 : 0);
-            /* tl_javaapp_reset returns 0 when it unwound both of its threads, 1 when a thread was asked to stop
-             * and would not (quarantined), 2 when nothing could ask it (irreversible). A clean 0 is not a leak:
-             * reading it as one is what once reported a working close as "swapped, leaked". */
+            /* tl_javaapp_reset: 0 unwound both threads, 1 a thread was asked to stop and would not (quarantined), 2
+             * nothing could ask it. A clean 0 is not a leak. */
             verdict = !dvm_ok ? SWAP_NEEDS_RESTART : app_ok != 0 ? SWAP_PARTIAL : SWAP_OK;
         }
         break;
     default:
-        /* No reset implementation for this engine yet. Do not pretend success: this run's registry is
-         * still there, so a second app would load on top of it -- the exact fault this gate exists to
-         * stop. Refuse, leave the session as it was, and report the capability. */
+        /* No reset implementation for this engine yet. Do not pretend success: a second app would load on top of this
+         * run's registry -- the exact fault this gate exists to stop. Refuse and report the capability. */
         tl_log_line("husk: session close: %s has no in-process reset yet (capability %d); refusing",
                     engine_name(engine), husk_tl_swap_capability(engine));
         verdict = SWAP_NEEDS_RESTART;
@@ -1028,8 +934,8 @@ int husk_tl_session_close(void)
     }
 
     if (verdict == SWAP_NEEDS_RESTART) {
-        /* Put the run back the way we found it, so the user keeps a working game (plan §2b). The game is still
-         * running, so nothing below -- which tears down the layer's audio and its message loops -- may run. */
+        /* Put the run back the way we found it, so the user keeps a working game. The game is still running, so
+         * nothing below -- which tears down the layer's audio and message loops -- may run. */
         atomic_store(&A.state, from);
         g_swap_verdict = verdict;
         snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
@@ -1039,16 +945,13 @@ int husk_tl_session_close(void)
     }
 
     /*
-     * The close proceeds. An app the user closed must not make noise, whatever happens next, and the threads the
-     * LAYER owns must actually end rather than be inherited by the next app -- for every engine, and whether or
-     * not a guest thread survives:
-     *   1. stop the layer's own audio producer threads while the host sink is still live, so an in-flight
-     *      tl_cocos_audio_hook returns instead of parking and the joins cannot hang;
-     *   2. ask every Android Looper thread to unwind. Unity dispatches its frames, its Handler messages and the
-     *      app's own JNI callbacks (robot gf's U.handleMessage) from a HandlerThread looper that the Java reset
-     *      never touched, which is why a closed game still ran;
-     *   3. silence the sink and deactivate the host session (paused, closed, indicator off), so a writer we could
-     *      not stop -- a guest thread -- drops its samples instead of reopening the queue.
+     * The close proceeds. An app the user closed must not make noise, and the threads the LAYER owns must end rather
+     * than be inherited by the next app, for every engine:
+     *   1. stop the layer's audio producer threads while the host sink is still live, so an in-flight hook returns
+     *      instead of parking and the joins cannot hang;
+     *   2. ask every Android Looper thread to unwind (Unity dispatches frames over a HandlerThread looper the Java
+     *      reset never touched);
+     *   3. silence the sink and deactivate the host session, so a writer we could not stop drops its samples.
      */
     tl_aaudio_stop_all();
     tl_opensl_stop_all();
@@ -1056,11 +959,8 @@ int husk_tl_session_close(void)
     int loops_live = tl_loop_quit_all();
     tl_audio_close();
 
-    /*
-     * A Looper that will not unwind is a guest thread still running guest code -- the design's "quarantined".
-     * Give the looper threads a short grace to finish the callback they were in, then report what remains
-     * honestly: it downgrades the close to a partial, and one line names the count. No false clean close.
-     */
+    /* A Looper that will not unwind is a guest thread still running guest code ("quarantined"): give them a short
+     * grace, then report what remains honestly -- it downgrades the close to a partial. No false clean close. */
     for (int i = 0; i < 20 && (loops_live = tl_loop_live_count()) > 0; i++) {
         struct timespec ts = { 0, 10 * 1000 * 1000 };       /* 20 * 10 ms = 200 ms */
         nanosleep(&ts, NULL);
@@ -1072,12 +972,8 @@ int husk_tl_session_close(void)
         tl_log_line("husk: session close: every looper thread unwound");
     }
 
-    /*
-     * Threads the guest started through the pthread shim are not ours to stop: there is no registry to walk, so
-     * nothing can be suspended or cancelled (and cancelling a thread that ran guest code runs its TLS
-     * destructors, which the design forbids). The count is all this can honestly say, and a nonzero count is
-     * quarantined -- reported, and reflected in the verdict rather than hidden behind a clean close.
-     */
+    /* Threads the guest started through the pthread shim are not ours to stop: no registry to walk, and cancelling a
+     * thread that ran guest code runs its TLS destructors. A nonzero count is quarantined, reflected in the verdict. */
     int guest_live = tl_guest_thread_live_count();
     if (guest_live > 0) {
         tl_log_line("husk: session close: %d guest thread(s) still running (not ours to stop; quarantined)", guest_live);
@@ -1087,38 +983,27 @@ int husk_tl_session_close(void)
     /* Forget the old loopers once reported: the next app builds its own main looper and HandlerThreads. */
     tl_loop_reset();
 
-    /* One app's HOST world, forgotten at the boundary: the Ren'Py platform flag (set by tl_renpy_prepare and otherwise
-     * left set for every later app), the virtual-file name table, the stale entries of the descriptor redirection table
-     * and the jar lookup cache. Every item is the layer's own bookkeeping -- no guest memory and no mapping is dropped --
-     * so a thread that outlived the close (quarantined) reads through none of it (see tl_io_reset_for_new_app). */
+    /* One app's HOST world, forgotten at the boundary (see tl_io_reset_for_new_app): the Ren'Py platform flag, the
+     * virtual-file name table, stale descriptor redirects and the jar lookup cache -- all the layer's own bookkeeping,
+     * no guest memory or mapping dropped. */
     { void tl_io_reset_for_new_app(void); tl_io_reset_for_new_app(); }
 
     /* The linker's session generation: stale mappings stay mapped but stop being reachable by name. */
     tl_ld_end_session();
 
-    /* Reset our own bookkeeping ONLY -- never the memory, and field-by-field (a blanket clear would
-     * also wipe the engine id this function just used for the log). */
+    /* Reset our own bookkeeping ONLY -- never the memory, and field-by-field (a blanket clear would wipe the engine id
+     * used for the log). */
     A.engine = ENGINE_UNITY;
     A.apk[0] = 0; A.data[0] = 0; A.package[0] = 0; A.angle[0] = 0; A.ca[0] = 0; A.vulkan[0] = 0;
     A.nextra = 0;
     A.layer = NULL; A.width = 0; A.height = 0;
 
     /*
-     * Open the gate LAST, by CAS: this is the only writer of HUSK_UNITY_IDLE (plan §2/§4, F §3.9).
-     *
-     * The teardown above has run, so the process holds no live session, and a completed close must leave the machine
-     * at IDLE whatever terminal state the run reached. Leaving it anywhere else keeps the gate shut, so the library
-     * greys every other game out ("another game is loaded") until Husk is relaunched -- the exact fault this gate
-     * exists to prevent. Accept every state that is a terminal marker and not a live session:
-     *   STOPPING   the close's own marker -- the normal case;
-     *   ENDED      the app's own exit, or a guest exit()/Runtime.exit that arrived during the close and finished the
-     *              run (husk_tl_guest_exit_requested saw the close in flight and let the app unwind): still no session;
-     *   FAILED     a launch that never came up: there is nothing to protect, and leaving it FAILED would lock the user
-     *              out for good with no session even open.
-     * Refuse anything that still means a live session -- this is deliberately not "anything goes":
-     *   RUNNING    the engine is producing frames; a second app must not load over a live session;
-     *   STARTING   a launch is in flight: neither terminal nor idle.
-     * A refusal here is a real refusal -- the teardown did not leave the run idle -- and the log says which state and why.
+     * Open the gate LAST, by CAS: this is the only writer of HUSK_UNITY_IDLE. The teardown above has run, so a
+     * completed close must leave the machine at IDLE whatever terminal state the run reached -- leaving it elsewhere
+     * keeps the gate shut and greys every other game out ("another game is loaded") until Husk is relaunched. Accept
+     * every TERMINAL marker (STOPPING, ENDED, FAILED) and refuse anything that still means a live session (RUNNING,
+     * STARTING). A refusal is a real refusal; the log says which state and why.
      */
     int opened = 0, gate_from = -1;
     for (int i = 0; i < 64; i++) {
@@ -1149,10 +1034,8 @@ int husk_tl_session_close(void)
     return verdict;
 }
 
-/*
- * A swap is done when this passes, not when it was asked for (plan §2b). Called once the new app has
- * been launched and loaded; it checks the swap against the world, not against what we intended.
- */
+/* A swap is done when this passes, not when it was asked for: called once the new app has launched and loaded, it
+ * checks the swap against the world, not against what we intended. */
 int husk_tl_verify_swap(const char *apk, const char *package)
 {
     int ok = 1;
@@ -1204,8 +1087,8 @@ int husk_tl_verify_swap(const char *apk, const char *package)
 
 int husk_unity_state(void)
 {
-    /* RUNNING -> ENDED, by CAS and not a store: the same rule as the heartbeat, so the UI polling this during a
-     * session close cannot clobber the close's STOPPING marker or re-close the gate the close has just opened. */
+    /* RUNNING -> ENDED by CAS, not a store: the same rule as the heartbeat, so the UI polling this during a session
+     * close cannot clobber the close's STOPPING marker or re-close the gate. */
     if (atomic_load(&A.state) == HUSK_UNITY_RUNNING && ((A.engine == ENGINE_COCOS && tl_cocos_ended()) || (A.engine == ENGINE_GODOT && tl_godot_ended()) || (A.engine == ENGINE_GAMEMAKER && tl_gm_ended()) || (A.engine == ENGINE_JAVA && tl_javaapp_ended()))) {
         int expect_running = HUSK_UNITY_RUNNING;
         atomic_compare_exchange_strong(&A.state, &expect_running, HUSK_UNITY_ENDED);
@@ -1235,16 +1118,15 @@ void husk_unity_perf_snapshot(husk_unity_perf *out)
     if (A.engine == ENGINE_GODOT) { tl_godot_perf p; tl_godot_perf_snapshot(&p); out->fps = p.fps; out->mean_ms = p.mean_ms; out->max_ms = p.max_ms; return; }
     tl_unity_perf p; tl_unity_perf_snapshot(&p); out->fps = p.fps; out->mean_ms = p.mean_ms; out->max_ms = p.max_ms;
 }
-/* The touches written to the log this process: bounded, so one run that ignores touches can be read without a line per
- * finger per frame. */
+/* The touches logged this process: bounded, so one run that ignores touches can be read without a line per finger per
+ * frame. */
 static atomic_int g_touch_notes;
 
 void husk_unity_touch(int phase, int id, float x, float y)
 {
-    /* The layer end of the input chain: a touch has left the host's view and reached the layer. It is written down on
-     * its way in -- the first few only -- with what happened to it: which engine it is for, or that no game was running
-     * and it was dropped. A game that draws but ignores touches cannot be told from one whose input never left the host
-     * unless this line and the host's own "input: host touch" line are both in the log. */
+    /* A touch has reached the layer from the host: the first few are logged, with which engine it is for or that no
+     * game was running. A game that draws but ignores touches cannot be told from one whose input never left the host
+     * unless this line and the host's own "input: host touch" line are both present. */
     int n = atomic_fetch_add(&g_touch_notes, 1);
     int state = atomic_load(&A.state);
     if (state != HUSK_UNITY_RUNNING) {

@@ -130,12 +130,9 @@ static const char *synth_content(const char *path, char *buf, size_t n)
     return NULL;
 }
 
-/* The directories the synthesised files above live in (/proc, /proc/self, /sys/devices/system/cpu). A caller
- * that checks the *containing* directory before opening a file -- Mono's FileStream does, and reports a missing
- * one as "DirectoryNotFoundException: Could not find a part of the path <file>", which is exactly the wording
- * robot gf's memory probe produced -- must find them. Reaching this is not enough on its own: the file itself
- * is served by synth_content()/b_open(), so an app whose directory check fails never gets that far. Nothing
- * here shadows a real host path: iOS has no /proc and no /sys. */
+/* The directories the synthesised files above live in. A caller that checks the *containing* directory before opening a
+ * file (Mono's FileStream does, and reports a missing one as "DirectoryNotFoundException") must find them, or it never
+ * reaches synth_content()/b_open(). Nothing here shadows a real host path: iOS has no /proc and no /sys. */
 static bool synth_dir(const char *p)
 {
     static const char *const dirs[] = {
@@ -176,18 +173,12 @@ void tl_set_cacerts_dir(const char *dir) { snprintf(g_cacerts, sizeof(g_cacerts)
 static char g_sysfonts[1024];
 void tl_set_system_fonts_dir(const char *dir) { snprintf(g_sysfonts, sizeof(g_sysfonts), "%s", dir ? dir : ""); }
 
-/* ------------------------------------------------------------------ the Macintosh that Ren'Py thinks it is
- * Ren'Py asks CPython's platform.mac_ver() what it is running on, in renpy/__init__.py's if/elif chain: a Windows
- * test, then RENPY_PLATFORM starting with "ios", then mac_ver(), and *then* ("ANDROID_PRIVATE" in os.environ) -- the
- * test that sets renpy.android. mac_ver() answers with the iOS version, because the host's
- * /System/Library/CoreServices/SystemVersion.plist is right there and readable, so Ren'Py calls itself macintosh and
- * the Android branch is never reached: renpy.loader never runs its "if renpy.android:" block (loader.py:76), no APK
- * is indexed, and since Ren'Py's common modules exist only in the APK (assets/x-renpy/x-common/) the first
- * load_module("_errorhandling") raises "Module _errorhandling could not be loaded." (script.py:377). Setting
- * ANDROID_PRIVATE alone cannot help: that branch is never tested. So for a Ren'Py app -- and only then; the flag is
- * turned on by tl_renpy_prepare, the layer's one Ren'Py entry point -- the guest is told that one host file is not
- * there, mac_ver() falls through to the Android test, and renpy.android is true. Nothing else in the guest reads it,
- * and no other engine turns the flag on. */
+/* -------------------------------------------------- the Macintosh that Ren'Py thinks it is
+ * Ren'Py's platform check (renpy/__init__.py) tests mac_ver() BEFORE the "ANDROID_PRIVATE in os.environ" test that sets
+ * renpy.android. The host's readable /System/Library/CoreServices/SystemVersion.plist makes mac_ver() answer, so Ren'Py
+ * calls itself macintosh and the Android branch is never reached -- renpy.loader never indexes the APK and the first
+ * load_module fails. So for a Ren'Py app ONLY (the flag is set by tl_renpy_prepare) the guest is told that one host file
+ * is absent, mac_ver() falls through and renpy.android is true. Nothing else reads it; no other engine sets it. */
 static bool g_renpy_android;
 void tl_renpy_android_on(void) { g_renpy_android = true; }
 static bool renpy_hidden_macver(const char *p)
@@ -195,12 +186,9 @@ static bool renpy_hidden_macver(const char *p)
     return g_renpy_android && p && (strstr(p, "/CoreServices/SystemVersion.plist") != NULL);
 }
 
-/*
- * A game's expansion file (Android/obb/<package>/main.<version>.<package>.obb) that is there: said once, naming where it
- * was found, so a run says the OBB was found the way the missing line says it was not. Skipped for anything under /obb
- * that is not a .obb, and for a target that does not exist (a game that creates the file itself must not be reported as
- * having found one).
- */
+/* A game's expansion file (Android/obb/<package>/main.<version>.<package>.obb) that is there: said once, naming where it
+ * was found. Skipped for a non-.obb under /obb and for a target that does not exist (a game creating the file itself must
+ * not be reported as having found one). */
 static void note_obb_used(const char *rest, const char *full)
 {
     static bool said;
@@ -297,11 +285,9 @@ const char *tl_path_resolve(const char *path, char *buf, size_t n)
     }
     if (!strncmp(path, "/sdcard", 7) || !strncmp(path, "/storage/emulated/0", 19)) {
         const char *rest = !strncmp(path, "/sdcard", 7) ? path + 7 : path + 19;
-        /* Shared storage (anything but an app's own Android/data) is one folder for every game when the app gave one,
-         * which the player can fill from Files: a game whose data lives in a folder of its own on /sdcard finds it there. What a game
-         * already keeps in its private copy stays found. Android/obb is included on purpose: an expansion file is the one thing a player
-         * has to supply by hand, the shared folder is reachable from Files and from Husk's own served downloads, and a game that asks
-         * Android for its OBB directory is handed this same path -- so there is one place to put it and the layer finds it there. */
+        /* Shared storage (anything but an app's own Android/data) is one folder for every game when the app gave one, which
+         * the player can fill from Files. Android/obb is included on purpose: an expansion file is the one thing a player
+         * supplies by hand, and a game asking Android for its OBB directory is handed this same path. */
         if (g_shared_storage[0] && strncmp(rest, "/Android/data", 13)) {
             char own[1024]; struct stat st;
             snprintf(own, sizeof(own), "%s/sdcard%s", tl_data_dir(), rest);
@@ -320,17 +306,13 @@ const char *tl_path_resolve(const char *path, char *buf, size_t n)
 
 /* ------------------------------------------------------------ virtual files */
 
-/*
- * A file that is really a stretch of another: Unreal Engine games keep their data in an OBB, which a repackaged APK may carry inside itself (ARK's is 2 GB
- * stored in the APK). It is shown to the game under its usual name, and reads go to the right place in the APK, so nothing is unpacked. Matching is by file name.
- */
+/* A file that is really a stretch of another: a UE4 OBB a repackaged APK carries inside itself, shown to the game under
+ * its usual name with reads going to the right place in the APK. Matching is by file name. */
 typedef struct { char name[160]; char host[1024]; uint64_t off, size; } vfile;
-/* A descriptor that is really a stretch of an APK entry: a stored jar:file: entry served in place. `on` says the descriptor
- * is served from the entry now; `was` remembers a descriptor whose redirect has been DROPPED (the descriptor was closed, or
- * a dup2/dup3 replaced it) together with the entry it served, so that a read arriving on that number afterwards can be
- * *named* instead of only surfacing as the guest's nameless generic I/O error -- Unity's "Win32 IO returned
- * ERROR_GEN_FAILURE", the black screen this was chased over three separate runs. A descriptor the layer never redirected has
- * both false and is never mentioned. `name` is for the diagnostic only; it never takes part in serving. */
+/* A descriptor that is really a stretch of an APK entry: a stored jar:file: entry served in place. `on` says the
+ * descriptor is served from the entry now; `was` remembers a descriptor whose redirect was DROPPED (closed, or replaced
+ * by dup2/dup3) together with the entry it served, so a later read on that number can be NAMED instead of surfacing only
+ * as the guest's nameless generic I/O error (Unity's "Win32 IO returned ERROR_GEN_FAILURE"). `name` is diagnostic only. */
 typedef struct { bool on, was; uint64_t off, size, pos; char name[96]; } vfd;
 static vfile g_vfiles[8];
 static int g_nvfiles;
@@ -355,53 +337,47 @@ static const vfile *vfile_find(const char *path)
 }
 static bool vfd_is(int fd) { return fd >= 0 && fd < 4096 && g_vfd[fd].on; }
 
-/* The redirect belongs to the descriptor, so it has to follow it exactly as the kernel's copy of the file description
- * does: dup/F_DUPFD make a second descriptor onto the same entry and both must redirect; dup2 that replaces a descriptor
- * onto an entry drops the old one (the host closes it); and a descriptor closed by a raw close system call must leave
- * nothing behind, because the next descriptor to land on that number would otherwise be served the APK's bytes at the old
- * entry's offset instead of its own file. Every one of those goes through these two, so the table cannot drift from the
- * descriptors it describes. */
+/* The redirect belongs to the descriptor, so it follows it exactly as the kernel's file description does: dup/F_DUPFD
+ * make a second descriptor onto the same entry (both redirect); dup2 replacing a descriptor drops the old one; a raw
+ * close must leave nothing behind, or the next file to land on that number is served the old APK's bytes. Every one of
+ * those goes through these two, so the table cannot drift from the descriptors it describes. */
 static void vfd_copy(int newfd, int oldfd)
 {
     if (newfd >= 0 && newfd < 4096) g_vfd[newfd] = (oldfd >= 0 && oldfd < 4096 && g_vfd[oldfd].on) ? g_vfd[oldfd] : (vfd){ 0 };
 }
-/* Drop a descriptor's redirect -- but keep the entry's name and geometry behind as a tombstone (`was`), never as a live
- * redirect. An entry that outlived its descriptor must never serve anything again (that is the stale-redirect bug this keeps
- * closed: the next file to land on that number would be served the old APK's bytes), yet a read that fails on that number
- * afterwards should still be able to say which entry it used to be, instead of vanishing into the guest's nameless error. */
+/* Drop a descriptor's redirect, but keep the entry's name and geometry as a tombstone (`was`), never a live redirect:
+ * an entry that outlived its descriptor must never serve again, yet a read that fails on that number should still be
+ * able to say which entry it used to be. */
 static void vfd_drop(int fd)
 {
     if (fd < 0 || fd >= 4096) return;
     if (g_vfd[fd].on) { g_vfd[fd].on = false; g_vfd[fd].was = true; g_vfd[fd].pos = 0; }
 }
-/* The layer's one place for recording a redirect (a stored APK entry, or an OBB inside an APK shown through a vfile), so
- * the descriptor's name is remembered wherever a redirect is set and a failure can name it. */
+/* The layer's one place for recording a redirect, so the descriptor's name is remembered wherever one is set and a
+ * failure can name it. */
 static void vfd_set(int fd, uint64_t off, uint64_t size, const char *name)
 {
     if (fd < 0 || fd >= 4096) return;
     g_vfd[fd] = (vfd){ .on = true, .was = false, .off = off, .size = size, .pos = 0 };
     snprintf(g_vfd[fd].name, sizeof(g_vfd[fd].name), "%s", name ? name : "");
 }
-/* A descriptor number just handed out by an open that does NOT redirect it: whatever the layer remembered about that number
- * belongs to another file now. The kernel can never hand out a number that is still open, so this cannot drop a redirect
- * that is still serving -- it closes the other half of the same invariant: a redirect that outlived its descriptor through
- * a close the layer did not see (a lane that is not shimmed) must not be applied to the next file to land on the number. */
+/* A descriptor number just handed out by an open that does NOT redirect it: whatever the layer remembered about that
+ * number belongs to another file now. The kernel never reuses a number that is still open, so this cannot drop a live
+ * redirect -- it closes the other half of the invariant: a redirect that outlived its descriptor must not be applied to
+ * the next file to land on the number. */
 static void vfd_take_over(int fd)
 {
     if (fd >= 0 && fd < 4096) g_vfd[fd] = (vfd){ 0 };
 }
 
-/* ------------------------------------------------------------------ naming a failed read on a redirected descriptor
+/* ---------------------------------------- naming a failed read on a redirected descriptor
  *
- * The layer's line for an entry prints at OPEN time ("... stored (read in place)"), so a build can log a served entry whose
- * descriptor is still read wrong -- and the guest then reports it as System.IO.IOException: "Win32 IO returned
- * ERROR_GEN_FAILURE": a generic Win32 I/O error, with no errno and no call in the sentence (Mono's file_read turns the
- * read() failure into one of these generic codes, so the guest log cannot say which errno it was). Three black screens were
- * chased this way. The one place that still knows the errno is here, so a read (or pread, or seek) on a descriptor the layer
- * redirected that FAILS is now said out loud, once per descriptor: which descriptor, which call, the offset and length asked
- * for, where inside the APK that lands, the entry and its size, and the host errno beside its guest number. A descriptor
- * whose redirect was dropped says that too -- that is the shape that reads the APK's own bytes at the APK's own offset (a
- * wrong file, silently) or fails outright if the number has since been taken by a pipe or a socket. */
+ * The entry's line prints at OPEN time, so a build can log a served entry whose descriptor is still read wrong -- and the
+ * guest reports only System.IO.IOException: "Win32 IO returned ERROR_GEN_FAILURE", a generic code with no errno (Mono's
+ * file_read turns the read() failure into one). The one place that still knows the errno is here, so a read/pread/seek on
+ * a redirected descriptor that FAILS is logged once: which descriptor and call, the offset and length, where inside the
+ * APK that lands, the entry and its size, and the host errno beside its guest number. A descriptor whose redirect was
+ * dropped says that too -- the shape that reads the APK's own bytes at the APK's own offset, or fails outright. */
 static void vfd_note_failed(int fd, const char *call, const vfd *v, uint64_t off, size_t len, int host_errno)
 {
     static bool said[4096];
@@ -412,10 +388,9 @@ static void vfd_note_failed(int fd, const char *call, const vfd *v, uint64_t off
                 v->name[0] ? v->name : "(unnamed)", (unsigned long long)v->size, host_errno,
                 tl_errno_to_guest(host_errno));
 }
-/* A read on a descriptor the layer DID redirect and is not redirecting any more: its redirect was dropped when the
- * descriptor was closed or replaced, and the number now belongs to something else (or to nothing). Saying this is what
- * separates "the layer never served the entry" from "it served it once and the guest kept reading a number whose redirect
- * was gone" -- the two look identical from Unity's side. */
+/* A read on a descriptor the layer DID redirect and no longer is: its redirect was dropped when the descriptor was
+ * closed or replaced. Saying this separates "the layer never served the entry" from "it served it once and the guest kept
+ * reading a number whose redirect was gone" -- identical from Unity's side. */
 static void vfd_note_dropped(int fd, const char *call, long r, int host_errno)
 {
     static bool said[4096];
@@ -432,22 +407,16 @@ static void vfd_note_dropped(int fd, const char *call, long r, int host_errno)
 
 /* ------------------------------------------------- a kernel write into a guest buffer, and where it lands
  *
- * A read does not only hand the layer a file and an offset -- it hands the KERNEL an address to write the
- * bytes into. That address is the guest's own (the guest runs natively, so a guest address is already a host
- * address and this layer performs no guest->host translation on the path), and the layer passes it through
- * unchanged. So a read can fail with EFAULT (14) with the file, the offset and the descriptor all correct:
- * errno 14 is the kernel saying it will not write THERE. EBADF 9, EINVAL 22, EIO 5 and ESPIPE 29 are what a
- * wrong descriptor, offset or file answer; 14 is the destination, and nothing else.
+ * A read hands the KERNEL an address to write the bytes into. That address is the guest's own (the guest runs natively,
+ * so a guest address is already a host address) and is passed through unchanged. So a read can fail with EFAULT (14)
+ * with the file, offset and descriptor all correct: errno 14 is the kernel saying it will not write THERE (EBADF/EINVAL/
+ * EIO/ESPIPE are a wrong descriptor, offset or file; 14 is the destination).
  *
- * When the destination can be unwritable while the GUEST still believes it writable: the JIT region
- * (husk-tl-xmem.c) is one set of pages seen through two views a fixed delta apart. The guest's own stores into
- * the EXECUTABLE view (a JIT's code arena the loader's adrp retarget handed it, or any buffer the layer put
- * there) are carried out by the code-write emulation through the other view (husk-tl-codewrite.c put()), so
- * to the guest the memory is writable -- but a kernel read()/pread() writes through the page tables, meets the
- * view's real protection (read+execute) and answers EFAULT. The two views are the same pages, so the kernel is
- * sent to the writable view at the fixed delta and writes the very bytes the guest will read back at its own
- * address. Nothing is bounced and nothing is copied twice: this is exactly the move codewrite.c already makes
- * for a store, and it is why the fix belongs here rather than in the redirect, which was always right. */
+ * The JIT region (husk-tl-xmem.c) is one set of pages seen through two views a fixed delta apart. A guest store into the
+ * EXECUTABLE view is carried out through the other view (husk-tl-codewrite.c put()), so to the guest the memory is
+ * writable -- but a kernel read()/pread() writes through the page tables, meets the view's real protection (read+execute)
+ * and answers EFAULT. The two views are the same pages, so the kernel is sent to the writable view at the fixed delta and
+ * writes the very bytes the guest reads back at its own address -- the same move codewrite.c makes for a store. */
 static void *kernel_dst(void *p, size_t n)
 {
     if (n && tl_xmem_is_rx(p) && tl_xmem_is_rx((char *)p + n - 1)) {
@@ -460,10 +429,9 @@ static void *kernel_dst(void *p, size_t n)
     return p;
 }
 
-/* The iovec form of the same translation, for readv/preadv: any iovec whose base is the JIT region's executable
- * view is sent to the writable view, so the kernel can fill it. Up to 32 iovecs (the count a guest uses); more
- * is passed through unchanged, since a read into the executable view across that many iovecs is not a shape any
- * guest produces. Returns whether anything was moved. */
+/* The iovec form of the same translation, for readv/preadv: any iovec whose base is the JIT region's executable view is
+ * sent to the writable view so the kernel can fill it. Up to 32 iovecs; more is passed through unchanged. Returns whether
+ * anything was moved. */
 static int iov_dst(const struct iovec *v, int n, struct iovec *out, int cap)
 {
     if (n <= 0 || n > cap) return 0;
@@ -476,11 +444,9 @@ static int iov_dst(const struct iovec *v, int n, struct iovec *out, int cap)
     return moved;
 }
 
-/* A host-side verdict on the address a read was told to write into, said when that write failed, so an EFAULT
- * stops being a guess: is the address mapped at all, with what protection, and is it the JIT region's
- * executable view -- the one mapping the kernel will not write but the guest still stores to through the
- * code-write emulation? Printed with the destination pointer, how it was arrived at (handed to the kernel
- * unchanged), and the length. Only EFAULT prints it: that is the only errno that is about the destination. */
+/* A host-side verdict on the address a read was told to write into, so an EFAULT stops being a guess: is the address
+ * mapped at all, with what protection, and is it the JIT region's executable view? Printed with the destination pointer
+ * and length. Only EFAULT reaches it (the only errno about the destination). */
 static void vfd_note_dst(bool redirected, int fd, const char *call, const void *p, size_t n, int host_errno)
 {
     if (host_errno != EFAULT) return;
@@ -521,11 +487,10 @@ static void ftrace_open_jar(const char *path, int fd)
 /* ------------------------------------------------------------ files inside an APK */
 
 /*
- * "jar:file:///data/app/.../base.apk!/assets/aa/Android/catalog.json": how Java's JarURLConnection, and Unity's Addressables
- * after it, name a file inside the APK. On a phone the platform reads those; here the guest hands such a path straight to
- * stat() and open(), sometimes with its current directory glued in front. So: a stored entry is served in place, as a stretch
- * of the APK (the virtual-file machinery above), and a compressed one is inflated once into the data folder and opened from
- * there. Subway Surfers keeps its whole Addressables catalogue -- its sounds among it -- behind paths like these.
+ * "jar:file:///.../base.apk!/assets/aa/Android/catalog.json": how Java's JarURLConnection, and Unity's Addressables after
+ * it, name a file inside the APK. The guest hands such a path straight to stat() and open(), sometimes with a current
+ * directory glued in front. A stored entry is served in place as a stretch of the APK (the virtual-file machinery above);
+ * a compressed one is inflated once into the data folder and opened from there.
  */
 typedef struct { bool found, dir; char apk[1024]; uint64_t off, size; uint16_t method; char entry[512]; } jar_entry;
 static pthread_mutex_t g_jar_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -533,8 +498,8 @@ static tl_zip g_jar_zip;
 static char g_jar_apk[1024];
 
 static bool jar_lookup(const char *p, jar_entry *out);
-/* The native library folder holds an empty stand-in for each library the APKs carry (so File.exists() and findLibrary() find
- * them); opened or looked at, one is the APK's entry -- Unity copies its symbol file (libil2cpp.usym.so) out of there. */
+/* The native library folder holds an empty stand-in for each library the APKs carry (so File.exists()/findLibrary() find
+ * them); opened or looked at, one is the APK's entry (Unity copies libil2cpp.usym.so out of there). */
 static bool lib_standin(const char *p, jar_entry *out)
 {
     const char *dd = tl_data_dir();
@@ -554,8 +519,8 @@ static bool lib_standin(const char *p, jar_entry *out)
     char jar[1400]; snprintf(jar, sizeof(jar), "jar:file://%s!/lib/arm64-v8a/%s", apk, name);
     return jar_lookup(jar, out) && out->found;
 }
-/* A URL fragment's percent-encoding ("%2F" for '/'), decoded into out: a jar: path names the entry as a zip does, once the
- * escapes a URL adds are taken out. Anything that is not a complete "%XX" is copied as it stands. */
+/* A URL fragment's percent-encoding ("%2F" for '/'), decoded into out. Anything not a complete "%XX" is copied as it
+ * stands. */
 static void jar_unescape(const char *s, const char *end, char *out, size_t n)
 {
     size_t k = 0;
@@ -571,9 +536,9 @@ static bool jar_lookup(const char *p, jar_entry *out)
 {
     if (p && p[0] == '/' && lib_standin(p, out)) return true;
     memset(out, 0, sizeof(*out));
-    /* "jar:file:<apk>!/<entry>" and "/jar:file:<apk>!/<entry>" (Unity's Addressables, with a leading slash) both name an
-     * entry in an APK; the "jar:file:" is found wherever it sits, so either spelling -- and a current directory glued in front
-     * of one -- is understood. The "//" of a plain file URL ("jar:file:///...") is consumed here too. */
+    /* "jar:file:<apk>!/<entry>" and "/jar:file:<apk>!/<entry>" both name an entry in an APK; the "jar:file:" is found
+     * wherever it sits, so either spelling -- and a current directory glued in front of one -- is understood. The "//" of
+     * a plain file URL is consumed too. */
     const char *q = p ? strstr(p, "jar:file:") : NULL;
     if (!q) return false;
     q += 9;
@@ -616,35 +581,21 @@ static bool jar_lookup(const char *p, jar_entry *out)
 }
 
 /*
- * One app's host world, forgotten at the session boundary, so the next app in this process starts from nothing of the
- * last one. Called from husk_tl_session_close (husk-tl-unity-app.c) after the app has been asked to close and before a
- * second app is launched. Every item here is the layer's OWN bookkeeping -- no guest memory, no mapping is unmapped and
- * no guest descriptor is closed -- so a thread that outlived the close (quarantined) cannot be reading through anything
- * this drops.
+ * One app's host world, forgotten at the session boundary, so the next app starts from nothing of the last one. Called
+ * from husk_tl_session_close after the app was asked to close and before a second app is launched. Every item is the
+ * layer's OWN bookkeeping -- no guest memory, no mapping unmapped, no guest descriptor closed -- so a quarantined thread
+ * cannot be reading through anything this drops:
  *
- *   g_renpy_android        Ren'Py's platform answer. It makes the guest see the host's SystemVersion.plist as absent so
- *                          platform.mac_ver() falls through to Ren'Py's Android branch (husk-tl-python.c), and it is set
- *                          ONLY for a Ren'Py app, from tl_renpy_prepare. Left set, EVERY later app in the process is lied
- *                          to about that one host file whether it is Ren'Py or not: one app's platform answer surviving
- *                          into the next. The next Ren'Py app sets it again from its own prepare path.
- *
- *   g_vfiles / g_nvfiles   the name -> (APK, offset, size) table an OBB carried inside a repackaged APK is shown through
- *                          (husk-tl-nativeactivity.c). It belongs to the ended app; the next app registers its own, and a
- *                          name the old app registered would otherwise still resolve, handing the new app the old app's
- *                          bytes. It is append-only and capped at 8, so it must be cleared per app for the cap to be the
- *                          next app's too.
- *
- *   g_vfd                  the descriptor -> (APK entry offset, size) redirection table. It describes a descriptor, so the
- *                          one invariant that must hold at every boundary is the one vfd_drop keeps as descriptors close:
- *                          an entry must not outlive the descriptor it describes, or the next app's descriptor could land
- *                          on that number and be served the old APK's bytes (b_pread64). Swept here, but only where the
- *                          descriptor is genuinely gone (F_GETFD fails with EBADF): a live descriptor's redirect is left
- *                          exactly as it is, since a descriptor still open on the host cannot be reused anyway.
- *
- *   g_jar_zip / g_jar_apk  the jar:file: entry lookup cache. It is keyed by the APK path and reopened when the path
- *                          differs, so it self-corrects on the next app; dropped here so the ended app's APK is not held
- *                          open a moment longer than the run needed it. It is the layer's own tl_zip handle, never a guest
- *                          descriptor or a guest mapping (served reads go through the guest's own fd, b_pread64).
+ *   g_renpy_android        Ren'Py's platform answer, set ONLY for a Ren'Py app. Left set, every later app (Ren'Py or
+ *                          not) is lied to about that host file.
+ *   g_vfiles / g_nvfiles   the OBB-inside-an-APK name table (husk-tl-nativeactivity.c). Append-only and capped at 8, so
+ *                          it must be cleared per app: a name the old app registered would otherwise resolve to the old
+ *                          app's bytes.
+ *   g_vfd                  the descriptor -> APK-entry redirection table. An entry must not outlive its descriptor, or the
+ *                          next app's descriptor could land on that number and be served the old APK's bytes. Swept here,
+ *                          but only where the descriptor is genuinely gone (F_GETFD fails with EBADF); a live one is left.
+ *   g_jar_zip / g_jar_apk  the jar:file: entry cache. Keyed by APK path, so it self-corrects; dropped so the ended app's
+ *                          APK is not held open longer than needed. The layer's own tl_zip handle, never a guest fd.
  */
 void tl_io_reset_for_new_app(void)
 {
@@ -670,8 +621,8 @@ void tl_io_reset_for_new_app(void)
                 nvfiles, swept, jar);
 }
 
-/* One line each, per distinct entry: that an APK entry was resolved (with its name, size and how it is served), so a phone log
- * proves the APK was read; and that one was asked for and is not in the APK -- an honest ENOENT, said once, not a lie. */
+/* One line per distinct entry: that an APK entry was resolved (name, size, how served), and that one asked for is not in
+ * the APK -- an honest ENOENT, said once. */
 static void jar_note(const jar_entry *j, bool found)
 {
     static char said[64][192];
@@ -689,13 +640,10 @@ static void jar_note(const jar_entry *j, bool found)
         tl_log_line("husk: apk entry %s: not in %s (ENOENT)", j->entry[0] ? j->entry : "(no entry named)", j->apk[0] ? j->apk : "(the APK)");
 }
 
-/* The other half of the line above, and the one a phone log needs when an entry is *not* served after all. The
- * "served" line is deliberately not printed until the descriptor and its redirection are both in place, because an
- * entry that was resolved but whose descriptor could not be handed over reads, to the game, as a file that opened and
- * then failed mid-read -- Unity's "Win32 IO returned ERROR_GEN_FAILURE" -- and no line said so. Here it does: whether
- * the APK open failed (with its errno), or the descriptor number was outside the redirection table below (fd >= 4096,
- * where a read would have come from the APK's own bytes at its own offset while fstat() reported the APK's size --
- * a wrong file, not an error). */
+/* The other half of the line above, for when an entry is *not* served: the "served" line only prints once the descriptor
+ * and its redirection are both in place. Says whether the APK open failed (with its errno), or the descriptor number was
+ * outside the redirection table (fd >= 4096, where a read would come from the APK's own bytes at its own offset while
+ * fstat() reported the APK's size -- a wrong file, not an error). */
 static void jar_note_serve_failed(const jar_entry *j, int fd, int e)
 {
     static char said[64][192];
@@ -769,9 +717,8 @@ static int oflags_from_darwin(int d)
 /* --------------------------------------------------------- crash-safe saves */
 
 /*
- * A game rewrites a save by opening it with O_TRUNC and writing it again, so for a moment the file is empty. iOS ends an app
- * whenever it likes (swiped away, out of memory, a crash in another thread), and an app ended in that moment keeps an empty
- * save. Minecraft Dungeons then waits forever on its title screen for an empty GlobalSave.sav it cannot read. So a file that
+ * A game rewrites a save by opening it with O_TRUNC and writing it again, so for a moment the file is empty; iOS can end an
+ * app at any moment, leaving an empty save (Minecraft Dungeons then waits forever on one it cannot read). So a file that
  * already has contents and lives in the game's own data is not truncated: the game writes a new file beside it, which takes
  * the old one's name when the game closes it. Ended halfway, the old save is still there, whole.
  */
@@ -829,10 +776,8 @@ void tl_atomic_closed(int fd)
     free(real);
 }
 
-/* A game's expansion file (Android/obb/<package>/main.<version>.<package>.obb) that is not there: said once, for the app's
- * diagnosis ("Missing game data") -- the store installs APKs and splits, not expansion files. The path printed is the
- * one the file system looked in (the app's own tree, or where the player can put the file), so the line says where the
- * OBB has to go as well as that it is missing. */
+/* A game's expansion file that is not there: said once (the store installs APKs and splits, not expansion files). The path
+ * printed is the one the file system looked in, so the line says where the OBB has to go as well as that it is missing. */
 void tl_note_missing_file(const char *path)
 {
     static bool said;
@@ -840,12 +785,10 @@ void tl_note_missing_file(const char *path)
     const char *dot = strrchr(path, '.');
     if (strstr(path, "/obb/") && dot && !strcmp(dot, ".obb")) { said = true; tl_log_line("husk: the app's expansion file (OBB) is missing: %s", path); }
 }
-/* The Java runtime's own data is in ordinary FILES the layer was handed -- the i18n APEX's etc/icu/icudt*.dat and the
- * tzdata APEX's etc/tz/... -- not in an archive and not in the APK. Android's ICU4J reads them with android.system.Os.open
- * + Os.mmap (android.icu.impl.AndroidDataFiles / ICUBinary), which arrive here as a plain open() of an ordinary path. When
- * such a path will not open, the Java code that wanted it dies inside a static initialiser with nothing but a bare
- * NullPointerException to show for it (android/icu/impl/ICUBinary.<clinit> -> libcore/icu/LocaleData.<clinit>), so the path
- * and its errno are said once, here, where they can still be named. */
+/* The Java runtime's own data is in ordinary FILES the layer was handed (the i18n and tzdata APEXes' icudt*.dat and tz/),
+ * read by ICU4J through android.system.Os.open -- arriving here as a plain open() of an ordinary path. When such a path
+ * will not open, the Java code dies inside a static initialiser with a bare NullPointerException, so the path and its errno
+ * are said once here. */
 static bool runtime_data_path(const char *p)
 {
     return p && (strstr(p, "/usr/icu/") || strstr(p, "/etc/icu/") || strstr(p, "/icu/icudt") ||
@@ -870,11 +813,10 @@ static int b_open(const char *path, int flags, unsigned mode)
         if (!jar.found || jar.dir || (flags & 3) != 0) { tl_set_guest_errno(jar.dir ? 21 : 2); ftrace_open_jar(path, -1); return -1; }
         int fd = -1, e = 0;
         if (jar.method == 0) {
-            /* A stored entry is a stretch of the APK itself, so the APK is opened and every read of that descriptor is
-             * redirected into the entry (g_vfd) -- that redirect *is* the entry. Two ways of getting it wrong are silent
-             * and both are refused here instead: an APK that will not open, and a descriptor number outside the table,
-             * where the read would have come from the APK's own offset while fstat() reported the APK's size, so the
-             * game would have been handed the wrong file with no error anywhere. */
+            /* A stored entry is a stretch of the APK, so the APK is opened and every read of that descriptor is
+             * redirected into the entry (g_vfd) -- the redirect *is* the entry. Refused here instead of silently: an APK
+             * that will not open, and a descriptor number outside the table (a read would come from the APK's own offset
+             * while fstat() reported the APK's size -- the wrong file with no error). */
             TL_ERRNO_BEGIN(); fd = open(jar.apk, O_RDONLY); e = errno; TL_ERRNO_END();
             if (fd < 0 || fd >= 4096) {
                 jar_note_serve_failed(&jar, fd, e);
@@ -993,10 +935,9 @@ static long b___write_chk(int fd, const void *p, size_t n, size_t bufsize) { if 
 static long b_writev(int fd, const struct iovec *v, int n) { TL_ERRNO_BEGIN(); long r = writev(fd, v, n); TL_ERRNO_END(); return r; }
 static long b_pread64(int fd, void *p, size_t n, long off);   /* b_preadv (below) serves its iovecs through it */
 /* readv/preadv on a descriptor redirecting into an APK entry: the redirect must serve these exactly as it serves read, or
- * the guest is handed the APK's own bytes at the APK's own offset -- the wrong file, silently. readv used to be a plain
- * passthrough (TL_DIRECT in husk-tl-bionic-ldbl.c) and preadv was not wrapped at all, so a guest that read an entry in
- * iovecs got the wrong bytes while read() got the right ones: how the guest spelled the call decided the answer. Each
- * iovec is served in order; a short iovec ends the call, as readv would. */
+ * the guest is handed the APK's own bytes -- the wrong file, silently. (readv used to be a plain passthrough and preadv was
+ * not wrapped, so how the guest spelled the call decided the answer.) Each iovec is served in order; a short iovec ends
+ * the call, as readv would. */
 static long b_readv(int fd, const struct iovec *v, int n)
 {
     if (vfd_is(fd)) {
@@ -1073,8 +1014,8 @@ static long b_lseek(int fd, long off, int whence)
     return r;
 }
 static int b_dup(int fd) { TL_ERRNO_BEGIN(); int r = dup(fd); TL_ERRNO_END(); if (r >= 0) vfd_copy(r, fd); return r; }
-/* The host's stdin/stdout/stderr stay the host's: apps that send stdout/stderr to logcat dup2 a pipe over them (Waze), which
- * would swallow Husk's own log. The redirect is reported done; their pipe simply stays empty. */
+/* The host's stdin/stdout/stderr stay the host's: apps that send them to logcat dup2 a pipe over them, which would swallow
+ * Husk's own log. The redirect is reported done; their pipe stays empty. */
 static int b_dup2(int a, int b) { if (b >= 0 && b <= 2 && a != b) return b; TL_ERRNO_BEGIN(); int r = dup2(a, b); if (r >= 0 && a != b) { tl_atomic_closed(b); vfd_copy(b, a); } TL_ERRNO_END(); return r; }
 static int b_pipe(int fds[2]) { TL_ERRNO_BEGIN(); int r = pipe(fds); TL_ERRNO_END(); return r; }
 static int b_fsync(int fd) { TL_ERRNO_BEGIN(); int r = fsync(fd); TL_ERRNO_END(); return r; }
@@ -1117,8 +1058,8 @@ static int b_symlink(const char *a, const char *b2) { char y[1024]; TL_ERRNO_BEG
 static bool is_proc_exe(const char *p) { return p && (!strcmp(p, "/proc/self/exe") || (!strncmp(p, "/proc/", 6) && strstr(p, "/exe") && strlen(strstr(p, "/exe")) == 4)); }
 static long b_readlink(const char *p, char *buf, size_t n)
 {
-    /* An Android app's executable is the zygote's app_process. The host has no /proc, and code that sizes a string with the result (DXVK's
-     * exe-name lookup) throws when it gets -1. */
+    /* An Android app's executable is the zygote's app_process; the host has no /proc, and code that sizes a string with
+     * the result (DXVK's exe-name lookup) throws when it gets -1. */
     if (is_proc_exe(p)) {
         static const char exe[] = "/system/bin/app_process64";
         size_t l = strlen(exe) < n ? strlen(exe) : n;
@@ -1135,10 +1076,9 @@ static int b_utime(const char *p, const struct utimbuf *t) { char b[1024]; TL_ER
 static int b_futimens(int fd, const struct timespec ts[2]) { TL_ERRNO_BEGIN(); int r = futimens(fd, ts); TL_ERRNO_END(); return r; }
 static unsigned b___umask_chk(unsigned m) { return umask((mode_t)m); }
 
-/* sendfile: Linux's (out, in, off*, count) emulated with read/write. The source may be a descriptor redirecting into an APK
- * entry: then the entry's bytes are sent, not the APK's, and the entry's position/offset is advanced the way the copy does
- * (b_read/b_pread64 do the redirection). Before this, sendfile read the APK itself, so a guest that copied an entry this
- * way got the archive's own bytes at its own offset. */
+/* sendfile: Linux's (out, in, off*, count) emulated with read/write. The source may be a descriptor redirecting into an
+ * APK entry: then the entry's bytes are sent and its offset advanced (b_read/b_pread64 do the redirection), not the APK's
+ * own bytes at the APK's own offset. */
 static long b_sendfile(int out, int in, long *off, size_t count)
 {
     char buf[16384]; long total = 0;
@@ -1303,8 +1243,8 @@ static int b_ioctl(int fd, unsigned long req, long arg)
 typedef struct { uint64_t d_ino; int64_t d_off; uint16_t d_reclen; uint8_t d_type; char d_name[256]; } guest_dirent;
 typedef struct { DIR *dir; guest_dirent ent; char **names; uint8_t *types; size_t n, pos; } guest_dir;
 
-/* A folder inside an APK ("jar:file:///.../base.apk!/assets"), listed from the zip: what is directly in it, files and folders.
- * Unity 6 lists its StreamingAssets this way through System.IO (Wordscapes boots from it). */
+/* A folder inside an APK ("jar:file:///.../base.apk!/assets"), listed from the zip: what is directly in it. Unity 6 lists
+ * its StreamingAssets this way through System.IO. */
 static guest_dir *jar_opendir(const char *p)
 {
     jar_entry j;
@@ -1370,7 +1310,8 @@ static void *b_readdir(void *dp)
 }
 static int b_closedir(void *dp) { guest_dir *g = dp; int r = g->dir ? closedir(g->dir) : 0; for (size_t i = 0; i < g->n; i++) free(g->names[i]); free(g->names); free(g->types); free(g); return r; }
 
-/* scandir: the entries of a directory, optionally filtered and sorted by functions of the guest's own (the same ISA, so they are called directly). */
+/* scandir: the entries of a directory, optionally filtered and sorted by the guest's own functions (same ISA, called
+ * directly). */
 static int b_alphasort(const guest_dirent **a, const guest_dirent **b) { return strcoll((*a)->d_name, (*b)->d_name); }
 static int b_scandir(const char *path, guest_dirent ***list, int (*filter)(const guest_dirent *), int (*cmp)(const guest_dirent **, const guest_dirent **))
 {
@@ -1408,12 +1349,9 @@ static int prot_filter(int prot, const char *what)
     return prot;
 }
 
-/*
- * Anonymous mappings the guest made, so madvise(MADV_DONTNEED) can do what Linux does to them:
- * throw the pages away so the next touch finds zeros. Allocators lean on that -- they release a range
- * and expect it to come back clean. Darwin's MADV_DONTNEED keeps the contents, so the pages are
- * replaced with fresh ones at the same protection instead.
- */
+/* Anonymous mappings the guest made, so madvise(MADV_DONTNEED) can throw the pages away (the next touch finds zeros).
+ * Allocators lean on that; Darwin's MADV_DONTNEED keeps the contents, so the pages are replaced with fresh ones at the
+ * same protection instead. */
 #define MAX_ANON 4096
 static struct { uintptr_t addr; size_t len; } g_anon[MAX_ANON];
 static int g_nanon;
@@ -1470,10 +1408,10 @@ static void mm_trace(const char *what, void *a, size_t l, long x, long y)
 }
 
 /*
- * V8's pointer-compression cage is a 4 GiB region aligned to 4 GiB, which V8 gets by reserving twice that and giving back the
- * parts outside the aligned half. An iPhone app without the extended-virtual-addressing entitlement (a sideloaded one) is refused
- * an 8 GiB reservation, though it can map 4 GiB. So when the 8 GiB one fails, the caller is given an aligned 4 GiB mapping at the
- * start of an 8 GiB range it believes it owns; what it then gives back -- the half that was never mapped -- is ignored.
+ * V8's pointer-compression cage is a 4 GiB region aligned to 4 GiB, reserved as twice that with the parts outside the
+ * aligned half given back. A sideloaded iPhone app is refused an 8 GiB reservation though it can map 4 GiB. So when the
+ * 8 GiB one fails, the caller is given an aligned 4 GiB mapping at the start of an 8 GiB range it believes it owns; the
+ * half it gives back was never mapped and is ignored.
  */
 #define PHANTOM_HALF ((size_t)4 << 30)
 static struct { uintptr_t base; size_t len, real; } g_phantom[4];
@@ -1483,8 +1421,8 @@ static void *phantom_reserve(size_t len)
 {
     if (len != 2 * PHANTOM_HALF || g_nphantom >= 4) return MAP_FAILED;
     void *res = MAP_FAILED;
-    /* Reserve 5 GiB, which holds an aligned 4 GiB only when it starts in the first GiB of an alignment period. Mappings come one after
-     * another, so a miss is kept (it moves the next one on by a GiB) and given back once there is a hit. */
+    /* Reserve 5 GiB, which holds an aligned 4 GiB only when it starts in the first GiB of an alignment period. Mappings
+     * come one after another, so a miss is kept (it moves the next on by a GiB) and given back once there is a hit. */
     void *held[8]; int nheld = 0;
     const size_t S = PHANTOM_HALF + ((size_t)1 << 30);
     for (int t = 0; t < 8 && res == MAP_FAILED; t++) {
@@ -1548,10 +1486,9 @@ static void *b_mmap(void *addr, size_t len, int prot, int flags, int fd, long of
             return rx;
         }
     }
-    /* A JIT's code memory where only the JIT region can execute (a phone: iOS 26+ lets nothing else run): LuaJIT maps it near its
-     * own code with a hint, writes the machine code, then makes it executable with mprotect -- which on a phone "succeeds" and
-     * then faults. An anonymous, code-sized, writable mapping hinted near the region comes from the region instead: its stores
-     * go through the writable view (code-write emulation), and mprotect there is a yes. TL_PHONE_JIT=1 does this on a Mac too. */
+    /* A JIT's code memory where only the JIT region can execute (iOS 26+ lets nothing else run): LuaJIT maps it near its
+     * own code with a hint, writes machine code, then mprotects it executable -- which on a phone "succeeds" and then
+     * faults. An anonymous, code-sized, writable mapping hinted near the region comes from the region instead. */
     if (addr && !(prot & PROT_EXEC) && (prot & PROT_WRITE) && (flags & 0x20) && !(flags & 0x10) && len <= (32u << 20)
         && tl_codewrite_enabled() && phone_jit() && tl_xmem_near(addr, 256u << 20)) {
         uint8_t *rx, *rw;
@@ -1567,9 +1504,8 @@ static void *b_mmap(void *addr, size_t len, int prot, int flags, int fd, long of
     if (flags & 0x10)   df |= MAP_FIXED;
     if (flags & 0x20)   df |= MAP_ANON;
     /* A redirected descriptor mapped directly: mmap would take the APK's own bytes at the guest's own offset, not the
-     * entry's. mmap is not a read() and Mono's FileStream never uses it (it reads), so the mapping is left exactly as it is
-     * -- placing a guest's file mapping differently is not a bounded change and could not be checked without a phone -- but
-     * it is said once, so that an entry read through a mapping is never silent. */
+     * entry's. It is left exactly as it is (Mono's FileStream reads, never mmaps) but said once, so an entry read through a
+     * mapping is never silent. */
     if (!(flags & 0x20) && vfd_is(fd)) {
         static bool said[4096];
         if (fd >= 0 && fd < 4096 && !said[fd]) {
@@ -1589,9 +1525,9 @@ static void *b_mmap(void *addr, size_t len, int prot, int flags, int fd, long of
             : mmap(addr, len, prot_filter(prot, "mmap"), df, (flags & 0x20) ? -1 : fd, off);
     if (r == MAP_FAILED && (errno == ENOMEM || force_phantom) && prot == 0 && (flags & 0x20) && !(flags & 0x10)) { r = phantom_reserve(len); if (r != MAP_FAILED) errno = 0; }
     TL_ERRNO_END();
-    /* a file mapped executable (libffi's trampolines: its own library's code page, or a temporary file holding a copy): a phone
-       can not make file pages executable, and a library's file offsets are not where the loader put its code, so the mapping
-       fails here as it would there, and libffi takes anonymous executable memory instead (a piece of the JIT region) */
+    /* a file mapped executable (libffi trampolines): a phone cannot make file pages executable and a library's file offsets
+     * are not where the loader put its code, so the mapping fails here as it would there, and libffi takes anonymous
+     * executable memory instead (a piece of the JIT region) */
     if (r != MAP_FAILED && (prot & PROT_EXEC) && !(flags & 0x20)) {
         tl_note_once("a file was mapped executable (libffi trampolines): refused, so anonymous executable memory is used");
         TL_ERRNO_BEGIN(); munmap(r, len); TL_ERRNO_END();
@@ -1619,8 +1555,8 @@ static bool anon_contains(uintptr_t addr, size_t len)
     return in;
 }
 
-/* A guest turning its own anonymous memory executable is a JIT (LuaJIT, a regex engine) and can not be given that; saying so lets it fall back to its interpreter, where
- * pretending to succeed would have it jump into data. */
+/* A guest turning its own anonymous memory executable is a JIT (LuaJIT, a regex engine) and cannot be given that; saying so
+ * lets it fall back to its interpreter, where pretending to succeed would have it jump into data. */
 const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void **sym_addr);
 static int b_mprotect(void *a, size_t l, int prot)
 {
@@ -1628,11 +1564,10 @@ static int b_mprotect(void *a, size_t l, int prot)
      * the writable view as they fault (husk-tl-codewrite.c). */
     if (tl_codewrite_enabled() && tl_xmem_contains(a)) {
         /* A page the guest names with PROT_EXEC that is in the WRITABLE view is its own JIT arena (the loader retargets
-         * the guest's adrp at the writable view, husk-tl-ld.c), which the guest then calls through that address. The
-         * executable view of those pages already runs, but the address the guest holds does not, so execute is added to
-         * the writable view -- and only claimed if that really happened: tl_xmem_allow_exec fetch-tests the page (a
-         * guarded write-then-execute; the verdict is that fetch, not vm_protect's return code and not the
-         * vm_region_recurse_64 read-back, which is a diagnostic printed beside it). */
+         * the guest's adrp at the writable view, husk-tl-ld.c). The executable view of those pages already runs, but the
+         * address the guest holds does not, so execute is added to the writable view -- and only claimed if that really
+         * happened: tl_xmem_allow_exec fetch-tests the page (the verdict is the fetch, not vm_protect's return code and
+         * not the read-back printed beside it). */
         if ((prot & PROT_EXEC) && !tl_xmem_is_rx(a)) {
             bool ok = tl_xmem_allow_exec(a, l);
             static int said;
@@ -1655,12 +1590,12 @@ static int b_mprotect(void *a, size_t l, int prot)
             tl_set_guest_errno(13);
             return -1;
         }
-        /* the guest's own memory it wrote code into (Meta's and ByteDance's stubs, a JIT): made executable when the system lets a
-         * process do that (a debugger attached for JIT, or a Mac), write access dropped if both were asked for (W^X); refused
-         * otherwise, which lets a JIT fall back to its interpreter. TL_NO_GUEST_JIT=1 always refuses. */
-        /* the calling thread's own stack (liblinkernsbypass asks for RWX on the page it keeps a local in): left writable and as it
-         * is -- dropping write there for W^X would leave the thread unable to push a frame. Heap pages still get the real attempt
-         * below (a JIT writing into malloc'd memory needs it executable, or EACCES so it falls back). */
+        /* the guest's own memory it wrote code into (Meta's and ByteDance's stubs, a JIT): made executable when the system
+         * lets a process do that, write access dropped if both were asked for (W^X); refused otherwise so a JIT falls back
+         * to its interpreter. TL_NO_GUEST_JIT=1 always refuses. */
+        /* the calling thread's own stack (liblinkernsbypass asks for RWX on the page it keeps a local in): left writable and
+         * as it is -- dropping write there for W^X would leave the thread unable to push a frame. Heap pages still get the
+         * real attempt below. */
         {
             pthread_t me = pthread_self();
             uintptr_t top = (uintptr_t)pthread_get_stackaddr_np(me), low = top - pthread_get_stacksize_np(me);
@@ -1997,10 +1932,9 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
         char buf[1024]; const char *p = tl_path_resolve((const char *)a1, buf, sizeof(buf));
         return access(p, (int)a2) ? -tl_errno_to_guest(errno) : 0;
     }
-    /* A guest that issues raw system calls instead of libc's (protectors and packers do) must get the same file as one
-     * that calls libc: for a descriptor redirecting into an APK entry, read and lseek are served by the same shims the
-     * wrapped calls use. Otherwise the entry's own descriptor would read the APK's bytes from the APK's own offset -- the
-     * wrong file, silently, depending only on how the guest spelled the call. */
+    /* A guest that issues raw system calls instead of libc's (protectors and packers do) must get the same file as one that
+     * calls libc: for a descriptor redirecting into an APK entry, read and lseek go through the same shims the wrapped
+     * calls use, or the entry's descriptor would read the APK's own bytes at the APK's own offset. */
     case 62: { if (vfd_is((int)a0)) { long r = b_lseek((int)a0, (long)a1, (int)a2); return r < 0 ? -(*tl_guest_errno_ptr() ? *tl_guest_errno_ptr() : 22) : r; } off_t r = lseek((int)a0, (off_t)a1, (int)a2); return r < 0 ? -tl_errno_to_guest(errno) : (long)r; }
     case 101: { int r = nanosleep((const struct timespec *)a0, (struct timespec *)a1); return r < 0 ? -tl_errno_to_guest(errno) : 0; }
     case 124: sched_yield(); return 0;
@@ -2052,11 +1986,9 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
 
 /* ------------------------------------------------------- poll, select, etc. */
 
-/*
- * Apple's poll() does not work on character devices: asked about /dev/urandom it answers POLLNVAL (invalid), where Linux says "readable".
- * OpenSSL seeds its random generator by polling that device before reading it, so it never read anything and refused to make a TLS
- * connection ("PRNG not seeded"). A descriptor that is valid but that poll() refuses is asked again through select(), which does handle them.
- */
+/* Apple's poll() does not work on character devices: asked about /dev/urandom it answers POLLNVAL, where Linux says
+ * "readable". OpenSSL seeds its RNG by polling that device, so it never read anything and refused to make a TLS connection
+ * ("PRNG not seeded"). A descriptor poll() refuses is asked again through select(), which handles them. */
 static int poll_devices_via_select(struct pollfd *fds, unsigned long n, int r)
 {
     for (unsigned long i = 0; i < n; i++) {
@@ -2180,8 +2112,9 @@ static int b_fchmodat(int dirfd, const char *path, unsigned mode, int flags)
     TL_ERRNO_BEGIN(); int r = fchmodat(dirfd, path, (mode_t)mode, 0); TL_ERRNO_END();
     return r;
 }
-/* The other *at calls, the same way: a path relative to AT_FDCWD (or absolute) goes through the guest's path mapping, one relative to
- * a real directory descriptor goes to the host's call. AT_EACCESS / AT_SYMLINK_NOFOLLOW are dropped where Darwin's differ. */
+/* The other *at calls, the same way: a path relative to AT_FDCWD (or absolute) goes through the guest's path mapping; one
+ * relative to a real directory descriptor goes to the host's call. AT_EACCESS / AT_SYMLINK_NOFOLLOW are dropped where
+ * Darwin's differ. */
 static int b_faccessat(int dirfd, const char *path, int mode, int flags)
 {
     (void)flags;

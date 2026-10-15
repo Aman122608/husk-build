@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * What the app calls to run a Unity game through the native runtime.
- *
- * Starting is asynchronous: the engine takes seconds to load, and the UI must stay up
- * meanwhile. The progress is in the log (husk_tl_attempt_log) and in husk_unity_state.
- * An engine cannot be unloaded, so a game that has been started stays loaded for the life
- * of the process; leaving its screen pauses it.
+ * What the app calls to run a game through the native runtime. Starting is asynchronous (the engine takes seconds to
+ * load, and the UI must stay up meanwhile); progress is in the log and in husk_unity_state. An engine cannot be
+ * unloaded, so a started game stays loaded for the life of the process; leaving its screen pauses it.
  */
 #ifndef HUSK_TL_UNITY_APP_H
 #define HUSK_TL_UNITY_APP_H
@@ -17,19 +14,15 @@ extern "C" {
 #endif
 
 /*
- * The state of the one run this process can have at a time.
- * IDLE -> STARTING -> RUNNING | FAILED -> ENDED. The session close takes any live or terminal
- * state to STOPPING while it tears the run down, then opens the gate back to IDLE from every
- * terminal marker (STOPPING, ENDED, FAILED) -- but never from a live run (RUNNING/STARTING).
- * husk_tl_session_close() is the ONLY writer of HUSK_UNITY_IDLE (nothing else may restore the gate).
+ * The state of the one run this process can have at a time: IDLE -> STARTING -> RUNNING | FAILED -> ENDED. The session
+ * close takes any live or terminal state to STOPPING while it tears down, then opens the gate back to IDLE from every
+ * terminal marker (STOPPING, ENDED, FAILED) -- never from a live run (RUNNING/STARTING). husk_tl_session_close() is the
+ * ONLY writer of HUSK_UNITY_IDLE.
  */
 enum { HUSK_UNITY_IDLE = 0, HUSK_UNITY_STARTING = 1, HUSK_UNITY_RUNNING = 2, HUSK_UNITY_FAILED = 3, HUSK_UNITY_ENDED = 4, HUSK_UNITY_STOPPING = 5 };
 
-/*
- * The engines husk_tl_swap_capability() classifies. The numbers mirror the internal
- * ENGINE_* enum in husk-tl-unity-app.c (the order of the launch calls), so a caller that
- * has an ENGINE_* id can pass it straight through.
- */
+/* The engines husk_tl_swap_capability() classifies. The numbers mirror the internal ENGINE_* enum in
+ * husk-tl-unity-app.c, so a caller with an ENGINE_* id can pass it straight through. */
 enum {
     HUSK_TL_ENGINE_UNITY = 0, HUSK_TL_ENGINE_COCOS = 1, HUSK_TL_ENGINE_GAMEACTIVITY = 2,
     HUSK_TL_ENGINE_SDL = 3, HUSK_TL_ENGINE_UE4 = 4, HUSK_TL_ENGINE_GTA = 5,
@@ -38,10 +31,9 @@ enum {
 };
 
 /*
- * What a second, different app in this process can be for an engine. Static, from the
- * reconnaissance in .hermes/plans/engine-reset/ (C-native-engines.md, D-other-engines.md,
- * B-java-dvm.md) and the plan's §2/§2b tables. Never chosen at run time as a substitute --
- * an unswappable engine says so and the user relaunches deliberately.
+ * What a second, different app in this process can be for an engine. Static, per engine: SWAP_OK, SWAP_PARTIAL (only a
+ * DIFFERENT engine is safe next) or SWAP_NEEDS_RESTART. Never chosen at run time as a substitute -- an unswappable
+ * engine says so and the user relaunches deliberately. The per-engine evidence is in engine-swap-capability.md.
  */
 enum { SWAP_OK = 0, SWAP_PARTIAL = 1, SWAP_NEEDS_RESTART = 2 };
 
@@ -52,12 +44,10 @@ int husk_tl_swap_capability(int engine);
 int husk_tl_swap_verdict(void);
 
 /*
- * Close the running app's session so a different app can start later in this process:
- * reset the engine's per-app BOOKKEEPING (never the memory, never a guest thread), then open
- * the gate to HUSK_UNITY_IDLE LAST. Idempotent; safe after a FAILED, half-initialised start.
- * Returns the verdict SWAP_OK / SWAP_PARTIAL / SWAP_NEEDS_RESTART. On SWAP_NEEDS_RESTART it
- * refuses: the gate stays closed (as it was) and the reason is logged -- the user keeps a
- * working game and relaunches deliberately. This is the only writer of HUSK_UNITY_IDLE.
+ * Close the running app's session so a different app can start later in this process: reset the engine's per-app
+ * BOOKKEEPING (never the memory, never a guest thread), then open the gate to HUSK_UNITY_IDLE LAST. Idempotent; safe
+ * after a FAILED, half-initialised start. Returns SWAP_OK / SWAP_PARTIAL / SWAP_NEEDS_RESTART; on SWAP_NEEDS_RESTART it
+ * refuses (the gate stays closed and the reason is logged) so the user keeps a working game. The only writer of IDLE.
  */
 int husk_tl_session_close(void);
 
@@ -65,10 +55,9 @@ int husk_tl_session_close(void);
 const char *husk_tl_swap_status(void);
 
 /*
- * After a swap, check it really happened -- a swap is done when this passes, not when it was asked
- * for (plan §2b). Runs the four checks: the loaded APK is the one requested, no library from an
- * earlier session is reachable by name, the new engine has produced frames, and the accounting is
- * logged. Returns 1 only if all pass. `package` is used only in the log.
+ * After a swap, check it really happened -- a swap is done when this passes, not when it was asked for. Runs four
+ * checks: the loaded APK is the one requested, no library from an earlier session is reachable by name, the new engine
+ * has produced frames, and the accounting is logged. Returns 1 only if all pass. `package` is used only in the log.
  */
 int husk_tl_verify_swap(const char *apk, const char *package);
 
@@ -91,16 +80,14 @@ bool husk_cocos_launch(const char *apk, const char *data_dir, void *metal_layer,
 bool husk_gameactivity_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
                               const char *angle_dylib, const char *ca_bundle);
 
-/*
- * The same for a game built on SDL3 (Beach Buggy Racing 2): landscape, sound, multi-touch. Its libraries may be in a split, and its data in an asset pack, so every
- * other APK of the app is given first with husk_native_add_package. The game's activity is the launcher activity of the manifest.
- */
+/* The same for an SDL3 game (Beach Buggy Racing 2): landscape, sound, multi-touch. Its libraries may be in a split and
+ * its data in an asset pack, so every other APK is given first with husk_native_add_package. Its activity is the manifest's
+ * launcher activity. */
 bool husk_sdl_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
                      const char *angle_dylib, const char *ca_bundle);
-/*
- * The same for a game built on Unreal Engine 4 (Minecraft Dungeons): landscape, sound, touch and controllers. Its renderer is Vulkan, on MoltenVK: give the path
- * of libMoltenVK.dylib with husk_ue4_set_vulkan first. Its data is an OBB the APK carries inside itself, mapped in place.
- */
+/* The same for a UE4 game (Minecraft Dungeons): landscape, sound, touch and controllers. Its renderer is Vulkan on
+ * MoltenVK -- give its path with husk_ue4_set_vulkan first. Its data is an OBB the APK carries inside itself, mapped in
+ * place. */
 bool husk_ue4_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
                      const char *angle_dylib, const char *ca_bundle);
 /* A Godot game (libgodot_android.so: Godot 3 and 4, with GLES2/GLES3 or the Compatibility renderer): sound, multi-touch. */
@@ -161,10 +148,9 @@ void husk_native_set_system_files(const char *cacerts_dir, const char *fonts_roo
 void husk_native_add_package(const char *apk);
 /* The folder games see as Android's shared storage (/sdcard outside their own Android/data), or NULL for each game's own. */
 void husk_native_set_shared_storage(const char *dir);
-/* Where the layer writes the last arena verdict, so it survives a crash: a file in the app's container
-   (e.g. Documents/husk-arena-verdict.txt). Set before a game starts; the layer writes it at measurement
-   time and again if a guest fetch fault ends the run, and the app's "Guest arena" row reads it on the
-   next launch. NULL or empty turns persistence off. */
+/* Where the layer writes the last arena verdict, so it survives a crash: a file in the app's container, set before a
+   game starts. The layer writes it at measurement time (and again if a guest fetch fault ends the run) and the app's
+   "Guest arena" row reads it on the next launch. NULL or empty turns persistence off. */
 void husk_native_set_arena_verdict_path(const char *path);
 /* The screen's safe-area insets in pixels, for a game that keeps its controls out of a notch (SDL games ask). Before the launch call, or any time. */
 void husk_sdl_set_safe_insets(int left, int top, int right, int bottom);
