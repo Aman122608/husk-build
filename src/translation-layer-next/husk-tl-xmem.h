@@ -70,6 +70,26 @@ bool tl_xmem_contains(const void *p);
 bool tl_xmem_is_rx(const void *p);
 
 /*
+ * The verdict of the guarded write-then-execute, as a value the APP can read.
+ *
+ * This is the only honest basis for a "JIT is on" indicator: the app's own `prewarmed` flag is
+ * something the app SET, and a flag can be true while the pages cannot be fetched (measured --
+ * husk-20261015-085540: the app detaching the debugger revoked the region's per-entry grant, every
+ * entry then read prot 1 max 3, and the guarded fetch FAULTED -- while the UI still said "JIT is
+ * on"). The layer runs the guarded write-then-execute when the arena opens, aimed at the address
+ * the guest both writes and executes, and its outcome is kept here so the UI reports a measurement
+ * rather than an assertion. TL_XMEM_EXEC_UNMEASURED (0) is the truth before a game has opened an
+ * arena: the UI must say it does not know yet, not that it works.
+ */
+enum { TL_XMEM_EXEC_UNMEASURED = 0, TL_XMEM_EXEC_RAN = 1, TL_XMEM_EXEC_FAULTED = 2 };
+
+/* The last guarded write-then-execute's verdict: a TL_XMEM_EXEC_* value. */
+int tl_xmem_exec_verdict(void);
+
+/* Why it did not RAN, as one line for the UI, or NULL when it RAN (or has not run yet). */
+const char *tl_xmem_exec_detail(void);
+
+/*
  * Make the pages at the WRITABLE-view address `p` executable in that same view (the mirror of
  * tl_xmem_is_rx): the executable view of those pages already runs, but a guest that keeps a
  * code pointer in memory it wrote -- a JIT's trampoline arena, which the loader's adrp rewrite

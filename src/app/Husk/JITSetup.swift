@@ -353,10 +353,11 @@ final class JITCoordinator: ObservableObject {
     /// stall this whole hold has to avoid, and it would freeze on the first call.
     ///
     /// Started before a run rather than blocking it: the grant matters at the guest's *first JIT
-    /// write*, which is well after the engine's start. If it cannot be renewed, the run still
-    /// starts and the layer says honestly that the guest's own arena cannot be made executable
-    /// (`tl_xmem_allow_exec`'s refusal), which is better than a run that freezes on a `brk` no
-    /// one is answering.
+    /// write*, which is well after the engine's start. For Husk's own helper the renew is a request,
+    /// safe mid-session; for an external debugger the app cannot renew it at all, so nothing is
+    /// started on the user's behalf and the status says exactly what they must do. Either way the
+    /// layer still reports its own measurement of the guest's arena (`tl_xmem_exec_verdict`), which
+    /// is what the "JIT is on" indicator reads — never a flag this app set.
     func reassertForRun() {
         guard JITBootstrap.prewarmed, !JITBootstrap.detached else { return }
         guard !JITBootstrap.debuggedFlag else { return }   // still attached: nothing to renew
@@ -369,11 +370,17 @@ final class JITCoordinator: ObservableObject {
             // ask for mid-session. It attaches and services traps exactly as the first one did.
             enableBuiltIn()
         case .stikDebug, .trollStore, .jailbreak, .automatic:
-            // These hand the foreground to another app (StikDebug) or need something Husk cannot
-            // start itself, so they are not asked for mid-session: the run proceeds on the honest
-            // refusal and the UI says what to do.
-            log("the \(resolvedMethod.title) method cannot renew the attach in-session; the run "
-                + "will start and the guest's arena will be refused honestly")
+            // These need the USER's hands — a foreground bounce to the external StikDebug app, or a
+            // device setting — so the attach cannot be renewed from inside a run. Say exactly what to
+            // do rather than start a run that will not have the grant. This is the one part of the
+            // user's working flow the app cannot reproduce from inside itself: StikDebug is left
+            // attached by the USER, not by Husk, so when it has gone the user brings it back.
+            let title = resolvedMethod.title
+            let how = "Open \(title) and let it enable JIT for Husk again, then come back and start the game."
+            error = "JIT was turned off when the debugger let go. \(how)"
+            status = nil
+            log("the \(title) attach is gone and cannot be renewed from inside a run; telling the user "
+                + "to re-attach: \(how)")
         }
     }
 

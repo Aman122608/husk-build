@@ -175,7 +175,10 @@ struct OnboardingView: View {
 
     /// What the JIT page says is already in place, if anything.
     private var jitState: String? {
-        if JITBootstrap.ready { return "JIT is on." }
+        if JITBootstrap.usable { return "JIT is on." }
+        if case .unusable(let why) = JITBootstrap.state {
+            return "JIT is granted, but the translator measured the guest's arena unable to run: \(why)"
+        }
         if jit.method == .stikDebug { return "Husk will use StikDebug." }
         if jit.method == .trollStore { return "Husk will use TrollStore." }
         switch jit.pairingSource {

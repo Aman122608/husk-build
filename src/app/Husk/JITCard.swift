@@ -11,7 +11,16 @@ struct JITCard: View {
     /// One line instead of a card: for the library, where it sits above the games rather than being the page.
     var compact = false
 
-    private var isOn: Bool { JITBootstrap.ready }
+    /// "JIT is on" is the layer's measurement, not a flag: `usable` is false when the layer has
+    /// measured the guest's arena unable to run (JITBootstrap.state), so the card stops asserting
+    /// success while the pages cannot be fetched.
+    private var isOn: Bool { JITBootstrap.usable }
+
+    /// What the layer measured, when it measured a failure: the card says this instead of "JIT is on".
+    private var measuredProblem: String? {
+        if case .unusable(let why) = JITBootstrap.state { return why }
+        return nil
+    }
 
     /// The way the card offers: StikJIT where Husk has it (iOS 26 and later), and otherwise whatever this device has -- TrollStore, a
     /// jailbreak -- since StikJIT cannot run on an iOS before 26.
@@ -72,12 +81,21 @@ struct JITCard: View {
             if let error = jit.error {
                 Text(error).font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
             }
+            if let why = measuredProblem {
+                Text("Husk measured the guest's arena and it will not run: \(why)")
+                    .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(12)
         .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var explanation: String {
+        if measuredProblem != nil {
+            return "JIT was on, but the translator MEASURED the guest's arena and it did not run — which "
+                 + "is what happens once the debugger lets go. Turn JIT on again with "
+                 + "\(offered == .builtIn ? "StikJIT" : offered.title), then start the game."
+        }
         switch offered {
         case .trollStore:
             return "TrollStore can turn JIT on for Husk: it opens Husk and enables it, with no computer. "
@@ -133,6 +151,11 @@ struct JITCard: View {
             Text(explanation)
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let why = measuredProblem {
+                Text("Husk measured the guest's arena and it will not run: \(why)")
+                    .font(.footnote).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            }
 
             if let why = HuskBuiltInJIT.unavailableReason {
                 Text(why).font(.footnote).foregroundStyle(.orange)

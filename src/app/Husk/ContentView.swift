@@ -287,7 +287,9 @@ struct ContentView: View {
         // Claim the JIT region now, on the first foreground pass after the debugger
         // attaches, while it is still running. Waiting for the Start button means
         // iOS has often suspended the debugger, causing unserviced brk freezes.
-        // After the first call this is a no-op, and on success it also detaches the debugger.
+        // After the first call this is a no-op, and it now HOLDS the debugger rather than
+        // detaching it: the region's execute is the debugger's per-entry grant, and it does not
+        // survive a detach (JITBootstrap.prewarm).
         JITBootstrap.prewarm()
 
         // Start on launch, when that is what was asked for.

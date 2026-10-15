@@ -63,7 +63,27 @@ static struct {
      * use to reach it. NULL means "the same as g_x.rw". */
     uint8_t *wrw;
     pthread_mutex_t lock;
+    /* The verdict of the guarded write-then-execute on the address the GUEST both writes and
+     * executes, taken when the arena opens (see tl_xmem_exec_verdict). It is the measurement the
+     * app's "JIT is on" indicator is backed by, because the app's own prewarmed flag can be true
+     * while the pages cannot be fetched. Zero-initialised: exec_measured is TL_XMEM_EXEC_UNMEASURED
+     * and exec_detail is the empty string until a measurement is taken. */
+    int exec_measured;
+    char exec_detail[240];
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
+
+/* Record the guarded write-then-execute's outcome, so the app can report a measurement rather than
+ * the flag it set. Called only with a real verdict (RAN or FAULTED); `detail` is copied, so the
+ * caller's stack buffer need not outlive the call. Apple-only because every call site is: the
+ * guarded probes are the mach ones below. */
+#if defined(__APPLE__)
+static void xmem_note_exec(int verdict, const char *detail)
+{
+    g_x.exec_measured = verdict;
+    if (detail && *detail) snprintf(g_x.exec_detail, sizeof(g_x.exec_detail), "%s", detail);
+    else g_x.exec_detail[0] = '\0';
+}
+#endif
 
 /* The view the layer WRITES through. Everything that mirrors a guest/executable address to a
  * writable one -- the loader's bulk emission (tl_xmem_alloc), the codewrite redirect (tl_xmem_delta)
@@ -222,6 +242,7 @@ static bool make_views(uint8_t *base, size_t size, char *err, size_t errlen)
         if (code_view_runs && guest_view_runs) {
             g_x.rw = rw; g_x.rx = (uint8_t *)(uintptr_t)alias; g_x.size = size; g_x.guest_view_jit = true;
             g_x.route = guest_extra[k] ? "MAP_JIT" : "plain RWX";
+            xmem_note_exec(TL_XMEM_EXEC_RAN, NULL);   /* the guest's own view ran a function written into it */
             tl_log_line("xmem: Fix A: the view the guest addresses and calls (%p) is the %s mapping and the code view (%p) is a vm_remap of it; a guest's own arena there is authorised",
                         (void *)rw, guest_extra[k] ? "MAP_JIT" : "plain RWX", (void *)alias);
             return true;
@@ -257,6 +278,11 @@ static bool make_views(uint8_t *base, size_t size, char *err, size_t errlen)
         if (self_runs(rx, (uint8_t *)(uintptr_t)alias)) {
             g_x.rx = rx; g_x.rw = (uint8_t *)(uintptr_t)alias; g_x.size = size; g_x.guest_view_jit = false;
             g_x.route = "vm_remap";
+            /* The guest-facing view here is a vm_remap alias of the code view: guest CODE runs (through
+             * rx), but a guest's OWN arena at a writable-view address cannot fetch -- which is exactly
+             * the question the indicator asks. Measured now, not asserted. */
+            xmem_note_exec(TL_XMEM_EXEC_FAULTED,
+                           "the guest-facing view is a vm_remap of the code view; a guest's own arena there cannot fetch (iOS authorises execute per mapping ENTRY and an alias never inherits it)");
             tl_log_line("xmem: no authorised guest-facing view here: fell back to the two-view order (%s mapping, code view %p, guest view %p); a guest arena in the writable view cannot be made to fetch",
                         code_extra[k] ? "MAP_JIT" : "plain", (void *)rx, (void *)alias);
             return true;
@@ -749,6 +775,7 @@ static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen)
         snprintf(err, errlen, "vm_protect(RWX) on the executable view returned %d (%s); entry %p..%p prot %d max %d depth %u tag %u",
                  (int)kr, mach_error_string(kr),
                  (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag);
+        xmem_note_exec(TL_XMEM_EXEC_FAULTED, err);   /* the guest's arena cannot be made writable-and-executable */
         return false;
     }
     int stage = 0;
@@ -764,6 +791,7 @@ static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen)
                             : stage == 2 ? "FAULTED ON THE FETCH -- the view names RWX but will not run"
                                          : "FAULTED",
                  (int)g_self_sig, (int)g_self_code);
+        xmem_note_exec(TL_XMEM_EXEC_FAULTED, err);   /* the guarded probe is the verdict, and it said no */
         return false;
     }
     g_x.rx = g_x.rw = m->rx_addr;
@@ -772,6 +800,7 @@ static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen)
     g_x.wx_fallback = false;
     g_x.wrw = NULL;                 /* the guest-facing view is writable in place: no separate twin */
     g_x.route = "the executable view, made RWX in place";
+    xmem_note_exec(TL_XMEM_EXEC_RAN, NULL);   /* one address, written and executed, and it ran */
     return true;
 }
 #endif
@@ -843,6 +872,10 @@ static void xmem_probe_guest_view(void)
          * service can change that: the fetch itself is what iOS is refusing. */
         int stage = 0;
         bool f = xmem_write_fetch((uintptr_t)xmem_writable_view(), at, &stage);
+        xmem_note_exec(f ? TL_XMEM_EXEC_RAN : TL_XMEM_EXEC_FAULTED,
+                       f ? NULL
+                         : stage == 1 ? "the writable twin could not be written (unexpected: it should be)"
+                                      : "the executable view names no execute and will not run: the guarded write through the writable twin then call at the guest's address FAULTED ON THE FETCH, and no store service can change that because the FETCH is what is refused");
         tl_log_line("xmem: guest-facing view %p IS the EXECUTABLE view (RX): read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write through the writable twin %p then call at %p %s",
                     (void *)at, e.kr == KERN_SUCCESS ? "ok" : "FAILED",
                     (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
@@ -854,6 +887,10 @@ static void xmem_probe_guest_view(void)
     }
     int stage = 0;
     bool f = xmem_writable_fetches(at, &stage);
+    xmem_note_exec(f ? TL_XMEM_EXEC_RAN : TL_XMEM_EXEC_FAULTED,
+                   f ? NULL
+                     : stage == 1 ? "the guest cannot write at the address it will execute (W^X): the guarded write-then-execute FAULTED ON THE STORE"
+                                  : "the guest's arena names RWX but will not run: the guarded write-then-execute FAULTED ON THE FETCH");
     tl_log_line("xmem: guest-facing view %p: read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write-then-execute %s%s", 
                 (void *)at, e.kr == KERN_SUCCESS ? "ok" : "FAILED",
                 (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
@@ -979,6 +1016,10 @@ size_t tl_xmem_used(void) { return g_x.used; }
 size_t tl_xmem_size(void)  { return g_x.size; }
 
 bool tl_xmem_guest_view_is_jit(void) { return g_x.open && g_x.guest_view_jit; }
+
+/* The guarded write-then-execute's verdict, for the app's indicator: a measurement, not a flag. */
+int tl_xmem_exec_verdict(void) { return g_x.exec_measured; }
+const char *tl_xmem_exec_detail(void) { return g_x.exec_detail[0] ? g_x.exec_detail : NULL; }
 
 /* True only in the W^X fallback: the guest was handed the executable view but it could not be HELD
  * writable-and-executable, so a store into it is serviced page by page (below). */

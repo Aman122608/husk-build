@@ -175,8 +175,11 @@ enum JITBootstrap {
     static func releaseGrantWhenIdle() {
         guard grantHeldForRun else { return }
         grantHeldForRun = false
-        HuskLog.log("jit", "no run is live; releasing the debugger so a suspended servicer cannot "
-                         + "stall the process while nothing needs the grant")
+        // The FLAG is what is dropped here; whether the debugger itself is let go is detachIfIdle's
+        // decision, and it never ends an attach Husk did not make (the user's external StikDebug). So
+        // this line does not promise a detach.
+        HuskLog.log("jit", "no run is live; the run-scoped execute-grant hold is released (the debugger "
+                         + "itself is only let go by Husk's own helper -- see detachIfIdle)")
         detachIfIdle()
     }
 
@@ -184,6 +187,29 @@ enum JITBootstrap {
     private static var stikDebugMayServiceTraps: Bool {
         let method = UserDefaults.standard.string(forKey: "husk.jitMethod") ?? JITMethod.automatic.rawValue
         return method == JITMethod.stikDebug.rawValue || (method == JITMethod.automatic.rawValue && isStikDebugInstalled)
+    }
+
+    /// Whether the attached debugger is an EXTERNAL app the USER brought in — StikDebug, via its
+    /// `stikjit://` scheme, or a jailbreak/TrollStore marking — rather than Husk's own
+    /// `HuskJITHelper.appex` extension, which Husk starts itself.
+    ///
+    /// This is who may end the session, and it is the crux of the user's flow: "it's really just a
+    /// quick redirect to StikDebug and back to the app, and the app stays saying that jit is enabled".
+    /// Husk started neither of those and cannot start them again on its own — the external StikDebug
+    /// attach is a foreground bounce that needs the user's hands — so sending the detach
+    /// (`brk #0xf00d`, `x16 = 0`, `husk-brk.S`) to one of them is not "releasing a servicer", it is
+    /// revoking the only route this device has to executable memory, for the rest of the process, with
+    /// no way back from inside the app. Only Husk's own helper, which one more extension request
+    /// brings back, may be let go. Mirrors `JITCoordinator.resolvedMethod`, kept here so a
+    /// non-MainActor caller need not hop actors to ask.
+    static var debuggerIsExternalApp: Bool {
+        let stored = UserDefaults.standard.string(forKey: "husk.jitMethod") ?? JITMethod.automatic.rawValue
+        let method = JITMethod(rawValue: stored) ?? .automatic
+        switch method {
+        case .automatic: return isStikDebugInstalled || isTrollStoreInstalled || isJailbroken
+        case .stikDebug, .trollStore, .jailbreak: return true
+        case .builtIn: return false
+        }
     }
 
     /// The one try at making the region without a debugger has been made (it is not repeated: the answer will not change).
@@ -197,18 +223,105 @@ enum JITBootstrap {
         return prewarm()
     }
 
+    /// What the LAYER measured about the guest's own arena: the verdict of the guarded
+    /// write-then-execute it runs when the arena opens (`tl_xmem_exec_verdict`, aimed at the address
+    /// the guest both writes and executes).
+    ///
+    /// This is what makes the indicator honest. `prewarmed` is a flag this app SET, and a flag can be
+    /// true while the pages cannot be fetched — measured in `husk-20261015-085540`, where the app
+    /// detached the debugger at the claim, the region's per-entry execute grant went with it (every
+    /// entry then read `prot 1 max 3`), and the guarded fetch faulted — and the UI said "JIT is on"
+    /// regardless. The layer already takes the one measurement that decides it; the UI now reports
+    /// that rather than the flag.
+    enum ExecuteVerdict: Equatable {
+        /// No arena has been opened yet, so nothing has been measured. The UI must say it does not
+        /// know yet, not that it works.
+        case unmeasured
+        /// The guarded write-then-execute RAN: the guest's arena genuinely executes.
+        case ran
+        /// It FAULTED: the arena names RWX but will not run (or cannot be written). `why` is the
+        /// layer's own one-line reason, stage and all.
+        case faulted(String)
+    }
+
+    static var executeVerdict: ExecuteVerdict {
+        switch tl_xmem_exec_verdict() {
+        case 1: return .ran
+        case 2: return .faulted(tl_xmem_exec_detail().map { String(cString: $0) }
+                                ?? "the guarded write-then-execute faulted")
+        default: return .unmeasured
+        }
+    }
+
+    /// The honest state the UI reports, and the only basis for "JIT is on".
+    enum JITState: Equatable {
+        /// Nothing claimed and no debugger: JIT is off.
+        case off
+        /// A debugger is attached and the region is held, but the layer has not exercised the
+        /// guest's arena yet. This is the state a fresh launch or the StikDebug bounce leaves behind,
+        /// and it is what the user's working flow shows: the grant is held; the arena is unproven.
+        case granted
+        /// The layer's guarded write-then-execute RAN: the guest's arena was measured executing.
+        case verified
+        /// The layer MEASURED the guest's arena unable to run. The indicator must not assert success
+        /// here, whatever `prewarmed` says; `why` is what the layer knows.
+        case unusable(String)
+    }
+
+    static var state: JITState {
+        switch executeVerdict {
+        case .ran: return .verified
+        case .faulted(let why): return .unusable(why)
+        case .unmeasured: return ready ? .granted : .off
+        }
+    }
+
+    /// Whether a game can be started: a debugger is attached AND the layer has not measured the
+    /// guest's arena unable to run. `ready` alone answers the first half; this fuses in the second.
+    static var usable: Bool {
+        guard ready else { return false }
+        if case .unusable = state { return false }
+        return true
+    }
+
+    /// One line for the UI: what the layer measured, said plainly.
+    static var measuredDescription: String {
+        switch executeVerdict {
+        case .ran: return "measured: executes (the guarded write-then-execute RAN)"
+        case .faulted(let why): return "measured: will NOT execute — \(why)"
+        case .unmeasured: return "not yet exercised (the layer opens and measures the arena when a game starts)"
+        }
+    }
+
     /// True once this process has told StikDebug to let go.
     nonisolated(unsafe) static private(set) var detached = false
 
-    /// Release the debugger, but only when nothing needs the grant.
+    /// Release the debugger, but only when nothing needs the grant — and only if Husk is the one that
+    /// attached it.
     ///
-    /// Two guards, and both matter. `grantHeldForRun` is the run scope: while a run can still
+    /// Three guards, and all of them matter. `grantHeldForRun` is the run scope: while a run can still
     /// execute guest code the grant is the only route the guest has to executable memory on this
-    /// device (jailbreak: false, "can grant its own JIT": false, TXM enforced), so it is not given
-    /// up. `keepDebuggerAttached` is the user's blunt override.
+    /// device (jailbreak: false, "can grant its own JIT": false, TXM enforced), so it is not given up.
+    /// `keepDebuggerAttached` is the user's blunt override. And `debuggerIsExternalApp` is the one the
+    /// user's working flow forced: the external StikDebug attach is the user's own, Husk cannot bring
+    /// it back by itself, so it must never be ended — see the comment inside.
     private static func detachIfIdle() {
         guard prewarmed, !detached, !keepDebuggerAttached, !grantHeldForRun else { return }
-        HuskLog.log("jit", "JIT region held and no run is live; detaching the debugger")
+        // Never send the detach to a debugger Husk did not start. The user's flow is "a quick redirect
+        // to StikDebug and back to the app, and the app stays saying that jit is enabled" — StikDebug
+        // attached throughout. Ending that session is what revokes the region's per-entry execute
+        // grant (measured: every entry reads `prot 1 max 3` after it, and the next fetch faults), and
+        // re-attaching takes the user's hands and a foreground bounce, which the app cannot do from
+        // inside itself. So this is not "releasing a servicer that could stall us": it is giving away
+        // the only route to executable memory there is here, permanently, for the rest of the process.
+        guard !debuggerIsExternalApp else {
+            HuskLog.log("jit", "no run is live, but the debugger is an external app the user attached "
+                             + "(StikDebug or the like); leaving the session as it is -- Husk did not "
+                             + "start it and cannot start it again, and ending it would revoke the "
+                             + "region's execute grant with no way back")
+            return
+        }
+        HuskLog.log("jit", "JIT region held and no run is live; releasing Husk's own JIT helper")
         husk_ios_jit_detach()
         detached = true
     }

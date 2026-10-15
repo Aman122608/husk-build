@@ -123,7 +123,11 @@ enum Launcher {
         }
     }
 
-    static var jitOn: Bool { JITBootstrap.ready }
+    /// The gate the UI uses everywhere for "JIT is on", fused with the layer's measurement: `usable`
+    /// is true only when a debugger is attached AND the layer has not measured the guest's arena
+    /// unable to run (`JITBootstrap.state`). Deliberately not `ready` alone — `ready` is a flag the
+    /// app set, and the indicator must not say "JIT is on" while the pages cannot be fetched.
+    static var jitOn: Bool { JITBootstrap.usable }
 }
 
 // MARK: - Home

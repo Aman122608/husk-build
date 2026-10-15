@@ -534,6 +534,13 @@ struct JITSettings: View {
                                : JITBootstrap.detached ? "given up (no run is live)"
                                : JITBootstrap.prewarmed ? "held" : "not claimed",
                           mono: false)
+                // The measurement the indicator is backed by, not the flag above: the layer's
+                // guarded write-then-execute, aimed at the address the guest both writes and
+                // executes, when the arena opens. This is the row that would have caught
+                // husk-20261015-085540 saying "JIT is on" while the guarded fetch faulted.
+                DetailRow(label: "Guest arena",
+                          value: JITBootstrap.measuredDescription,
+                          mono: false)
                 DetailRow(label: "Debugger after setup",
                           value: JITBootstrap.detached ? "detached" : "attached",
                           mono: false)
@@ -589,10 +596,11 @@ struct JITSettings: View {
             } footer: {
                 Text("Husk holds the debugger's execute grant for as long as a game can run, "
                    + "because that grant — not the region — is what makes the region executable, "
-                   + "and it does not survive a detach. It gives the debugger up the moment no "
-                   + "run is live, so a debugger iOS has suspended cannot stop the app while "
-                   + "nothing needs it. Turn this on to keep it attached even then (useful only "
-                   + "to collect the servicer's own logs).")
+                   + "and it does not survive a detach. It gives up its OWN helper the moment no "
+                   + "run is live. It never ends an attach it did not make: the external StikDebug "
+                   + "session is the user's own, and ending it would revoke the region's execute "
+                   + "grant with no way back from inside the app. Turn this on only to keep Husk's "
+                   + "own helper attached even when nothing is running.")
             }
 
             Section {

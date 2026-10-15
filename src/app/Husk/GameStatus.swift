@@ -274,9 +274,12 @@ enum NativeSession {
             let tail = "The next game can start, but something from this session was left behind."
             let outcome = finish(appID, .leaked, detail: detail,
                                  message: Toast(title: "Swapped, with a leak", detail: detail.map { "\($0). \(tail)" } ?? tail, good: false))
-            // The layer replaced the session (with a leak): no native run is live. The Android
-            // guest may still be, and QEMU shares this grant, so release only when nothing is.
-            if !guestOrEngineLive { JITBootstrap.releaseGrantWhenIdle() }
+            // A LEAKED close (SWAP_PARTIAL) is NOT "no run": the layer left something behind. The
+            // close resets the engine's BOOKKEEPING, never the memory and never a guest thread, so a
+            // thread from this session may still execute guest code in the arena. Releasing the grant
+            // here would send the detach and take execute away from a live thread's arena — the hard
+            // rule is never to end, join, or unmap what a live thread may use, and this is the same
+            // thing one layer up. So the grant is held until a CLEAN close, or the process exits.
             return outcome
         case .clean:
             // The layer cleared its session: nothing can execute guest code now, so this is the

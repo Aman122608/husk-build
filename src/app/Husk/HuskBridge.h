@@ -110,5 +110,9 @@ void husk_balloon_set_bytes(int64_t target_bytes);
    docs/04-translation-layer.md for why the two are kept apart. */
 #include "../../translation-layer/husk-tl.h"
 #include "../../translation-layer-next/husk-tl-unity-app.h"
+/* The guarded write-then-execute's verdict, so the app's "JIT is on" indicator is backed by a
+   measurement the layer actually took (tl_xmem_exec_verdict / tl_xmem_exec_detail) rather than by
+   the app's own prewarmed flag -- which, measured, can be true while the pages cannot be fetched. */
+#include "../../translation-layer-next/husk-tl-xmem.h"
 
 #endif /* HUSK_BRIDGE_H */
