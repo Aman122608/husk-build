@@ -11,5 +11,8 @@ void tl_codewrite_enable(void);
 bool tl_codewrite_enabled(void);
 /* Stores carried out so far, for the log. */
 long tl_codewrite_count(void);
+/* Stores the guard REFUSED (a form its decoder does not understand, chained to the previous handler). Counted so the
+ * trap rate can be summarised without a line per store -- the carry line is throttled to the first few. */
+long tl_codewrite_refused_count(void);
 
 #endif

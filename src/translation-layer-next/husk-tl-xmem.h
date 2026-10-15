@@ -120,6 +120,10 @@ void tl_xmem_flush(const void *rx, size_t bytes);
 size_t tl_xmem_used(void);
 size_t tl_xmem_size(void);
 
+/* The arena's per-allocation backing work so far: allocations handed out and 4 KiB pages backed by a volatile store
+ * through the writable twin (tl_xmem_alloc). Read-only; safe any time, and used by the perf summary. */
+void tl_xmem_backing_stats(size_t *allocs, size_t *pages);
+
 /* The base of the EXECUTABLE (guest-code) view of the region, so (addr - tl_xmem_region_base()) and tl_xmem_used() are
  * in the same units and directly comparable. Read-only; safe on the fatal path. */
 const void *tl_xmem_region_base(void);

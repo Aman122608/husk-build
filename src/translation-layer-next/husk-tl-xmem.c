@@ -61,6 +61,11 @@ static struct {
     char exec_detail[240];
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
 
+/* The arena's own per-allocation work, counted so the log's per-alloc backing line is not the only evidence of how much
+ * the backing pass costs: allocations handed out and 4 KiB pages backed by a volatile store (tl_xmem_alloc). Bumped under
+ * g_x.lock; read racy from the heartbeat (a counter, not a control value). */
+static size_t g_x_alloc_calls, g_x_alloc_pages;
+
 #if defined(__APPLE__)
 /*
  * The last GUEST FAULT the crash reporter handed in (tl_xmem_note_guest_fault), and whether the fatal-time verdicts
@@ -606,6 +611,19 @@ static bool xmem_guarded_read(const unsigned char *p, unsigned char *got, int *s
 { *got = *p; if (sig) *sig = 0; if (code) *code = 0; return true; }
 #endif
 
+/* Whether the backing PROOF runs. The per-page READ-BACK, the checksum folded from it and the two guarded reads of the
+ * span's first page were the honest fix for the dead-store bug: they PROVE the volatile store landed (a page that was
+ * never backed faults HERE, inside the layer, instead of later inside the guest). But that proof is a DEBUG ASSERTION,
+ * not production work -- it doubles the pass's memory traffic and each guarded read installs and restores three signal
+ * handlers, six per allocation. It runs only with TL_XMEM_BACKING_TRACE set. The VOLATILE STORE LOOP IS NEVER GATED: it
+ * is what makes the kernel back each page (and being volatile, cannot be elided as a dead store). */
+static bool xmem_backing_trace(void)
+{
+    static int on = -1;
+    if (on < 0) { const char *s = getenv("TL_XMEM_BACKING_TRACE"); on = (s && *s && *s != '0') ? 1 : 0; }
+    return on != 0;
+}
+
 /*
  * Hand out a span of the arena -- and BACK it.
  *
@@ -641,18 +659,34 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
          * And it is PROVEN: each page is READ BACK through the same writable view and folded into a checksum the log
          * prints, so a page that was never backed faults HERE, inside the layer, instead of later inside the guest. */
         {
+            const bool trace = xmem_backing_trace();
             uint8_t *wv = xmem_writable_view() + start;
             volatile unsigned char *vb = (volatile unsigned char *)wv;
             size_t touched = 0;
             uint64_t checksum = 0;
             bool readback_ok = true;
             for (size_t off = 0; off < n; off += 4096u) {
-                vb[off] = 0;             /* volatile store -- the kernel backs the page */
-                unsigned char got = vb[off]; /* read back the SAME byte through the SAME writable view */
-                if (got != 0) readback_ok = false;
-                checksum ^= (uint64_t)got ^ (uint64_t)(off / 4096u);
+                vb[off] = 0;             /* volatile store -- the kernel backs the page. REQUIRED, never gated: this is
+                                          * what publishes the page, and volatile so a Release build cannot delete it as
+                                          * a dead store (it did, once -- the bug this pass exists to end). */
+                if (trace) {
+                    unsigned char got = vb[off]; /* read back the SAME byte through the SAME writable view */
+                    if (got != 0) readback_ok = false;
+                    checksum ^= (uint64_t)got ^ (uint64_t)(off / 4096u);
+                }
                 touched++;
             }
+            __atomic_fetch_add(&g_x_alloc_calls, 1, __ATOMIC_RELAXED);
+            __atomic_fetch_add(&g_x_alloc_pages, touched, __ATOMIC_RELAXED);
+            if (!trace) {
+                /* Production: the volatile stores above are all the backing needs and cannot be elided. The read-back,
+                 * the checksum and the two guarded reads are the DEBUG ASSERTION that PROVES the store landed -- off
+                 * unless TL_XMEM_BACKING_TRACE is set (they double the pass's memory traffic, and the guarded reads
+                 * install six signal handlers per allocation). The pages backed are still counted and summarised. */
+                tl_log_line("xmem: backed the span just handed out %p..%p (%zu bytes, %zu pages; %zu page(s) backed so far) -- one VOLATILE store per 4 KiB page through the writable twin %p is what makes the kernel back each page (no vm_protect, nothing unmapped); the read-back/dead-store proof is OFF (TL_XMEM_BACKING_TRACE=1 to run it)",
+                            (void *)wv, (void *)(wv + n), n, touched,
+                            (size_t)__atomic_load_n(&g_x_alloc_pages, __ATOMIC_RELAXED), (void *)xmem_writable_view());
+            } else {
             const char *rb = readback_ok
                 ? "read back OK -- every page re-read through the same writable view returned the value just written"
                 : "read back FAILED -- a page did not return the value just written, so it may not be backed";
@@ -676,11 +710,19 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
                         rb, (unsigned long long)checksum, touched,
                         (void *)(g_x.rx + start), (void *)g_x.rx, xverdict, (unsigned)xb, xsig, xcode,
                         (void *)wv, wverdict, (unsigned)wb, wsig, wcode);
+            }
         }
     }
     tl_lock_released(TL_LOCK_ARENA);
     pthread_mutex_unlock(&g_x.lock);
     return ok;
+}
+
+/* The arena's per-allocation work so far (see g_x_alloc_calls/g_x_alloc_pages). Read-only, safe any time. */
+void tl_xmem_backing_stats(size_t *allocs, size_t *pages)
+{
+    if (allocs) *allocs = __atomic_load_n(&g_x_alloc_calls, __ATOMIC_RELAXED);
+    if (pages)  *pages  = __atomic_load_n(&g_x_alloc_pages,  __ATOMIC_RELAXED);
 }
 
 ptrdiff_t tl_xmem_delta(void) { return xmem_writable_view() - g_x.rx; }

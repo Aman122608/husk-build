@@ -805,6 +805,7 @@ static void tl_note_missing_data(const char *path, int e)
 }
 static int b_open(const char *path, int flags, unsigned mode)
 {
+    tl_hp_bump(TL_HP_OPEN);
     char buf[1024]; static __thread char content[32768];
     jar_entry jar;
     if (renpy_hidden_macver(path)) { tl_set_guest_errno(2); return -1; }   /* Ren'Py must not look like a Mac (see above) */
@@ -889,6 +890,7 @@ static bool net_trace_fd(int fd)
 }
 static long b_read(int fd, void *p, size_t n)
 {
+    tl_hp_bump(TL_HP_READ);
     if (vfd_is(fd)) {
         vfd *v = &g_vfd[fd];
         if (v->pos >= v->size) return 0;
@@ -974,6 +976,7 @@ static long b_preadv(int fd, const struct iovec *v, int n, long off)
 }
 static long b_pread64(int fd, void *p, size_t n, long off)
 {
+    tl_hp_bump(TL_HP_PREAD64);
     if (vfd_is(fd)) {
         const vfd *v = &g_vfd[fd];
         if (off < 0) { tl_set_guest_errno(22); return -1; }
@@ -1162,6 +1165,7 @@ static int b_lstat(const char *p, guest_stat *g)
 /* fstatat: Android's AT_FDCWD is -100 and AT_SYMLINK_NOFOLLOW is 0x100 (macOS: -2 and 0x20). */
 static int b_fstatat(int dirfd, const char *p, guest_stat *g, int flags)
 {
+    tl_hp_bump(TL_HP_FSTATAT);
     if (!p[0] && (flags & 0x1000 /* AT_EMPTY_PATH */)) return fstat_guest_fd(dirfd, g);
     if (p[0] == '/' || dirfd == -100) return (flags & 0x100) ? b_lstat(p, g) : b_stat(p, g);
     struct stat s;
@@ -1171,6 +1175,7 @@ static int b_fstatat(int dirfd, const char *p, guest_stat *g, int flags)
 }
 static int b_fstat(int fd, guest_stat *g)
 {
+    tl_hp_bump(TL_HP_FSTAT);
     struct stat s;
     TL_ERRNO_BEGIN(); int r = fstat(fd, &s); TL_ERRNO_END();
     if (r == 0) { fill_stat(g, &s); if (vfd_is(fd)) g->st_size = (int64_t)g_vfd[fd].size; }
@@ -1476,6 +1481,7 @@ static bool phone_jit(void)
 }
 static void *b_mmap(void *addr, size_t len, int prot, int flags, int fd, long off)
 {
+    tl_hp_bump(TL_HP_MMAP);
     /* A hooking library's trampolines (Geode): executable memory is a piece of the JIT region, written through the other view. */
     if ((prot & PROT_EXEC) && (flags & 0x20) && !(flags & 0x10) && tl_codewrite_enabled()) {
         uint8_t *rx, *rw;
@@ -1655,10 +1661,11 @@ static clockid_t clock_to_darwin(int id)
     default: return CLOCK_MONOTONIC;
     }
 }
-static int b_clock_gettime(int id, struct timespec *ts) { TL_ERRNO_BEGIN(); int r = clock_gettime(clock_to_darwin(id), ts); TL_ERRNO_END(); return r; }
+static int b_clock_gettime(int id, struct timespec *ts) { tl_hp_bump(TL_HP_CLOCK_GETTIME); TL_ERRNO_BEGIN(); int r = clock_gettime(clock_to_darwin(id), ts); TL_ERRNO_END(); return r; }
 static int b_clock_getres(int id, struct timespec *ts) { TL_ERRNO_BEGIN(); int r = clock_getres(clock_to_darwin(id), ts); TL_ERRNO_END(); return r; }
 static int b_gettimeofday(int64_t *tv, void *tz)
 {
+    tl_hp_bump(TL_HP_GETTIMEOFDAY);
     struct timeval t; (void)tz;
     gettimeofday(&t, NULL);
     if (tv) { tv[0] = t.tv_sec; tv[1] = t.tv_usec; }

@@ -388,6 +388,8 @@ static void name_refusal(uintptr_t pc, uint32_t insn, bool have_insn, const char
     }
 }
 
+long tl_codewrite_refused_count(void) { return g_refused_total; }
+
 static void chain(struct sigaction *prev, int sig, siginfo_t *info, void *uc)
 {
     if ((prev->sa_flags & SA_SIGINFO) && prev->sa_sigaction) { prev->sa_sigaction(sig, info, uc); return; }

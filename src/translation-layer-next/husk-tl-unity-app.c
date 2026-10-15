@@ -31,6 +31,7 @@
 #include "husk-tl-jni.h"
 #include "husk-tl-ld.h"
 #include "husk-tl-xmem.h"
+#include "husk-tl-codewrite.h"
 #include "husk-tl-godot.h"
 #include "husk-tl-unity.h"
 #include "husk-tl-audio.h"
@@ -330,6 +331,8 @@ static void guest_exit(int status)
 
 /* The swapped-in stall probe, defined below near the engine/state names it prints. */
 static void tl_swapstall_tick(unsigned long frames, bool running);
+/* The periodic hot-path counter summary, defined below beside the buffer helper it shares with the stall probe. */
+static void tl_perf_summary(const char *tag);
 
 /* Says every few seconds that the engine is alive and how much memory the phone says is left: without it a silent death
  * cannot be told from a frozen game, or a jetsam kill from a crash. */
@@ -353,6 +356,9 @@ static void *heartbeat_thread(void *arg)
         /* A swapped-in app that presented a frame and then stopped drawing may be blocked on a layer lock a parked thread
          * holds (tl_swapstall_tick). This is where such a stall names itself, once per stall. */
         tl_swapstall_tick(f, atomic_load(&A.state) == HUSK_UNITY_RUNNING);
+        /* The hot-path counters, once per N seconds -- NEVER per event: the log has no line per fstat/clock_gettime/
+         * read and could not answer which shim is hot or how often the store guard traps. */
+        if (tick > 0 && (tick % 8) == 0) tl_perf_summary("hb");
         { extern volatile struct { uint64_t count, x21, impl, mask; } tl_va_clobber;
           static uint64_t seen;
           if (tl_va_clobber.count != seen) {
@@ -895,6 +901,24 @@ static void ss_where(char *out, size_t n, uintptr_t a, bool is_pc)
         snprintf(out, n, "%#lx", (unsigned long)a);
 }
 
+/* One line per N seconds, and once at session close, with the hot-path counters: what the log cannot answer without a
+ * line per event -- the store guard's carried/refused traps, the arena's per-allocation backing (allocations and pages
+ * backed), and the intercepted calls by name. NEVER per event; the caller gates the cadence (the heartbeat, husk). */
+static void tl_perf_summary(const char *tag)
+{
+    char line[512];
+    int w = 0;
+    size_t allocs = 0, pages = 0;
+    tl_xmem_backing_stats(&allocs, &pages);
+    w = ss_put(line, w, sizeof(line), "perf[%s]: codewrite carried=%ld refused=%ld; arena allocs=%zu pages=%zu;",
+               tag, tl_codewrite_count(), tl_codewrite_refused_count(), allocs, pages);
+    for (int i = 0; i < TL_HP_N; i++) {
+        unsigned long c = __atomic_load_n(&tl_hp_count[i], __ATOMIC_RELAXED);
+        if (c) w = ss_put(line, w, sizeof(line), " %s=%lu", tl_hp_name(i), c);
+    }
+    if (w > 0) tl_log_line("%s", line);
+}
+
 #define TL_SS_THREADS 160
 static void ss_probe(unsigned long frames, double quiet_s)
 {
@@ -1218,6 +1242,7 @@ int husk_tl_session_close(void)
         tl_log_line("husk: session close: state %s -> idle (the run had settled at %s when the gate opened); ready for the next app (%s)",
                     state_name(from), state_name(gate_from), engine_name(engine));
     }
+    tl_perf_summary("close");
     tl_guest_exit_set_close_in_flight(false);
     return verdict;
 }

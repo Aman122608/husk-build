@@ -106,6 +106,7 @@ static void describe_site(char *out, size_t n, uint64_t addr)
 }
 static int b_mutex_lock(void *g)
 {
+    tl_hp_bump(TL_HP_MUTEX_LOCK);
     pthread_mutex_t *m = obj_host(g, make_mutex);
     if (!mutex_trace()) return rc(pthread_mutex_lock(m));
     void *lr = __builtin_return_address(0);
@@ -126,7 +127,7 @@ static int b_mutex_lock(void *g)
     }
 }
 static int b_mutex_trylock(void *g) { int r = pthread_mutex_trylock(obj_host(g, make_mutex)); if (r == 0 && mutex_trace()) note_owner(g, __builtin_return_address(0)); return rc(r); }
-static int b_mutex_unlock(void *g)  { if (mutex_trace()) ((uint64_t *)g)[2] = 0; return rc(pthread_mutex_unlock(obj_host(g, make_mutex))); }
+static int b_mutex_unlock(void *g)  { tl_hp_bump(TL_HP_MUTEX_UNLOCK); if (mutex_trace()) ((uint64_t *)g)[2] = 0; return rc(pthread_mutex_unlock(obj_host(g, make_mutex))); }
 
 static int b_mutexattr_init(long *a)    { *a = 0; return 0; }
 static int b_mutexattr_destroy(long *a) { (void)a; return 0; }
@@ -169,6 +170,7 @@ static int b_cond_signal(void *g)    { return rc(pthread_cond_signal(obj_host(g,
 static int b_cond_broadcast(void *g) { return rc(pthread_cond_broadcast(obj_host(g, make_cond))); }
 static int b_cond_wait(void *g, void *m)
 {
+    tl_hp_bump(TL_HP_COND_WAIT);
     return rc(pthread_cond_wait(obj_host(g, make_cond), obj_host(m, make_mutex)));
 }
 

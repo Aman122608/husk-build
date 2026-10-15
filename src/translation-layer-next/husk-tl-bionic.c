@@ -102,6 +102,18 @@ void tl_note_once(const char *what)
     tl_log_line("bionic: %s", what);
 }
 
+/* ------------------------------------------------------------------ hot-path counters */
+
+volatile unsigned long tl_hp_count[TL_HP_N];
+
+static const char *const k_hp_name[TL_HP_N] = {
+    "clock_gettime", "gettimeofday", "read", "pread64",
+    "fstat", "fstatat", "open", "mmap",
+    "mutex_lock", "mutex_unlock", "cond_wait"
+};
+
+const char *tl_hp_name(int which) { return (which >= 0 && which < TL_HP_N) ? k_hp_name[which] : "?"; }
+
 /* ------------------------------------------------------------ properties */
 
 static const struct { const char *k, *v; } k_props[] = {

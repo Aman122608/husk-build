@@ -113,6 +113,26 @@ void tl_log_line(const char *fmt, ...);
 /* A one-line note, once per distinct text, for things that are stubbed. */
 void tl_note_once(const char *what);
 
+/* ------------------------------------------------------------- hot-path counters
+ *
+ * One relaxed atomic tally per intercepted call that runs per frame, so "which shim is hot" is a NUMBER and not a guess:
+ * the log does not print a line per fstat/clock_gettime/read, and a per-call log line would cost more than the call. The
+ * bump is a lock-free, allocation-free relaxed atomic add at the TOP of each wrapping entry point; the totals are read by
+ * the periodic perf summary (husk-tl-unity-app.c) once per N seconds and once at session close -- never per event. */
+enum {
+    TL_HP_CLOCK_GETTIME = 0, TL_HP_GETTIMEOFDAY, TL_HP_READ, TL_HP_PREAD64,
+    TL_HP_FSTAT, TL_HP_FSTATAT, TL_HP_OPEN, TL_HP_MMAP,
+    TL_HP_MUTEX_LOCK, TL_HP_MUTEX_UNLOCK, TL_HP_COND_WAIT,
+    TL_HP_N
+};
+extern volatile unsigned long tl_hp_count[TL_HP_N];
+const char *tl_hp_name(int which);
+static inline void tl_hp_bump(int which)
+{
+    if (which >= 0 && which < TL_HP_N)
+        __atomic_fetch_add(&tl_hp_count[which], 1ul, __ATOMIC_RELAXED);
+}
+
 /* How many guest threads the pthread shim has started and that have not returned: what a session close reports it could
  * not stop. A close never ends or joins one -- cancelling a thread that ran guest code runs its TLS destructors. */
 int tl_guest_thread_live_count(void);
