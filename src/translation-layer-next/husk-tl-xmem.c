@@ -30,6 +30,10 @@ static void xmem_report_open(void);
 /* The guarded write-then-execute, defined beside the other mach probes far below; declared here so
  * the StikDebug path's adopt_exec_view (just above open_platform) can be written before it. */
 static bool xmem_writable_fetches(uintptr_t at, int *stage);
+/* The codewrite store-fault guard, which services a store into the executable view one page at a
+ * time in the W^X fallback. Declared weak so this file still links without husk-tl-codewrite.c
+ * (tools/a32/step0_xmem.c), where the fallback cannot engage and the open line says so. */
+extern bool tl_codewrite_enabled(void) __attribute__((weak));
 #endif
 
 static struct {
@@ -50,8 +54,22 @@ static struct {
      * everywhere the guest has a genuinely RWX address of its own (Fix A, or the StikDebug
      * executable view proven RWX). */
     bool wx_fallback;
+    /* The WRITABLE view the layer emits its OWN bytes through: library images, stubs, and the
+     * codewrite/kernel-write mirror. It is the same as g_x.rw everywhere the guest-facing view is
+     * itself writable (Fix A, the own arena, the plain two-view fallback). In the W^X fallback the
+     * guest-facing view is the EXECUTABLE one and is RX, so this is the debugger's writable vm_remap
+     * instead -- the loader still writes every library image through a genuinely writable address,
+     * and tl_xmem_delta() (writable view - executable view) is what the adrp retarget and the mirror
+     * use to reach it. NULL means "the same as g_x.rw". */
+    uint8_t *wrw;
     pthread_mutex_t lock;
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
+
+/* The view the layer WRITES through. Everything that mirrors a guest/executable address to a
+ * writable one -- the loader's bulk emission (tl_xmem_alloc), the codewrite redirect (tl_xmem_delta)
+ * and the kernel-write redirect (kernel_dst) -- goes through this, never through g_x.rw directly,
+ * because in the W^X fallback g_x.rw is the EXECUTABLE (read-only) view. */
+static uint8_t *xmem_writable_view(void) { return g_x.wrw ? g_x.wrw : g_x.rw; }
 
 /* Set while building the translation layer's OWN arena: make_views then adopts ONLY the order
  * where the guest-facing view is the mapping that carries the JIT authorisation (the address the
@@ -313,12 +331,13 @@ static bool adopt_alias(vm_address_t a, uintptr_t rx, size_t size, const char *h
     kern_return_t kr = vm_protect(mach_task_self(), a, size, FALSE, VM_PROT_READ | VM_PROT_WRITE);
     if (kr != KERN_SUCCESS) { tl_log_line("xmem: %s alias at %p: vm_protect rw failed (%d)", how, (void *)a, kr); vm_deallocate(mach_task_self(), a, size); return false; }
     tl_log_line("xmem: the writable view was %td MiB from the executable one; a new one (%s) at %p is %td MiB from it", was >> 20, how, (void *)a, (ptrdiff_t)(a - rx) >> 20);
-    g_x.rw = (uint8_t *)a;
+    if (g_x.wrw) g_x.wrw = (uint8_t *)a;   /* the W^X fallback's twin, when the guest holds the RX view */
+    else g_x.rw = (uint8_t *)a;
     return true;
 }
 static void near_alias(void)
 {
-    ptrdiff_t d = g_x.rw - g_x.rx;
+    ptrdiff_t d = xmem_writable_view() - g_x.rx;
     if (d < ((ptrdiff_t)2 << 30) && d > -((ptrdiff_t)2 << 30)) return;
     const uintptr_t step = 16u << 20, reach = (uintptr_t)2 << 30, rx = (uintptr_t)g_x.rx, size = g_x.size;
     task_t me = mach_task_self();
@@ -383,6 +402,7 @@ static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen);
  * view the guest addresses (make_views), and whichever is taken is named in one line. */
 static bool open_platform(size_t host_bytes, char *err, size_t errlen)
 {
+    g_x.wrw = NULL;                    /* "writable view == g_x.rw"; the W^X fallback below sets it */
     tl_dual_mapping *m = tl_find_stikdebug_prewarmed();
 
     /* 1. The layer's own arena first: the address the guest both writes and executes, in a mapping the app owns. */
@@ -429,21 +449,42 @@ static bool open_platform(size_t host_bytes, char *err, size_t errlen)
             return true;
         }
         /* The executable view could not be HELD writable-and-executable: its store (or its fetch)
-         * faulted -- iOS keeps W^X. The guest is still handed the executable view (it is the one
-         * that fetches), but as RX: a store into it is serviced by the codewrite guard, which flips
-         * the one page writable for the store and back to executable for the fetch, at the mmap
-         * level (tl_xmem_wx_fallback, tl_xmem_page_set_writable/executable). The loader keeps its
-         * own writable view (the vm_remap) for bulk emission, so no library image is faulted in
-         * page by page. */
-        g_x.rx = m->rx_addr;
-        g_x.rw = m->rw_addr;
+         * faulted -- iOS keeps W^X. The guest is handed the EXECUTABLE view as its ONE arena address
+         * (the view whose generated code provably ran at boot); because that view is RX, a store into
+         * it is serviced one page at a time by the codewrite guard. The debugger's writable vm_remap
+         * is kept, but ONLY as the twin the layer emits library images and codewrite mirrors through
+         * (g_x.wrw) -- never as the view the guest holds. The old code contradicted its own
+         * declaration here: it reported handing over the executable view while setting g_x.rw (the
+         * guest-facing view) to that vm_remap, which is exactly the alias iOS will not fetch. */
+        g_x.rx = m->rx_addr;             /* guest code executes here, and this is the guest's arena */
+        g_x.rw = m->rx_addr;             /* the ONE address the guest both writes and executes (RX) */
+        g_x.wrw = m->rw_addr;            /* the writable twin: the layer's bulk emission (vm_remap) */
         g_x.size = m->size;
-        g_x.guest_view_jit = false;
+        g_x.guest_view_jit = false;      /* it is RX, not an authorised-RWX view */
         g_x.wx_fallback = true;
-        g_x.route = "vm_remap (W^X fallback: the executable view is RX; stores into it are serviced one page at a time)";
-        near_alias();
-        tl_log_line("xmem: open: StikDebug's prewarmed region -- the EXECUTABLE view %p could NOT be made writable in place (%s); keeping the two-view order (rx %p rw %p size %zu MiB, delta %td) and servicing a guest store into the executable view in the JIT guard, one page at a time",
-                    (void *)m->rx_addr, why[0] ? why : "refused", (void *)g_x.rx, (void *)g_x.rw, g_x.size >> 20, tl_xmem_delta());
+        g_x.route = "the executable view, handed to the guest as RX (W^X fallback: stores into it are serviced one page at a time; the layer emits through the writable twin)";
+        near_alias();                    /* keep the writable twin within adrp range of the executable view */
+        {
+            /* adrp, which the loader uses to retarget guest code at the writable view, reaches +-4 GiB. */
+            ptrdiff_t d = (ptrdiff_t)(g_x.wrw - g_x.rx);
+            if (d > ((ptrdiff_t)3 << 30) || d < -((ptrdiff_t)3 << 30))
+                tl_log_line("xmem: the writable twin %p is %td MiB from the executable view: too far for the loader's adrp", (void *)g_x.wrw, d >> 20);
+        }
+        tl_log_line("xmem: open: StikDebug's prewarmed region -- the EXECUTABLE view %p could NOT be made writable in place (%s); the guest is handed THAT view as its one arena address (RX), the layer emits through the writable twin %p (delta %td), and a guest store into the arena is serviced in the JIT guard, one page at a time",
+                    (void *)m->rx_addr, why[0] ? why : "refused", (void *)g_x.wrw, tl_xmem_delta());
+        /* The other fact the log stated about the vm_remap and now must not: that it "names RWX", yet
+         * fetching it faults. Reconcile it here, once, so the arena lines are consistent. */
+        tl_log_line("xmem: W^X fallback: the writable twin %p is a vm_remap of the same pages; it can be vm_protected to NAME RWX (its max is the debugger's 7), yet a fetch there faults -- iOS authorises execute per mapping ENTRY and an alias never inherits the debugger's blessing, so the protection field says RWX while the pmap publishes no fetchable PTE. That is why the twin is NOT the guest's arena and why 'names RWX' and 'will not fetch' were both true of the same address",
+                    (void *)g_x.wrw);
+        /* Whether the store service can engage at all: the JIT guard must be armed for this engine. A
+         * guard that was never enabled cannot service any store, and the guest's first store into the
+         * arena would fault instead of being carried through the writable twin. Say which, here. */
+        {
+            const char *guard = !tl_codewrite_enabled ? "UNKNOWN (the codewrite module is not linked here)"
+                              : tl_codewrite_enabled() ? "ARMED"
+                                                       : "NOT ARMED -- tl_codewrite_enable() has not run for this engine, so a store into the executable view will FAULT, not be serviced";
+            tl_log_line("xmem: W^X fallback: the JIT guard for stores into the executable view is %s", guard);
+        }
         return true;
     }
     /* Reached only if tl_find_stikdebug_prewarmed changed its mind between the two calls. */
@@ -512,7 +553,7 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
     pthread_mutex_lock(&g_x.lock);
     if (g_x.open && n <= g_x.size - g_x.used) {
         if (rx) *rx = g_x.rx + g_x.used;
-        if (rw) *rw = g_x.rw + g_x.used;
+        if (rw) *rw = xmem_writable_view() + g_x.used;
         g_x.used += n;
         ok = true;
     }
@@ -520,24 +561,27 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
     return ok;
 }
 
-ptrdiff_t tl_xmem_delta(void) { return g_x.rw - g_x.rx; }
+ptrdiff_t tl_xmem_delta(void) { return xmem_writable_view() - g_x.rx; }
 bool tl_xmem_near(const void *p, size_t dist)
 {
     if (!g_x.open || !p) return false;
     /* Two views of one set of pages, and in the Fix A order the guest-facing one is the LOWER address,
      * so the span is taken from the two views rather than assumed to start at rx. */
     uintptr_t a = (uintptr_t)p, lo = (uintptr_t)g_x.rx, hi = lo + g_x.size;
-    uintptr_t rwb = (uintptr_t)g_x.rw;
-    if (rwb < lo) lo = rwb;
-    if (rwb + g_x.size > hi) hi = rwb + g_x.size;
+    uintptr_t views[2] = { (uintptr_t)g_x.rw, (uintptr_t)xmem_writable_view() };
+    for (int i = 0; i < 2; i++) {
+        if (views[i] < lo) lo = views[i];
+        if (views[i] + g_x.size > hi) hi = views[i] + g_x.size;
+    }
     return a + dist >= lo && a <= hi + dist;
 }
 
 bool tl_xmem_contains(const void *p)
 {
-    const uint8_t *b = p;
+    const uint8_t *b = p, *w = xmem_writable_view();
     return g_x.open && ((b >= g_x.rx && b < g_x.rx + g_x.size)
-                     || (b >= g_x.rw && b < g_x.rw + g_x.size));
+                     || (b >= g_x.rw && b < g_x.rw + g_x.size)
+                     || (b >= w && b < w + g_x.size));
 }
 
 bool tl_xmem_is_rx(const void *p)
@@ -620,11 +664,11 @@ static xmem_entry xmem_probe_entry(uintptr_t p)
  * call happens in execute mode -- the two states a guest's arena passes through as it writes and then
  * runs its own trampoline.
  */
-static bool xmem_writable_fetches(uintptr_t at, int *stage)
+static bool xmem_write_fetch(uintptr_t write_at, uintptr_t fetch_at, int *stage)
 {
     static const uint32_t code[2] = { 0x528B4B40u, 0xD65F03C0u };   /* movz w0, #0x5a5a ; ret */
     uint32_t saved[2];
-    memcpy(saved, (const void *)at, sizeof(saved));
+    memcpy(saved, (const void *)write_at, sizeof(saved));
     struct sigaction sa, ob, os, oi;
     memset(&sa, 0, sizeof(sa)); sa.sa_sigaction = self_fault_info; sa.sa_flags = SA_SIGINFO; sigemptyset(&sa.sa_mask);
     sigaction(SIGBUS, &sa, &ob); sigaction(SIGSEGV, &sa, &os); sigaction(SIGILL, &sa, &oi);
@@ -634,12 +678,12 @@ static bool xmem_writable_fetches(uintptr_t at, int *stage)
     g_self_stage = 0;
     if (sigsetjmp(g_self_jump, 1) == 0) {
         xmem_write_mode(true);
-        g_self_stage = 1;                                    /* the store into the guest's address */
-        memcpy((void *)at, code, sizeof(code));
+        g_self_stage = 1;                                    /* the store into the write view */
+        memcpy((void *)write_at, code, sizeof(code));
         g_self_stage = 2;                                    /* the fetch of what was stored */
         xmem_write_mode(false);
-        sys_icache_invalidate((void *)at, sizeof(code));
-        ok = ((int (*)(void))(void *)at)() == 0x5a5a;
+        sys_icache_invalidate((void *)fetch_at, sizeof(code));
+        ok = ((int (*)(void))(void *)fetch_at)() == 0x5a5a;
     }
     g_self_running = 0;
     sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
@@ -649,12 +693,19 @@ static bool xmem_writable_fetches(uintptr_t at, int *stage)
      * restore. */
     if (g_self_stage != 1) {
         xmem_write_mode(true);
-        memcpy((void *)at, saved, sizeof(saved));
+        memcpy((void *)write_at, saved, sizeof(saved));
         xmem_write_mode(false);
-        sys_icache_invalidate((void *)at, sizeof(saved));
+        sys_icache_invalidate((void *)write_at, sizeof(saved));
     }
     if (stage) *stage = (int)g_self_stage;
     return ok;
+}
+
+/* Write the stub at `at` and call it at `at` (the same view named twice): the question a single
+ * address answers, when that address is the one the guest both writes and executes. */
+static bool xmem_writable_fetches(uintptr_t at, int *stage)
+{
+    return xmem_write_fetch(at, at, stage);
 }
 
 #if defined(__APPLE__) && !TARGET_OS_OSX
@@ -719,6 +770,7 @@ static bool adopt_exec_view(tl_dual_mapping *m, char *err, size_t errlen)
     g_x.size = m->size;
     g_x.guest_view_jit = true;      /* the guest-facing view carries the authorisation: it is RWX */
     g_x.wx_fallback = false;
+    g_x.wrw = NULL;                 /* the guest-facing view is writable in place: no separate twin */
     g_x.route = "the executable view, made RWX in place";
     return true;
 }
@@ -760,6 +812,16 @@ static void xmem_report_region(void)
                 (gaps || noexec || a < end)
                     ? "a fetch in an unmapped or non-executable entry is a requestless fault, not a permission the guest asked for"
                     : "the whole arena is mapped and executable");
+    /* Reconcile the walk's own contradiction, so the next run is not read wrong. The walk reports the
+     * kernel's PROTECTION FIELD; on this device family execute is granted per defining mapping entry
+     * (the debugger's blessing), NOT by that field, and the boot selftest executed generated code at
+     * this view's first page -- so "0 MiB executable / NOT EXECUTABLE" is what the kernel names, not
+     * proof the view cannot run. The guarded fetch printed next is the verdict. */
+    if (execut == 0)
+        tl_log_line("xmem: the walk above names NO execute anywhere in the executable view, yet the boot selftest ran generated code at this view's first page -- so 'non-executable' here is the protection field lying, not the pmap. On this region execute comes from the debugger's per-entry grant; the guarded write-then-execute below, aimed at the view the guest holds, is the only verdict");
+    if (g_x.wx_fallback)
+        tl_log_line("xmem: the guest-facing view is the EXECUTABLE view %p (RX); the layer writes through the writable twin %p (delta %td). 'resident but not executable' entries above are the executable view's own entries -- the field, not a second view",
+                    (void *)g_x.rw, (void *)g_x.wrw, (ptrdiff_t)(g_x.wrw - g_x.rx));
 }
 
 /*
@@ -772,6 +834,24 @@ static void xmem_probe_guest_view(void)
 {
     uintptr_t at = (uintptr_t)g_x.rw;
     xmem_entry e = xmem_probe_entry(at);
+    if (g_x.wx_fallback) {
+        /* The guest's view is the EXECUTABLE one and is RX, so a store into it faults (that is what
+         * the codewrite guard exists to service). The question "does the guest's view FETCH" is
+         * therefore answered the way the boot selftest answered it: write the stub through the
+         * WRITABLE TWIN and call it at the guest's address. This is the decisive measurement -- if it
+         * faults on the fetch, the executable view names no execute and will not run, and no store
+         * service can change that: the fetch itself is what iOS is refusing. */
+        int stage = 0;
+        bool f = xmem_write_fetch((uintptr_t)xmem_writable_view(), at, &stage);
+        tl_log_line("xmem: guest-facing view %p IS the EXECUTABLE view (RX): read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write through the writable twin %p then call at %p %s",
+                    (void *)at, e.kr == KERN_SUCCESS ? "ok" : "FAILED",
+                    (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
+                    (void *)xmem_writable_view(), (void *)at,
+                    f ? "RAN -- the executable view is genuinely executable here, so the guest's arena will run; a store into it is serviced by the JIT guard, one page at a time"
+                      : stage == 1 ? "FAULTED writing the writable twin (unexpected: the twin should be writable)"
+                                   : "FAULTED ON THE FETCH -- the executable view names no execute and will not run: iOS is refusing write-and-execute JIT on this device, and the store service cannot help because the FETCH is what is refused");
+        return;
+    }
     int stage = 0;
     bool f = xmem_writable_fetches(at, &stage);
     tl_log_line("xmem: guest-facing view %p: read-back %s (entry %p..%p prot %d max %d depth %u tag %u), guarded write-then-execute %s%s", 
@@ -833,8 +913,15 @@ bool tl_xmem_allow_exec(void *p, size_t n)
     static int no_rw_exec = -1;
     if (no_rw_exec < 0) no_rw_exec = getenv("TL_NO_XMEM_RW_EXEC") ? 1 : 0;
     if (no_rw_exec || !g_x.open || !p) return false;
-    uintptr_t a = (uintptr_t)p, base = (uintptr_t)g_x.rw, end = base + g_x.size;
-    if (a < base || a >= end) return false;
+    /* The guest can name either view: the guest-facing view (g_x.rw), or -- in the W^X fallback,
+     * where g_x.rw IS the executable view -- the writable twin a guest JIT derives an address from.
+     * Accept either, and work on the one it actually named. */
+    uintptr_t a = (uintptr_t)p;
+    uintptr_t rwbase = (uintptr_t)g_x.rw, wbase = (uintptr_t)xmem_writable_view();
+    bool in_rw = a >= rwbase && a < rwbase + g_x.size;
+    bool in_w  = a >= wbase  && a < wbase  + g_x.size;
+    if (!in_rw && !in_w) return false;
+    uintptr_t base = in_rw ? rwbase : wbase, end = base + g_x.size;
     uintptr_t page = a & ~(uintptr_t)(TL_XMEM_PAGE - 1);
     uintptr_t last = (a + n + TL_XMEM_PAGE - 1) & ~(uintptr_t)(TL_XMEM_PAGE - 1);
     if (last > end) last = end;

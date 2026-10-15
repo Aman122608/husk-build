@@ -77,16 +77,27 @@ static bool put(uint64_t addr, const void *value, unsigned bytes)
          * fetch at this same address then finds the byte it wrote. If the kernel refuses the flip,
          * do NOT attempt the store: a second fault inside the handler would end the process. */
         if (tl_xmem_wx_fallback()) {
-            bool w_ok = tl_xmem_page_set_writable((void *)addr, bytes);
-            if (w_ok) {
-                static int said;
-                if (said++ < 4)
-                    tl_log_line("husk: W^X fallback: store into the executable view at %p (%u bytes) serviced in place -- the page was made writable for the store and executable again for the fetch (the guest writes and fetches at this one address)", (void *)addr, bytes);
-                memcpy((void *)addr, value, bytes);
-                tl_xmem_page_set_executable((void *)addr, bytes);
-                tl_xmem_flush((const void *)addr, bytes);
+            /* The fallback's whole dependency: the one page is made writable for the store and
+             * executable again for the fetch, at the mmap level. The log must never be silent about
+             * which half engaged and which (if either) the kernel refused -- that silence is exactly
+             * what hid this path in the last run. */
+            if (!tl_xmem_page_set_writable((void *)addr, bytes)) {
+                static int said_w;
+                if (said_w++ < 4)
+                    tl_log_line("husk: W^X fallback: store into the executable view at %p (%u bytes) REFUSED -- vm_protect(RW) on the page was refused, so the store is NOT attempted (a second fault inside this handler would end the process); the guest's arena cannot be written here",
+                                (void *)addr, bytes);
+                return false;
             }
-            return w_ok;
+            memcpy((void *)addr, value, bytes);
+            bool x_ok = tl_xmem_page_set_executable((void *)addr, bytes);
+            static int said;
+            if (said++ < 4)
+                tl_log_line("husk: W^X fallback: store into the executable view at %p (%u bytes) serviced in place -- the page was made writable for the store and %s (the guest writes and fetches at this one address)",
+                            (void *)addr, bytes,
+                            x_ok ? "executable again for the fetch"
+                                 : "NOT made executable again -- vm_protect(RX) was refused, so the guest's next fetch at this page will fault");
+            tl_xmem_flush((const void *)addr, bytes);
+            return true;
         }
         tl_xmem_emit_begin();
         memcpy((void *)(addr + (uint64_t)tl_xmem_delta()), value, bytes);

@@ -107,11 +107,21 @@ bool tl_xmem_allow_exec(void *p, size_t n);
 bool tl_xmem_guest_view_is_jit(void);
 
 /*
- * True only in the W^X FALLBACK: the guest was handed the executable view, but that view could not
+ * True only in the W^X FALLBACK: the guest was handed the EXECUTABLE view but that view could not
  * be HELD writable-and-executable in place (iOS enforces W^X -- the open-time guarded store faulted),
  * so a store into it is serviced one page at a time by the codewrite guard
  * (tl_xmem_page_set_writable / tl_xmem_page_set_executable). False wherever the guest has a genuinely
  * RWX address of its own. Fixed once at open; valid after tl_xmem_open succeeds.
+ *
+ * When true, tl_xmem_guest_view_is_jit() is false and the guest-facing view (g_x.rw, the address the
+ * loader hands the guest and the one tl_xmem_allow_exec and the reports speak about) IS the
+ * executable view, as RX -- it is the view whose generated code provably ran at boot, not the
+ * writable vm_remap alias iOS will not fetch. The layer still WRITES through the debugger's writable
+ * twin (the vm_remap): tl_xmem_alloc hands it back as *rw and tl_xmem_delta() is that twin minus the
+ * executable view, so the loader's bulk emission, the codewrite redirect and the kernel-write
+ * redirect all keep working without faulting a library image in page by page. tl_xmem_alloc's *rw
+ * therefore stays a genuinely writable address even though the guest's own arena address (g_x.rw) is
+ * read-only-to-the-kernel.
  */
 bool tl_xmem_wx_fallback(void);
 
