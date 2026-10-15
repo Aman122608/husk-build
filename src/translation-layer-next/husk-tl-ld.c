@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
+#define _DARWIN_C_SOURCE
 #include "husk-tl-ld.h"
 
+#include <dlfcn.h>
 #include <errno.h>
 #include <libkern/OSCacheControl.h>
 #include <pthread.h>
@@ -451,6 +453,96 @@ static bool is_cxx_runtime_symbol(const char *name)
     return false;
 }
 
+/*
+ * The C++ unwinder. The guest's libc++ throws the Itanium way: it calls _Unwind_RaiseException, and the
+ * personality routine named in every frame's .eh_frame calls the _Unwind_* accessors (GetIP, SetIP, SetGR,
+ * GetLanguageSpecificData, GetRegionStart) to find and enter a catch. On a phone these come from
+ * libunwind.so, which bionic's libc pulls in. On Darwin the SAME unwinder is already in the process -- iOS
+ * ships libunwind because Objective-C exceptions need it -- but it is exported under Darwin's own spelling:
+ * the Itanium ABI's function is `_Unwind_RaiseException`, and Darwin's C export of that name carries one
+ * more leading underscore. So the guest's name is not necessarily the host's name, and the lookup has to
+ * probe both and take what dlsym actually returns, not what we assume.
+ *
+ * A stub is not an option here. The logging stub a missing import otherwise gets RETURNS: libc++ would call
+ * it, get its zero back, and go on to walk a frame the unwinder never built. The throw then becomes a
+ * corrupted unwind and a fault inside libc++ far from the cause -- which is exactly the `blr x8` to a
+ * computed target that killed this run (pc == x8 == the fault address, libc++.so+0x7ec4c). So an unwinder
+ * symbol is either bound to the host's real one or refused, loudly, by name.
+ */
+static const char *const k_unwind_names[] = {
+    "_Unwind_RaiseException", "_Unwind_DeleteException", "_Unwind_Resume", "_Unwind_SetGR",
+    "_Unwind_SetIP", "_Unwind_GetIP", "_Unwind_GetLanguageSpecificData", "_Unwind_GetRegionStart", NULL
+};
+static void *g_unwind_real[8];
+static void *g_unwind_raise, *g_unwind_resume;
+
+static bool is_unwind_symbol(const char *name)
+{
+    for (int i = 0; k_unwind_names[i]; i++) if (!strcmp(name, k_unwind_names[i])) return true;
+    return false;
+}
+static int unwind_index(const char *name)
+{
+    for (int i = 0; k_unwind_names[i]; i++) if (!strcmp(name, k_unwind_names[i])) return i;
+    return -1;
+}
+
+/* Ask the host for the unwinder under the guest's spelling and, failing that, under Darwin's own (an extra
+ * leading underscore). dladdr says which image it came from, so the next log states plainly whether the
+ * unwinder is real and where it lives. A miss is logged too; bind_symbol turns it into a refusal, not a stub. */
+static void *unwind_host_lookup(int idx)
+{
+    if (idx < 0 || idx >= 8) return NULL;
+    const char *name = k_unwind_names[idx];
+    if (g_unwind_real[idx]) return g_unwind_real[idx];
+    void *a = dlsym(RTLD_DEFAULT, name);
+    const char *how = a ? name : NULL;
+    if (!a) {
+        char alt[80];
+        snprintf(alt, sizeof(alt), "_%s", name);      /* Darwin's export of the Itanium name */
+        a = dlsym(RTLD_DEFAULT, alt);
+        if (a) how = alt;
+    }
+    if (a) {
+        Dl_info di;
+        const char *lib = (dladdr(a, &di) && di.dli_fname && di.dli_fname[0]) ? di.dli_fname : "the host process";
+        tl_log_line("unwind: %s is REAL -- bound as %s from %s (%p)", name, how, lib, a);
+        g_unwind_real[idx] = a;
+    } else {
+        tl_log_line("unwind: %s is NOT on this host (tried %s and _%s)", name, name, name);
+    }
+    return a;
+}
+
+/* _Unwind_RaiseException is where a throw enters the unwinder: a thin shim logs that it did, once, then
+ * calls the real one, so the ABI (same argument, same _Unwind_Reason_Code return) is untouched. */
+static int unwind_raise_shim(void *exc)
+{
+    static int said;
+    if (!said++) tl_log_line("unwind: a C++ throw reached the unwinder (_Unwind_RaiseException) -- the unwinder is real and running");
+    return ((int (*)(void *))g_unwind_raise)(exc);
+}
+/* _Unwind_Resume never returns: a frame that did not accept the exception resumes it into the frame below. */
+static void unwind_resume_shim(void *exc)
+{
+    static int said;
+    if (!said++) tl_log_line("unwind: _Unwind_Resume reached the unwinder -- the unwinder is real and running");
+    ((void (*)(void *))g_unwind_resume)(exc);
+    abort();   /* unreachable: the real Resume unwinds away or aborts; this shim must not fall through */
+}
+
+/* The address a guest `_Unwind_*` import binds to, or NULL when the host has no such unwinder. */
+static void *unwind_bind(const char *name)
+{
+    int idx = unwind_index(name);
+    if (idx < 0) return NULL;
+    void *real = unwind_host_lookup(idx);
+    if (!real) return NULL;
+    if (!strcmp(name, "_Unwind_RaiseException")) { g_unwind_raise = real; return (void *)unwind_raise_shim; }
+    if (!strcmp(name, "_Unwind_Resume")) { g_unwind_resume = real; return (void *)unwind_resume_shim; }
+    return real;
+}
+
 static void *lookup_for(tl_lib *L, const char *name, bool *weak_hit)
 {
     (void)weak_hit;
@@ -469,6 +561,10 @@ static void *lookup_for(tl_lib *L, const char *name, bool *weak_hit)
         s = lib_find(L->deps[i], name);
         if (s && (s->st_info & 0xf) != STT_GNU_IFUNC_) return sym_value(L->deps[i], s);
     }
+    /* The C++ unwinder is not any guest library's here: it is the host's, under a name Darwin spells with an
+     * extra underscore. Only for _Unwind_*, so nothing else starts resolving out of the host's namespace, which
+     * the bionic tables exist to stop. */
+    if (is_unwind_symbol(name)) return unwind_bind(name);
     return tl_bionic_find(name);
 }
 
@@ -1362,6 +1458,13 @@ static uint64_t bind_symbol(tl_lib *L, uint32_t symidx, bool *failed)
             val = (uint64_t)(uintptr_t)a;
         } else if ((s->st_info >> 4) == STB_WEAK_) {
             val = 0;
+        } else if (is_unwind_symbol(name)) {
+            /* Nothing resolved the guest's unwinder. A returning stub is the bus error -- libc++ would walk a
+             * frame the unwinder never built -- so refuse here, by name, rather than hand one back. The load of
+             * this library then fails (relocation failed), which is loud and local instead of a fault inside
+             * libc++ with no cause; no C++ exception in the app could unwind either way, so nothing is lost. */
+            tl_log_line("ld: %s: FATAL: the C++ unwinder symbol %s cannot be resolved on this host; refusing to bind a returning stub", L->name, name);
+            *failed = true; return 0;
         } else {
             void *stub = make_stub(name);
             if (!stub) { *failed = true; return 0; }
