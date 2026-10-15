@@ -518,3 +518,82 @@ block), `()` 762/762, `[]` 45/45; 21 format specifiers match 21 arguments. No in
 `vm_protect` on the region, the executable view is never written (the stub goes through the writable
 view and its bytes are put back), nothing unmapped, no thread ended, the honest refusal unchanged.
 
+---
+
+## The same three verdicts re-taken on the FATAL path (`fault-is-not-permission` follow-up)
+
+The open-time probe above measured ONE page ONCE at arena open. Its own conclusion named what that
+cannot see: a page that reads and executes at open can still be the page the guest dies on ~12 s
+later if it loses its **backing** or its **execute grant** in between (a later `vm_protect`, a
+debugger-detach costing the per-entry grant, a jetsam/CoW event). A fixed open-time probe is blind to
+a **transient**. This build re-takes the SAME three verdicts on the page the guest ACTUALLY faulted
+on, and prints whether they still match.
+
+### How it is wired (and why it is safe)
+
+- `tl_xmem_note_guest_fault(reason, pc)` — the crash reporter's guest-fault path
+  (`husk-tl-unity-app.c`, `on_fatal`) — now also **records the fault address** into the xmem module
+  (`g_fault_addr`/`g_fault_have`/`g_fault_reported`). That is ALL the handler does: a plain store, no
+  mach probe, and **never** a `sigsetjmp` guard for the signal being handled (installing a guard and
+  longjmping out of a handler for the signal already being handled is re-entrancy risk).
+- The three verdicts are taken **later**, ONCE per fault, by the new
+  `tl_xmem_report_fault_time()` (husk-tl-xmem.c), called from `husk_tl_session_close()` on the
+  **normal thread** that runs the app-fault/session-close path — after the handler has returned and
+  only the faulting thread has ended. Nothing the layer does unmaps the arena, so the pages are still
+  there; only `g_x.open` is required. An ordinary close (no recorded fault) is a no-op.
+- The measurement body is **factored, not duplicated**: one helper
+  `xmem_take_three(offset, &t)` does the guarded READ through the executable view, the guarded READ
+  through the writable view, and the guarded CALL of the movz/ret stub, and classifies the page. The
+  open-time probe (`xmem_probe_fault_offset`, which keeps the named constant `TL_XMEM_FAULT_OFFSET`)
+  and the fatal-time probe both call it, with the offset as the parameter, so a page is never judged
+  by two different pieces of code. The open-time probe records its verdict so the fatal-time line can
+  compare against it.
+- **Safe to run at fatal time — yes.** It runs on a normal thread, not in a handler; it issues no
+  `vm_protect`, never writes the executable view (the stub goes through the writable twin and its
+  bytes are put back), unmaps nothing, ends no thread, and the CALL is taken only if the writable
+  view could READ the page (xmem_write_fetch saves the guest's bytes with an unguarded read before it
+  arms the guard, so it is not called on a page that view cannot read). A fault inside the guards is
+  caught, not fatal.
+
+### The exact fatal-time line
+
+```
+husk: FATAL-TIME arena page verdicts (taken ONCE per fault, on this normal thread -- NOT in the crash reporter's signal handler, so no sigsetjmp guard is installed for the signal being handled): fault address %p, offset +%#lx from the arena base %p; the page's entry %p..%p prot %d max %d depth %u tag %u -- the SAME fields the fatal report line prints; and the three verdicts on this ONE page: guarded READ through the EXECUTABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded READ through the WRITABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded CALL of a movz/ret stub there (written through the writable view %p, flushed, called at the executable view %p) -> %s; VS the open-time verdicts at arena open (offset +%#lx): %s; no vm_protect was issued, the executable view was not written, nothing was unmapped and no thread was ended
+```
+
+For `robot gf`'s known fault it fills in as, for example (addresses are this run's):
+
+```
+husk: FATAL-TIME arena page verdicts (taken ONCE per fault, on this normal thread -- NOT in the crash reporter's signal handler, so no sigsetjmp guard is installed for the signal being handled): fault address 0x123e51b90, offset +0xb589b90 from the arena base 0x1188c8000; the page's entry 0x123e50000..0x123e54000 prot 5 max 7 depth 0 tag 0 -- the SAME fields the fatal report line prints; and the three verdicts on this ONE page: guarded READ through the EXECUTABLE view 0x123e51b90 -> READ -- ... ; guarded READ through the WRITABLE view 0x143e51b90 -> READ -- ... ; guarded CALL of a movz/ret stub there (...) -> RAN -- ... ; VS the open-time verdicts at arena open (offset +0xb589b90): MATCH -- the fatal-time verdicts are the SAME as the open-time ones seen at arena open (both say READABLE-AND-EXECUTABLE (all three verdicts ok)), so the page lost NOTHING between arena open and this fatal access; no vm_protect was issued, the executable view was not written, nothing was unmapped and no thread was ended
+```
+
+### How to read the final clause (the whole point)
+
+The last `%s` before the invariants is one of:
+
+- **`MATCH -- the fatal-time verdicts are the SAME as the open-time ones ... (both say <class>)`** —
+  the page reads and (if the CALL ran) executes exactly as it did at arena open. Backing and execute
+  were **not** lost between open and the fatal access, so the crash is NOT a transient at this page;
+  the open-time verdict for this page stands and the cause is elsewhere (the access type/size, or a
+  different page reached by a different address).
+- **`DIFFER -- THIS IS THE TRANSIENT: at arena open the page was <class A>, at this fatal access it
+  is <class B> ...`** — the page changed between arena open and the fatal access. This is the
+  valuable case: the page lost its **backing** (`READABLE-AND-EXECUTABLE`/`READABLE-NOT-EXECUTABLE`
+  at open, `UNBACKED` at the fault), or lost its **execute grant** (`READABLE-AND-EXECUTABLE` at
+  open, `READABLE-NOT-EXECUTABLE` at the fault), with no `vm_protect` issued by the layer. The named
+  classes in the line say which, so a human does not diff two log lines.
+- **`NOT COMPARABLE -- ... this fault is at offset +<x>, so they are DIFFERENT pages ...`** — the
+  open-time probe measured the fixed offset `TL_XMEM_FAULT_OFFSET`; this fault is at a different
+  offset, so the open-time verdicts do not apply to this page. (Also printed if the recorded address
+  is somehow outside the arena.) This is not a failure of the probe: it says plainly that there is
+  nothing to compare against, rather than implying a match.
+
+The page's classification is one of **`UNBACKED`** (both reads faulted), **`READABLE-NOT-EXECUTABLE`**
+(the reads served the page, the guarded CALL did not), **`READABLE-AND-EXECUTABLE`** (all three ok),
+or **`MIXED/UNEXPECTED`** (the two reads disagree, or the stub store was refused) — the same three
+states the open-time line names, plus the honest "not one of the three" bucket.
+
+No invariant changed: no `vm_protect` on the region, the executable view is never written, nothing is
+unmapped, no thread is ended, no guard is relaxed, and the honest refusal path is intact.
+
+

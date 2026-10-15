@@ -983,6 +983,14 @@ int husk_tl_session_close(void)
                        : from == HUSK_UNITY_RUNNING ? "forced" : "starting";
     tl_log_line("husk: session close (%s, %s)", engine_name(engine), reason);
 
+    /* THE FATAL-TIME MEASUREMENT, taken HERE, on this normal thread -- NOT in the crash reporter's
+     * signal handler (see tl_xmem_report_fault_time). If on_fatal recorded a guest fault, the SAME
+     * three verdicts the open-time probe took are re-taken now, on the page the guest faulted on, and
+     * the one line says whether they MATCH the open-time ones -- so a transient loss of the page's
+     * backing or of its execute grant between arena open and the fatal access is caught, not invisible.
+     * A no-op when no guest fault was recorded (an ordinary close) and on a host with no arena. */
+    tl_xmem_report_fault_time();
+
     /* From here the close is in flight: a guest quit call (Runtime.exit, System.exit, Process.killProcess, exit()/_exit())
      * that arrives now is the app confirming it is done, not a new request -- husk_tl_guest_exit_requested() sees this and
      * the shim lets the app unwind instead of re-entering the close. Cleared on every way out below. */

@@ -217,6 +217,23 @@ bool tl_xmem_arena_fetch_fault(uintptr_t pc, uintptr_t addr);
  */
 void tl_xmem_note_guest_fault(const char *reason, uintptr_t pc);
 
+/*
+ * THE FATAL-TIME MEASUREMENT: take the SAME three verdicts the open-time probe takes -- a guarded READ
+ * through the executable view, a guarded READ through the writable view, and a guarded CALL of a
+ * movz/ret stub -- on the page the guest actually faulted on, and print them on ONE line, labelled as
+ * the FATAL-TIME measurement, together with whether they MATCH the open-time ones seen at arena open.
+ *
+ * It runs ONCE per fault, on a NORMAL THREAD, and NEVER inside the crash reporter's signal handler:
+ * installing and longjmping out of a sigsetjmp guard for the signal already being handled is
+ * re-entrancy risk. The handler only records the fault (tl_xmem_note_guest_fault); this is called
+ * later on the app-fault/session-close path (husk_tl_session_close), after the handler returned and
+ * only the faulting thread ended. Nothing is unmapped by the layer, so the arena pages are still there.
+ * A no-op unless the arena is open and an unreported guest fault was recorded; a no-op on a host with
+ * no arena at all. No vm_protect is issued, the executable view is never written, nothing is unmapped,
+ * no thread is ended, and a fault in its guards is caught, not fatal.
+ */
+void tl_xmem_report_fault_time(void);
+
 #ifdef __cplusplus
 }
 #endif

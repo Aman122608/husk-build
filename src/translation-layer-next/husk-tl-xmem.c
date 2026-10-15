@@ -73,6 +73,26 @@ static struct {
     char exec_detail[240];
 } g_x = { .lock = PTHREAD_MUTEX_INITIALIZER };
 
+#if defined(__APPLE__)
+/*
+ * The last GUEST FAULT the crash reporter handed in (tl_xmem_note_guest_fault), and whether the
+ * fatal-time verdicts have been taken for it yet.
+ *
+ * The fault arrives in a SIGNAL HANDLER, where nothing but a plain record is safe: no mach probe,
+ * and NEVER a sigsetjmp guard for the signal being handled (installing a guard and longjmping out of
+ * a handler for the signal already being handled is re-entrancy risk). So the handler only STORES
+ * the address here; the three verdicts are taken LATER, ONCE, on the normal thread that runs the
+ * app-fault/session-close path (tl_xmem_report_fault_time), after the handler has returned and the
+ * faulting thread has ended. The record happens-before the run is marked FAILED (a seq_cst CAS in
+ * on_fatal) and the report happens-after the close observes that state, so the plain stores and
+ * loads below are ordered by the state machine. Nothing is unmapped by the layer, so the arena pages
+ * are still there when the report runs.
+ */
+static uintptr_t g_fault_addr;
+static bool      g_fault_have;
+static bool      g_fault_reported;
+#endif
+
 /* Record the guarded write-then-execute's outcome, so the app can report a measurement rather than
  * the flag it set. Called only with a real verdict (RAN or FAULTED); `detail` is copied, so the
  * caller's stack buffer need not outlive the call. Apple-only because every call site is: the
@@ -1048,6 +1068,86 @@ static void xmem_probe_guest_view(void)
                 f ? "" : " (a guarded fault is caught, not a dead process)");
 }
 
+/* ------------------------------------------- the three verdicts: ONE body, shared by BOTH probes */
+
+/*
+ * ONE page's three verdicts and the pmap entry that holds them -- the SAME body the open-time probe
+ * and the fatal-time probe both call, so a page is never judged by two different pieces of code.
+ * `offset` is the page's offset from the executable view's base (tl_xmem_region_base()), the same unit
+ * tl_xmem_alloc's bump span is measured in, so the open-time offset and a fatal fault's offset are
+ * directly comparable. Guarded probes only: no store to the executable view, no vm_protect, nothing
+ * unmapped, no thread ended. The CALL is taken ONLY if the writable view read the page, because
+ * xmem_write_fetch saves the guest's bytes with an unguarded read before it arms the guard -- calling
+ * it on a page that view cannot read would end the process instead of reporting.
+ */
+typedef enum {
+    XMEM_PAGE_UNBACKED,             /* both reads FAULTED: the page has no backing at this offset */
+    XMEM_PAGE_READABLE_NOT_EXEC,    /* both reads READ, the guarded CALL did not                     */
+    XMEM_PAGE_READABLE_AND_EXEC,    /* all three verdicts ok                                        */
+    XMEM_PAGE_MIXED                 /* the two reads disagree, or the stub store was refused        */
+} xmem_page_class;
+
+typedef struct {
+    xmem_entry      e;              /* the page's map entry, the fields the fatal report line prints */
+    uintptr_t       page, twin;     /* the page in the EXECUTABLE view and in the WRITABLE view      */
+    bool            xok, wok, ran;  /* read through rx, read through the twin, guarded call of stub  */
+    uint8_t         xb, wb;         /* the bytes the two reads returned                              */
+    int             xsig, xcode, wsig, wcode, stage;
+    xmem_page_class cls;
+} xmem_three;
+
+static const char *xmem_page_class_name(xmem_page_class c)
+{
+    switch (c) {
+    case XMEM_PAGE_UNBACKED:          return "UNBACKED (both reads faulted at this offset)";
+    case XMEM_PAGE_READABLE_NOT_EXEC: return "READABLE-NOT-EXECUTABLE (the reads served the page, the guarded CALL did not)";
+    case XMEM_PAGE_READABLE_AND_EXEC: return "READABLE-AND-EXECUTABLE (all three verdicts ok)";
+    default:                          return "MIXED/UNEXPECTED (the two reads disagree, or the stub store was refused)";
+    }
+}
+
+static const char *xmem_x_verdict(const xmem_three *t)
+{
+    return t->xok ? "READ -- the executable view served the page at the fault offset"
+                  : "FAULTED -- the executable view has no readable backing at the fault offset";
+}
+
+static const char *xmem_w_verdict(const xmem_three *t)
+{
+    return t->wok ? "READ -- the writable view served the same page"
+                  : "FAULTED -- the writable view has no readable backing at the same page";
+}
+
+static const char *xmem_c_verdict(const xmem_three *t)
+{
+    return !t->wok
+        ? "NOT ATTEMPTED -- the writable view could not read this page, so the page is unbacked here (the stub is written through that view and xmem_write_fetch saves the guest's bytes with an unguarded read; nothing was attempted rather than end the process)"
+        : t->ran
+            ? "RAN -- the executable view fetched the stub, so this page is executable"
+            : t->stage == 1 ? "FAULTED ON THE STORE -- the writable view would not take the stub (the page is not writable through the twin)"
+                            : "FAULTED ON THE FETCH -- the page is readable but NOT executable (the per-16-KiB execute preparation did not take here)";
+}
+
+static void xmem_take_three(size_t offset, xmem_three *t)
+{
+    memset(t, 0, sizeof(*t));
+    t->page = (uintptr_t)g_x.rx + offset;
+    t->twin = (uintptr_t)xmem_writable_view() + offset;
+    t->e    = xmem_probe_entry(t->page);
+    t->xok  = xmem_guarded_read((const unsigned char *)t->page, &t->xb, &t->xsig, &t->xcode);
+    t->wok  = xmem_guarded_read((const unsigned char *)t->twin, &t->wb, &t->wsig, &t->wcode);
+    if (t->wok) t->ran = xmem_write_fetch(t->twin, t->page, &t->stage);
+    if (!t->xok && !t->wok) t->cls = XMEM_PAGE_UNBACKED;
+    else if (!t->xok || !t->wok) t->cls = XMEM_PAGE_MIXED;
+    else if (t->ran) t->cls = XMEM_PAGE_READABLE_AND_EXEC;
+    else t->cls = XMEM_PAGE_READABLE_NOT_EXEC;
+}
+
+/* The open-time probe's verdict, kept so the fatal-time probe can say MATCH or DIFFER against it. */
+static size_t          g_open_page_offset;
+static xmem_page_class g_open_page_class;
+static bool            g_open_page_have;
+
 /*
  * The deterministic fault offset, measured exhaustively on ONE page, ONCE per open.
  *
@@ -1085,34 +1185,77 @@ static void xmem_probe_guest_view(void)
 static void xmem_probe_fault_offset(void)
 {
     static const size_t TL_XMEM_FAULT_OFFSET = (size_t)0xb589b90u;   /* the observed fault offset: arena base + 0xb589b90, every run */
-    uintptr_t page = (uintptr_t)g_x.rx + TL_XMEM_FAULT_OFFSET;                 /* the page in the EXECUTABLE view */
-    uintptr_t twin = (uintptr_t)xmem_writable_view() + TL_XMEM_FAULT_OFFSET;   /* the same page in the WRITABLE view */
-    xmem_entry e = xmem_probe_entry(page);   /* the page's entry, the same fields the fatal line prints */
-    uint8_t xb = 0, wb = 0;
-    int xsig = 0, xcode = 0, wsig = 0, wcode = 0;
-    bool xok = xmem_guarded_read((const unsigned char *)page, &xb, &xsig, &xcode);
-    bool wok = xmem_guarded_read((const unsigned char *)twin, &wb, &wsig, &wcode);
-    bool ran = false;
-    int stage = 0;
-    if (wok) ran = xmem_write_fetch(twin, page, &stage);   /* the guard: see the comment; the EXEC GATE's shape */
-    const char *xverdict = xok
-        ? "READ -- the executable view served the page at the fault offset"
-        : "FAULTED -- the executable view has no readable backing at the fault offset";
-    const char *wverdict = wok
-        ? "READ -- the writable view served the same page"
-        : "FAULTED -- the writable view has no readable backing at the same page";
-    const char *cverdict = !wok
-        ? "NOT ATTEMPTED -- the writable view could not read this page, so the page is unbacked here (the stub is written through that view and xmem_write_fetch saves the guest's bytes with an unguarded read; nothing was attempted rather than end the process)"
-        : ran
-            ? "RAN -- the executable view fetched the stub, so this page is executable"
-            : stage == 1 ? "FAULTED ON THE STORE -- the writable view would not take the stub (the page is not writable through the twin)"
-                         : "FAULTED ON THE FETCH -- the page is readable but NOT executable (the per-16-KiB execute preparation did not take here)";
+    xmem_three t;
+    xmem_take_three(TL_XMEM_FAULT_OFFSET, &t);   /* the SAME body the fatal-time probe uses: guarded, nothing relaxed */
+    /* Keep THIS page's verdict, so the fatal-time probe can say plainly whether the same three
+     * verdicts still hold when the guest actually faults (a transient loss of backing or of the
+     * execute grant between here and the fatal access is what that comparison catches). */
+    g_open_page_offset = TL_XMEM_FAULT_OFFSET;
+    g_open_page_class  = t.cls;
+    g_open_page_have   = true;
     tl_log_line("xmem: the deterministic fault offset +%#lx (arena base %p + the observed fault offset, one page measured once): the page's entry as the pmap walk reports it %p..%p prot %d max %d depth %u tag %u -- the SAME fields the fatal line prints; and the three verdicts on this ONE page: guarded READ through the EXECUTABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded READ through the WRITABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded CALL of a movz/ret stub there (written through the writable view %p, flushed, called at the executable view %p) -> %s -- so UNBACKED (both reads faulted) vs READABLE-NOT-EXECUTABLE (reads ok, CALL faulted on the fetch) vs READABLE-AND-EXECUTABLE (all three ok) is named by these three verdicts; no vm_protect was issued, the executable view was not written, nothing was unmapped and no thread was ended",
                 (unsigned long)TL_XMEM_FAULT_OFFSET, (void *)g_x.rx,
-                (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
-                (void *)page, xverdict, (unsigned)xb, xsig, xcode,
-                (void *)twin, wverdict, (unsigned)wb, wsig, wcode,
-                (void *)twin, (void *)page, cverdict);
+                (void *)t.e.start, (void *)(t.e.start + t.e.size), (int)t.e.prot, (int)t.e.max, (unsigned)t.e.depth, t.e.tag,
+                (void *)t.page, xmem_x_verdict(&t), (unsigned)t.xb, t.xsig, t.xcode,
+                (void *)t.twin, xmem_w_verdict(&t), (unsigned)t.wb, t.wsig, t.wcode,
+                (void *)t.twin, (void *)t.page, xmem_c_verdict(&t));
+}
+
+/*
+ * THE FATAL-TIME MEASUREMENT: take the SAME three verdicts the open-time probe takes -- a guarded READ
+ * through the executable view, a guarded READ through the writable view, and a guarded CALL of a
+ * movz/ret stub -- on the page the guest ACTUALLY faulted on, ONCE per fault, on a NORMAL THREAD, and
+ * print them on ONE line with a plain MATCH / DIFFER against the open-time verdicts.
+ *
+ * Why not in the handler: on_fatal is a signal handler for the very signal being handled, and
+ * installing a sigsetjmp guard and longjmping out of it THERE is re-entrancy risk. So the handler
+ * only RECORDS the fault (tl_xmem_note_guest_fault); this runs LATER, on the normal thread that runs
+ * the app-fault/session-close path (husk_tl_session_close calls it), after the handler has returned
+ * and only the faulting thread has ended. Nothing is unmapped by the layer, so the arena pages are
+ * still there; only g_x.open is required. A no-op unless an unreported guest fault was recorded.
+ *
+ * THE COMPARISON IS THE POINT: the open-time probe measured this page ONCE at arena open, ~12 s
+ * before a faulting DATA access. If the page's backing or its execute grant was lost in between (a
+ * later vm_protect, a debugger detach costing the per-entry grant, a jetsam/CoW event), the verdicts
+ * taken HERE differ from the open-time ones -- and the line says so in one word (MATCH / DIFFER)
+ * rather than leaving a human to diff two log lines. Nothing is relaxed: no vm_protect, the
+ * executable view is never written, nothing is unmapped, no thread is ended.
+ */
+void tl_xmem_report_fault_time(void)
+{
+    if (!g_x.open || !g_fault_have || g_fault_reported) return;   /* only for an unreported fault, once */
+    g_fault_reported = true;                                      /* ONE measurement per fault, whatever follows */
+    uintptr_t base = (uintptr_t)g_x.rx;
+    uintptr_t addr = g_fault_addr;
+    size_t    off  = (size_t)(addr - base);
+    xmem_three t;
+    xmem_take_three(off, &t);
+    char cmp[600];
+    if (!tl_xmem_contains((const void *)addr)) {
+        snprintf(cmp, sizeof(cmp),
+                 "NOT COMPARABLE -- the recorded fault address %p is not inside the arena, so there is no page here to compare with the open-time verdicts",
+                 (void *)addr);
+    } else if (!g_open_page_have || off != g_open_page_offset) {
+        snprintf(cmp, sizeof(cmp),
+                 "NOT COMPARABLE -- the open-time probe measured the fixed offset +%#lx (the deterministic fault offset); this fault is at offset +%#lx, so they are DIFFERENT pages and the open-time verdicts do not apply here",
+                 g_open_page_have ? (unsigned long)g_open_page_offset : 0ul, (unsigned long)off);
+    } else if (t.cls == g_open_page_class) {
+        snprintf(cmp, sizeof(cmp),
+                 "MATCH -- the fatal-time verdicts are the SAME as the open-time ones seen at arena open (both say %s), so the page lost NOTHING between arena open and this fatal access",
+                 xmem_page_class_name(t.cls));
+    } else {
+        snprintf(cmp, sizeof(cmp),
+                 "DIFFER -- THIS IS THE TRANSIENT: at arena open the page was %s, at this fatal access it is %s -- the page lost its backing or its execute grant between arena open and the fatal access (a later vm_protect, a debugger detach costing the per-entry grant, or a jetsam/CoW event)",
+                 xmem_page_class_name(g_open_page_class), xmem_page_class_name(t.cls));
+    }
+    tl_log_line("husk: FATAL-TIME arena page verdicts (taken ONCE per fault, on this normal thread -- NOT in the crash reporter's signal handler, so no sigsetjmp guard is installed for the signal being handled): fault address %p, offset +%#lx from the arena base %p; the page's entry %p..%p prot %d max %d depth %u tag %u -- the SAME fields the fatal report line prints; and the three verdicts on this ONE page: guarded READ through the EXECUTABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded READ through the WRITABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded CALL of a movz/ret stub there (written through the writable view %p, flushed, called at the executable view %p) -> %s; VS the open-time verdicts at arena open (offset +%#lx): %s; no vm_protect was issued, the executable view was not written, nothing was unmapped and no thread was ended",
+                (void *)addr, (unsigned long)off, (void *)base,
+                (void *)t.e.start, (void *)(t.e.start + t.e.size), (int)t.e.prot, (int)t.e.max, (unsigned)t.e.depth, t.e.tag,
+                (void *)t.page, xmem_x_verdict(&t), (unsigned)t.xb, t.xsig, t.xcode,
+                (void *)t.twin, xmem_w_verdict(&t), (unsigned)t.wb, t.wsig, t.wcode,
+                (void *)t.twin, (void *)t.page, xmem_c_verdict(&t),
+                g_open_page_have ? (unsigned long)g_open_page_offset : 0ul,
+                cmp);
 }
 
 static void xmem_report_open(void)
@@ -1125,6 +1268,7 @@ static void xmem_report_open(void)
 #else
 /* No mach probe on a host that is not an Apple one: nothing to report. */
 static void xmem_report_open(void) {}
+void tl_xmem_report_fault_time(void) {}
 #endif
 
 #if !defined(__APPLE__) || TARGET_OS_OSX
@@ -1407,6 +1551,13 @@ void tl_xmem_note_guest_fault(const char *reason, uintptr_t pc)
     snprintf(g_verdict_rec.fault, sizeof(g_verdict_rec.fault), "%s", reason ? reason : "the guest faulted in its arena");
     g_verdict_rec.fault_pc = pc;
     g_verdict_rec.fault_when = (long long)time(NULL);
+    /* RECORD the fault for the fatal-time probe -- and NOTHING more. This runs in the signal handler,
+     * where no mach probe and no sigsetjmp guard for the signal being handled is safe. The three
+     * verdicts are taken later, once, on the normal thread that runs the session close
+     * (tl_xmem_report_fault_time). A NEW fault clears `reported` so the next close re-takes them. */
+    g_fault_addr = pc;
+    g_fault_have = true;
+    g_fault_reported = false;
     xmem_write_verdict_file();
 }
 #else
