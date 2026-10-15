@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
 """
-Watch the Husk log directory and announce each new log, then exit.
+Watch the Husk log directory and announce each new log. Stays running.
 
 One line per new .log file, which is what a Hermes background-process notification
 pattern matches on -- so a log arriving from the phone turns into a turn on the PC
 without anyone polling for it.
 
-**It exits as soon as it has announced something, and that is deliberate.** A
-pattern-based notification is capped at 8 deliveries per process lifetime, after
-which the pattern is switched off and the process falls back to notifying only on
-exit -- so a watcher that runs forever goes silent exactly when it has been useful
-8 times. Exiting after each announcement means every notification arrives through
-the on-exit path, which has no cap. Restart it after handling a log.
+**It stays running, and that is a correction.** It used to exit after each announcement so that
+every notification arrived through the on-exit path, which has no cap. In practice that meant the
+watcher had to be re-armed by hand after every single log, and that was missed twice in one
+session -- the user's next run landed silently and they had to report that the listener was dead.
+A watcher that stops watching is not worth the cap it buys. So: it keeps polling, announces each
+new log once, and flushes the line immediately (a long-running process's stdout is block-buffered,
+so without a flush the announcement would never reach the notification path at all).
+
+Announcements are one line per log and logs arrive one per run, minutes apart, so the pattern
+watch is never over-fired and does not auto-disable.
 
 **The state file is what makes exiting safe.** If the watcher is down when a log
 lands, a fresh start would otherwise treat that file as already known and never
 announce it. Instead the announced set is persisted, so a restart announces
-anything it missed (one line each) and exits again -- a backlog drains one
-notification at a time rather than being silently dropped.
+anything it missed (one line each) and keeps watching -- a backlog drains through
+the same path as a fresh arrival.
 
 Deliberately separate from husk_log_receiver.py: the receiver's job is to accept a
 POST and write a file, and a watcher that also catches a log copied in by hand,
@@ -85,12 +89,12 @@ else:
 
 
 def announce(names):
-    """Print each new log, persist the set, and exit so the notification is uncapped."""
+    """Print each new log, persist the set, and keep watching."""
     for name in sorted(names):
         print(f"NEW HUSK LOG: {name} ({present.get(name, 0):,} bytes)", flush=True)
     announced.update(names)
     save_announced(announced)
-    sys.exit(0)
+    sys.stdout.flush()          # the notification path reads this as it is written
 
 
 # Drain anything that landed while we were not running, before settling in to poll.
