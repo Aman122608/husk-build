@@ -1048,11 +1048,79 @@ static void xmem_probe_guest_view(void)
                 f ? "" : " (a guarded fault is caught, not a dead process)");
 }
 
+/*
+ * The deterministic fault offset, measured exhaustively on ONE page, ONCE per open.
+ *
+ * Every previous read-back tested a span's FIRST page (offset +0x0 of whatever tl_xmem_alloc had just
+ * handed out). Nothing had ever tested the one page the guest actually dies on, and nothing had
+ * separated "the page is unbacked there" from "the page is readable but not executable there". This
+ * does both, on the page at the fault offset, and prints the pmap's own entry for that page on the SAME
+ * line, so the entry's fields and the three verdicts sit together.
+ *
+ * The offset is the OBSERVED fault offset, not a guess: robot gf takes its fatal SIGBUS at arena base +
+ * 0xb589b90 in every run (this run's log, husk-20261015-120923: `fault address 0x123e51b90` on base
+ * `0x1188c8000` -> +0xb589b90, entry 0x123e50000..0x123e54000 prot 5 max 7; the same offset in the runs
+ * before it). It is a named constant with this comment rather than a bare number.
+ *
+ * Three measurements on that one page:
+ *   1. a guarded READ through the EXECUTABLE view at that offset -- the view the guest's own accesses use;
+ *   2. a guarded READ through the WRITABLE view at the same page -- the control (the view the layer's
+ *      backing writes through);
+ *   3. a guarded CALL of a movz/ret stub at that offset, the EXEC GATE's own shape: the stub is written
+ *      through the writable view and called through the executable view (xmem_write_fetch). The call is
+ *      taken ONLY if measure 2 read the page: xmem_write_fetch SAVES the guest's bytes at the write view
+ *      with an UNGUARDED memcpy before it arms the guard, so calling it on a page the writable view
+ *      cannot read would end the process instead of reporting -- and a faulted measure 2 already says
+ *      the page is unbacked, which is the CALL's answer too.
+ *
+ * The three verdicts name the state directly: both reads FAULTED = the page is UNBACKED at this offset
+ * (the fix is to back it there); the reads READ but the CALL FAULTED ON THE FETCH = the page is readable
+ * but NOT EXECUTABLE (the fix is the per-16-KiB execute preparation, which did not take here); all three
+ * ok = the page is readable AND executable, so this page's backing and its execute are both fine and the
+ * guest's fault must be explained by something else (named in the plan note). Nothing is relaxed: no
+ * vm_protect on the region, the executable view is never written (the stub goes through the writable view
+ * and its bytes are put back), nothing is unmapped and no thread is ended. It runs once, at the open
+ * (xmem_report_open), never on an alloc.
+ */
+static void xmem_probe_fault_offset(void)
+{
+    static const size_t TL_XMEM_FAULT_OFFSET = (size_t)0xb589b90u;   /* the observed fault offset: arena base + 0xb589b90, every run */
+    uintptr_t page = (uintptr_t)g_x.rx + TL_XMEM_FAULT_OFFSET;                 /* the page in the EXECUTABLE view */
+    uintptr_t twin = (uintptr_t)xmem_writable_view() + TL_XMEM_FAULT_OFFSET;   /* the same page in the WRITABLE view */
+    xmem_entry e = xmem_probe_entry(page);   /* the page's entry, the same fields the fatal line prints */
+    uint8_t xb = 0, wb = 0;
+    int xsig = 0, xcode = 0, wsig = 0, wcode = 0;
+    bool xok = xmem_guarded_read((const unsigned char *)page, &xb, &xsig, &xcode);
+    bool wok = xmem_guarded_read((const unsigned char *)twin, &wb, &wsig, &wcode);
+    bool ran = false;
+    int stage = 0;
+    if (wok) ran = xmem_write_fetch(twin, page, &stage);   /* the guard: see the comment; the EXEC GATE's shape */
+    const char *xverdict = xok
+        ? "READ -- the executable view served the page at the fault offset"
+        : "FAULTED -- the executable view has no readable backing at the fault offset";
+    const char *wverdict = wok
+        ? "READ -- the writable view served the same page"
+        : "FAULTED -- the writable view has no readable backing at the same page";
+    const char *cverdict = !wok
+        ? "NOT ATTEMPTED -- the writable view could not read this page, so the page is unbacked here (the stub is written through that view and xmem_write_fetch saves the guest's bytes with an unguarded read; nothing was attempted rather than end the process)"
+        : ran
+            ? "RAN -- the executable view fetched the stub, so this page is executable"
+            : stage == 1 ? "FAULTED ON THE STORE -- the writable view would not take the stub (the page is not writable through the twin)"
+                         : "FAULTED ON THE FETCH -- the page is readable but NOT executable (the per-16-KiB execute preparation did not take here)";
+    tl_log_line("xmem: the deterministic fault offset +%#lx (arena base %p + the observed fault offset, one page measured once): the page's entry as the pmap walk reports it %p..%p prot %d max %d depth %u tag %u -- the SAME fields the fatal line prints; and the three verdicts on this ONE page: guarded READ through the EXECUTABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded READ through the WRITABLE view %p -> %s (byte 0x%02x, signal %d si_code %d); guarded CALL of a movz/ret stub there (written through the writable view %p, flushed, called at the executable view %p) -> %s -- so UNBACKED (both reads faulted) vs READABLE-NOT-EXECUTABLE (reads ok, CALL faulted on the fetch) vs READABLE-AND-EXECUTABLE (all three ok) is named by these three verdicts; no vm_protect was issued, the executable view was not written, nothing was unmapped and no thread was ended",
+                (unsigned long)TL_XMEM_FAULT_OFFSET, (void *)g_x.rx,
+                (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag,
+                (void *)page, xverdict, (unsigned)xb, xsig, xcode,
+                (void *)twin, wverdict, (unsigned)wb, wsig, wcode,
+                (void *)twin, (void *)page, cverdict);
+}
+
 static void xmem_report_open(void)
 {
     if (!g_x.open) return;
     xmem_report_region();
     xmem_probe_guest_view();
+    xmem_probe_fault_offset();   /* the one page nothing had measured: the observed fault offset (once per open) */
 }
 #else
 /* No mach probe on a host that is not an Apple one: nothing to report. */

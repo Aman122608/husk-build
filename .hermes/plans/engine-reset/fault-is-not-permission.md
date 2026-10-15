@@ -450,3 +450,71 @@ page` (the twin was just written), so a fault on the executable side is the two-
 layer mistake. No invariant is relaxed: no `vm_protect` on the region, the executable view is never
 written, nothing is unmapped, no thread is ended, and the honest refusal path is untouched.
 
+---
+
+## The deterministic fault offset measured exhaustively on ONE page (`husk-20261015-120923`)
+
+Run read: `HuskLogs/husk-20261015-120923-2.0.0-112.log` (415 lines). The two-views hypothesis is DEAD:
+every one of the 38 backing passes (log `:128`...`:354`) reports BOTH reads succeeding on the span's
+first page -- `-> the executable view READ the backed page (byte 0x00, signal 0 si_code 0); the
+WRITABLE view 0x1388c8000 -> the writable view READ the backed page`. So a page backed only through the
+writable twin IS readable through the executable view; backing through the twin is not the mechanism,
+and the read-back guard is sound. The crash is unchanged: `FATAL signal 10 on thread 'UnityMain':
+fault address 0x123e51b90` (`:371`), entry `0x123e50000..0x123e54000 prot 5 max 7 depth 0 tag 0`
+`-> names execute, so this fault is NOT a permission` (`:374`), 123 frames, and Husk survived the fault
+and closed the session cleanly (`:385-386`).
+
+### Span-family verdict: the span list is the TWIN (writable) family -- and the arithmetic holds
+
+The backing spans are the WRITABLE twin's addresses, not the executable view's: the writable view is
+`0x1388c8000` and the first span is `0x1388c8000..0x1388cc000` (`:128`), i.e. it starts at the twin
+base, not at the arena base `0x1188c8000`. Recomputing (verified here by hand): delta `0x1388c8000 -
+0x1188c8000 = 0x20000000 = 536870912` (512 MiB); fault offset `0x123e51b90 - 0x1188c8000 = 0xb589b90`
+(= 190,356,368, 181.5 MiB), which is `+0x1b90` into the one 16 KiB entry `0x123e50000..0x123e54000`.
+The fault's **twin-equivalent** address is `0x1388c8000 + 0xb589b90 = 0x143e51b90`, which lies inside
+the logged span `0x142f84000..0x144158000` (span offsets `0xa6bc000..0xb890000` from the twin base; the
+fault's `0xb589b90` is inside that). So **by the layer's own span list the faulting page IS inside a
+span the layer backed** (volatile store + `read back OK` + checksum), the offset is **INSIDE the emitted
+span** (`offset 0xb589b90 < used 193953792`, consumed `:375`), and yet the guest still faulted at it. I
+agree with the narrowing, and the span list is definitively the twin family. That is exactly why the
+first-page read-back could not settle it: it tested `+0x0` of each span, never the faulting offset.
+
+### The one measurement landed (once, at the open -- never on an alloc)
+
+`src/translation-layer-next/husk-tl-xmem.c`: a new static `xmem_probe_fault_offset()`, called from
+`xmem_report_open()` after the arena walk and the guest-view probe, runs ONCE per open (in
+`tl_xmem_open`, inside the `if (!g_x.open)`), on the page at the **observed fault offset** -- a named
+constant `TL_XMEM_FAULT_OFFSET = 0xb589b90`, commented as robot gf's observed fault offset, not a magic
+number. It does all three on ONE line, reusing the file's existing guard (`self_fault_info` +
+`sigsetjmp`; no second guard invented) and the EXEC GATE's own stub shape (`xmem_write_fetch`), and
+prints the page's pmap entry with the same fields the fatal line prints:
+
+```
+xmem: the deterministic fault offset +%#lx (arena base %p + the observed fault offset, one page measured once): the page's entry as the pmap walk reports it %p..%p prot %d max %d depth %u tag %u -- the SAME fields the fatal line prints; and the three verdicts on this ONE page: guarded READ through the EXECUTABLE view %p -> <v1> (byte 0x%02x, signal %d si_code %d); guarded READ through the WRITABLE view %p -> <v2> (byte 0x%02x, signal %d si_code %d); guarded CALL of a movz/ret stub there (written through the writable view %p, flushed, called at the executable view %p) -> <v3> -- so UNBACKED ... vs READABLE-NOT-EXECUTABLE ... vs READABLE-AND-EXECUTABLE ... is named by these three verdicts; no vm_protect was issued, the executable view was not written, nothing was unmapped and no thread was ended
+```
+
+The three verdicts it prints, and what each names (the CALL runs only if measure 2 read the page --
+`xmem_write_fetch` saves the guest's bytes with an unguarded read before arming the guard, so calling it
+on a page the writable view cannot read would end the process):
+
+- **v1 FAULTED + v2 FAULTED** = the page is **UNBACKED** at this offset. Fix: back it there (the
+  allocator's per-4-KiB backing pass must actually reach this offset -- if it already claims to, the
+  span/offset families disagree and the backing went to the wrong address).
+- **v1 READ + v2 READ + v3 FAULTED ON THE FETCH** = the page is **READABLE-NOT-EXECUTABLE**. Fix: the
+  execute for that page is what StikDebug's per-16-KiB preparation (`M<addr>,1:69`) provides and it did
+  not take -- verify/repair the per-page preparation rather than the backing.
+- **v1 READ + v2 READ + v3 RAN** = the page is **READABLE-AND-EXECUTABLE**: this page's backing and its
+  execute are both fine, so the guest's fault is NOT this page and must be explained by something else.
+  What the log still leaves open then: the fault is a **DATA** access (`pc App+0x4c5e8e4 != si_addr`,
+  `:372-374`) yet the page here reads and executes, so the difference must be the **access size/type** or
+  a **transient** -- e.g. the faulting access straddles the 16 KiB entry boundary, a store (not the load
+  this probe makes) hits the page in a state the probe does not reproduce, or the page was backed at the
+  moment of this open-time probe and lost its backing before the fatal access ~12 s later (a later
+  `vm_protect`, a debugger-detach that cost the per-entry grant, a jetsam/CoW event). The open-time
+  probe cannot see a transient; that would need the same three verdicts re-taken on the fatal path.
+
+Hand-checked against HEAD with no compiler here: `{}` 128/128 vs HEAD 127/127 (the one new balanced
+block), `()` 762/762, `[]` 45/45; 21 format specifiers match 21 arguments. No invariant changed: no
+`vm_protect` on the region, the executable view is never written (the stub goes through the writable
+view and its bytes are put back), nothing unmapped, no thread ended, the honest refusal unchanged.
+
