@@ -24,6 +24,7 @@ import os
 import re
 import shutil
 import sys
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -31,6 +32,27 @@ OUT = os.path.join(ROOT, "HuskBuilds")
 INDEX = os.path.join(OUT, "INDEX.md")
 LAN = "192.168.1.123"
 PORT = 8643
+
+
+def verify(ipa):
+    """Refuse to name or stage something that is not a real, complete IPA.
+
+    Learned the hard way: a download clobbered by a concurrent one staged as a
+    15 MB file that was not even a zip, and it was on its way to a phone. Size,
+    zip structure and the shipped framework are all checked before the name is
+    handed out, so a partial file cannot get a convincing name.
+    """
+    size = os.path.getsize(ipa)
+    if size < 50 * 1024 * 1024:
+        return False, f"only {size:,} bytes -- a Husk IPA is ~89 MB, so this is a partial download"
+    try:
+        with zipfile.ZipFile(ipa) as z:
+            n = len(z.namelist())
+    except Exception as e:
+        return False, f"not a zip file ({e.__class__.__name__}: {e})"
+    if n < 100:
+        return False, f"zip opens but has only {n} entries"
+    return True, f"{size:,} bytes, valid zip with {n} entries"
 
 
 def main(argv):
@@ -46,6 +68,12 @@ def main(argv):
     if not os.path.exists(src):
         print(f"no IPA at {src} (build first, or pass --from=<path>)")
         return 1
+    ok, why = verify(src)
+    if not ok:
+        print(f"REFUSING to stage {src}: {why}")
+        print("re-download it (a fresh dir, one downloader at a time) and try again")
+        return 3
+    print(f"verified: {why}")
     stamp = datetime.datetime.now().strftime("%m%d-%H%M")
     name = f"Husk-{stamp}-{sha7}-{slug}.ipa"
     dst = os.path.join(OUT, name)
