@@ -749,10 +749,11 @@ static void xmem_report_region(void)
         if (e.start != a) gaps++;                    /* an unmapped gap before this entry */
         mapped += e.size;
         if (e.prot & VM_PROT_EXECUTE) execut += e.size;
-        else { noexec++; tl_log_line("xmem: arena entry %p..%p prot %d max %d depth %u tag %u -- NOT EXECUTABLE", (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag); }
+        else { noexec++; if (noexec <= 4) tl_log_line("xmem: arena entry %p..%p prot %d max %d depth %u tag %u -- NOT EXECUTABLE", (void *)e.start, (void *)(e.start + e.size), (int)e.prot, (int)e.max, (unsigned)e.depth, e.tag); }
         a = e.start + e.size;
         entries++;
     }
+    tl_log_line("xmem: arena walk: %d entries, %zu MiB mapped, %zu MiB executable, %d NOT executable (the first four are listed above; this line exists because this region has tens of thousands of them)", entries, mapped >> 20, execut >> 20, noexec);
     tl_log_line("xmem: arena %p..%p: %zu MiB, %zu MiB MAPPED, %zu MiB executable, guest-facing view %p is %s, delta %td -- %s",
                 (void *)g_x.rx, (void *)end, g_x.size >> 20, mapped >> 20, execut >> 20, (void *)g_x.rw,
                 g_x.route ? g_x.route : "? (the guest view has no authorisation of its own)", tl_xmem_delta(),
