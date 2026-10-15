@@ -603,12 +603,39 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
         ok = true;
         /* Back the span just handed out: one store per 4 KiB page, through the writable view. A store
          * (not a read) is what makes the kernel publish the page; writing zero is safe because the span
-         * is fresh, as above. */
+         * is fresh, as above.
+         *
+         * The store MUST be volatile. A store of zero to memory that is only ever written and never
+         * read is a DEAD STORE: in a Release build the optimizer is entitled to delete the entire loop
+         * body, and it did -- the loop still ran, the log line still printed "backed", and no page was
+         * backed, which is why the guest faulted at the identical offset after the previous build. The
+         * volatile-qualified lvalue forbids that: a volatile access is an observable side effect and
+         * cannot be removed or elided. So the write below is real.
+         *
+         * And it is PROVEN, not assumed. Each page is then READ BACK through the SAME writable view and
+         * its value folded into a checksum whose result the log line prints. A read whose result is USED
+         * cannot be optimized away either, so a page that was never backed faults HERE, inside the layer
+         * where the fault is honest and named -- not later, inside the guest. If a page cannot be read
+         * back, the line says so instead of claiming success. */
         {
             uint8_t *wv = xmem_writable_view() + start;
-            for (size_t off = 0; off < n; off += 4096u) wv[off] = 0;
-            tl_log_line("xmem: arena page backing: backed the span just handed out %p..%p (%zu bytes, %zu pages) -- one byte per 4 KiB page written through the writable view %p, so a later guest DATA access to these pages cannot SIGBUS on an unbacked page (no vm_protect, nothing unmapped)",
-                        (void *)wv, (void *)(wv + n), n, n / 4096u, (void *)xmem_writable_view());
+            volatile unsigned char *vb = (volatile unsigned char *)wv;
+            size_t touched = 0;
+            uint64_t checksum = 0;
+            bool readback_ok = true;
+            for (size_t off = 0; off < n; off += 4096u) {
+                vb[off] = 0;             /* volatile store -- the kernel backs the page */
+                unsigned char got = vb[off]; /* read back the SAME byte through the SAME writable view */
+                if (got != 0) readback_ok = false;
+                checksum ^= (uint64_t)got ^ (uint64_t)(off / 4096u);
+                touched++;
+            }
+            const char *rb = readback_ok
+                ? "read back OK -- every page re-read through the same writable view returned the value just written"
+                : "read back FAILED -- a page did not return the value just written, so it may not be backed";
+            tl_log_line("xmem: arena page backing: backed the span just handed out %p..%p (%zu bytes, %zu pages) -- one VOLATILE store per 4 KiB page through the writable view %p (volatile, so the compiler cannot delete it as a dead store), then %s; checksum 0x%016llx over %zu page(s), so the store is real and a later guest DATA access to these pages cannot SIGBUS on an unbacked page (no vm_protect, nothing unmapped)",
+                        (void *)wv, (void *)(wv + n), n, n / 4096u, (void *)xmem_writable_view(),
+                        rb, (unsigned long long)checksum, touched);
         }
     }
     pthread_mutex_unlock(&g_x.lock);

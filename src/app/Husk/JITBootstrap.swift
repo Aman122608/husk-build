@@ -444,14 +444,29 @@ enum JITBootstrap {
     /// every time, and every trap is a chance to hit a moment when StikDebug is
     /// not listening. The brk probe still runs once, inside the allocator, where
     /// its answer is immediately acted on.
+    ///
+    /// The last CS_DEBUGGED answer this process LOGGED, so the per-poll status line is not repeated.
+    ///
+    /// The flag is still READ on every call -- only the LOG is coalesced: the first reading, and any
+    /// change of state, print the `csops status = 0x...` line; an unchanged repeat stays silent. Views
+    /// poll this and the log was filling with the same line every poll, which buried the rest of the
+    /// run. This changes only how often the line is repeated, never what `isDebuggerAttached` returns.
+    nonisolated(unsafe) static private var lastLoggedDebugged: Bool?
+
     static var isDebuggerAttached: Bool {
         guard let flags = csStatus() else {
-            HuskLog.log("jit", "csops failed (errno \(errno)); assuming no debugger")
+            if lastLoggedDebugged != false {
+                lastLoggedDebugged = false
+                HuskLog.log("jit", "csops failed (errno \(errno)); assuming no debugger")
+            }
             return false
         }
         let attached = (flags & CS_DEBUGGED) != 0
-        HuskLog.log("jit", String(format: "csops status = 0x%08x, CS_DEBUGGED = %@",
-                                  flags, attached ? "set" : "clear"))
+        if lastLoggedDebugged != attached {
+            lastLoggedDebugged = attached
+            HuskLog.log("jit", String(format: "csops status = 0x%08x, CS_DEBUGGED = %@",
+                                      flags, attached ? "set" : "clear"))
+        }
         return attached
     }
 
@@ -469,13 +484,39 @@ enum JITBootstrap {
         return rc == 0 ? flags : nil
     }
 
+    /// Whether StikDebug is installed -- asked of the URL scheme, and asked ONCE.
+    ///
+    /// `canOpenURL` emits its own system line every single time it is called
+    /// (`-canOpenURL: failed for URL: "stikjit://" - error: "This app is not allowed to query for
+    /// scheme stikjit"`), and views and the JIT resolver call this on every body refresh, which
+    /// flooded the log with hundreds of identical lines at the end of the run. Whether an app is
+    /// installed does not change within a process, so the probe runs once and the answer is cached;
+    /// it is not re-asked per poll. Nothing about what the probe DECIDES changes -- only how often
+    /// it is asked and logged.
+    nonisolated(unsafe) static private var stikDebugInstalled: Bool?
+
     static var isStikDebugInstalled: Bool {
-        URL(string: "stikjit://").map(UIApplication.shared.canOpenURL) ?? false
+        if let known = stikDebugInstalled { return known }
+        let found = URL(string: "stikjit://").map(UIApplication.shared.canOpenURL) ?? false
+        stikDebugInstalled = found
+        HuskLog.log("jit", "stikjit:// install probe (asked once): StikDebug "
+                         + (found ? "is installed" : "is NOT reachable (not installed, or the "
+                                  + "'stikjit' query scheme is missing from Info.plist) -- answer "
+                                  + "cached for this process, not re-probed per poll"))
+        return found
     }
 
-    /// TrollStore answers enable-jit on the `apple-magnifier` scheme.
+    /// TrollStore answers enable-jit on the `apple-magnifier` scheme. Same once-only probe and
+    /// cache as above, for the same reason: the query line is not worth repeating per view pass.
+    nonisolated(unsafe) static private var trollStoreInstalled: Bool?
+
     static var isTrollStoreInstalled: Bool {
-        URL(string: "apple-magnifier://").map(UIApplication.shared.canOpenURL) ?? false
+        if let known = trollStoreInstalled { return known }
+        let found = URL(string: "apple-magnifier://").map(UIApplication.shared.canOpenURL) ?? false
+        trollStoreInstalled = found
+        HuskLog.log("jit", "apple-magnifier:// install probe (asked once): TrollStore "
+                         + (found ? "is installed" : "is NOT reachable") + " -- answer cached for this process")
+        return found
     }
 
     /// Whether this copy of Husk was installed by TrollStore (or TrollStore Lite): it leaves a marker file next to the app in

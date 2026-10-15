@@ -317,3 +317,67 @@ balanced), `()` balanced, the arena walk still reads `512 MiB mapped, 512 MiB ex
 executable`, the EXEC GATE pair and the guarded write-then-execute are untouched, and no path writes the
 executable view.
 
+---
+
+## The backing was a DEAD STORE -- elided in Release -- so it is now volatile and proven by read-back
+
+The fix above did not stop the fault. In `husk-20261015-113644` the backing pass ran and logged its
+lines (39 of them, up to the multi-MB library images), yet the guest faulted at the **identical**
+offset: `FATAL signal 10 on thread UnityMain: fault address 0x124651b90`, entry
+`0x1246518000..0x124651c000 prot 5 max 7` (names execute, still not backed), and the offset line read
+the same allocator state as the run before the fix -- `the bump allocator has handed out 189408 KiB
+of 524288 KiB (used=193953792 size=536870912) -> INSIDE the emitted span`, frames to 122.
+
+The diagnosis is a classic one, and it makes the old log line *non-evidence*: the per-page touch was
+`wv[off] = 0` -- a store of zero to memory that is only ever **written and never read**. That is a
+**dead store**. In a Release build the optimizer is entitled to delete the entire loop body; the loop
+still iterates, the log line still prints "backed", and *nothing is written* -- so no page is backed.
+The line said the loop ran; it never said the pages were backed, and it could not.
+
+### The fix: a store the compiler cannot remove, and a read-back that proves it
+
+`src/translation-layer-next/husk-tl-xmem.c`, `tl_xmem_alloc`, same choke point and same span:
+
+1. The write goes through a **`volatile unsigned char *`** lvalue. A volatile access is an observable
+   side effect and cannot be removed or elided, so the store -- and the page backing it forces -- is
+   real in any build.
+2. Each page is then **read back** through the SAME writable view and its byte folded into a checksum
+   (`checksum ^= got ^ page_index`). A read whose result is *used* cannot be optimized away either, so
+   a page that was never backed now faults **here, in the layer**, where the fault is honest and named
+   -- instead of later, inside the guest. If a page cannot be read back the line says so rather than
+   claiming success.
+3. The log line keeps start/end/bytes/pages/where-it-wrote and adds the checksum and the read-back
+   verdict, so a reader can tell "the loop ran" from "the pages are really backed":
+
+```
+xmem: arena page backing: backed the span just handed out %p..%p (%zu bytes, %zu pages) -- one VOLATILE store per 4 KiB page through the writable view %p (volatile, so the compiler cannot delete it as a dead store), then %s; checksum 0x%016llx over %zu page(s), so the store is real and a later guest DATA access to these pages cannot SIGBUS on an unbacked page (no vm_protect, nothing unmapped)
+```
+
+   where `%s` is `read back OK -- every page re-read through the same writable view returned the value
+   just written`, or `read back FAILED -- a page did not return the value just written, so it may not
+   be backed`. Kept: no `vm_protect` on the region, the executable view is never written, nothing is
+   unmapped, no thread is ended, no guard relaxed.
+
+### What this makes diagnostic for the NEXT run
+
+If the same page faults again after a proven touch **and** a read-back, it is a **different** fault and
+must be treated as one: the page was demonstrably written and re-read through the writable view at
+alloc time, so the cause is no longer "the layer never backed it". It is then one of: the mapping was
+revoked **after** alloc (a later `vm_protect`, a debugger detach that cost the per-entry execute grant,
+a jetsam/CoW event), the faulting address is in a different region than the one the allocator backed
+(the offset line vs the printed span must be compared, not assumed), or the guest reached the page
+through an address the writable view does not alias -- not a dead store. The offset line and the new
+span line, read together, are what separate those cases.
+
+### Separately: the stikjit:// probe and the csops line no longer flood the log
+
+Same run, `src/app/Husk/JITBootstrap.swift`: `isStikDebugInstalled` asked `canOpenURL("stikjit://")`
+on every view/body refresh and every resolver call, and each call emitted the system line
+`-canOpenURL: failed for URL: "stikjit://" ...` (48 in the tail of this run alone); `isDebuggerAttached`
+re-logged `csops status = 0x32003005, CS_DEBUGGED = set` on every poll (19 in the run). Both now
+**probe once and cache**, and the csops line prints at most **once per state change**. Nothing about
+what the probes DECIDE changed -- only how often they are repeated and logged.
+
+Hand-checked against HEAD (no compiler here): the one added `{}` block in `tl_xmem_alloc` is balanced,
+the `?:` and the call's `()` pair balance, `%llx` is fed an `(unsigned long long)` cast and `%zu` a
+`size_t`, and the Swift changes add no new control-flow brackets beyond the `if` bodies they show.
