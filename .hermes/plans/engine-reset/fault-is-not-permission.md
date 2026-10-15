@@ -378,6 +378,75 @@ re-logged `csops status = 0x32003005, CS_DEBUGGED = set` on every poll (19 in th
 **probe once and cache**, and the csops line prints at most **once per state change**. Nothing about
 what the probes DECIDE changed -- only how often they are repeated and logged.
 
-Hand-checked against HEAD (no compiler here): the one added `{}` block in `tl_xmem_alloc` is balanced,
-the `?:` and the call's `()` pair balance, `%llx` is fed an `(unsigned long long)` cast and `%zu` a
-`size_t`, and the Swift changes add no new control-flow brackets beyond the `if` bodies they show.
+## The alias experiment: a guarded read through the EXECUTABLE view of a twin-backed page
+
+> (The paragraph that closed the previous section, kept: hand-checked against HEAD with no compiler
+> here -- the one added `{}` block in `tl_xmem_alloc` is balanced, the `?:` and the call's `()` pair
+> balance, `%llx` is fed an `(unsigned long long)` cast and `%zu` a `size_t`, and the Swift changes
+> add no new control-flow brackets beyond the `if` bodies they show. The xmem addition below was
+> hand-checked the same way: `{}` 127/127 vs HEAD 124/124, `()` 949/949, and the format string's 19
+> specifiers match its 19 arguments.)
+
+The backing pass is real and proven (`husk-20261015-114957`: 38–39 `arena page backing` lines, every
+one `read back OK`, 0 FAILED), yet the guest still faults at the **identical** offset (`0xb589b90`
+into the region, `+0x1b90` into a 16 KiB entry, entry still `prot 5 max 7` -- it NAMES execute). By the
+agreed criterion that is a **different** fault: "the layer never backed the page" is excluded.
+
+The layer backs pages by writing through the **writable twin** (`xmem_writable_view()`); the guest's own
+accesses go through the **executable view** (`g_x.rx`, what it is handed as its address space). The
+store-carry tests prove the executable view sees twin-written bytes only for the **stub pages the layer
+itself writes and then fetches** -- evidence about the pages the layer exercises, not about a page that
+is only ever written through the twin. So the sharpened question is: for a page backed *only* by writing
+through the twin, does a **read** through the executable view succeed? This one experiment answers it.
+
+### The experiment (landed)
+
+`src/translation-layer-next/husk-tl-xmem.c`:
+
+- A new `xmem_guarded_read(p, &got, &sig, &code)` -- **one** read under the **existing** guard
+  (`self_fault_info` + `sigsetjmp`, the same the EXEC GATE uses; no second guard is invented). It stores
+  nothing, issues no `vm_protect`, unmaps nothing, ends no thread, so a fault is caught, not fatal.
+  Apple-only like every guarded probe here; the host build (tools/a32/step0) does the plain read so the
+  file still compiles and links.
+- `tl_xmem_alloc`, at the backing pass, now reads the span's **FIRST page** (offset `+0x0` in the span,
+  the very byte the volatile store just backed -- deterministic, and genuinely a page the allocator
+  handed out and backed *only* through the twin, never written as a stub) through **both** views and
+  prints both verdicts on the SAME `arena page backing` line.
+
+The line now ends, for every backing pass:
+
+```
+... (no vm_protect, nothing unmapped); and ONE guarded read of the span's first page (offset +0x0)
+through the two views: the EXECUTABLE view %p (arena base %p) -> <verdict> (byte 0x%02x, signal %d
+si_code %d); the WRITABLE view %p -> <verdict> (byte 0x%02x, signal %d si_code %d)
+```
+
+with the executable-view verdict one of exactly:
+
+- `the executable view READ the backed page`
+- `the executable view FAULTED on a backed page -- the two views do not share readable backing`
+
+and the writable-view verdict `the writable view READ the backed page` (expected) or
+`the writable view FAULTED ...` (unexpected -- the twin is the view that was written).
+
+### What each verdict implies for the fix (do not pick the fix until this reads)
+
+- **`the executable view READ the backed page`** (the two views share readable backing): a twin-backed
+  page IS readable through the executable view, so an unbacked-looking page is not the cause and the fix
+  is elsewhere -- most likely the guest's **DATA accesses** are reaching a page the allocator did not
+  back at all (a page later in the bump span, or a page the walk/emitter never touched), so the fix is to
+  prepare the pages the way StikDebug does (`one prepared 16 KiB page per entry`) for the *whole* span
+  the guest can touch, or to stop handing the guest the executable view as its whole address space
+  (code-only RX plus a writable data view) so data faults never land in an RX entry.
+- **`the executable view FAULTED on a backed page`** (the two views do NOT share readable backing): a
+  page that is only ever written through the twin is not readable through the executable view the guest
+  uses, so the guest's reads/fetches of twin-backed pages fault regardless of how well the backing store
+  landed. The fix is then to route the guest's DATA accesses **to the twin** (address translation at the
+  fault, the way stores are already carried) or to make the executable view genuinely aliased and
+  readable for twin-backed pages -- not to keep backing through a twin the guest's view cannot read.
+
+Either way the writable-view verdict is the control: it must read `the writable view READ the backed
+page` (the twin was just written), so a fault on the executable side is the two-views question, not a
+layer mistake. No invariant is relaxed: no `vm_protect` on the region, the executable view is never
+written, nothing is unmapped, no thread is ended, and the honest refusal path is untouched.
+

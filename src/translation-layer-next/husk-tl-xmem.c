@@ -566,6 +566,50 @@ bool tl_xmem_open(size_t host_bytes, char *err, size_t errlen)
 }
 
 /*
+ * ONE guarded read through a named view -- the measurement the two-view read-back in tl_xmem_alloc
+ * needs.
+ *
+ * The open question this answers: the layer backs pages by WRITING through the writable twin
+ * (xmem_writable_view()), but the guest's own accesses go through the EXECUTABLE view (g_x.rx, the
+ * address it is handed as its address space). The store-carry tests prove the executable view sees
+ * bytes written through the twin FOR THE STUB PAGES the layer itself writes and fetches -- that is
+ * evidence about the pages the layer exercises, NOT about a page that is only ever written through
+ * the twin. So: for a page the allocator handed out and backed only through the twin, does a READ
+ * through the executable view succeed? Writing through the twin cannot answer it.
+ *
+ * So read one byte under the SAME signal guard self_runs and xmem_write_fetch use (self_fault_info +
+ * sigsetjmp): the read either returns a value or faults into the guard, and the verdict is which. It
+ * touches nothing else -- no store, no vm_protect, nothing unmapped, no thread ended -- so a fault
+ * here is caught, not fatal, and leaves the region exactly as it was. No second guard is invented:
+ * this is the one the file already carries.
+ *
+ * Apple-only, like every guarded probe here (they are mach ones); the host build, which has no guard
+ * and no mach probes, does the plain read so this file still compiles and links (tools/a32/step0).
+ */
+#if defined(__APPLE__)
+static bool xmem_guarded_read(const unsigned char *p, unsigned char *got, int *sig, int *code)
+{
+    struct sigaction sa, ob, os, oi;
+    memset(&sa, 0, sizeof(sa)); sa.sa_sigaction = self_fault_info; sa.sa_flags = SA_SIGINFO; sigemptyset(&sa.sa_mask);
+    sigaction(SIGBUS, &sa, &ob); sigaction(SIGSEGV, &sa, &os); sigaction(SIGILL, &sa, &oi);
+    bool ok = false;
+    g_self_running = 1;
+    g_self_sig = g_self_code = 0;
+    if (sigsetjmp(g_self_jump, 1) == 0) { *got = *p; ok = true; }   /* the read; its value is USED below, so it cannot be elided */
+    g_self_running = 0;
+    sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
+    if (sig) *sig = (int)g_self_sig;
+    if (code) *code = (int)g_self_code;
+    return ok;
+}
+#else
+/* No guard on the host (no mach probes, no signal guard here): the read is plain, and there is no
+ * signal to name. `sig`/`code` are provided so the caller's line is written the same way everywhere. */
+static bool xmem_guarded_read(const unsigned char *p, unsigned char *got, int *sig, int *code)
+{ *got = *p; if (sig) *sig = 0; if (code) *code = 0; return true; }
+#endif
+
+/*
  * Hand out a span of the arena -- and BACK it.
  *
  * The span is carved by bumping g_x.used and the address it returns is MAPPED (an entry the kernel
@@ -633,9 +677,32 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
             const char *rb = readback_ok
                 ? "read back OK -- every page re-read through the same writable view returned the value just written"
                 : "read back FAILED -- a page did not return the value just written, so it may not be backed";
-            tl_log_line("xmem: arena page backing: backed the span just handed out %p..%p (%zu bytes, %zu pages) -- one VOLATILE store per 4 KiB page through the writable view %p (volatile, so the compiler cannot delete it as a dead store), then %s; checksum 0x%016llx over %zu page(s), so the store is real and a later guest DATA access to these pages cannot SIGBUS on an unbacked page (no vm_protect, nothing unmapped)",
+            /* The DECISIVE next measurement, one page, one read per view: read back a page THIS call
+             * handed out and backed ONLY through the writable twin -- never written as a stub -- through
+             * the EXECUTABLE view, and print the writable-view read on the SAME line so the two verdicts
+             * sit together. The page chosen deterministically is the span's FIRST page (offset 0 in the
+             * span: the very byte the volatile store above just backed), so every backing pass reports
+             * the same relative page and it is genuinely twin-backed, not a page the layer happens to
+             * write code into. If the executable view can READ this twin-backed page the two views share
+             * readable backing and the guest's fault is elsewhere; if it FAULTS here (caught by the
+             * guard, never fatal) then pages only ever written through the twin are not readable through
+             * the executable view, which is the fault. Nothing is written to the executable view, no
+             * vm_protect is issued, nothing is unmapped and no thread is ended. */
+            uint8_t xb = 0, wb = 0;
+            int xsig = 0, xcode = 0, wsig = 0, wcode = 0;
+            bool xok = xmem_guarded_read((const unsigned char *)(g_x.rx + start), &xb, &xsig, &xcode);  /* g_x.rx + start: the span's first page in the EXECUTABLE view */
+            bool wok = xmem_guarded_read((const unsigned char *)wv, &wb, &wsig, &wcode);                /* the same page through the WRITABLE twin */
+            const char *xverdict = xok
+                ? "the executable view READ the backed page"
+                : "the executable view FAULTED on a backed page -- the two views do not share readable backing";
+            const char *wverdict = wok
+                ? "the writable view READ the backed page"
+                : "the writable view FAULTED on a backed page (unexpected: the twin is the view that was just written)";
+            tl_log_line("xmem: arena page backing: backed the span just handed out %p..%p (%zu bytes, %zu pages) -- one VOLATILE store per 4 KiB page through the writable view %p (volatile, so the compiler cannot delete it as a dead store), then %s; checksum 0x%016llx over %zu page(s), so the store is real and a later guest DATA access to these pages cannot SIGBUS on an unbacked page (no vm_protect, nothing unmapped); and ONE guarded read of the span's first page (offset +0x0) through the two views: the EXECUTABLE view %p (arena base %p) -> %s (byte 0x%02x, signal %d si_code %d); the WRITABLE view %p -> %s (byte 0x%02x, signal %d si_code %d)",
                         (void *)wv, (void *)(wv + n), n, n / 4096u, (void *)xmem_writable_view(),
-                        rb, (unsigned long long)checksum, touched);
+                        rb, (unsigned long long)checksum, touched,
+                        (void *)(g_x.rx + start), (void *)g_x.rx, xverdict, (unsigned)xb, xsig, xcode,
+                        (void *)wv, wverdict, (unsigned)wb, wsig, wcode);
         }
     }
     pthread_mutex_unlock(&g_x.lock);
