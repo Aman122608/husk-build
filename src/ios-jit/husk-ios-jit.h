@@ -56,6 +56,18 @@ extern "C" {
 /* See husk-display.h for why this is necessary. */
 #define HUSK_EXPORT __attribute__((visibility("default")))
 
+/*
+ * One guarded write-then-execute at the region's own two views, NAMING what was happening when it ran.
+ *
+ * The instrument for "what removes the execute grant": call it after every event that could cost it --
+ * the claim, a run start, a re-attach, the detach -- and the log names the moment a fetch stops
+ * running, instead of the layer guessing. It writes a movz/ret through the writable alias, flushes,
+ * calls it through the executable view under a signal guard, and restores the bytes it found. It never
+ * changes any mapping's protection. Safe to call when no region is claimed (says so and returns false).
+ */
+HUSK_EXPORT bool husk_ios_jit_exec_gate(const char *after);
+
+
 typedef struct HuskDualMapping {
     uint8_t *rw_addr;   /* writable alias  -- emit code here            */
     uint8_t *rx_addr;   /* executable alias -- branch here              */

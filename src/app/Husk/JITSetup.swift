@@ -360,6 +360,13 @@ final class JITCoordinator: ObservableObject {
     /// is what the "JIT is on" indicator reads — never a flag this app set.
     func reassertForRun() {
         guard JITBootstrap.prewarmed, !JITBootstrap.detached else { return }
+        // Measure before touching anything: is execute still there at the moment a run starts? A "NO"
+        // here, with no call of the layer's in between, is the debugger's presence going away -- the
+        // hazard the old detach was written for, and the only other candidate. A "NO" after the
+        // re-attach below would make the re-attach itself the cost.
+        let live = husk_ios_jit_exec_gate("a run is about to start, before any re-attach")
+        log("execute at the run start: " + (live ? "RAN -- the grant is held and live"
+                                                  : "FAULTED -- NO execute at the region, and this run has not started yet"))
         guard !JITBootstrap.debuggedFlag else { return }   // still attached: nothing to renew
         log("a run is about to start with no debugger attached; asking for one again "
             + "(the region is kept, only the attach is renewed)")

@@ -454,9 +454,13 @@ HUSK_EXPORT bool husk_ios_jit_prewarm(size_t bytes)
     husk_prewarm_done = true;
     husk_prewarmed = husk_ios_jit_allocate_real(bytes);
     fprintf(stderr, "[husk-jit] prewarm %s: %zu bytes -- the region's execute is the debugger's "
-                    "per-entry grant and does not survive a detach (JITBootstrap holds it for the "
-                    "run instead of letting it go at the claim)\n",
+                    "per-entry grant, so this build holds the debugger for the run instead of "
+                    "letting it go at the claim, and NEVER asks for RWX on the region (that ask is "
+                    "what revoked the grant: husk-tl-xmem.c, adopt_exec_view)\n",
             husk_prewarmed.rw_addr ? "OK" : "FAILED", bytes);
+    /* The first execute gate of the process: the grant is measured live right after the claim, so
+     * every later gate has a baseline to differ from. */
+    if (husk_prewarmed.rw_addr) husk_ios_jit_exec_gate("the claim (prewarm)");
     return husk_prewarmed.rw_addr != NULL;
 }
 
@@ -630,6 +634,54 @@ static HuskDualMapping husk_ios_jit_allocate_real(size_t bytes)
     return region;
 }
 
+/*
+ * The execute gate, at the region's own two views.
+ *
+ * One guarded write-then-execute: write a movz/ret through the writable alias, flush, call it through
+ * the executable one, and NAME what was happening when it ran. It is here, in the file that owns the
+ * claim and the detach, because those are the two events that can cost the grant and neither is a
+ * vm_protect: the debugger's per-entry blessing is a property of its presence, so the question "did
+ * this event cost the execute?" is only answerable by fetching something.
+ *
+ * Unlike husk_self_selftest this does NOT pre-check the protection field: the field can be wrong (the
+ * whole point), and the call itself is the verdict. It saves and restores the bytes it finds, so a
+ * gate can be taken at any time without changing the region.
+ */
+HUSK_EXPORT bool husk_ios_jit_exec_gate(const char *after)
+{
+    static const uint32_t code[2] = { 0x528B4B40u, 0xD65F03C0u };   /* movz w0, #0x5a5a ; ret */
+    uint8_t *rx = husk_prewarmed.rx_addr, *rw = husk_prewarmed.rw_addr;
+    if (!rx || !rw || !husk_prewarmed.size) {
+        HUSK_LOG("EXEC GATE after %s: no region has been claimed, so there is nothing to fetch yet", after ? after : "(unnamed)");
+        return false;
+    }
+    uint32_t saved[2];
+    memcpy(saved, rw, sizeof(saved));
+    struct sigaction sa, ob, os, oi;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = husk_self_fault;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGBUS, &sa, &ob); sigaction(SIGSEGV, &sa, &os); sigaction(SIGILL, &sa, &oi);
+    bool ok = false;
+    g_self_running = 1;
+    if (sigsetjmp(g_self_jump, 1) == 0) {
+        memcpy(rw, code, sizeof(code));
+        sys_icache_invalidate(rx, sizeof(code));
+        ok = ((int (*)(void))(void *)rx)() == 0x5a5a;
+    }
+    g_self_running = 0;
+    sigaction(SIGBUS, &ob, NULL); sigaction(SIGSEGV, &os, NULL); sigaction(SIGILL, &oi, NULL);
+    memcpy(rw, saved, sizeof(saved));
+    sys_icache_invalidate(rx, sizeof(saved));
+    HUSK_LOG("EXEC GATE after %s: a stub written through the writable alias %p and called at the "
+             "executable view %p -> %s",
+             after ? after : "(unnamed)", (void *)rw, (void *)rx,
+             ok ? "RAN -- execute is still there"
+                : "FAULTED -- NO EXECUTE at the executable view now; whatever happened between this "
+                  "gate and the last one is what cost it");
+    return ok;
+}
+
 void husk_ios_jit_release(HuskDualMapping *m)
 {
     if (m == NULL) {
@@ -649,21 +701,24 @@ void husk_ios_jit_release(HuskDualMapping *m)
 void husk_ios_jit_detach(void)
 {
     /*
-     * This is a decision, not housekeeping, and the log has to say so: the region's execute is
-     * the debugger's per-entry grant, and it does not survive this call. In the 085540 run the
-     * boot selftest executed generated code through the RX alias while the debugger was attached;
-     * every entry of the same region read `prot 1 max 3` afterwards, `vm_protect(RWX)` on the
-     * executable view was refused with 2, and a fetch at 0x1184bc000 faulted. The old line here
-     * ("RX mappings persist after this") asserted the opposite and was not borne out.
+     * This is a decision, not housekeeping, and the log has to say so. It also has to MEASURE, because
+     * the claim that "the detach costs the grant" was made from a run that also had the layer asking for
+     * RWX on the whole region -- and that ask is now known to be what collapses it (husk-tl-xmem.c,
+     * adopt_exec_view). So the detach is bracketed by two execute gates: the pair says whether THIS call
+     * is what cost the execute, with nothing else in between.
+     *
+     * The old line here ("RX mappings persist after this") asserted the opposite and was not borne out
+     * in 085540; the gates below are what decides it, on the next run, instead of either claim.
      */
-    HUSK_LOG("detaching the debugger: the region's per-entry execute grant goes with it "
-             "(measured -- every entry reads prot 1 max 3 after this and a fetch faults), so no "
-             "guest that needs its own JIT arena can run after this point");
+    HUSK_LOG("detaching the debugger: the region's per-entry execute grant is a property of the debugger's presence, so this may cost it -- the gates below measure whether it does");
+    husk_ios_jit_exec_gate("immediately BEFORE the debugger detach");
     g_expecting_jit_trap = true;
     husk_brk_jit_detach();
     g_expecting_jit_trap = false;
-    HUSK_LOG("debugger detached; the JIT region stays mapped and writable through its twin, but "
-             "its entries are no longer executable");
+    bool still = husk_ios_jit_exec_gate("immediately AFTER the debugger detach");
+    HUSK_LOG("debugger detached; the JIT region stays mapped and writable through its twin, and "
+             "execute %s", still ? "SURVIVES the detach here (the detach is not what costs it)"
+                                : "is gone -- the detach is what cost it on this run");
 }
 
 bool husk_ios_jit_is_available(void)
@@ -819,6 +874,7 @@ HuskDualMapping husk_ios_jit_allocate(size_t bytes)
 bool husk_ios_jit_prewarm(size_t bytes) { (void)bytes; return false; }
 void husk_ios_jit_release(HuskDualMapping *m) { (void)m; }
 void husk_ios_jit_detach(void) {}
+bool husk_ios_jit_exec_gate(const char *after) { (void)after; return false; }
 bool husk_ios_jit_is_available(void) { return false; }
 bool husk_ios_jit_mapjit_works(void) { return false; }
 const char *husk_ios_jit_self_route(void) { return 0; }

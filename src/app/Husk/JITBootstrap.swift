@@ -159,6 +159,11 @@ enum JITBootstrap {
     /// `brk` is executed here, so it is safe to call from the engine's start path.
     static func holdGrantForRun(_ reason: String) {
         guard prewarmed, !detached else { return }
+        // Measure at the moment the hold is taken: the gate writes a stub through the writable alias and
+        // calls it at the executable view, so the log says whether the grant is live right here. It is
+        // the same measurement at the run start and after the claim, which is what makes the next run
+        // name the event that cost it instead of guessing.
+        _ = husk_ios_jit_exec_gate("holding the grant (\(reason))")
         if !grantHeldForRun {
             grantHeldForRun = true
             HuskLog.log("jit", "holding the debugger's execute grant (\(reason)): the per-entry "
@@ -285,13 +290,74 @@ enum JITBootstrap {
     }
 
     /// One line for the UI: what the layer measured, said plainly.
+    ///
+    /// When nothing has been measured in this process, this is not "unknown": the layer wrote its last
+    /// measurement to the container before the previous run could die (see `storedVerdict`), and that
+    /// is what the row shows -- labelled as the last game's measurement, not this process's. The user
+    /// must be able to read why the last run died without the app being alive to ask.
     static var measuredDescription: String {
         switch executeVerdict {
         case .ran: return "measured: executes (the guarded write-then-execute RAN)"
         case .faulted(let why): return "measured: will NOT execute — \(why)"
-        case .unmeasured: return "not yet exercised (the layer opens and measures the arena when a game starts)"
+        case .unmeasured:
+            guard let stored = storedVerdict() else {
+                return "not yet exercised (the layer opens and measures the arena when a game starts)"
+            }
+            let when = stored.when.map { verdictDate.string(from: $0) } ?? "the last game start"
+            if stored.ran { return "measured at the last game start (\(when)): executes" }
+            let why = stored.reason ?? "the guarded write-then-execute faulted"
+            return "measured at the last game start (\(when)): will NOT execute — \(why)"
         }
     }
+
+    // MARK: the verdict, read back from the container
+
+    /// Where the layer writes the last arena verdict at measurement time (`tl_xmem_set_verdict_path`),
+    /// and where it records why the run died if a guest fetch fault ends it. In the app's Documents, so
+    /// it is readable on the next launch -- the whole point being that the verdict outlives the process.
+    static var arenaVerdictURL: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("husk-arena-verdict.txt")
+    }
+
+    /// What the layer last wrote to the container: the measurement, and (when a guest fault ended the
+    /// run) the reason it died. The file is the layer's own `husk-arena-verdict 1` key/value record,
+    /// written atomically (`<path>.tmp` then rename), so this never reads a half-written file.
+    struct StoredVerdict {
+        let ran: Bool
+        let reason: String?
+        let when: Date?
+        /// Why the last run died, if a guest fetch fault ended it (nil when it did not).
+        let fault: String?
+    }
+
+    private static let verdictDate: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        return f
+    }()
+
+    /// The last recorded verdict, or nil when the layer has never written one. A pure file read; safe
+    /// from a view body (no probe, nothing executed).
+    static func storedVerdict() -> StoredVerdict? {
+        guard let text = try? String(contentsOf: arenaVerdictURL, encoding: .utf8) else { return nil }
+        var ran = false, reason: String?, fault: String?, when: Date?, sawHeader = false
+        for raw in text.split(separator: "\n") {
+            let line = String(raw)
+            if line.hasPrefix("husk-arena-verdict") { sawHeader = true }
+            else if line.hasPrefix("verdict ") { ran = line.contains("ran") }
+            else if line.hasPrefix("reason ") { reason = String(line.dropFirst("reason ".count)) }
+            else if line.hasPrefix("fault ") { fault = String(line.dropFirst("fault ".count)) }
+            else if line.hasPrefix("when ") { when = Double(line.dropFirst("when ".count)).map { Date(timeIntervalSince1970: $0) } }
+        }
+        guard sawHeader else { return nil }
+        return StoredVerdict(ran: ran, reason: reason, when: when, fault: fault)
+    }
+
+    /// Why the last run died, in words, or nil when the last run did not die this way. Read by the app
+    /// so a survived guest fault is explained without needing the log.
+    static var lastRunFault: String? { storedVerdict()?.fault }
 
     /// True once this process has told StikDebug to let go.
     nonisolated(unsafe) static private(set) var detached = false

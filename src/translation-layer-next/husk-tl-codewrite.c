@@ -11,12 +11,14 @@
  *   - mmap for executable memory hands out a piece of the JIT region;
  *   - a store into the executable view faults, and the fault handler performs it through the writable view -- the store
  *     instruction is decoded from the faulting PC, its value read from the saved registers -- flushes the instruction cache
- *     for the bytes it changed, and resumes after the instruction. A store into the GUEST-FACING view (a JIT's own arena,
- *     which the loader hands it in writable-view form) faults there too when that view is the authorised MAP_JIT mapping
- *     and the calling thread is in execute mode: the same handler writes it in place with the thread put back in write mode.
+ *     for the bytes it changed, and resumes after the instruction. It is landed there and NOT by making the page writable:
+ *     a vm_protect naming WRITE on these pages is what revokes the debugger's per-entry execute grant for the whole region
+ *     (husk-tl-xmem.c, adopt_exec_view), so the executable page is left executable and the value goes through the twin.
+ *     A store into the GUEST-FACING view when that view is not writable at all is refused honestly rather than guessed at.
  *
  * Patching happens a few hundred times while a mod loader starts, so a fault per store costs nothing that shows. Off unless
- * a driver turns it on (tl_codewrite_enable), so no other game's crash ever passes through here.
+ * a driver turns it on (tl_codewrite_enable) OR the arena opens on the executable view, which is exactly the engine that
+ * needs it (husk-tl-xmem.c arms it there), so no other game's crash ever passes through here.
  */
 #define _XOPEN_SOURCE 700
 #define _DARWIN_C_SOURCE
@@ -70,39 +72,31 @@ static void set_xreg(struct __darwin_arm_thread_state64 *ss, unsigned r, uint64_
 static bool put(uint64_t addr, const void *value, unsigned bytes)
 {
     if (tl_xmem_is_rx((const void *)addr) && tl_xmem_is_rx((const void *)(addr + bytes - 1))) {
-        /* The store already faulted here. W^X fallback (the guest was handed the executable view,
-         * but it could not be held writable-and-executable): land the store IN PLACE on that very
-         * page, by flipping the one page writable for the store and back to executable for the
-         * fetch -- at the mmap level, which is the level iOS honours. The guest's next instruction
-         * fetch at this same address then finds the byte it wrote. If the kernel refuses the flip,
-         * do NOT attempt the store: a second fault inside the handler would end the process. */
-        if (tl_xmem_wx_fallback()) {
-            /* The fallback's whole dependency: the one page is made writable for the store and
-             * executable again for the fetch, at the mmap level. The log must never be silent about
-             * which half engaged and which (if either) the kernel refused -- that silence is exactly
-             * what hid this path in the last run. */
-            if (!tl_xmem_page_set_writable((void *)addr, bytes)) {
-                static int said_w;
-                if (said_w++ < 4)
-                    tl_log_line("husk: W^X fallback: store into the executable view at %p (%u bytes) REFUSED -- vm_protect(RW) on the page was refused, so the store is NOT attempted (a second fault inside this handler would end the process); the guest's arena cannot be written here",
-                                (void *)addr, bytes);
-                return false;
-            }
-            memcpy((void *)addr, value, bytes);
-            bool x_ok = tl_xmem_page_set_executable((void *)addr, bytes);
+        /* The store already faulted here: the address is in the EXECUTABLE view, which is RX and which
+         * the layer will NOT make writable, because a vm_protect naming WRITE on these pages is exactly
+         * what revoked the debugger's per-entry execute grant for the whole region (husk-tl-xmem.c,
+         * adopt_exec_view -- two consecutive runs, same guest view, same delta, the only difference the
+         * ask; the first read `512 MiB executable` and rendered the game, the second read `0 MiB
+         * executable` and died on its first arena fetch).
+         *
+         * So the store is landed the way a JIT substrate does it: the equivalent write through the
+         * OTHER view of the same physical pages, one fixed delta away, which is a genuinely writable
+         * mapping -- and the executable page is left executable, so the guest's next fetch at this
+         * address still runs. Nothing is copied twice and no bytes differ: the two views are one set
+         * of pages.
+         *
+         * The per-page vm_protect(RW)/vm_protect(RX) flip that used to be here for the W^X fallback is
+         * gone with the flag's old meaning: it was the same ask in miniature, and it was never needed,
+         * because the twin is writable. A refusal cannot happen here -- if it does, the write is a
+         * no-op rather than a guess. */
+        memcpy((void *)(addr + (uint64_t)tl_xmem_delta()), value, bytes);
+        tl_xmem_flush((const void *)addr, bytes);
+        {
             static int said;
             if (said++ < 4)
-                tl_log_line("husk: W^X fallback: store into the executable view at %p (%u bytes) serviced in place -- the page was made writable for the store and %s (the guest writes and fetches at this one address)",
-                            (void *)addr, bytes,
-                            x_ok ? "executable again for the fetch"
-                                 : "NOT made executable again -- vm_protect(RX) was refused, so the guest's next fetch at this page will fault");
-            tl_xmem_flush((const void *)addr, bytes);
-            return true;
+                tl_log_line("husk: store into the executable view at %p (%u bytes) carried through the writable twin at %p (delta %td) -- the executable page was NOT made writable and stays executable, and the guest fetches the byte it wrote at %p",
+                            (void *)addr, bytes, (void *)(addr + (uint64_t)tl_xmem_delta()), tl_xmem_delta(), (void *)addr);
         }
-        tl_xmem_emit_begin();
-        memcpy((void *)(addr + (uint64_t)tl_xmem_delta()), value, bytes);
-        tl_xmem_emit_end();
-        tl_xmem_flush((const void *)addr, bytes);
         return true;
     }
     if (tl_xmem_contains((const void *)addr) && tl_xmem_contains((const void *)(addr + bytes - 1))) {

@@ -50,6 +50,9 @@ bool husk_ios_jit_is_available(void);
 bool husk_ios_jit_mapjit_works(void);
 const char *husk_ios_jit_self_route(void);
 void husk_ios_jit_detach(void);
+/* One guarded write-then-execute at the region's own views, naming what was happening when it ran --
+   the instrument that says which event cost the execute grant (see husk-ios-jit.h). */
+bool husk_ios_jit_exec_gate(const char *after);
 void husk_ios_jit_log_footprint(const char *tag);
 size_t husk_ios_available_memory(void);
 

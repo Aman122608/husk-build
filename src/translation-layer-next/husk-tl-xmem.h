@@ -127,33 +127,36 @@ bool tl_xmem_allow_exec(void *p, size_t n);
 bool tl_xmem_guest_view_is_jit(void);
 
 /*
- * True only in the W^X FALLBACK: the guest was handed the EXECUTABLE view but that view could not
- * be HELD writable-and-executable in place (iOS enforces W^X -- the open-time guarded store faulted),
- * so a store into it is serviced one page at a time by the codewrite guard
- * (tl_xmem_page_set_writable / tl_xmem_page_set_executable). False wherever the guest has a genuinely
- * RWX address of its own. Fixed once at open; valid after tl_xmem_open succeeds.
+ * True when the guest's code arena is the EXECUTABLE view of the debugger's region, held RX: a guest
+ * store into it faults and is carried through the writable twin by the codewrite guard, and NO page of
+ * the region is ever asked for WRITE. Fixed once at open; valid after tl_xmem_open succeeds.
  *
- * When true, tl_xmem_guest_view_is_jit() is false and the guest-facing view (g_x.rw, the address the
- * loader hands the guest and the one tl_xmem_allow_exec and the reports speak about) IS the
- * executable view, as RX -- it is the view whose generated code provably ran at boot, not the
- * writable vm_remap alias iOS will not fetch. The layer still WRITES through the debugger's writable
- * twin (the vm_remap): tl_xmem_alloc hands it back as *rw and tl_xmem_delta() is that twin minus the
- * executable view, so the loader's bulk emission, the codewrite redirect and the kernel-write
- * redirect all keep working without faulting a library image in page by page. tl_xmem_alloc's *rw
- * therefore stays a genuinely writable address even though the guest's own arena address (g_x.rw) is
- * read-only-to-the-kernel.
+ * This flag used to mean "the executable view could not be HELD writable-and-executable in place",
+ * and the code that tried to hold it -- vm_protect(RWX) on the whole 512 MiB view -- is exactly what
+ * destroyed the debugger's execute grant. That ask is gone: the view is never written and never
+ * protected (see adopt_exec_view in husk-tl-xmem.c for the two-run control that proves it). When true,
+ * tl_xmem_guest_view_is_jit() is false and the guest-facing view (g_x.rw) IS the executable view, as
+ * RX -- the view whose generated code provably ran at boot, and the same view b_mmap hands a guest
+ * that asks for code memory. The layer still WRITES through the debugger's writable twin:
+ * tl_xmem_alloc hands it back as *rw and tl_xmem_delta() is that twin minus the executable view, so
+ * the loader's bulk emission, the codewrite redirect, the kernel-write redirect and every guest store
+ * the guard carries all land through a genuinely writable mapping.
  */
 bool tl_xmem_wx_fallback(void);
 
 /*
- * The two halves of the W^X fallback's per-page bracket, at the mmap level (vm_protect) -- the level
- * iOS honours, unlike the per-thread pthread_jit_write_protect, which only governs MAP_JIT. Flip the
- * page(s) covering [p, p+n) writable for a store, then executable again for the fetch. Return false
- * if the kernel refused, in which case the caller must NOT attempt the store (a second fault inside
- * the signal handler would end the process). No-ops returning false off the phone.
+ * One guarded write-then-execute, naming what was happening when it ran -- the instrument that ends
+ * the guessing about which call costs the execute grant. Call it BEFORE the layer's first
+ * protection-changing call and after each one: the pair of lines names the moment a fetch stops
+ * running (so the call between them is the one that cost it), or proves that none of our calls did
+ * (both RAN, so the loss is outside the layer -- the debugger's presence going away).
+ *
+ * `write_at`/`fetch_at` are the two views of one page, or one view named twice when the question is
+ * whether a single view both takes a write and executes. It writes a movz/ret through `write_at`,
+ * flushes, calls it at `fetch_at` under a signal guard, and restores the bytes it found. True if the
+ * call ran and returned the marker. Never changes any mapping's protection.
  */
-bool tl_xmem_page_set_writable(void *p, size_t n);
-bool tl_xmem_page_set_executable(void *p, size_t n);
+bool tl_xmem_exec_gate(const char *after, void *write_at, void *fetch_at);
 
 /*
  * Put the calling thread in write mode (emit_begin) or back in execute mode (emit_end) around the
@@ -168,12 +171,41 @@ void tl_xmem_emit_end(void);
 
 /* Make bytes written through the RW view visible to instruction fetch. */
 void tl_xmem_flush(const void *rx, size_t bytes);
-
 size_t tl_xmem_used(void);
 size_t tl_xmem_size(void);
 
 /* Whether p is within dist bytes of the executable region (a JIT asking for code memory near its own code). */
 bool tl_xmem_near(const void *p, size_t dist);
+
+/* ---------------------------------------------------- the verdict, made to survive a crash */
+
+/*
+ * Where the app wants the last arena verdict written: a path inside its container, set before a game
+ * starts. The layer writes the record there at MEASUREMENT time (inside tl_xmem_open, from
+ * xmem_note_exec), so the verdict -- and, later, why the run died -- survives a fault that takes the
+ * process, and the app's Settings "Guest arena" row reads it on the next launch. NULL or empty turns
+ * persistence off; the layer never guesses at a sandbox layout. Safe to call any time.
+ */
+void tl_xmem_set_verdict_path(const char *path);
+
+/*
+ * Whether a fatal fault is the GUEST's fetch failing in the region it runs from: the program counter
+ * IS the fault address (a fetch, not a data access that merely used the address) and that address lies
+ * in the arena region -- which is where ALL of the guest's code lives (the loader emits the app's
+ * libraries and its JIT arena into the same region). True exactly for the shape robot gf died on --
+ * `blr x8` into a page that will not fetch. The crash reporter (husk-tl-unity-app.c, on_fatal) treats
+ * it as a GUEST failure: the run is ended, Husk stays, and the reason is displayed and persisted, the
+ * same rule that makes a guest exit() unwind the app rather than the process. A fault outside the
+ * region is still a host crash and keeps the old behaviour.
+ */
+bool tl_xmem_arena_fetch_fault(uintptr_t pc, uintptr_t addr);
+
+/*
+ * Record why the last run died, in the same container file as the verdict (see tl_xmem_set_verdict_path).
+ * `reason` is one line; `pc` is the address the guest branched to. Called from the crash reporter's
+ * guest-fault path. A no-op when no path was set, and on a host with no arena at all.
+ */
+void tl_xmem_note_guest_fault(const char *reason, uintptr_t pc);
 
 #ifdef __cplusplus
 }
