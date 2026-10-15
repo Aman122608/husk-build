@@ -280,3 +280,40 @@ cannot be proven (make `grant_own_arena()` a requirement rather than a preferenc
 `husk_ios_jit_prewarm` verify the per-page `M<addr>,1:69` sweep actually ran. Either way the widened
 fault rule (Task A) is what lets the run survive to print this line instead of dying with the app. No
 guard relaxed, nothing unmapped, no thread ended, the honest refusal unchanged.
+
+---
+
+## The fix landed: the allocator backs the span it hands out
+
+The measurement above decided it: `offset +0xb589b90` is **INSIDE** the emitted span (fault address
+190,356,368 < the allocator's high-water mark 193,953,792, by ~3.6 MB), so the page the guest touched
+was handed out by the layer's own bump pointer and the layer is obliged to back it. The fault is a DATA
+access (SIGBUS, not a protection SIGSEGV) into entry `0x1217b8000..0x1217bc000` reported `prot 5 max 7`
+-- the entry NAMES EXECUTE and the page still had no backing -- which is the shape `husk-tl-xmem.c`'s own
+record already named (`:339-341`, `:825-827`). The backing is created by a WRITE (the loader `memset`s
+every image through the writable twin, and that store is what makes the kernel publish the page); the
+bump allocator's tail -- stub pages, the JIT arena, any span handed out but never written -- was therefore
+handed out mapped-but-unbacked.
+
+`src/translation-layer-next/husk-tl-xmem.c`, `tl_xmem_alloc` (the single choke point for every arena
+allocation -- the loader's library/JIT allocs, `husk-tl-ld.c`; the bionic-io and egl page allocs): after
+the bump pointer advances, one byte is written per 4 KiB page across the span **this call** handed out,
+through the WRITABLE view (`xmem_writable_view()`, never the executable view), forcing the kernel to back
+each page before any caller can touch it. A store, not a full `memset`: the span is fresh and the caller
+that keeps content writes it before use. Nothing in the whole 512 MiB reservation is touched beyond the
+handed-out span, and `tl_xmem_used()`/`tl_xmem_size()` remain the only accounting -- no second counter is
+invented. **No `vm_protect` is issued on the region** (the ask for RWX is what revoked the debugger's
+per-entry execute grant -- see `adopt_exec_view`), nothing is unmapped, no thread is ended, no guard is
+relaxed. The executable view is never written: every store goes through the writable twin.
+
+The log line, once per backing pass, at the layer's usual level:
+
+```
+xmem: arena page backing: backed the span just handed out %p..%p (%zu bytes, %zu pages) -- one byte per 4 KiB page written through the writable view %p, so a later guest DATA access to these pages cannot SIGBUS on an unbacked page (no vm_protect, nothing unmapped)
+```
+
+Hand-checked against HEAD (no compiler here): `{}` counts 123/123 vs HEAD 122/122 (the one added block is
+balanced), `()` balanced, the arena walk still reads `512 MiB mapped, 512 MiB executable, 0 NOT
+executable`, the EXEC GATE pair and the guarded write-then-execute are untouched, and no path writes the
+executable view.
+

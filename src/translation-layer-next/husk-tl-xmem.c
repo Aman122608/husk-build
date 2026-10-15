@@ -565,16 +565,51 @@ bool tl_xmem_open(size_t host_bytes, char *err, size_t errlen)
     return ok;
 }
 
+/*
+ * Hand out a span of the arena -- and BACK it.
+ *
+ * The span is carved by bumping g_x.used and the address it returns is MAPPED (an entry the kernel
+ * names, here even naming execute), but on this device the pages behind it are not necessarily
+ * RESIDENT until something WRITES them -- the same way the loader's own emission is what makes the
+ * kernel back an image's pages: it memsets every image through the writable twin right after this
+ * returns (husk-tl-ld.c). A span handed out but never written -- a stub page, the JIT arena, any tail
+ * the emitter did not reach -- is therefore mapped-but-unbacked, and a later guest DATA access (a
+ * load or a store) to one of its pages takes SIGBUS on a page whose entry NAMED execute. robot gf's
+ * fault (offset +0xb589b90 from the arena base, INSIDE the bump allocator's 184.9 MiB high-water
+ * mark, entry 0x1217b8000..0x1217bc000 prot 5 max 7) is exactly that shape: the page is the layer's
+ * to back and nothing had backed it. See .hermes/plans/engine-reset/fault-is-not-permission.md.
+ *
+ * So back it here, the moment it is handed out, the SAME way the loader does -- a write through the
+ * WRITABLE view (xmem_writable_view(); NEVER the executable view, which is RX and whose pages must
+ * stay executable). One byte per 4 KiB page is enough to force the kernel to back the page; a full
+ * memset of the whole span is NOT required and would be wasteful -- the callers that keep content
+ * write it before use, and the loader memsets the whole image right after this returns, so the byte
+ * is written as zero into a span that is freshly handed out and holds nothing yet. Exactly the span
+ * THIS call handed out is backed -- never the whole 512 MiB reservation (tl_xmem_used()/tl_xmem_size()
+ * already track the span, so no second accounting is invented) -- and NO vm_protect is issued on the
+ * region: the ask for RWX on these pages is what revoked the debugger's per-entry execute grant (see
+ * adopt_exec_view). Nothing is unmapped and no thread is ended.
+ */
 bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
 {
     size_t n = (bytes + TL_XMEM_PAGE - 1) & ~(size_t)(TL_XMEM_PAGE - 1);
     bool ok = false;
     pthread_mutex_lock(&g_x.lock);
     if (g_x.open && n <= g_x.size - g_x.used) {
-        if (rx) *rx = g_x.rx + g_x.used;
-        if (rw) *rw = xmem_writable_view() + g_x.used;
+        size_t start = g_x.used;
+        if (rx) *rx = g_x.rx + start;
+        if (rw) *rw = xmem_writable_view() + start;
         g_x.used += n;
         ok = true;
+        /* Back the span just handed out: one store per 4 KiB page, through the writable view. A store
+         * (not a read) is what makes the kernel publish the page; writing zero is safe because the span
+         * is fresh, as above. */
+        {
+            uint8_t *wv = xmem_writable_view() + start;
+            for (size_t off = 0; off < n; off += 4096u) wv[off] = 0;
+            tl_log_line("xmem: arena page backing: backed the span just handed out %p..%p (%zu bytes, %zu pages) -- one byte per 4 KiB page written through the writable view %p, so a later guest DATA access to these pages cannot SIGBUS on an unbacked page (no vm_protect, nothing unmapped)",
+                        (void *)wv, (void *)(wv + n), n, n / 4096u, (void *)xmem_writable_view());
+        }
     }
     pthread_mutex_unlock(&g_x.lock);
     return ok;
