@@ -161,6 +161,11 @@ void husk_native_set_system_files(const char *cacerts_dir, const char *fonts_roo
 void husk_native_add_package(const char *apk);
 /* The folder games see as Android's shared storage (/sdcard outside their own Android/data), or NULL for each game's own. */
 void husk_native_set_shared_storage(const char *dir);
+/* Where the layer writes the last arena verdict, so it survives a crash: a file in the app's container
+   (e.g. Documents/husk-arena-verdict.txt). Set before a game starts; the layer writes it at measurement
+   time and again if a guest fetch fault ends the run, and the app's "Guest arena" row reads it on the
+   next launch. NULL or empty turns persistence off. */
+void husk_native_set_arena_verdict_path(const char *path);
 /* The screen's safe-area insets in pixels, for a game that keeps its controls out of a notch (SDL games ask). Before the launch call, or any time. */
 void husk_sdl_set_safe_insets(int left, int top, int right, int bottom);
 /* Whether an SDL game's manifest asks for a portrait screen (the others are landscape). */

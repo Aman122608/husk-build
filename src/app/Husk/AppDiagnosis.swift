@@ -80,6 +80,18 @@ struct AppDiagnosis: Identifiable, Equatable {
     static func fromLog(_ text: String) -> AppDiagnosis? {
         let lines = text.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
 
+        // A guest fetch fault the layer SURVIVED and named: the app's own code branched into a page of
+        // its JIT arena that will not fetch. The layer ends the run and leaves Husk up (a GUEST failure,
+        // not a host one), so this is the layer's own reason rather than a guess from a fatal signal.
+        if let l = lines.last(where: { $0.contains("husk: GUEST FAULT: ") }) {
+            let why = l.components(separatedBy: "husk: GUEST FAULT: ").last ?? l
+            return AppDiagnosis(kind: .nativeCrash, title: "The game crashed in its JIT arena",
+                                detail: "The app branched into a page of the guest arena that iOS will not execute on this "
+                                    + "device — the arena is there, but the page will not fetch. Husk ended the run and stayed "
+                                    + "up so this can be read. " + String(why.prefix(240)),
+                                evidence: l)
+        }
+
         // A native crash: the runtime's crash handler names the library the bad instruction was in
         if let i = lines.lastIndex(where: { $0.contains("=== CRASH:") || $0.contains("*** FATAL SIGNAL") }) {
             let head = lines[i]

@@ -172,6 +172,32 @@ static void fault_address_region(uintptr_t pc)
 }
 
 /*
+ * Is this fault the GUEST failing in its own arena -- the shape robot gf died on?
+ *
+ * The guest's compiled code branched (a computed `blr x8`) to an address in the arena that will not
+ * fetch; the kernel delivered SIGBUS with pc == fault address, inside the region, on a page whose
+ * entry named no execute. Such a fault is the APP's failure, not Husk's: it was the app's own code
+ * that ran, and iOS is refusing the page it ran into. So it must end the game SESSION and leave Husk
+ * standing -- the same rule the guest exit family already follows (tl_guest_exit_unwind: A GUEST'S
+ * FAILURE MUST NOT KILL THE HOST). Otherwise the one thing built to explain the run -- the "Guest
+ * arena" row and this very report -- goes down with the process, and the user cannot read why.
+ *
+ * It must be a FETCH, not a data access: pc == fault address. And it must be inside the arena, which
+ * is guest memory; a fault anywhere else is still a host crash and keeps the old behaviour exactly.
+ * `why` is filled with a one-line reason for the log, the UI and the persisted verdict file.
+ */
+static bool guest_arena_fetch(siginfo_t *info, ucontext_t *uc, char *why, size_t whyn)
+{
+    uintptr_t pc = (uintptr_t)uc->uc_mcontext->__ss.__pc;
+    uintptr_t addr = (uintptr_t)info->si_addr;
+    if (!tl_xmem_arena_fetch_fault(pc, addr)) return false;
+    char at[200];
+    where(at, sizeof(at), pc);
+    snprintf(why, whyn, "the app's own code branched to %s in the guest arena and the page will not fetch (it is inside the arena the layer made, and iOS refuses to execute it on this device)", at);
+    return true;
+}
+
+/*
  * A fault in guest code ends the process, as it would on Android, but not before the log says where:
  * the guest library and offset of the faulting instruction and of the code that called it. The app's
  * own crash handling (which keeps the log file) runs after.
@@ -214,6 +240,41 @@ static void on_fatal(int sig, siginfo_t *info, void *uctx)
     for (int i = 0; i < 29; i += 4)
         tl_log_line("    x%d=%#llx x%d=%#llx x%d=%#llx x%d=%#llx", i, uc->uc_mcontext->__ss.__x[i], i + 1, uc->uc_mcontext->__ss.__x[i + 1],
                     i + 2, i + 2 < 29 ? uc->uc_mcontext->__ss.__x[i + 2] : 0ull, i + 3, i + 3 < 29 ? uc->uc_mcontext->__ss.__x[i + 3] : 0ull);
+    /*
+     * A guest fetch fault INSIDE THE ARENA is the GUEST's failure, not Husk's, so it ends the game
+     * session and not the process. The full report above is printed unchanged (the evidence is the
+     * point), then the run is unwound the way a guest exit() unwinds it (tl_guest_exit_unwind), and
+     * the reason is written to the container so the next launch can show it.
+     *
+     * Only the faulting thread ends, and only because it cannot continue: the instruction at pc is
+     * unreadable, so there is NO "resume with a defined value" here the way an unserviced brk returns
+     * 0 -- that convention exists for brk (the debugger's answer register), and nothing defines the
+     * bytes after a page that will not fetch. So this is the honest behaviour available: end the
+     * calling thread (pthread_exit, exactly what tl_guest_exit_unwind does -- never a cancel or join
+     * of anyone else's thread) and leave Husk standing with the reason recorded.
+     */
+    {
+        char gf[240];
+        if (guest_arena_fetch(info, uc, gf, sizeof(gf))) {
+            tl_xmem_note_guest_fault(gf, (uintptr_t)info->si_addr);
+            tl_log_line("husk: GUEST FAULT: %s; this is the APP failing, so the app is unwound and Husk stays "
+                        "for the next game (never the host process; the verdict row and the log above say why)",
+                        gf);
+            /* End the RUN, and only by CAS: a session close already in flight (STOPPING) or the
+             * closed gate (IDLE) is never clobbered -- the close finishes with the gate open. */
+            if (!tl_guest_exit_close_in_flight()) {
+                int cur = atomic_load(&A.state);
+                if (cur != HUSK_UNITY_IDLE && cur != HUSK_UNITY_STOPPING) {
+                    int expect_cur = cur;
+                    atomic_compare_exchange_strong(&A.state, &expect_cur, HUSK_UNITY_FAILED);
+                }
+            }
+            tl_javaapp_request_exit();
+            tl_javaapp_thread_leaving();
+            pthread_exit(NULL);
+            /* never returns */
+        }
+    }
     if (g_prev[sig].sa_flags & SA_SIGINFO) {
         if (g_prev[sig].sa_sigaction) { g_prev[sig].sa_sigaction(sig, info, uctx); return; }
     } else if (g_prev[sig].sa_handler != SIG_DFL && g_prev[sig].sa_handler != SIG_IGN && g_prev[sig].sa_handler) {
@@ -678,6 +739,12 @@ void husk_native_set_system_files(const char *cacerts_dir, const char *fonts_roo
 void husk_ue4_set_vulkan(const char *dylib) { snprintf(A.vulkan, sizeof(A.vulkan), "%s", dylib ? dylib : ""); }
 void tl_set_shared_storage(const char *dir);
 void husk_native_set_shared_storage(const char *dir) { tl_set_shared_storage(dir); }
+
+/* Where the layer writes the last arena verdict (tl_xmem_set_verdict_path): a file in the app's
+ * container, so the Settings "Guest arena" row can read why the last run's arena did or did not run
+ * even after a fault took the process. The app gives the path before a game starts; the layer writes
+ * it at measurement time and again if a guest fault ends the run. */
+void husk_native_set_arena_verdict_path(const char *path) { tl_xmem_set_verdict_path(path); }
 
 void husk_native_add_package(const char *apk)
 {

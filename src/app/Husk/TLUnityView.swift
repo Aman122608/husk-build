@@ -310,6 +310,10 @@ final class TLUnityUIView: UIView, UIKeyInput {
         // Android's shared storage, one folder for every game: a game that keeps its data in a folder of its own on /sdcard finds it
         // in Husk's "Shared Storage", which can be filled from Files or Finder.
         husk_native_set_shared_storage(TranslationLayer.sharedStorage.path)
+        // Where the layer records the arena verdict the moment it measures it, and why the run died if
+        // a guest fault ends it. A file in the app's container, so the Settings "Guest arena" row can
+        // read it on the NEXT launch -- the verdict has to outlive the process it was measured in.
+        husk_native_set_arena_verdict_path(JITBootstrap.arenaVerdictURL.path)
         // The CA certificates and system fonts Android keeps under /system, as the app carries them.
         if let sys = Bundle.main.resourcePath.map({ $0 + "/android-system" }), FileManager.default.fileExists(atPath: sys) {
             husk_native_set_system_files(sys + "/cacerts", sys)
