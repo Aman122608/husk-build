@@ -980,6 +980,22 @@ int husk_tl_session_close(void)
         if (verdict == SWAP_OK) verdict = SWAP_PARTIAL;
     }
 
+    /* Name what the partial close left behind, so `husk_tl_swap_status` states the condition. It used to read
+     * "swapped, leaked (detail in the log)", and a caller that quotes the layer's own words -- the Swift swap record --
+     * then printed the garbled "leaked (swapped, leaked (detail in the log))". The counts are the honest detail; a
+     * partial with neither count nonzero is the Java reset's own quarantine (a thread asked to stop that would not). */
+    char leak[96] = "";
+    if (verdict == SWAP_PARTIAL) {
+        if (guest_live > 0 && loops_live > 0)
+            snprintf(leak, sizeof(leak), "%d guest thread(s) and %d looper(s) left parked", guest_live, loops_live);
+        else if (guest_live > 0)
+            snprintf(leak, sizeof(leak), "%d guest thread(s) left parked", guest_live);
+        else if (loops_live > 0)
+            snprintf(leak, sizeof(leak), "%d looper thread(s) left parked", loops_live);
+        else
+            snprintf(leak, sizeof(leak), "a Java thread would not stop");
+    }
+
     /* Forget the old loopers once reported: the next app builds its own main looper and HandlerThreads. */
     tl_loop_reset();
 
@@ -1015,7 +1031,14 @@ int husk_tl_session_close(void)
         if (atomic_compare_exchange_strong(&A.state, &expect, HUSK_UNITY_IDLE)) { opened = 1; break; }
     }
     g_swap_verdict = verdict;
-    snprintf(g_swap_status, sizeof(g_swap_status), verdict == SWAP_OK ? "swapped cleanly" : "swapped, leaked (detail in the log)");
+    if (verdict == SWAP_OK)
+        snprintf(g_swap_status, sizeof(g_swap_status), "swapped cleanly");
+    else if (verdict == SWAP_PARTIAL)
+        /* The verdict word ("leaked") is carried by g_swap_verdict and printed by the caller; the status string names
+         * the CONDITION, so a caller that quotes it inline does not print "leaked (swapped, leaked (...))". */
+        snprintf(g_swap_status, sizeof(g_swap_status), "%s; not ours to stop", leak);
+    else
+        snprintf(g_swap_status, sizeof(g_swap_status), "swap failed, relaunch needed");
     if (!opened) {
         const char *why = gate_from == HUSK_UNITY_STARTING ? "a launch is still in flight"
                         : gate_from == HUSK_UNITY_RUNNING  ? "the engine is still running frames"

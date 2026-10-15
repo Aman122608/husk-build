@@ -51,7 +51,9 @@ int husk_tl_swap_verdict(void);
  */
 int husk_tl_session_close(void);
 
-/* A short, stable string for the UI: "swapped cleanly", "swapped, leaked (...)", "swap failed, relaunch needed", "no session". */
+/* A short string for the UI: "swapped cleanly", the leak CONDITION for a partial close ("N guest thread(s) left
+ * parked; not ours to stop"), "swap failed, relaunch needed", "no session". The partial form names the condition, not
+ * the verdict word, so a caller that prints it after the verdict does not read "leaked (swapped, leaked (...))". */
 const char *husk_tl_swap_status(void);
 
 /*

@@ -262,10 +262,14 @@ enum NativeSession {
     @discardableResult
     static func close(appID: String, apk: String?, package: String?, engine: TLNativeEngine) -> Outcome? {
         guard isOpen else { return nil }
-        // The layer's own words about the close, if it has any. `husk_tl_swap_status` returns a const string the layer
-        // owns, so unlike the attempt log it is read and not freed.
+        // Close first, then read the layer's own words about it. `husk_tl_swap_status` holds the LAST close's verdict
+        // string, so reading it BEFORE the call reports the previous close's words — or, on the first close of a
+        // process, the boot default "no session" — as this close's detail. That is what printed
+        // "[swap] <id>: leaked (no session)" against a close that had a real leak to name. Read after, and the detail
+        // belongs to this close. `husk_tl_swap_status` returns a const string the layer owns; it is read, not freed.
+        let close = SessionClose(rawValue: husk_tl_session_close()) ?? .needsRestart
         let detail = statusText()
-        switch SessionClose(rawValue: husk_tl_session_close()) ?? .needsRestart {
+        switch close {
         case .needsRestart:
             let tail = "This game's engine would not give up its session, so another game cannot start until Husk is relaunched."
             return finish(appID, .needsRelaunch, detail: detail,
