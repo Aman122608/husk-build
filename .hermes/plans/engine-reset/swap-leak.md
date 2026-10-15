@@ -182,3 +182,171 @@ names — parked guest threads in the shared arena — remains reported, now wit
 - No line in the shape `leaked (swapped, leaked (…))`.
 - The black-screen stall is *not* addressed by this fix; if it persists, the next step is to log the
   parked threads' lock state at the stall to prove the deadlock inference.
+
+---
+
+# Addendum: the swapped-in black-screen stall, made to name itself
+
+Scope: `src/translation-layer-next/husk-tl-xmem.{c,h}`, `husk-tl-ld.c`,
+`husk-tl-bionic-pthread.c`, `husk-tl-bionic.h`, `husk-tl-unity-app.c`. Nothing under
+`tools/a32`; no other plan touched.
+
+## 0. The premise, restated: the first app always works, the second never comes up
+
+The stall is not one app, one engine or one direction. In `130333` it was robot gf (first,
+1327 frames, fine) then lewdest house swapped in → 1 frame → black. In `131029` it is the
+**reverse**: lewdest house ran first to 275 frames and closed cleanly, then robot gf was
+swapped in — `swap verified: scope ok`, `liveness ok (1 frames)` (`131029:534-535`) — and sat
+on its first frame (`131029:532`). **The same app runs perfectly standalone on this build.**
+So the variable is not the app; it is *what the swap left behind*. That is the whole
+inference to test.
+
+Two further facts from `131029` sharpen it, and both are carried into the probe:
+
+- The carried-over thread count is **2**, not 35 (`131029:435`: `2 guest thread(s) still
+  running (not ours to stop; quarantined)`). So **crowding is out**: one or two parked threads
+  are enough. The mechanism to test is **a single thread holding a lock**, not contention
+  among many — so the probe names *each* parked thread and *who holds what*, at the
+  granularity of one thread.
+- The verdict lines confirm the read-order bug diagnosis on a fresh log: the *first* close in
+  the process says `leaked (no session)` (the boot default, `131029:433`) and a later close
+  says the one-behind string (`131029:532`), with each line carrying that app's own
+  `TranslationLayer/<uuid>/` id (`6E5E49CD…` lewdest house, `AEA429E1…` robot gf). The §1
+  diagnosis stands; the §4 fix is untouched here.
+
+## 1. Every lock a parked guest thread could hold, and a swapped-in app could block on
+
+A parked thread is one the close neither ended nor joined — **it keeps running** guest code
+(`husk_tl_session_close`; `130333:473`). For it to hang the next app, it must be *inside* a
+lock when the close walks away and *never leave* it. The candidates, in this layer:
+
+**A. The arena allocator's lock — `husk-tl-xmem.c`.** The arena has one lock, a **single global
+non-recursive `pthread_mutex_t`**, `g_x.lock` (`husk-tl-xmem.c:56`, `g_x` at `:61`). It is
+taken by exactly two functions — `tl_xmem_open` (`:505/517`) and `tl_xmem_alloc` (`:567/621`)
+— and **nowhere else**. What is held under it: the whole bump allocation, the per-page
+read-back of the handed-out span, a pair of guarded signal-probes, and one `tl_log_line`
+(`:583-619`). **No guest code runs under it** — there is no `c.fn`, no constructor, no
+guest call inside the critical section. So a parked thread is only realistically inside it if
+it was **interrupted mid-allocation**; and the only blocking-capable step inside is the logger's
+own mutex (`husk-tl-load.c:338`, short-held) — so it would have to be stuck there. Ranked
+**third**: real, but the lock is never held *across* guest code.
+
+**B. The loader's serialising lock — `husk-tl-ld.c`.** `g_big` is a **recursive**
+`pthread_mutex_t` (`:116`) taken by four entry points (`tl_ld_load`, `tl_ld_init`,
+`tl_ld_begin_session`, `tl_ld_end_session`). Crucially, `tl_ld_init` holds it **across
+`init_locked`**, which calls the library's `DT_INIT` and every `DT_INIT_ARRAY` constructor —
+i.e. **arbitrary guest code** (`husk-tl-ld.c:2099`, `:2105`, under `:2115`). A constructor
+that maps a big asset, waits on I/O, or runs a game loop holds `g_big` for as long as it runs;
+if the session closes while a thread is inside one, that thread stays inside — **still holding
+`g_big`** — and the next app's very first `dlopen`/`dl_ld_init` blocks on it forever. This is
+the one lock **held across a guest call that can park**, so it ranks **first**.
+
+**C. The loader's registry lock — `husk-tl-ld.c`.** `G.lock` (plain, `:101`) guards registry
+bookkeeping only (`tl_ld_maps`, `drop_other_sessions`, the end-session APK close,
+`tl_ld_stale_count`, `tl_ld_handle_live`) — no guest code under it, and it is always nested
+*inside* `g_big` during a load. Ranked **fourth** (bookkeeping).
+
+**D. The codewrite store guard — `husk-tl-codewrite.c`.** **It takes no layer lock at all.**
+It runs on the SIGSEGV/SIGBUS fault path, decodes the faulting store, and carries it through
+the writable twin (`put()`, `:67-93`); its only shared state is a lock-free refusal table. It
+takes neither `g_x.lock` nor `g_big`, so **nothing a swapped-in app needs is held by it** —
+ruled out as a lock holder (the probe says so explicitly).
+
+**E. Guest- and Java-level locks.** The bionic pthread shim's mutexes (`husk-tl-bionic-pthread.c`:
+`b_mutex_lock` etc., the guest's own objects, plus the shim's own `obj_host` init race), the
+DVM's Java object monitors (`husk-tl-dvm.c:762` `mon` = a `pthread_mutex_t` + owner + count) and
+its `g_lock`/`g_open_lock`, and the JNI `JNI_OnLoad` mutex (`husk-tl-jni-hle.c:419`). These are
+**guest/Java-level** locks held by guest code. The layer's ledger does **not** cover them, and
+cannot enumerate who holds an arbitrary guest mutex. Two reasons this is not the first suspect
+for *this* stall: (i) the stall is direction-independent across a Java app and an SDL app, and a
+Java monitor held by an SDL thread (or vice versa) is a mismatch, not a shared resource; (ii) the
+pthread shim **already** names a guest mutex that has waited 5 s, under `TL_MUTEX_TRACE`
+(`husk-tl-bionic-pthread.c:107-127`) — that is the paired run for this class, and the probe says
+so rather than guessing.
+
+**If a parked app-A thread is inside the arena lock when app B allocates:** app B's
+`tl_xmem_alloc` blocks on the same `g_x.lock` (via `tl_xmem_open`/`tl_xmem_alloc` in `ld.c` at
+a library load, `husk-tl-bionic-io.c:1483/1496` for a JIT mmap, `husk-tl-ld.c:695/1601/1913`
+for loader spans, `husk-tl-egl.c:730`). The same question for `g_big` yields the same deadlock,
+one level up and far more likely.
+
+### Ranked, with the one line of code that supports each
+
+1. **loader `g_big`** — held across guest constructors: `husk-tl-ld.c:2115` →
+   `init_locked` → `:2099 ((init_fn)(L->rx + …))(…)`. *Recursive, so a thread parked one level
+   deep keeps it.*
+2. **arena `g_x.lock`** — a single global mutex, `husk-tl-xmem.c:56/567`; held across the
+   allocation + its read-back/probe/log, **never across guest code** — a candidate only if
+   interrupted mid-hold.
+3. **loader `G.lock`** — `husk-tl-ld.c:101`; bookkeeping only, nested inside `g_big`.
+4. **guest mutexes / JVM monitors** — not in the ledger; the shim's 5 s `TL_MUTEX_TRACE` waiter
+   line is the tool for them (`husk-tl-bionic-pthread.c:124`).
+5. **codewrite guard** — takes no layer lock; ruled out.
+
+## 2. The instrument: a lock ledger, a thread census, and a stall probe
+
+Three pieces, all **lock-free**, so a probe that reports a stall cannot itself be what hangs,
+and none of it runs on a fault path or installs a signal handler:
+
+- **Layer-lock ledger** (`husk-tl-xmem.c`, declared in `husk-tl-xmem.h`): fixed slots
+  `TL_LOCK_ARENA`, `TL_LOCK_LOADER_BIG`, `TL_LOCK_LOADER_LIBS`. `tl_lock_acquired(slot, site)`
+  records the holder's `pthread_self()` + its name and a site string; `tl_lock_released(slot)`
+  drops it. Depth counts nesting (the loader lock is recursive). It lives in `xmem.c`, not a new
+  file, **because `tools/a32/build.sh` links `husk-tl-xmem.c` on its own** (`step0`/`diff`,
+  `arm32-harness.yml`): the ledger must not add an undefined symbol there. The loader's sites
+  call it through `ld_big_lock/unlock` and `ld_libs_lock/unlock` wrappers (`husk-tl-ld.c:125-128`).
+- **Guest-thread census** (`husk-tl-bionic-pthread.c`, declared in `husk-tl-bionic.h`): the bare
+  `g_guest_threads` counter is joined by a small lock-free table — per live thread its Darwin
+  `pthread_t`, the entry it was created on, and the **session epoch** it started in. A session
+  close calls `tl_guest_thread_new_epoch()`, so a thread from the swapped-out app is
+  `epoch < current`. `tl_guest_thread_census()` reads it without ever taking a lock.
+- **Stall probe** (`husk-tl-unity-app.c`): the heartbeat calls `tl_swapstall_tick(frames,
+  running)` every tick. When the app has presented ≥1 frame and then made no new one for a
+  bounded time (default **8 s**, `TL_SWAPSTALL_SECS` overrides), it prints **once per distinct
+  stall** — the latch clears when frames advance again. It reads the census and the ledger,
+  cross-references holder-vs-parked by `pthread_t`, and — where the kernel will read it — takes
+  each parked thread's **pc** with `thread_get_state` (it briefly stops the thread to copy its
+  registers; it does not end, join, unmap or install a signal handler for a signal being
+  handled). Where the kernel will not, it prints `not readable by the layer` — never a guess.
+
+## 3. The exact line the probe prints
+
+```
+swap-stall: app presented 1 frame(s) then no new frame for 8.0 s while RUNNING (engine sdl, state running) -- the difference from this app run alone is exactly what the swap left behind; layer locks: arena=free loader-big=HELD(PARKED THREAD 'SDLTimer' from loader load/init -- a thread from the swapped-out session) loader-libs=free; codewrite guard takes no layer lock (a signal-time store redirect, husk-tl-codewrite.c); 2 guest thread(s) still counted live, 2 from an earlier session (parked); parked threads: #1 'SDLAudioP1' entry [libmain.so ?+0x0] pc [libmain.so ?+0x1a3c]; #2 'SDLTimer' entry [libmain.so ?+0x0] pc [the arena +0x21f40 (executable view: it is running JIT'd guest code)]; VERDICT: a thread parked from the session that was swapped out holds 'loader-big' -- the swapped-in app blocks on it here, so the quarantine (a thread left mid-hold by the close) IS the deadlock, and the fix is to make the swap wait for or reclaim those locks rather than quarantine a thread mid-hold.
+```
+
+The two shapes the `VERDICT` clause can take are the whole point:
+
+- `VERDICT: a thread parked from the session that was swapped out holds '<lock>' … the
+  quarantine (a thread left mid-hold by the close) IS the deadlock …`
+- `VERDICT: no parked thread holds any layer lock the layer can see, so this stall is NOT the
+  swap's quarantine -- look next at the app's OWN first-frame path (its onResume/launch and its
+  own asset/asset-file reads) …`
+
+## 4. What the probe proves, either way
+
+- **If a parked thread is inside the allocator (or holds the loader lock / any layer lock) when
+  app B stalls** — the line names the thread, the lock and the site: that **is the deadlock**, and
+  the fix is to make the swap **wait for or reclaim** those threads' locks instead of
+  quarantining a thread mid-hold (out of scope here; prove the cause first, as required).
+- **If no parked thread holds anything app B needs** — the line says so plainly, and the next
+  place to look is **app B's own first-frame path**: its `onResume`/launch and its own asset /
+  virtual-file reads. A guest-level mutex would then be the remaining suspect, and the paired run
+  is `TL_MUTEX_TRACE` (the shim's existing 5 s waiter line names holder and waiter).
+
+The probe does not force the first story: it reports the ledger and the census as they are, and
+the verdict sentence follows the evidence. Nothing the guest holds is unmapped, no thread that
+ran guest code is ended or joined, and the honest accounting (`leaked`, the parked count) is
+unchanged — the fix in §4 of this file is untouched.
+
+## 5. What a next run must show
+
+- One `swap-stall:` line, **once**, within ~10 s of the swapped-in app's first frame going quiet.
+- The line states `engine …` and `state running`, the number still counted live and how many are
+  from an earlier session.
+- For each layer lock: `free`, or `HELD(<PARKED THREAD|thread> '<name>' from <site> …)`.
+- Each parked thread named: `'<name>' entry [<image …>] pc [<image …> | the arena +0xN | not
+  readable by the layer]`.
+- A final `VERDICT:` naming either the lock (deadlock confirmed) or that no parked thread holds
+  a layer lock (next place: the app's own first-frame path).
+

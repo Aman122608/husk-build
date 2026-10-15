@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,6 +75,62 @@ static uintptr_t g_fault_addr;
 static bool      g_fault_have;
 static bool      g_fault_reported;
 #endif
+
+/* ============================================================================================
+ * THE LAYER-LOCK LEDGER -- which of the layer's own locks is held, and by which thread.
+ *
+ * A session close QUARANTINES a guest thread it cannot stop: the thread keeps running guest code and may hold a layer
+ * lock forever. A swapped-in app that then blocks on one of those locks stalls on its first frame and says nothing else.
+ * So every layer lock a swapped-in app can block on records, lock-free, who holds it and where it was taken, and the
+ * stall probe (husk-tl-unity-app.c) reads this table and NAMES the holder.
+ *
+ * The arena lock (g_x.lock) is slot ARENA; the loader's two locks (husk-tl-ld.c) are recorded through the SAME table, so
+ * one reader sees every layer lock at once. The codewrite guard is deliberately not here: it takes no layer lock, it runs
+ * on the signal path, and a store into the executable view is carried through the writable twin without acquiring
+ * anything (husk-tl-codewrite.c).
+ *
+ * Lock-free, because a probe that reported a stall by blocking on a mutex a parked thread held would be the bug it looks
+ * for. Only the holder writes owner/site; a reader reads them only after depth > 0 -- a release/acquire pairing. Depth is
+ * 0 when free and counts nesting for the loader's recursive lock.
+ */
+static const char *const g_ledger_names[TL_LOCK_COUNT] = { "arena", "loader-big", "loader-libs" };
+static struct {
+    _Atomic int depth;
+    _Atomic unsigned long owner;      /* pthread_t as an integer, 0 when free */
+    char owner_name[32];
+    char site[48];
+} g_ledger[TL_LOCK_COUNT];
+
+void tl_lock_acquired(int slot, const char *site)
+{
+    if (slot < 0 || slot >= TL_LOCK_COUNT) return;
+    pthread_t t = pthread_self();
+    pthread_getname_np(t, g_ledger[slot].owner_name, sizeof(g_ledger[slot].owner_name));
+    if (!g_ledger[slot].owner_name[0]) snprintf(g_ledger[slot].owner_name, sizeof(g_ledger[slot].owner_name), "thread-%p", (void *)t);
+    snprintf(g_ledger[slot].site, sizeof(g_ledger[slot].site), "%s", site ? site : "?");
+    atomic_store_explicit(&g_ledger[slot].owner, (unsigned long)(uintptr_t)t, memory_order_relaxed);
+    atomic_fetch_add_explicit(&g_ledger[slot].depth, 1, memory_order_release);
+}
+
+void tl_lock_released(int slot)
+{
+    if (slot < 0 || slot >= TL_LOCK_COUNT) return;
+    int d = atomic_load_explicit(&g_ledger[slot].depth, memory_order_acquire);
+    if (d > 0) atomic_fetch_sub_explicit(&g_ledger[slot].depth, 1, memory_order_release);
+}
+
+int tl_lock_ledger(tl_lock_info *out, int max)
+{
+    for (int i = 0; i < TL_LOCK_COUNT; i++) {
+        if (!out || i >= max) break;
+        out[i].name  = g_ledger_names[i];
+        out[i].depth = atomic_load_explicit(&g_ledger[i].depth, memory_order_acquire);
+        out[i].owner = atomic_load(&g_ledger[i].owner);
+        snprintf(out[i].owner_name, sizeof(out[i].owner_name), "%s", g_ledger[i].owner_name);
+        snprintf(out[i].site, sizeof(out[i].site), "%s", g_ledger[i].site);
+    }
+    return TL_LOCK_COUNT;
+}
 
 /* Record the guarded write-then-execute's outcome (RAN or FAULTED only); `detail` is copied, so the caller's buffer
  * need not outlive the call. Apple-only: the guarded probes are the mach ones below. The verdict is ALSO written to the
@@ -503,6 +560,7 @@ bool tl_xmem_open(size_t host_bytes, char *err, size_t errlen)
 {
     bool ok = true;
     pthread_mutex_lock(&g_x.lock);
+    tl_lock_acquired(TL_LOCK_ARENA, "tl_xmem_open");
     if (!g_x.open) {
         char local[160] = "";
         ok = open_platform(host_bytes, local, sizeof(local));
@@ -514,6 +572,7 @@ bool tl_xmem_open(size_t host_bytes, char *err, size_t errlen)
             snprintf(err, errlen, "%s", local);
         }
     }
+    tl_lock_released(TL_LOCK_ARENA);
     pthread_mutex_unlock(&g_x.lock);
     return ok;
 }
@@ -565,6 +624,7 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
     size_t n = (bytes + TL_XMEM_PAGE - 1) & ~(size_t)(TL_XMEM_PAGE - 1);
     bool ok = false;
     pthread_mutex_lock(&g_x.lock);
+    tl_lock_acquired(TL_LOCK_ARENA, "tl_xmem_alloc");
     if (g_x.open && n <= g_x.size - g_x.used) {
         size_t start = g_x.used;
         if (rx) *rx = g_x.rx + start;
@@ -618,6 +678,7 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
                         (void *)wv, wverdict, (unsigned)wb, wsig, wcode);
         }
     }
+    tl_lock_released(TL_LOCK_ARENA);
     pthread_mutex_unlock(&g_x.lock);
     return ok;
 }

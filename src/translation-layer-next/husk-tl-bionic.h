@@ -113,9 +113,21 @@ void tl_log_line(const char *fmt, ...);
 /* A one-line note, once per distinct text, for things that are stubbed. */
 void tl_note_once(const char *what);
 
-/* How many guest threads the pthread shim has started and that have not returned (for a session close to report
- * what it could not stop; there is no registry to enumerate or suspend them). */
+/* How many guest threads the pthread shim has started and that have not returned: what a session close reports it could
+ * not stop. A close never ends or joins one -- cancelling a thread that ran guest code runs its TLS destructors. */
 int tl_guest_thread_live_count(void);
+
+/*
+ * WHO those live threads are, so a stall can name itself. The counter can say a close left 35 threads running and cannot
+ * say which; a swapped-in app that then hangs on its first frame cannot be explained from a number. A small lock-free
+ * table records, per live thread, its Darwin identity, the entry it was created on and the session EPOCH it started in,
+ * so a reader can tell a thread from an EARLIER session (parked from the app that was swapped out) from this session's
+ * own. Reading it never blocks and never stops a thread -- it is for reporting, exactly as the counter is.
+ */
+typedef struct { unsigned long tid, entry; int epoch; } tl_guest_thread_info;
+int  tl_guest_thread_census(tl_guest_thread_info *out, int max);   /* live count (may exceed max); fills up to max */
+int  tl_guest_thread_epoch(void);                                  /* the current session epoch */
+void tl_guest_thread_new_epoch(void);                             /* a session boundary: later threads are this session's */
 
 #ifdef __cplusplus
 }

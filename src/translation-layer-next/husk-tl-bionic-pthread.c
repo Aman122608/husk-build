@@ -447,11 +447,64 @@ void tl_thread_altstack(void)
 static atomic_int g_guest_threads;
 int tl_guest_thread_live_count(void) { return atomic_load(&g_guest_threads); }
 
+/*
+ * WHO the live guest threads are, not only how many. The counter can say a close left two threads running and cannot
+ * say which; a swapped-in app that then hangs on its first frame has nothing else to point at. This table records, per
+ * live thread, its Darwin identity, the entry it was created on and the session EPOCH it started in, so a stall probe can
+ * tell a thread from an EARLIER session (parked from the app that was swapped out) from this session's own, and name it.
+ *
+ * Lock-free on purpose: the probe reads it from the heartbeat thread and must never block on a mutex a parked thread
+ * could be holding. A slot is reserved with a CAS to CLAIMING, filled, then published as PRESENT, and a reader includes a
+ * slot only once PRESENT. Nothing here suspends, ends or joins a thread -- it is for reporting, as the counter is.
+ */
+enum { GT_FREE = 0, GT_CLAIMING = 1, GT_PRESENT = 2 };
+#define TL_GT_SLOTS 128
+static struct { _Atomic int live; _Atomic unsigned long tid, entry; _Atomic int epoch; } g_gt[TL_GT_SLOTS];
+static _Atomic int g_epoch;
+int  tl_guest_thread_epoch(void) { return atomic_load(&g_epoch); }
+void tl_guest_thread_new_epoch(void) { atomic_fetch_add(&g_epoch, 1); }
+
+static void gt_enter(const void *entry)
+{
+    for (int i = 0; i < TL_GT_SLOTS; i++) {
+        int expect = GT_FREE;
+        if (!atomic_compare_exchange_strong(&g_gt[i].live, &expect, GT_CLAIMING)) continue;
+        atomic_store(&g_gt[i].tid, (unsigned long)(uintptr_t)pthread_self());
+        atomic_store(&g_gt[i].entry, (unsigned long)(uintptr_t)entry);
+        atomic_store(&g_gt[i].epoch, atomic_load(&g_epoch));
+        atomic_store_explicit(&g_gt[i].live, GT_PRESENT, memory_order_release);
+        return;
+    }
+}
+static void gt_leave(void)
+{
+    unsigned long me = (unsigned long)(uintptr_t)pthread_self();
+    for (int i = 0; i < TL_GT_SLOTS; i++) {
+        if (atomic_load_explicit(&g_gt[i].live, memory_order_acquire) != GT_PRESENT) continue;
+        if (atomic_load(&g_gt[i].tid) == me) { atomic_store_explicit(&g_gt[i].live, GT_FREE, memory_order_release); return; }
+    }
+}
+int tl_guest_thread_census(tl_guest_thread_info *out, int max)
+{
+    int n = 0;
+    for (int i = 0; i < TL_GT_SLOTS; i++) {
+        if (atomic_load_explicit(&g_gt[i].live, memory_order_acquire) != GT_PRESENT) continue;
+        if (out && n < max) {
+            out[n].tid   = atomic_load(&g_gt[i].tid);
+            out[n].entry = atomic_load(&g_gt[i].entry);
+            out[n].epoch = atomic_load(&g_gt[i].epoch);
+        }
+        n++;
+    }
+    return n;
+}
+
 static void *start_thunk(void *p)
 {
     start_ctx c = *(start_ctx *)p;
     free(p);
     atomic_fetch_add(&g_guest_threads, 1);
+    gt_enter((const void *)c.fn);
     /* a stack of its own for fault handlers: a crash that leaves the thread's stack unusable is then still reported (macOS kills a
        thread it can not deliver a signal to with SIGILL, and nothing is said) */
     tl_thread_altstack();
@@ -463,6 +516,7 @@ static void *start_thunk(void *p)
     }
     void *r = c.fn(c.arg);
     if (g_thread_trace) { char nm[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); tl_log_line("thread: '%s' EXITED", nm); }
+    gt_leave();
     atomic_fetch_sub(&g_guest_threads, 1);
     return r;
 }

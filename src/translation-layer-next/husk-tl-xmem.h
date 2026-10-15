@@ -161,6 +161,37 @@ void tl_xmem_note_guest_fault(const char *reason, uintptr_t pc);
  */
 void tl_xmem_report_fault_time(void);
 
+/* ---------------------------------------------------------- the layer-lock ledger */
+
+/*
+ * Which of the layer's own locks is held, and by which thread. A session close QUARANTINES guest threads it cannot stop
+ * (husk_tl_session_close); such a thread keeps running guest code and can hold a layer lock forever, and a swapped-in app
+ * that then needs that lock stalls on its first frame with no other symptom. Every layer lock a swapped-in app can block
+ * on records, lock-free, who holds it and where it was taken, so the stall probe (husk-tl-unity-app.c) can NAME the holder
+ * instead of it being inferred.
+ *
+ * Slots are fixed (one per lock) so a note never takes a lock itself: the arena allocator's own lock is slot ARENA, and
+ * the loader's two (husk-tl-ld.c) are recorded through the same table, so one reader sees every layer lock at once. The
+ * codewrite guard is deliberately absent: it takes NO layer lock -- it runs on the signal path and carries a store into
+ * the executable view through the writable twin without acquiring anything (husk-tl-codewrite.c).
+ *
+ * A note runs on the thread that just took (or is about to drop) the lock; only the holder writes owner/site, and a
+ * reader reads them only after depth > 0 -- a release/acquire pairing. `depth` is 0 when free and counts nesting for the
+ * loader's recursive lock. Reading never blocks, because a probe that reported a stall by blocking on a mutex a parked
+ * thread held would be the very bug it looks for.
+ */
+enum { TL_LOCK_ARENA = 0, TL_LOCK_LOADER_BIG = 1, TL_LOCK_LOADER_LIBS = 2, TL_LOCK_COUNT };
+typedef struct tl_lock_info {
+    const char *name;      /* "arena", "loader-big", "loader-libs" */
+    int depth;             /* 0 = free; > 0 = held (nesting depth for the recursive loader lock) */
+    unsigned long owner;   /* the holding thread's pthread_t as an integer, 0 when free */
+    char owner_name[32];   /* what the holder calls itself (pthread_getname_np), for the line */
+    char site[48];         /* the layer function that last took it */
+} tl_lock_info;
+void tl_lock_acquired(int slot, const char *site);   /* call AFTER the mutex is taken */
+void tl_lock_released(int slot);                     /* call AFTER the mutex is dropped */
+int  tl_lock_ledger(tl_lock_info *out, int max);     /* snapshot; returns TL_LOCK_COUNT */
+
 #ifdef __cplusplus
 }
 #endif

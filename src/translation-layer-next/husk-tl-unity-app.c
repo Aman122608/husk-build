@@ -6,7 +6,9 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdatomic.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +18,8 @@
 #include <TargetConditionals.h>
 #if defined(__APPLE__)
 #include <mach/mach.h>
+#include <mach/thread_act.h>
+#include <mach/arm/thread_status.h>
 #include <mach/vm_map.h>
 #endif
 #if TARGET_OS_IPHONE
@@ -324,6 +328,9 @@ static void guest_exit(int status)
     pthread_exit(NULL);
 }
 
+/* The swapped-in stall probe, defined below near the engine/state names it prints. */
+static void tl_swapstall_tick(unsigned long frames, bool running);
+
 /* Says every few seconds that the engine is alive and how much memory the phone says is left: without it a silent death
  * cannot be told from a frozen game, or a jetsam kill from a crash. */
 static void *heartbeat_thread(void *arg)
@@ -343,6 +350,9 @@ static void *heartbeat_thread(void *arg)
 #else
         tl_log_line("unity: alive: %lu frames (+%lu)", f, delta);
 #endif
+        /* A swapped-in app that presented a frame and then stopped drawing may be blocked on a layer lock a parked thread
+         * holds (tl_swapstall_tick). This is where such a stall names itself, once per stall. */
+        tl_swapstall_tick(f, atomic_load(&A.state) == HUSK_UNITY_RUNNING);
         { extern volatile struct { uint64_t count, x21, impl, mask; } tl_va_clobber;
           static uint64_t seen;
           if (tl_va_clobber.count != seen) {
@@ -819,6 +829,157 @@ static const char *state_name(int s)
     }
 }
 
+/* --------------------------------------------------- the swapped-in stall, made to name itself */
+
+/*
+ * A session close QUARANTINES every guest thread it cannot stop: the thread keeps running guest code and may hold a layer
+ * lock forever (husk_tl_session_close). The strongest evidence that a swap is what breaks the second app is that the SAME
+ * app runs perfectly alone: a swap in EITHER order leaves the first app fine and the second on its first frame, and two
+ * parked threads were enough (not a crowd). A swapped-in app that then needs one of those locks stalls and shows nothing
+ * else. This probe is how that names itself instead of being inferred.
+ *
+ * The heartbeat calls it once a tick. When the app has presented at least one frame and then made no new one for a bounded
+ * time it prints ONCE -- not once per poll -- what the layer can honestly know: which of the layer's own locks are held
+ * and by which thread, and every guest thread still counted live, with the identity, the name it gave itself, the entry
+ * it was created on, and (where the kernel will read it) the pc that says whether it is inside the allocator. It names
+ * each parked thread, not a crowd: ONE thread holding a lock is the mechanism to test.
+ *
+ * It takes no lock -- the census and the ledger are lock-free -- so a probe that reported the stall cannot itself be what
+ * hangs, and it never runs on a fault path. It only READS a thread's state (thread_get_state), which briefly stops the
+ * thread to copy its registers; nothing is ended, joined, unmapped or woken.
+ */
+#define TL_SS_SECS_DEFAULT 8
+static unsigned long g_ss_last_frames;
+static struct timespec g_ss_last_progress;
+static int g_ss_printed;                       /* one line per distinct stall, not per poll */
+static int g_ss_secs = -1;
+
+#if defined(__APPLE__)
+/* The thread's pc, where the kernel will read it. False -- never a guessed value -- when it will not. */
+static bool ss_thread_pc(unsigned long tid, uintptr_t *pc)
+{
+    mach_port_t tp = pthread_mach_thread_np((pthread_t)(uintptr_t)tid);
+    if (!tp) return false;
+    struct __darwin_arm_thread_state64 st;
+    mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
+    if (thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt) != KERN_SUCCESS) return false;
+    *pc = (uintptr_t)st.__pc;
+    return true;
+}
+#else
+static bool ss_thread_pc(unsigned long tid, uintptr_t *pc) { (void)tid; (void)pc; return false; }
+#endif
+
+/* Append to `buf` at offset `w`, clamped so a chained snprintf cannot walk past `cap`. Returns the new offset. */
+static int ss_put(char *buf, int w, size_t cap, const char *fmt, ...)
+{
+    if (w < 0) return 0;
+    if ((size_t)w >= cap) return (int)cap - 1;
+    va_list ap; va_start(ap, fmt);
+    int r = vsnprintf(buf + w, cap - (size_t)w, fmt, ap);
+    va_end(ap);
+    if (r < 0) return w;
+    return (size_t)r >= cap - (size_t)w ? (int)cap - 1 : w + r;
+}
+
+/* A guest address as image+symbol+offset, or a bare hex when no library claims it. */
+static void ss_where(char *out, size_t n, uintptr_t a, bool is_pc)
+{
+    const char *lib = NULL; const void *sa = NULL;
+    const char *sym = tl_ld_symbol_at((const void *)a, &lib, &sa);
+    if (lib)
+        snprintf(out, n, "%s %s+%#lx", lib, sym ? sym : "?", sa ? (unsigned long)(a - (uintptr_t)sa) : 0ul);
+    else if (is_pc && tl_xmem_is_rx((const void *)a))
+        snprintf(out, n, "the arena +%#lx (executable view: it is running JIT'd guest code)", (unsigned long)(a - (uintptr_t)tl_xmem_region_base()));
+    else
+        snprintf(out, n, "%#lx", (unsigned long)a);
+}
+
+#define TL_SS_THREADS 160
+static void ss_probe(unsigned long frames, double quiet_s)
+{
+    char line[2000];
+    int w = 0;
+
+    tl_guest_thread_info gt[TL_SS_THREADS];
+    int ngt = tl_guest_thread_census(gt, TL_SS_THREADS);
+    if (ngt > TL_SS_THREADS) ngt = TL_SS_THREADS;
+    int cur = tl_guest_thread_epoch();
+    int parked = 0;
+    for (int i = 0; i < ngt; i++) if (gt[i].epoch < cur) parked++;
+
+    tl_lock_info lk[TL_LOCK_COUNT];
+    int nlk = tl_lock_ledger(lk, TL_LOCK_COUNT);
+    int held_parked = -1;
+    for (int i = 0; i < nlk; i++) {
+        if (lk[i].depth <= 0) continue;
+        for (int j = 0; j < ngt; j++)
+            if (gt[j].epoch < cur && gt[j].tid == lk[i].owner) { held_parked = i; break; }
+        if (held_parked >= 0) break;
+    }
+
+    w = ss_put(line, w, sizeof(line),
+               "swap-stall: app presented %lu frame(s) then no new frame for %.1f s while RUNNING (engine %s, state %s) -- the difference from this app run alone is exactly what the swap left behind; layer locks:",
+               frames, quiet_s, engine_name(A.engine), state_name(atomic_load(&A.state)));
+    for (int i = 0; i < nlk; i++) {
+        int is_parked = 0;
+        if (lk[i].depth > 0) {
+            for (int j = 0; j < ngt; j++)
+                if (gt[j].epoch < cur && gt[j].tid == lk[i].owner) { is_parked = 1; break; }
+        }
+        w = ss_put(line, w, sizeof(line), " %s=%s", lk[i].name ? lk[i].name : "?", lk[i].depth > 0 ? "HELD" : "free");
+        if (lk[i].depth > 0)
+            w = ss_put(line, w, sizeof(line), "(%s '%s' from %s%s)", is_parked ? "PARKED THREAD" : "thread",
+                       lk[i].owner_name, lk[i].site, is_parked ? " -- a thread from the swapped-out session" : "");
+    }
+    w = ss_put(line, w, sizeof(line),
+               "; codewrite guard takes no layer lock (a signal-time store redirect, husk-tl-codewrite.c); %d guest thread(s) still counted live, %d from an earlier session (parked)",
+               ngt, parked);
+    w = ss_put(line, w, sizeof(line), "; parked threads:");
+    int shown = 0;
+    for (int j = 0; j < ngt; j++) {
+        if (gt[j].epoch >= cur) continue;                       /* this session's own threads are not parked */
+        if (w >= (int)sizeof(line) - 240) break;                /* leave room for the count and the verdict */
+        char nm[32] = "?"; pthread_getname_np((pthread_t)(uintptr_t)gt[j].tid, nm, sizeof(nm));
+        char ent[128]; ss_where(ent, sizeof(ent), (uintptr_t)gt[j].entry, false);
+        uintptr_t pc = 0; bool have = ss_thread_pc(gt[j].tid, &pc);
+        char pcs[128];
+        if (have) ss_where(pcs, sizeof(pcs), pc, true); else snprintf(pcs, sizeof(pcs), "not readable by the layer");
+        w = ss_put(line, w, sizeof(line), " #%d '%s' entry [%s] pc [%s];", shown + 1, nm, ent, pcs);
+        shown++;
+    }
+    if (parked == 0)
+        w = ss_put(line, w, sizeof(line), " none (no thread from an earlier session is still counted live)");
+    else if (parked > shown)
+        w = ss_put(line, w, sizeof(line), " (%d more parked thread(s) not shown: the line is bounded)", parked - shown);
+    w = ss_put(line, w, sizeof(line), ";");
+
+    if (held_parked >= 0)
+        w = ss_put(line, w, sizeof(line),
+                   " VERDICT: a thread parked from the session that was swapped out holds '%s' -- the swapped-in app blocks on it here, so the quarantine (a thread left mid-hold by the close) IS the deadlock, and the fix is to make the swap wait for or reclaim those locks rather than quarantine a thread mid-hold.",
+                   lk[held_parked].name ? lk[held_parked].name : "a layer lock");
+    else
+        w = ss_put(line, w, sizeof(line),
+                   " VERDICT: no parked thread holds any layer lock the layer can see, so this stall is NOT the swap's quarantine -- look next at the app's OWN first-frame path (its onResume/launch and its own asset/asset-file reads). A guest-level lock (a bionic pthread mutex, a JVM monitor) is not in this ledger: the pthread shim already names one that waits 5 s under TL_MUTEX_TRACE (husk-tl-bionic-pthread.c), the paired run for that case.");
+    if (w > 0) tl_log_line("%s", line);
+}
+
+static void tl_swapstall_tick(unsigned long frames, bool running)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if (!running) { g_ss_last_frames = frames; g_ss_last_progress = now; g_ss_printed = 0; return; }
+    if (frames != g_ss_last_frames) {          /* the app is drawing: any earlier stall ended, arm a fresh one */
+        g_ss_last_frames = frames; g_ss_last_progress = now; g_ss_printed = 0; return;
+    }
+    if (frames == 0) { g_ss_last_progress = now; return; }   /* nothing presented yet: not a stall on a frame */
+    if (g_ss_secs < 0) { const char *s = getenv("TL_SWAPSTALL_SECS"); g_ss_secs = s ? atoi(s) : TL_SS_SECS_DEFAULT; if (g_ss_secs <= 0) g_ss_secs = TL_SS_SECS_DEFAULT; }
+    double quiet = (now.tv_sec - g_ss_last_progress.tv_sec) + (now.tv_nsec - g_ss_last_progress.tv_nsec) / 1e9;
+    if (g_ss_printed || quiet < (double)g_ss_secs) return;
+    g_ss_printed = 1;                          /* one line per distinct stall, not per poll */
+    ss_probe(frames, quiet);
+}
+
 /* Can this engine go on to a different app in this process? Static, per engine: SWAP_OK (cooperative stop), SWAP_PARTIAL
  * (driver unwinds but a guest engine singleton survives, so only a DIFFERENT engine is safe next), or
  * SWAP_NEEDS_RESTART (no in-process unwind). The per-engine evidence and the exact stop path are in
@@ -1006,6 +1167,10 @@ int husk_tl_session_close(void)
 
     /* The linker's session generation: stale mappings stay mapped but stop being reachable by name. */
     tl_ld_end_session();
+
+    /* The guest-thread epoch advances at the same boundary: every thread still running from the run that just ended is now
+     * "from an earlier session", so the stall probe can tell a parked thread from this session's own (tl_swapstall_tick). */
+    tl_guest_thread_new_epoch();
 
     /* Reset our own bookkeeping ONLY -- never the memory, and field-by-field (a blanket clear would wipe the engine id
      * used for the log). */

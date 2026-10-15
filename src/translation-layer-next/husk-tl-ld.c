@@ -115,6 +115,18 @@ static struct {
  * dlopen the game they hook), on the thread that is already inside the loader. */
 static pthread_mutex_t g_big = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
 
+/*
+ * Take and drop the loader's two locks through the layer-lock ledger (husk-tl-xmem.c), so a stall can NAME whichever one
+ * a swapped-in app blocks on. g_big is the one that matters: it is held across a library's constructors (init_locked),
+ * i.e. across arbitrary guest code, so a thread parked inside a constructor can hold it forever. G.lock guards the
+ * registry bookkeeping only. The note runs AFTER the mutex is taken and AFTER it is dropped, so a reader sees the holder
+ * for as long as the lock is genuinely held.
+ */
+static void ld_big_lock(void)    { pthread_mutex_lock(&g_big);  tl_lock_acquired(TL_LOCK_LOADER_BIG, "loader load/init"); }
+static void ld_big_unlock(void)  { pthread_mutex_unlock(&g_big); tl_lock_released(TL_LOCK_LOADER_BIG); }
+static void ld_libs_lock(void)   { pthread_mutex_lock(&G.lock); tl_lock_acquired(TL_LOCK_LOADER_LIBS, "loader registry"); }
+static void ld_libs_unlock(void) { pthread_mutex_unlock(&G.lock); tl_lock_released(TL_LOCK_LOADER_LIBS); }
+
 void tl_ld_set_verbosity(int v) { G.verbosity = v; }
 void tl_ld_set_environment(char **argv, char **envp) { G.argv = argv; G.envp = envp; }
 size_t tl_ld_unresolved_count(void) { return G.unresolved; }
@@ -623,7 +635,7 @@ size_t tl_ld_maps(char *buf, size_t n, const char *libdir)
 {
     size_t k = 0;
     if (n) buf[0] = 0;
-    pthread_mutex_lock(&G.lock);
+    ld_libs_lock();
     for (int i = 0; i < G.nlibs && k + 200 < n; i++) {
         tl_lib *L = G.libs[i];
         if (!lib_in_session(L)) continue;
@@ -632,7 +644,7 @@ size_t tl_ld_maps(char *buf, size_t n, const char *libdir)
         k += (size_t)snprintf(buf + k, n - k, "%lx-%lx r-xp 00000000 fd:00 %d %s/%s\n", (unsigned long)lo, (unsigned long)hi, 4000 + i,
                               libdir, L->soname[0] ? L->soname : base_name(L->name));
     }
-    pthread_mutex_unlock(&G.lock);
+    ld_libs_unlock();
     return k;
 }
 
@@ -2063,9 +2075,9 @@ static tl_lib *load_locked(const char *name, int depth)
 
 tl_lib *tl_ld_load(const char *name)
 {
-    pthread_mutex_lock(&g_big);
+    ld_big_lock();
     tl_lib *L = load_locked(name, 0);
-    pthread_mutex_unlock(&g_big);
+    ld_big_unlock();
     return L;
 }
 
@@ -2112,9 +2124,9 @@ static bool init_locked(tl_lib *L)
 
 bool tl_ld_init(tl_lib *lib)
 {
-    pthread_mutex_lock(&g_big);
+    ld_big_lock();
     bool ok = init_locked(lib);
-    pthread_mutex_unlock(&g_big);
+    ld_big_unlock();
     return ok;
 }
 
@@ -2144,21 +2156,21 @@ static void free_registry_node(tl_lib *L)
 static int drop_other_sessions(void)
 {
     int w = 0, dropped = 0;
-    pthread_mutex_lock(&G.lock);
+    ld_libs_lock();
     for (int i = 0; i < G.nlibs; i++) {
         tl_lib *L = G.libs[i];
         if (!lib_in_session(L)) { free_registry_node(L); dropped++; continue; }
         G.libs[w++] = L;
     }
     G.nlibs = w;
-    pthread_mutex_unlock(&G.lock);
+    ld_libs_unlock();
     return dropped;
 }
 
 /* A new app's libraries: later lookups ignore anything an earlier session loaded. */
 void tl_ld_begin_session(void)
 {
-    pthread_mutex_lock(&g_big);
+    ld_big_lock();
     G.session++;
     int hidden = drop_other_sessions();     /* 0 in the usual begin-after-end order */
     /* Module numbers belong to the session, not the process: a library registering one is this
@@ -2167,13 +2179,13 @@ void tl_ld_begin_session(void)
     if (tl_jni_hle_reset_onload) tl_jni_hle_reset_onload();
     tl_log_line("husk: session begin %d (%d registry entries from earlier sessions dropped, %zu KiB of the region used)",
                 G.session, hidden, tl_xmem_used() >> 10);
-    pthread_mutex_unlock(&g_big);
+    ld_big_unlock();
 }
 
 /* The app is over: drop every earlier session's registry node. Mappings stay (see above). */
 void tl_ld_end_session(void)
 {
-    pthread_mutex_lock(&g_big);
+    ld_big_lock();
     G.session++;                           /* the run that just ended is now an earlier session */
     int dropped = drop_other_sessions();
     int kept = G.nlibs;
@@ -2182,11 +2194,11 @@ void tl_ld_end_session(void)
      * TL_LD_MAX_APKS is 16, so a handful of launches exhaust the cap; the search dirs are strdup'd; the queued splits are
      * the ended app's. All of it is the layer's own -- none is guest memory or a mapping. */
     int napks = 0, ndirs = g_nsearch, nsplits = g_nsplits;
-    pthread_mutex_lock(&G.lock);
+    ld_libs_lock();
     for (int i = 0; i < G.napks; i++) { tl_zip_close(&G.apks[i]); napks++; }
     G.napks = 0;
     memset(g_apk_paths, 0, sizeof(g_apk_paths));
-    pthread_mutex_unlock(&G.lock);
+    ld_libs_unlock();
     for (int i = 0; i < g_nsearch; i++) { free(g_search[i]); g_search[i] = NULL; }
     g_nsearch = 0;
     g_nsplits = 0;
@@ -2198,7 +2210,7 @@ void tl_ld_end_session(void)
 
     tl_log_line("husk: session end %d: dropped %d registry entries, kept %d, closed %d APKs, freed %d search dirs, cleared %d queued splits",
                 G.session, dropped, kept, napks, ndirs, nsplits);
-    pthread_mutex_unlock(&g_big);
+    ld_big_unlock();
 }
 
 int tl_ld_session(void) { return G.session; }
@@ -2206,18 +2218,18 @@ int tl_ld_session(void) { return G.session; }
 /* How many libraries from an earlier session the registry still holds; 0 after tl_ld_end_session(). */
 int tl_ld_stale_count(void)
 {
-    pthread_mutex_lock(&G.lock);
+    ld_libs_lock();
     int n = 0;
     for (int i = 0; i < G.nlibs; i++) if (!lib_in_session(G.libs[i])) n++;
-    pthread_mutex_unlock(&G.lock);
+    ld_libs_unlock();
     return n;
 }
 
 /* Whether `lib` is a node the current session's registry holds (for a dlsym handle check). */
 bool tl_ld_handle_live(const tl_lib *lib)
 {
-    pthread_mutex_lock(&G.lock);
+    ld_libs_lock();
     bool ok = lib_live(lib);
-    pthread_mutex_unlock(&G.lock);
+    ld_libs_unlock();
     return ok;
 }
