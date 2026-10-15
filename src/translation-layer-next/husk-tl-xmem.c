@@ -1219,22 +1219,22 @@ bool husk_ios_jit_exec_gate(const char *after)
 {
     const char *label = after ? after : "(unstated)";
     if (!g_x.rx || !g_x.size) {
-        HUSK_LOG("EXEC GATE after %s: no arena is open, so there is nothing to measure -- the gate "
+        tl_log_line("xmem: EXEC GATE after %s: no arena is open, so there is nothing to measure -- the gate "
                  "reports the grant only where the guest's own code would run", label);
         return false;
     }
     int stage = 0;
     bool ran = xmem_write_fetch((uintptr_t)xmem_writable_view(), (uintptr_t)g_x.rx, &stage);
     if (ran) {
-        HUSK_LOG("EXEC GATE after %s: a stub written through the writable view %p and called at the "
+        tl_log_line("xmem: EXEC GATE after %s: a stub written through the writable view %p and called at the "
                  "executable view %p -> RAN -- execute is still there", label,
                  (void *)xmem_writable_view(), (void *)g_x.rx);
     } else if (stage == 1) {
-        HUSK_LOG("EXEC GATE after %s: the STORE through the writable view %p was refused, so the call "
+        tl_log_line("xmem: EXEC GATE after %s: the STORE through the writable view %p was refused, so the call "
                  "could not be made -- the grant cannot be judged from a store that never landed",
                  label, (void *)xmem_writable_view());
     } else {
-        HUSK_LOG("EXEC GATE after %s: the stub was written through %p and called at %p but FAULTED ON "
+        tl_log_line("xmem: EXEC GATE after %s: the stub was written through %p and called at %p but FAULTED ON "
                  "THE FETCH -- %s", label, (void *)xmem_writable_view(), (void *)g_x.rx,
                  stage == 2 ? "the executable view names no execute for this device any more"
                             : "the guard did not run, so there is no verdict");
