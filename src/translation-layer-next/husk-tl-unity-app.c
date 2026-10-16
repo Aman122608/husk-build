@@ -79,6 +79,25 @@ static struct {
 } g_java_host;
 
 static unsigned long engine_frames(void);
+/* The same per-engine counter for an engine that is not the running one (the ledger snapshots it by name). */
+static unsigned long engine_frames_for(int engine);
+
+/* ------------------------------------------------------- the live session's own frames ---------------
+ *
+ * Every frame verdict -- the swap's liveness check and the swapped-in stall probe -- must be able to say
+ * that the frames it counts were presented by the app NOW on screen. The per-engine counter is one
+ * process-global static that a swap resets only as a SIDE EFFECT of the teardown (and a non-Unity
+ * engine's egl/vk counter is not reset at all), so reading the raw counter cannot tell this session's
+ * frames from the pulse of a thread the session that was swapped out left running. The census epoch IS
+ * the session boundary the layer already advances at every close (tl_guest_thread_new_epoch,
+ * husk-tl-bionic-pthread.c), so the ledger is keyed to it and adds no second session mechanism:
+ * live_frames_mark() records the counter where a session's engine starts, and husk_tl_frames_live()
+ * reports only the frames presented since. A read that finds the epoch has moved on since the mark
+ * reports 0 -- "no frame of this app's own" -- never an earlier session's frames.
+ */
+static struct { int epoch; unsigned long base; } g_live_frames = { -1, 0 };
+static void live_frames_mark(void);
+unsigned long husk_tl_frames_live(int *epoch_out);
 
 static struct {
     atomic_int state;
@@ -330,7 +349,7 @@ static void guest_exit(int status)
 }
 
 /* The swapped-in stall probe, defined below near the engine/state names it prints. */
-static void tl_swapstall_tick(unsigned long frames, bool running);
+static void tl_swapstall_tick(unsigned long frames, bool running, int epoch);
 /* The periodic hot-path counter summary, defined below beside the buffer helper it shares with the stall probe. */
 static void tl_perf_summary(const char *tag);
 
@@ -343,19 +362,21 @@ static void *heartbeat_thread(void *arg)
     unsigned long last = 0;
     for (int tick = 0;; tick++) {
         if (tick < 40) usleep(500000); else sleep(3);          /* twice a second for the first twenty seconds */
-        unsigned long f = engine_frames();
-        /* The frame counter resets to 0 at a session close, so clamp: a drop to zero is "no new frames", never a
-         * negative delta. */
+        /* The LIVE SESSION's own frames, never a process-global counter a quarantined thread can still tick
+         * (husk_tl_frames_live, and the note where it is defined). The counter also resets to 0 at a session
+         * close, so clamp: a drop to zero is "no new frames", never a negative delta. */
+        int ep = -1;
+        unsigned long f = husk_tl_frames_live(&ep);
         unsigned long delta = f >= last ? f - last : 0;
         last = f;
 #if TARGET_OS_IPHONE
-        tl_log_line("unity: alive: %lu frames (+%lu), %zu MiB left before jetsam", f, delta, os_proc_available_memory() >> 20);
+        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d), %zu MiB left before jetsam", f, delta, ep, os_proc_available_memory() >> 20);
 #else
-        tl_log_line("unity: alive: %lu frames (+%lu)", f, delta);
+        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d)", f, delta, ep);
 #endif
         /* A swapped-in app that presented a frame and then stopped drawing may be blocked on a layer lock a parked thread
          * holds (tl_swapstall_tick). This is where such a stall names itself, once per stall. */
-        tl_swapstall_tick(f, atomic_load(&A.state) == HUSK_UNITY_RUNNING);
+        tl_swapstall_tick(f, atomic_load(&A.state) == HUSK_UNITY_RUNNING, ep);
         /* The hot-path counters, once per N seconds -- NEVER per event: the log has no line per fstat/clock_gettime/
          * read and could not answer which shim is hot or how often the store guard traps. */
         if (tick > 0 && (tick % 8) == 0) tl_perf_summary("hb");
@@ -611,6 +632,10 @@ static bool launch(int engine, const char *apk, const char *data_dir, void *meta
     if (!apk || !data_dir || !metal_layer || width <= 0 || height <= 0 || !angle_dylib) return false;
     if (!atomic_compare_exchange_strong(&A.state, &expected, HUSK_UNITY_STARTING)) return false;
     A.engine = engine;
+    /* The live session's frame ledger starts here, where the engine does: every later frame verdict is
+     * measured against this mark (husk_tl_frames_live), so it counts THIS app's frames and nothing a
+     * thread left running by the session that was swapped out presents. */
+    live_frames_mark();
     snprintf(A.apk, sizeof(A.apk), "%s", apk);
     snprintf(A.data, sizeof(A.data), "%s", data_dir);
     snprintf(A.angle, sizeof(A.angle), "%s", angle_dylib);
@@ -948,8 +973,17 @@ static void tl_perf_summary(const char *tag)
     if (w > 0) tl_log_line("%s", line);
 }
 
+/* The app now on screen, by name: its package and the APK's file name. No inference -- whatever the layer
+ * recorded for the live session, or "?" where it could not. */
+static void ss_app_name(char *out, size_t n)
+{
+    const char *pkg = A.package[0] ? A.package : "?";
+    const char *base = strrchr(A.apk, '/'); base = base ? base + 1 : (A.apk[0] ? A.apk : "?");
+    snprintf(out, n, "%s (%s)", pkg, base);
+}
+
 #define TL_SS_THREADS 160
-static void ss_probe(unsigned long frames, double quiet_s)
+static void ss_probe(unsigned long frames, double quiet_s, int epoch)
 {
     /* A stall has been DETECTED: turn on the diagnostics a swap needs for the rest of the run (the guest-mutex trace, and
      * the swapped-in asset trace), because the phone launches the IPA and nobody can set an environment variable on the
@@ -975,9 +1009,10 @@ static void ss_probe(unsigned long frames, double quiet_s)
         if (held_parked >= 0) break;
     }
 
+    char app[240]; ss_app_name(app, sizeof(app));
     w = ss_put(line, w, sizeof(line),
-               "swap-stall: app presented %lu frame(s) then no new frame for %.1f s while RUNNING (engine %s, state %s) -- the difference from this app run alone is exactly what the swap left behind; layer locks:",
-               frames, quiet_s, engine_name(A.engine), state_name(atomic_load(&A.state)));
+               "swap-stall: the app now on screen (%s) presented %lu frame(s) of its own since the swap, then no new frame for %.1f s while RUNNING (engine %s, state %s, session epoch %d) -- counted from the live session only, never from a thread the swapped-out session left running; the difference from this app run alone is exactly what the swap left behind; layer locks:",
+               app, frames, quiet_s, engine_name(A.engine), state_name(atomic_load(&A.state)), epoch);
     for (int i = 0; i < nlk; i++) {
         int is_parked = 0;
         if (lk[i].depth > 0) {
@@ -1034,7 +1069,7 @@ static void ss_probe(unsigned long frames, double quiet_s)
     if (w > 0) tl_log_line("%s", line);
 }
 
-static void tl_swapstall_tick(unsigned long frames, bool running)
+static void tl_swapstall_tick(unsigned long frames, bool running, int epoch)
 {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
@@ -1047,7 +1082,7 @@ static void tl_swapstall_tick(unsigned long frames, bool running)
     double quiet = (now.tv_sec - g_ss_last_progress.tv_sec) + (now.tv_nsec - g_ss_last_progress.tv_nsec) / 1e9;
     if (g_ss_printed || quiet < (double)g_ss_secs) return;
     g_ss_printed = 1;                          /* one line per distinct stall, not per poll */
-    ss_probe(frames, quiet);
+    ss_probe(frames, quiet, epoch);
 }
 
 /* Can this engine go on to a different app in this process? Static, per engine: SWAP_OK (cooperative stop), SWAP_PARTIAL
@@ -1242,6 +1277,11 @@ int husk_tl_session_close(void)
      * "from an earlier session", so the stall probe can tell a parked thread from this session's own (tl_swapstall_tick). */
     tl_guest_thread_new_epoch();
 
+    /* The frame ledger is keyed to the SAME boundary, so it needs no second notion of a session: the frames a
+     * later verdict counts start here (husk_tl_frames_live). launch() re-marks with the new engine's own counter,
+     * and a close with no relaunch leaves the ledger at "no frame of this app's own". */
+    live_frames_mark();
+
     /* A SWAP has happened. Turn on the diagnostics a swap needs for the rest of the run -- the guest-mutex trace and the
      * swapped-in asset trace -- because the phone launches the IPA and nobody can set an environment variable on the
      * device, and because the NEXT app is the one a quarantined guest lock can wedge. A lone app never reaches here, so
@@ -1324,17 +1364,23 @@ int husk_tl_verify_swap(const char *apk, const char *package)
         tl_log_line("husk: swap verified: scope ok (no library from an earlier session is reachable)");
     }
 
-    /* (c) Liveness: the new engine has produced frames (the existing per-engine tl_*_frames() counters). */
-    unsigned long frames = engine_frames();
+    /* (c) Liveness: the app NOW ON SCREEN has presented frames of its OWN since the swap. This is read from
+     * the live session's ledger, not the raw per-engine counter: the raw counter is one process-global
+     * static that a thread left running by the session just closed can still tick, and a non-Unity engine's
+     * counter is not even reset by the teardown, so a raw read can pass a swap on the swapped-OUT app's
+     * pulse (husk_tl_frames_live). */
+    int ep = -1;
+    unsigned long frames = husk_tl_frames_live(&ep);
+    char app[240]; ss_app_name(app, sizeof(app));
     if (frames == 0) {
-        tl_log_line("husk: swap verified FAILED (liveness: the new engine has produced no frames yet)");
+        tl_log_line("husk: swap verified FAILED (liveness: the app now on screen '%s' has presented no frame of its own since the swap; session epoch %d)", app, ep);
         ok = 0;
     } else {
-        tl_log_line("husk: swap verified: liveness ok (%lu frames)", frames);
+        tl_log_line("husk: swap verified: liveness ok (%lu frames presented by the app now on screen '%s' since the swap; session epoch %d)", frames, app, ep);
     }
 
     /* (d) Accounting: what leaked or was quarantined is a number, not a feeling. */
-    tl_log_line("husk: swap accounting: %d stale libraries, %lu frames, loaded '%s'", stale, frames, loaded ? loaded : "(none)");
+    tl_log_line("husk: swap accounting: %d stale libraries, %lu frames presented by '%s' since the swap, loaded '%s'", stale, frames, app, loaded ? loaded : "(none)");
 
     if (!ok) {
         g_swap_verdict = SWAP_NEEDS_RESTART;
@@ -1361,9 +1407,28 @@ int husk_unity_state(void)
     }
     return atomic_load(&A.state);
 }
-static unsigned long engine_frames(void)
+static unsigned long engine_frames_for(int engine)
 {
-    return A.engine == ENGINE_JAVA ? tl_javaapp_frames() : A.engine == ENGINE_GAMEMAKER ? tl_gm_frames() : A.engine == ENGINE_FLUTTER ? tl_flutter_frames() : A.engine == ENGINE_GODOT ? tl_godot_frames() : A.engine == ENGINE_GTA ? tl_gta_frames() : A.engine == ENGINE_UE4 ? tl_na_frames() : A.engine == ENGINE_SDL ? tl_sdl_frames() : A.engine == ENGINE_GAMEACTIVITY ? tl_ga_frames() : A.engine == ENGINE_COCOS ? tl_cocos_frames() : tl_unity_frames();
+    return engine == ENGINE_JAVA ? tl_javaapp_frames() : engine == ENGINE_GAMEMAKER ? tl_gm_frames() : engine == ENGINE_FLUTTER ? tl_flutter_frames() : engine == ENGINE_GODOT ? tl_godot_frames() : engine == ENGINE_GTA ? tl_gta_frames() : engine == ENGINE_UE4 ? tl_na_frames() : engine == ENGINE_SDL ? tl_sdl_frames() : engine == ENGINE_GAMEACTIVITY ? tl_ga_frames() : engine == ENGINE_COCOS ? tl_cocos_frames() : tl_unity_frames();
+}
+static unsigned long engine_frames(void) { return engine_frames_for(A.engine); }
+
+/* The live session's mark and its reading (see the note beside g_live_frames). For a non-Unity engine
+ * engine_frames() already returns where that app's frames are really presented -- an SDL/Ren'Py app's egl
+ * swap, a GameActivity app's egl swap, and the Java driver's own render-thread compositor frame -- so the
+ * mark and the delta are what make the count THIS session's. */
+static void live_frames_mark(void)
+{
+    g_live_frames.epoch = tl_guest_thread_epoch();
+    g_live_frames.base  = engine_frames();
+}
+unsigned long husk_tl_frames_live(int *epoch_out)
+{
+    int cur = tl_guest_thread_epoch();
+    if (epoch_out) *epoch_out = cur;
+    if (g_live_frames.epoch != cur) return 0;                     /* a session boundary passed since the mark: nothing counted here is this app's */
+    unsigned long f = engine_frames();
+    return f >= g_live_frames.base ? f - g_live_frames.base : 0;  /* never a wrapped delta */
 }
 unsigned long husk_unity_frames(void) { return engine_frames(); }
 void husk_unity_perf_snapshot(husk_unity_perf *out)

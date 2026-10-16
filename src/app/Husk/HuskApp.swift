@@ -9,21 +9,56 @@ enum HuskOrientation {
     }
     static var mask: UIInterfaceOrientationMask = standard
 
+    /// The names for a mask, so a refusal and an application read the same way in the log.
+    static func describe(_ m: UIInterfaceOrientationMask) -> String {
+        var parts: [String] = []
+        if m.contains(.portrait) { parts.append("portrait") }
+        if m.contains(.portraitUpsideDown) { parts.append("portraitUpsideDown") }
+        if m.contains(.landscapeLeft) { parts.append("landscapeLeft") }
+        if m.contains(.landscapeRight) { parts.append("landscapeRight") }
+        return parts.isEmpty ? "none" : parts.joined(separator: ", ")
+    }
+
+    /// What the screen is showing now, for the log's "still ..." half.
+    @MainActor static func describeCurrent() -> String {
+        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+            switch scene.interfaceOrientation {
+            case .portrait: return "portrait"
+            case .portraitUpsideDown: return "portraitUpsideDown"
+            case .landscapeLeft: return "landscapeLeft"
+            case .landscapeRight: return "landscapeRight"
+            @unknown default: return "unknown"
+            }
+        }
+        return "no window scene"
+    }
+
     /// Allow only `new`, and turn the screen to it if it is not already there.
     ///
     /// A game's screen asks as it appears, while its full-screen cover is still being presented, and iOS can refuse then
     /// ("Supported: portrait") because it has not yet asked the cover what it allows. So a refusal is retried a few times,
     /// a moment apart, for as long as `new` is still what is wanted.
-    @MainActor static func set(_ new: UIInterfaceOrientationMask, attempt: Int = 0) {
+    ///
+    /// `app` names the game that asked, so a refusal says WHICH game's screen was refused and what it asked for, instead
+    /// of leaving a bare UIKit string in the log; and the refusal is retried from EVERY window of the scene, not just the
+    /// key one, because the cover's own hosting controller is the view controller iOS consults and the key window's chain
+    /// can miss it while the cover is still being presented.
+    @MainActor static func set(_ new: UIInterfaceOrientationMask, app: String? = nil, attempt: Int = 0) {
         mask = new
+        let who = app ?? "Husk"
         for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
-            var vc = scene.keyWindow?.rootViewController
-            while let v = vc { v.setNeedsUpdateOfSupportedInterfaceOrientations(); vc = v.presentedViewController }
+            for w in scene.windows {
+                var vc = w.rootViewController
+                while let v = vc { v.setNeedsUpdateOfSupportedInterfaceOrientations(); vc = v.presentedViewController }
+            }
             scene.requestGeometryUpdate(.iOS(interfaceOrientations: new)) { error in
-                HuskLog.log("ui", "orientation change refused (attempt \(attempt + 1)): \(error.localizedDescription)")
-                guard attempt < 5 else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    if mask == new { set(new, attempt: attempt + 1) }
+                HuskLog.log("ui", "orientation change refused (attempt \(attempt + 1)) for '\(who)' (asked for \(Self.describe(new))): \(error.localizedDescription)")
+                guard attempt < 6 else {
+                    HuskLog.log("ui", "orientation was NOT applied for '\(who)' after \(attempt + 1) attempts: it asked for \(Self.describe(new)) and the screen is still \(Self.describeCurrent())")
+                    return
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    if mask == new { set(new, app: app, attempt: attempt + 1) }
                 }
             }
         }

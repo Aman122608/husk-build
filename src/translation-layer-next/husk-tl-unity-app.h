@@ -58,8 +58,9 @@ const char *husk_tl_swap_status(void);
 
 /*
  * After a swap, check it really happened -- a swap is done when this passes, not when it was asked for. Runs four
- * checks: the loaded APK is the one requested, no library from an earlier session is reachable by name, the new engine
- * has produced frames, and the accounting is logged. Returns 1 only if all pass. `package` is used only in the log.
+ * checks: the loaded APK is the one requested, no library from an earlier session is reachable by name, the app now
+ * on screen has presented frames of ITS OWN since the swap (live-session scoped, never a quarantined thread's
+ * ticks), and the accounting is logged. Returns 1 only if all pass. `package` is used only in the log.
  */
 int husk_tl_verify_swap(const char *apk, const char *package);
 
@@ -200,6 +201,10 @@ bool husk_native_wants_controller(void);
 
 int  husk_unity_state(void);
 unsigned long husk_unity_frames(void);
+/* The frames the app NOW ON SCREEN has presented in the live session: the per-engine counter measured from the
+   session's own mark, so a thread the swapped-out session left running can never supply them. `epoch_out`
+   (optional) receives the census session epoch the reading belongs to. See the note in husk-tl-unity-app.c. */
+unsigned long husk_tl_frames_live(int *epoch_out);
 typedef struct husk_unity_perf { double fps, mean_ms, max_ms; } husk_unity_perf;
 void husk_unity_perf_snapshot(husk_unity_perf *out);          /* since the last call */
 void husk_unity_touch(int phase, int id, float x, float y);   /* phase 0 down, 1 move, 2 up, 3 cancel */

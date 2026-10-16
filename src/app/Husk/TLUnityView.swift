@@ -60,6 +60,8 @@ final class TLUnityUIView: UIView, UIKeyInput {
     private(set) var launchedSize: CGSize?
     /// In a floating window rather than full screen: no notch or home indicator to keep clear of.
     var windowed = false
+    /// The app's own name for a log line that has to say WHICH game: the APK's file name.
+    var appLabel: String { (apk as NSString).lastPathComponent }
     /// Where the corner statistics go when this view does not draw them itself (a landscape game has its own bar).
     var onStats: ((String) -> Void)?
     /// Active touches by UITouch identity, each given a small stable id like Android's pointer ids.
@@ -522,7 +524,18 @@ final class TLUnityUIView: UIView, UIKeyInput {
                 top.present(sheet, animated: true)
             }
         }, { orientation in
+            // The guest asked for a screen orientation (Android's ActivityInfo.SCREEN_ORIENTATION_*). It used to be
+            // logged and dropped, so a game that asked for landscape kept a portrait screen: ask iOS for it instead.
             HuskLog.log("tl", "java: the app asks for orientation \(orientation)")
+            Task { @MainActor in
+                let who = TLUnityUIView.cocosView?.appLabel
+                switch orientation {
+                case 0, 6, 8, 11:  HuskOrientation.set(.landscape, app: who)               // LANDSCAPE, SENSOR_/REVERSE_/USER_LANDSCAPE
+                case 1, 7, 9, 12:  HuskOrientation.set(.portrait, app: who)                // PORTRAIT, SENSOR_/REVERSE_/USER_PORTRAIT
+                case 2, 4, 10, 13: HuskOrientation.set(HuskOrientation.standard, app: who) // USER, SENSOR, FULL_SENSOR, FULL_USER: follow the device
+                default: break                                                             // UNSPECIFIED/BEHIND/NOSENSOR, and anything unknown: leave it
+                }
+            }
         })
     }
 
