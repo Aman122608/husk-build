@@ -489,6 +489,7 @@ static HuskDualMapping husk_self_dual_mapping(size_t bytes)
  * and held until QEMU asks for it.
  */
 static HuskDualMapping husk_ios_jit_allocate_real(size_t bytes);
+static bool husk_ios_jit_region_gate(const char *after);   /* file scope: static functions cannot be declared in a block */
 
 static HuskDualMapping husk_prewarmed;
 static bool husk_prewarm_done;
@@ -507,7 +508,6 @@ HUSK_EXPORT bool husk_ios_jit_prewarm(size_t bytes)
             husk_prewarmed.rw_addr ? "OK" : "FAILED", bytes);
     /* The first execute gate of the process: the grant is measured live right after the claim, so
      * every later gate has a baseline to differ from. */
-    static bool husk_ios_jit_region_gate(const char *after);
     if (husk_prewarmed.rw_addr) husk_ios_jit_region_gate("the claim (prewarm)");
     return husk_prewarmed.rw_addr != NULL;
 }
