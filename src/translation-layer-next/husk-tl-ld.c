@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "husk-tl-internal.h"
 #include "husk-tl-a64.h"
@@ -180,6 +181,9 @@ bool tl_ld_add_apk(const char *path)
 
 const tl_zip *tl_ld_apk_at(int i) { return (i >= 0 && i < G.napks) ? &G.apks[i] : NULL; }
 
+/* The path of the i'th APK, for callers that name an entry's cache identity (the asset manager). */
+const char *tl_ld_apk_path_at(int i) { return (i >= 0 && i < G.napks) ? g_apk_paths[i] : NULL; }
+
 /* Every arm64 library the APKs carry, by file name and size: a game that links SDL into its own library names no SDL library to look for. */
 int tl_ld_apk_libs(void (*cb)(const char *name, uint64_t size, void *user), void *user)
 {
@@ -218,13 +222,18 @@ static bool fetch_from_apks(const char *name, uint8_t **out, size_t *len)
     for (int i = 0; i < G.napks; i++) {
         const tl_zip_entry *e = tl_zip_find(&G.apks[i], path);
         if (!e) continue;
+        /* Through the inflated-bytes cache: a deflated library (a Unity game's libil2cpp.so and
+         * libunity.so are ~109 MiB together and deflated in the APK) is inflated once and read
+         * back as a plain copy on every later launch; a stored one is copied straight out of the
+         * mapping, as before. The cache's identity and its .part+rename write are the cache's own
+         * (husk-tl-bionic-io.c) -- this site only says whose bytes they are. */
         const uint8_t *data; size_t n; bool owned; char err[160];
-        if (!tl_zip_data(&G.apks[i], e, (size_t)1 << 30, &data, &n, &owned, err, sizeof(err))) {
+        if (!tl_zip_data_cached(&G.apks[i], e, g_apk_paths[i], (size_t)1 << 30, &data, &n, &owned, err, sizeof(err))) {
             tl_log_line("ld: %s: %s", name, err);
             return false;
         }
         if (!owned) {
-            uint8_t *copy = malloc(n);
+            uint8_t *copy = malloc(n ? n : 1);
             if (!copy) return false;
             memcpy(copy, data, n);
             data = copy;
@@ -2091,7 +2100,9 @@ static tl_lib *load_locked(const char *name, int depth)
         if (d > ((ptrdiff_t)3 << 30) || d < -((ptrdiff_t)3 << 30)) { tl_log_line("ld: the writable and executable views are %td MiB apart: too far for adrp", d >> 20); free(file); return NULL; }
     }
     if (!ensure_tcb()) { free(file); return NULL; }
+    unsigned long long tmap = tl_load_now_ns();
     L = map_library(name, file, flen);
+    tl_load_add(TL_LOAD_MAP, tl_load_now_ns() - tmap, flen);
     free(file);
     if (!L) return NULL;
 
@@ -2102,7 +2113,9 @@ static tl_lib *load_locked(const char *name, int depth)
         if (!load_locked(dn, depth + 1)) tl_log_line("ld: %s: needed library %s could not be loaded", name, dn);
     }
     build_scope(L);
+    unsigned long long trel = tl_load_now_ns();
     if (!relocate(L)) return NULL;
+    tl_load_add(TL_LOAD_MAP, tl_load_now_ns() - trel, 0);       /* relocating + adrp patching: the CPU after the bytes arrive */
     return L;
 }
 

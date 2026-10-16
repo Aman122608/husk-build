@@ -101,6 +101,38 @@ bool tl_zip_data(const tl_zip *z, const tl_zip_entry *e, size_t limit,
                  const uint8_t **out, size_t *out_len, bool *owned,
                  char *err, size_t errlen);
 
+/*
+ * The same, but preferring an on-disk copy of the entry's INFLATED bytes.
+ *
+ * A deflated entry costs a full zlib inflate every time it is read. On the load path that
+ * is the single biggest term a Unity game pays (its libil2cpp.so and libunity.so are
+ * deflated in the APK; together ~109 MiB), and the result does not change while the APK
+ * does not. So the inflated bytes are written once to <data>/.lib-cache and read back --
+ * a plain copy -- on every later launch. A stored entry is served in place and needs no
+ * cache. `apk` is the APK the entry came from; it is part of the cache's identity.
+ */
+bool tl_zip_data_cached(const tl_zip *z, const tl_zip_entry *e, const char *apk,
+                        size_t limit, const uint8_t **out, size_t *out_len, bool *owned,
+                        char *err, size_t errlen);
+
+/* --------------------------------------------------------- load-path accounting
+ *
+ * Where a launch's load path spends its time, as NUMBERS rather than a guess. Each phase
+ * is a few relaxed atomics (nanoseconds accumulated, bytes moved, calls) at the layer's
+ * own inflate/read/map sites; the totals are printed ONCE at session close, never per
+ * event, so the accounting is off the hot path entirely. Phases:
+ *
+ *   TL_LOAD_INFLATE  deflating an APK entry (zlib) -- the CPU cost a cache removes
+ *   TL_LOAD_COPY     bytes read back from an inflated on-disk copy (a plain copy)
+ *   TL_LOAD_HASH     any content hashing the layer does on the load path (none today)
+ *   TL_LOAD_MAP      mapping + relocating + initialising a library
+ *   TL_LOAD_ASSET    the guest's own asset walk through AAssetManager / File
+ */
+enum { TL_LOAD_INFLATE = 0, TL_LOAD_COPY, TL_LOAD_HASH, TL_LOAD_MAP, TL_LOAD_ASSET, TL_LOAD_N };
+void tl_load_add(int phase, unsigned long long ns, unsigned long long bytes);
+unsigned long long tl_load_now_ns(void);
+void tl_load_summary(const char *tag);
+
 /* ------------------------------------------------------------------- ELF */
 
 /*

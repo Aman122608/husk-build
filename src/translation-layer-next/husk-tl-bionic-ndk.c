@@ -324,13 +324,20 @@ static void *b_AAssetManager_open(void *mgr, const char *name, int mode)
         if (!z) break;
         const tl_zip_entry *e = tl_zip_find(z, path);
         if (!e) continue;
+        /* Through the inflated-bytes cache: an Addressables catalogue or a bundle that the APK
+         * stores deflated is inflated once and read back as a copy on every later launch; a stored
+         * one (robot gf's assets/aa/catalog.bin and settings.json are stored) is read in place and
+         * costs a stretch of the mapping, unchanged. */
         const uint8_t *data; size_t n; bool owned; char err[160];
-        if (!tl_zip_data(z, e, (size_t)2 << 30, &data, &n, &owned, err, sizeof(err))) {
+        unsigned long long t0 = tl_load_now_ns();
+        if (!tl_zip_data_cached(z, e, tl_ld_apk_path_at(i), (size_t)2 << 30, &data, &n, &owned, err, sizeof(err))) {
             tl_log_line("assets: %s: %s", name, err);
             tl_asset_read_note(name, 0, 5 /* EIO */);
             return NULL;
         }
+        tl_load_add(TL_LOAD_ASSET, tl_load_now_ns() - t0, n);
         tl_asset *a = calloc(1, sizeof(*a));
+        if (!a) { if (owned) free((void *)data); return NULL; }
         a->data = data; a->len = n;
         if (owned) a->owned = (uint8_t *)data;
         snprintf(a->name, sizeof(a->name), "%s", name);

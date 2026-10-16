@@ -77,6 +77,134 @@ void tl_set_data_dir(const char *dir)
 }
 const char *tl_data_dir(void) { return g_data_dir[0] ? g_data_dir : "/tmp"; }
 
+/* ------------------------------------------------------------ load-path accounting
+ *
+ * See husk-tl-internal.h. Accumulated in relaxed atomics by the layer's own inflate / copy
+ * / map sites, printed once at session close (tl_io_reset_for_new_app). This is the answer
+ * to "which phase is the minute": a number, not a guess. Nothing here runs per frame, and
+ * nothing here allocates or locks. */
+static volatile unsigned long long g_load_ns[TL_LOAD_N];
+static volatile unsigned long long g_load_bytes[TL_LOAD_N];
+static volatile unsigned long g_load_calls[TL_LOAD_N];
+static const char *const k_load_name[TL_LOAD_N] = { "inflate", "copy", "hash", "map", "asset" };
+
+unsigned long long tl_load_now_ns(void)
+{
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) return 0;
+    return (unsigned long long)ts.tv_sec * 1000000000ull + (unsigned long long)ts.tv_nsec;
+}
+void tl_load_add(int phase, unsigned long long ns, unsigned long long bytes)
+{
+    if (phase < 0 || phase >= TL_LOAD_N) return;
+    __atomic_fetch_add(&g_load_ns[phase], ns, __ATOMIC_RELAXED);
+    __atomic_fetch_add(&g_load_bytes[phase], bytes, __ATOMIC_RELAXED);
+    __atomic_fetch_add(&g_load_calls[phase], 1ul, __ATOMIC_RELAXED);
+}
+static void ss_put_load(char *line, int *w, size_t cap, const char *fmt, ...)
+{
+    if (*w < 0 || (size_t)*w >= cap) return;
+    va_list ap; va_start(ap, fmt);
+    int n = vsnprintf(line + *w, cap - (size_t)*w, fmt, ap);
+    va_end(ap);
+    if (n < 0 || (size_t)n >= cap - (size_t)*w) *w = (int)cap - 1; else *w += n;
+}
+void tl_load_summary(const char *tag)
+{
+    char line[640];
+    int w = 0;
+    line[0] = 0;
+    ss_put_load(line, &w, sizeof(line), "load[%s]:", tag ? tag : "?");
+    for (int i = 0; i < TL_LOAD_N; i++) {
+        unsigned long calls = __atomic_load_n(&g_load_calls[i], __ATOMIC_RELAXED);
+        if (!calls) continue;
+        unsigned long long ns = __atomic_load_n(&g_load_ns[i], __ATOMIC_RELAXED);
+        unsigned long long bytes = __atomic_load_n(&g_load_bytes[i], __ATOMIC_RELAXED);
+        ss_put_load(line, &w, sizeof(line), " %s=%.3fs/%lu call(s)/%.1f MiB",
+                    k_load_name[i], (double)ns / 1e9, calls, (double)bytes / 1048576.0);
+    }
+    ss_put_load(line, &w, sizeof(line), " -- inflate is the CPU a cache removes; copy is a later launch reading the cache");
+    tl_log_line("%s", line);
+}
+
+/* -------------------------------------------------------- the inflated-bytes cache
+ *
+ * An APK entry's bytes, preferring an on-disk copy of the INFLATED result (see
+ * husk-tl-internal.h for why). The identity is the whole point: the file name is a 64-bit
+ * FNV-1a over the APK's path, its size and mtime, the entry's name, and both of its sizes,
+ * so any change -- an updated APK, a rebuilt entry, a re-zipped one -- yields a different
+ * name and a stale copy is never even looked at. The file is written under a .part name
+ * and renamed into place, so a launch that dies mid-write can never leave a torn file; and
+ * a read-back shorter than the size the directory promised is discarded and the entry
+ * inflated afresh. A corrupted cache is worse than a slow load, so the cache is trusted
+ * only when it is exactly right. */
+static unsigned long long load_fnv(const char *s, unsigned long long h)
+{
+    if (!s) return h;
+    for (const unsigned char *p = (const unsigned char *)s; *p; p++) { h ^= *p; h *= 1099511628211ull; }
+    return h;
+}
+static uint64_t load_entry_identity(const char *apk, const char *entry, uint64_t usize, uint64_t csize)
+{
+    uint64_t h = 1469598103934665603ull;
+    h = load_fnv(apk, h);   h ^= 0x1full; h *= 1099511628211ull;
+    h = load_fnv(entry, h); h ^= 0x1full; h *= 1099511628211ull;
+    uint64_t extra = 0;
+    struct stat st;
+    if (apk && stat(apk, &st) == 0) extra = (uint64_t)st.st_size ^ ((uint64_t)st.st_mtime * 1099511628211ull);
+    for (int i = 0; i < 8; i++) { h ^= (usize  >> (8 * i)) & 0xffu; h *= 1099511628211ull; }
+    for (int i = 0; i < 8; i++) { h ^= (csize  >> (8 * i)) & 0xffu; h *= 1099511628211ull; }
+    for (int i = 0; i < 8; i++) { h ^= (extra  >> (8 * i)) & 0xffu; h *= 1099511628211ull; }
+    return h;
+}
+bool tl_zip_data_cached(const tl_zip *z, const tl_zip_entry *e, const char *apk,
+                        size_t limit, const uint8_t **out, size_t *out_len, bool *owned,
+                        char *err, size_t errlen)
+{
+    *out = NULL; *out_len = 0; *owned = false;
+    if (!z || !e) { if (err && errlen) snprintf(err, errlen, "no entry"); return false; }
+    if (e->method != 8)
+        return tl_zip_data(z, e, limit, out, out_len, owned, err, errlen);   /* stored: read in place, nothing to cache */
+
+    char dir[1100], cpath[1300];
+    snprintf(dir, sizeof(dir), "%s/.lib-cache", tl_data_dir());
+    mkdir(dir, 0755);
+    snprintf(cpath, sizeof(cpath), "%s/%016llx.bin", dir,
+             (unsigned long long)load_entry_identity(apk, e->name, e->usize, e->csize));
+
+    struct stat st;
+    if (e->usize <= limit && stat(cpath, &st) == 0 && (uint64_t)st.st_size == e->usize) {
+        unsigned long long t0 = tl_load_now_ns();
+        FILE *f = fopen(cpath, "rb");
+        uint8_t *buf = e->usize ? malloc((size_t)e->usize) : NULL;
+        bool ok = f && buf && fread(buf, 1, (size_t)e->usize, f) == (size_t)e->usize;
+        if (f) fclose(f);
+        if (ok) {
+            tl_load_add(TL_LOAD_COPY, tl_load_now_ns() - t0, e->usize);
+            *out = buf; *out_len = (size_t)e->usize; *owned = true;
+            return true;
+        }
+        free(buf);                            /* a torn or short file: never serve it, inflate afresh */
+    }
+
+    unsigned long long t0 = tl_load_now_ns();
+    if (!tl_zip_data(z, e, limit, out, out_len, owned, err, errlen)) return false;
+    tl_load_add(TL_LOAD_INFLATE, tl_load_now_ns() - t0, *out_len);
+
+    if (e->usize <= limit) {
+        char tmp[1320];
+        snprintf(tmp, sizeof(tmp), "%s.part", cpath);
+        FILE *f = fopen(tmp, "wb");
+        if (f) {
+            bool wrote = fwrite(*out, 1, *out_len, f) == *out_len;
+            fclose(f);
+            if (wrote) { if (rename(tmp, cpath) != 0) unlink(tmp); }
+            else unlink(tmp);
+        }
+    }
+    return true;
+}
+
 /* A file holding `content`, already unlinked. Where it can be made depends on the host: iOS gives an app no /tmp. */
 static int synth_file_n(const void *content, size_t n);
 static int synth_file(const char *content) { return synth_file_n(content, strlen(content)); }
@@ -492,7 +620,7 @@ static void ftrace_open_jar(const char *path, int fd)
  * directory glued in front. A stored entry is served in place as a stretch of the APK (the virtual-file machinery above);
  * a compressed one is inflated once into the data folder and opened from there.
  */
-typedef struct { bool found, dir; char apk[1024]; uint64_t off, size; uint16_t method; char entry[512]; } jar_entry;
+typedef struct { bool found, dir; char apk[1024]; uint64_t off, size, csize; uint16_t method; char entry[512]; } jar_entry;
 static pthread_mutex_t g_jar_lock = PTHREAD_MUTEX_INITIALIZER;
 static tl_zip g_jar_zip;
 static char g_jar_apk[1024];
@@ -566,7 +694,7 @@ static bool jar_lookup(const char *p, jar_entry *out)
     if (e && e->local_offset + 30 <= g_jar_zip.size) {
         const uint8_t *l = g_jar_zip.map + e->local_offset;
         uint64_t data = e->local_offset + 30ull + (uint64_t)(l[26] | (l[27] << 8)) + (uint64_t)(l[28] | (l[29] << 8));
-        out->found = true; out->off = data; out->size = e->usize; out->method = e->method;
+        out->found = true; out->off = data; out->size = e->usize; out->csize = e->csize; out->method = e->method;
     } else if (g_jar_apk[0]) {
         /* No entry by that name: a folder, if any entry lies under it (zips seldom list folders themselves). */
         size_t len = strlen(out->entry);
@@ -619,6 +747,8 @@ void tl_io_reset_for_new_app(void)
 
     tl_log_line("husk: app state reset: renpy platform flag off, %d virtual-file name(s) dropped, %d stale descriptor redirect(s) swept, jar cache closed=%d",
                 nvfiles, swept, jar);
+    /* Where the load path spent its time, once, at the session boundary -- never per event. */
+    tl_load_summary("close");
 }
 
 /*
@@ -667,7 +797,7 @@ static void jar_note(const jar_entry *j, bool found)
         static int said_first;
         if (!said_first++) tl_log_line("husk: first content read this session: %s", j->entry[0] ? j->entry : j->apk);
         tl_log_line("husk: apk entry %s: %llu bytes, %s, from %s", j->entry, (unsigned long long)j->size,
-                    j->method == 0 ? "stored (read in place)" : "deflated (inflated once)", j->apk);
+                    j->method == 0 ? "stored (read in place)" : "deflated (inflated once, then cached under .jar-cache)", j->apk);
     }
     else
         tl_log_line("husk: apk entry %s: not in %s (ENOENT)", j->entry[0] ? j->entry : "(no entry named)", j->apk[0] ? j->apk : "(the APK)");
@@ -694,7 +824,15 @@ static void jar_note_serve_failed(const jar_entry *j, int fd, int e)
     tl_asset_read_note(key, 0, fd < 0 ? e : 24);
 }
 
-/* A compressed entry, inflated once into <data>/.jar-cache: the path to open instead, or NULL. */
+/*
+ * A compressed entry, inflated once into <data>/.jar-cache: the path to open instead, or
+ * NULL. The cache file names the entry, its uncompressed AND compressed size, and a
+ * fingerprint of the APK it came from (path, size, mtime) -- entry identity, size, and the
+ * app's own version. A rebuilt or updated APK yields a different name, so a stale inflated
+ * copy is never served; the size check below is the last guard against a torn file. Written
+ * under a .part name and renamed into place, so a launch that dies mid-write cannot leave a
+ * torn file behind (and drop_unfinished sweeps any .husk-new, not this).
+ */
 static const char *jar_inflated(const jar_entry *j, char *buf, size_t n)
 {
     char name[512]; size_t k = 0;
@@ -703,13 +841,19 @@ static const char *jar_inflated(const jar_entry *j, char *buf, size_t n)
     char dir[1100];
     snprintf(dir, sizeof(dir), "%s/.jar-cache", tl_data_dir());
     mkdir(dir, 0755);
-    snprintf(buf, n, "%s/%s", dir, name);
+    uint64_t fp = load_entry_identity(j->apk, j->entry, j->size, j->csize);
+    snprintf(buf, n, "%s/%016llx_%s", dir, (unsigned long long)fp, name);
     struct stat st;
-    if (stat(buf, &st) == 0 && (uint64_t)st.st_size == j->size) return buf;
+    if (stat(buf, &st) == 0 && (uint64_t)st.st_size == j->size) {
+        tl_load_add(TL_LOAD_COPY, 0, j->size);          /* served from the inflated copy: no inflate */
+        return buf;
+    }
     pthread_mutex_lock(&g_jar_lock);
     const tl_zip_entry *e = tl_zip_find(&g_jar_zip, j->entry);
     const uint8_t *data = NULL; size_t len = 0; bool owned = false; char err[160];
+    unsigned long long t0 = tl_load_now_ns();
     bool ok = e && tl_zip_data(&g_jar_zip, e, 1u << 30, &data, &len, &owned, err, sizeof(err));
+    if (ok) tl_load_add(TL_LOAD_INFLATE, tl_load_now_ns() - t0, len);
     pthread_mutex_unlock(&g_jar_lock);
     if (!ok) return NULL;
     char tmp[1200];

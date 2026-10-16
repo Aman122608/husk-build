@@ -44,6 +44,8 @@ const char *tl_ld_queued_split(int index);              /* NULL past the last */
 /* The APKs added, in order, for asset access; NULL past the last. */
 struct tl_zip;
 const struct tl_zip *tl_ld_apk_at(int index);
+/* The path of that APK, for naming an entry's inflated-cache identity. NULL past the last. */
+const char *tl_ld_apk_path_at(int index);
 
 /* Bind every later import of `name` to `fn` instead of the library that defines it (the original is still reachable with tl_ld_sym). Call before the libraries load. */
 void tl_ld_interpose(const char *name, void *fn);
