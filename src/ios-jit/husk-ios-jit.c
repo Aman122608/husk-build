@@ -519,8 +519,14 @@ HUSK_EXPORT HuskDualMapping *husk_ios_jit_get_mapping(void)
 
 /* The size the debugger ACTUALLY granted at the claim, in bytes, or 0 when no region is held. This is the honest basis
  * for an arena-size setting's row: it shows what was claimed, not what was asked -- the region can come back smaller (or
- * absent) than the request, and the setting must never display the requested number as if it were the achieved one. */
-HUSK_EXPORT size_t husk_ios_jit_region_size(void)
+ * absent) than the request, and the setting must never display the requested number as if it were the achieved one.
+ *
+ * WEAK, for the same reason as husk_ios_jit_exec_gate below: src/translation-layer-next/husk-tl-xmem.c defines this
+ * name too (against the ARENA the guest runs from, which is the honest answer once a game has started), and since this
+ * file is now compiled into the same image as the layer, two strong definitions would be a duplicate-symbol link error.
+ * The layer's wins in the app -- exactly what happened when this file lived in the QEMU dylib and the app linked only
+ * the layer. This copy is what the engine's own build exports. */
+HUSK_EXPORT __attribute__((weak)) size_t husk_ios_jit_region_size(void)
 {
     return husk_prewarmed.rw_addr ? husk_prewarmed.size : 0;
 }
@@ -947,7 +953,7 @@ HuskDualMapping husk_ios_jit_allocate(size_t bytes)
     return husk_ios_jit_allocate_real(bytes);
 }
 bool husk_ios_jit_prewarm(size_t bytes) { (void)bytes; return false; }
-size_t husk_ios_jit_region_size(void) { return 0; }
+__attribute__((weak)) size_t husk_ios_jit_region_size(void) { return 0; }
 void husk_ios_jit_release(HuskDualMapping *m) { (void)m; }
 void husk_ios_jit_detach(void) {}
 __attribute__((weak)) bool husk_ios_jit_exec_gate(const char *after) { (void)after; return false; }

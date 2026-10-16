@@ -26,7 +26,7 @@ from it by `system/qemu.symbols` (`integrate_husk.sh:619-627`).
 | `husk_ios_jit_install_trap_handler` | the app, direct call — `JITBootstrap.swift:38`, declared `HuskBridge.h:56` |
 | `husk_ios_jit_prewarm` | the app, direct call — `JITBootstrap.swift:149`; **and** the native translation layer by `dlsym(RTLD_DEFAULT, "husk_ios_jit_prewarm")` — `src/translation-layer/husk-tl-load.c:529,534` |
 | `husk_ios_jit_get_mapping` | the native translation layer by `dlsym(RTLD_DEFAULT, "husk_ios_jit_get_mapping")` — `husk-tl-load.c:522` (this is `tl_find_stikdebug_prewarmed()`, called from `husk-tl-xmem.c:479` when the arena opens) |
-| `husk_ios_jit_region_size` | the app, direct call — `JITBootstrap.swift:100`, declared `HuskBridge.h:61` |
+| `husk_ios_jit_region_size` | the app, direct call — `JITBootstrap.swift:100`, declared `HuskBridge.h:61`. **Both** this file and the layer define it now: `src/translation-layer-next/husk-tl-xmem.c:1300` (the arena size — the answer once a game has started) landed in b717cca, and the layer's strong definition is the one the app binds to. Weak in this file, see §2 |
 | `husk_ios_jit_is_available` | the app — `JITBootstrap.swift:522` |
 | `husk_ios_jit_mapjit_works` | the app — `JITBootstrap.swift:508` |
 | `husk_ios_jit_self_route` | the app — `SettingsTab.swift:517,520` |
@@ -39,8 +39,13 @@ from it by `system/qemu.symbols` (`integrate_husk.sh:619-627`).
 Also inside the dylib and *not* in `qemu.symbols`: `husk_ios_jit_exec_gate`,
 `husk_ios_jit_region_size`, `husk_ios_jit_allocate` — i.e. the arena-size commit
 (77d0d53) added an app call to a symbol the engine's export list never carried.
-Compiling the substrate into the app removes that whole class of "links fine from
-a branch that was never built" problem, which is the accident the task names.
+That was hit twice, and the second fix (b717cca, `husk_ios_jit_region_size`
+defined in `husk-tl-xmem.c`) landed while this change was being made; both are
+folded in here. Compiling the substrate into the app removes that whole class of
+"links fine from a branch that was never built" problem, which is the accident the
+task names — but it also means the two names the layer also defines
+(`husk_ios_jit_exec_gate`, `husk_ios_jit_region_size`) need the weak/strong
+relationship of §2.
 
 ### 1b. The engine itself and the bridge compiled beside it
 
@@ -106,12 +111,16 @@ file now shares an image with the app's other C:
    `husk-ios-jit.c` is now `__attribute__((weak))`: the shim wins in the app, and
    the copy is still there for the engine's own build, where nothing else defines
    it.
-2. **`husk_ios_jit_exec_gate`** — the app-facing definition is the layer's
-   (`husk-tl-xmem.c:1463`, against the arena the guest runs from). The dylib's copy
-   was local, so there was no clash while it lived in the dylib; in one image there
-   would be. It is now a `static` **region gate** (`husk_ios_jit_region_gate`) that
-   prewarm and the detach pair call directly, plus a **weak** public wrapper for
-   the engine's build. The app's strong definition wins, exactly as it did.
+2. **`husk_ios_jit_exec_gate` and `husk_ios_jit_region_size`** — the app-facing
+   definitions of both are the layer's (`husk-tl-xmem.c:1463` and `:1300`,
+   against the arena the guest runs from). The dylib's copies were local, so
+   there was no clash while they lived in the dylib; in one image there would be.
+   `exec_gate` is now a `static` **region gate**
+   (`husk_ios_jit_region_gate`) that prewarm and the detach pair call directly,
+   plus a **weak** public wrapper; `region_size` keeps its body and becomes
+   **weak**. Both keep the layer's strong definition as the app's, exactly as
+   when the app linked only the layer, and both remain exportable in the engine's
+   own build.
 3. **QEMU's `tcg/tcg-apple-jit.h`** — the file's only QEMU-tree include (the APRR
    write-protect toggle used by the MAP_JIT probe). It is now behind
    `__has_include`: present in the engine's build (unchanged), absent in the app,
@@ -237,15 +246,22 @@ byte-for-byte the same instrument. The layer's own arena gate
 | `src/app/Husk/QemuRunner.swift` | `run()` refuses with the named reason when the engine is absent (after the existing guest-payload refusal) |
 | `src/app/Husk/ContentView.swift` | `start()` names the absent engine and raises the alert (`guestUnavailable`) |
 | `src/app/Husk/GuestRuntime.swift` | the "this cannot happen" bullet is now the real case, and says so |
-| `src/ios-jit/husk-ios-jit.c` | `pipe2` weak; `__has_include` for `tcg/tcg-apple-jit.h` with a libsystem fallback; `husk_ios_jit_exec_gate` → `static` region gate + weak public wrapper; the three internal gate calls point at the region gate |
+| `src/ios-jit/husk-ios-jit.c` | `pipe2` weak; `husk_ios_jit_region_size` weak (the layer defines it too, b717cca); `__has_include` for `tcg/tcg-apple-jit.h` with a libsystem fallback; `husk_ios_jit_exec_gate` → `static` region gate + weak public wrapper; the three internal gate calls point at the region gate |
 | `scripts/build_ipa_prebuilt.sh` | QEMU no longer staged (staging step replaced with a named note); donor check no longer requires it; manifest line honest |
 | `scripts/package_ipa.sh` | the stale-dylib restage block removed; validation now **requires QEMU to be absent** and still requires ANGLE |
 | `scripts/guest-unbundled.md` → `.hermes/plans/engine-reset/guest-unbundled.md` §5/§10 | unchanged — its §10 is what this change is |
 
 Not touched: `tools/a32`, `src/translation-layer*` (any file), `src/java-framework`,
-`tests/`, `.github/workflows/`, `patches/`, `scripts/integrate_husk.sh` (the
-engine's own build still copies the JIT into QEMU's `tcg/`, which is still right
-for a from-source engine).
+`tests/`, `patches/`, `scripts/integrate_husk.sh` (the engine's own build still
+copies the JIT into QEMU's `tcg/`, which is still right for a from-source engine).
+
+One stale premise left in place deliberately: `tools/fix_region_size.py` (b717cca,
+another agent's) says "the app links the layer but NOT src/ios-jit, so a `husk_*`
+entry point the Swift calls must be DEFINED here". That was true and is now
+false — the app compiles both, which is why `region_size` is weak in
+`husk-ios-jit.c` and the layer's definition is what the app binds to. The script is
+a one-shot that reports "already present, nothing to do", so it is harmless; its
+docstring is the only thing out of date.
 
 ---
 
