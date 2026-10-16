@@ -1293,6 +1293,23 @@ final class QemuRunner: ObservableObject {
             return
         }
 
+        // And the other half of "can this build run a guest": the payload may be
+        // here and the ENGINE that would run it absent. That is a real combination
+        // now -- the engine is no longer bundled, because the JIT substrate that
+        // used to be compiled into it lives in the app itself (see
+        // .hermes/plans/engine-reset/qemu-dylib-removal.md) -- and it is named
+        // here rather than discovered as a qemu_init() that returns immediately.
+        QemuEngine.logAvailability()
+        guard QemuEngine.present else {
+            let why = QemuEngine.absentMessage
+            HuskLog.log("qemu", "not starting the guest: \(why)")
+            DispatchQueue.main.async {
+                QemuRunner.shared.guestUnavailable = why
+                QemuRunner.shared.isRunning = false
+            }
+            return
+        }
+
         probeGL()
         let args = phase1Arguments()
         HuskLog.log("qemu", "profile: Android (LineageOS guest)")

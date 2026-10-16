@@ -48,6 +48,21 @@ targets:
       - path: ../translation-layer-next
         excludes:
           - "husk-tl-unity-app.h"
+      # Husk's JIT substrate, compiled into the app.
+      #
+      # These two files lived inside libqemu-aarch64-softmmu.dylib -- copied into QEMU's
+      # tcg/ by scripts/integrate_husk.sh and compiled there -- which is the whole reason
+      # the engine could not leave the bundle: that library was also the only definition
+      # of husk_ios_jit_prewarm / husk_ios_jit_get_mapping, which the app (JITBootstrap,
+      # SettingsTab, GameStatus) and the native translation layer
+      # (src/translation-layer/husk-tl-load.c, by dlsym) both need. Compiled here instead,
+      # it costs a few tens of KB in the app binary and the engine is free to go.
+      #
+      # Only these two files: the rest of src/ios-jit (husk-display*.c, husk-audio.c,
+      # husk-snapshot.c, husk-balloon.c) is QEMU-side and includes QEMU's own headers.
+      # See .hermes/plans/engine-reset/qemu-dylib-removal.md.
+      - path: ../ios-jit/husk-ios-jit.c
+      - path: ../ios-jit/husk-brk.S
       # The messages the app and its JIT helper exchange.
       - path: HuskJITHelper/HuskJITMessages.swift
       # The download Live Activity's attributes, shared with the widget that draws it.
@@ -70,7 +85,9 @@ targets:
         INFOPLIST_FILE: Husk/Info.plist
         CODE_SIGN_ENTITLEMENTS: "$(HUSK_ENTITLEMENTS)"
         SWIFT_OBJC_BRIDGING_HEADER: Husk/HuskBridge.h
-        # libqemu-aarch64-softmmu.dylib has install_name @rpath/...
+        # The embedded dylibs have install_name @rpath/... (ANGLE, the file-picker tweak,
+        # libhusk_rppairing). libqemu-aarch64-softmmu.dylib was one of them and is no
+        # longer embedded at all -- see the dependencies note above.
         LD_RUNPATH_SEARCH_PATHS:
           - "$(inherited)"
           - "@executable_path/Frameworks"
@@ -122,10 +139,15 @@ targets:
       - target: HuskJITHelper
       # The download Live Activity (Lock Screen and Dynamic Island). Embedded into PlugIns/.
       - target: HuskDownloadsWidget
-      # Built by scripts/build_ios.sh. Embedded and signed into the bundle.
-      - framework: ../../build/ios-arm64/lib/libqemu-aarch64-softmmu.dylib
-        embed: true
-        codeSign: true
+      # libqemu-aarch64-softmmu.dylib used to be here (embed + link), and it was the
+      # largest single entry in the IPA: 33.9 MiB raw, 6.7 MiB packed. It is NOT here
+      # any more -- not linked, not embedded, not shipped. What kept it was that the
+      # JIT substrate was compiled into it; that substrate now lives in the app itself
+      # (../ios-jit/husk-ios-jit.c, above), the engine's own symbols are forwarded by
+      # Husk/QemuEngineShim.c, and a guest start names the absent engine instead of
+      # discovering it inside qemu_init(). Removing the framework dependency is what
+      # takes the file out of Payload/Husk.app/Frameworks -- see
+      # .hermes/plans/engine-reset/qemu-dylib-removal.md.
       # The file picker's Open button does nothing on certificate-signed installs; this tweak (from issue #60) hooks
       # UIDocumentPickerViewController so the picker hands over copies. Linked so it loads at launch.
       - framework: Frameworks/libFilePickerFix.dylib

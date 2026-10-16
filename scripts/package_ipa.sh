@@ -32,17 +32,13 @@ if [ -z "$OUT" ]; then
 fi
 mkdir -p "$DD"
 
-# The .app is not the only thing that can be stale. The Xcode target links the
-# dylib staged in build/ios-arm64/lib, which is filled in by build_ios.sh's qemu
-# stage -- so rebuilding QEMU with plain ninja produces a new dylib that never
-# reaches the app, and the IPA ships the previous one with no warning at all.
-# That happened once and looked exactly like a fix that did not work.
-BUILT="$HUSK_ROOT/third_party/build/qemu-10.0.12-utm/_husk_build/libqemu-aarch64-softmmu.dylib"
-STAGED="$HUSK_ROOT/build/ios-arm64/lib/libqemu-aarch64-softmmu.dylib"
-if [ -f "$BUILT" ] && [ "$BUILT" -nt "$STAGED" ]; then
-    echo "==> staged dylib is older than the built one; restaging"
-    cp "$BUILT" "$STAGED"
-fi
+# Nothing to restage. This used to copy a freshly built QEMU dylib over the staged
+# one in build/ios-arm64/lib, because the Xcode target linked it and a plain
+# `ninja` in the QEMU tree therefore produced a dylib the IPA never saw -- which
+# looked exactly like a fix that did not work. The app no longer links, embeds or
+# ships that library at all (the JIT substrate that made it load-bearing is
+# compiled into the app: src/ios-jit/husk-ios-jit.c), so there is no staged copy
+# to go stale. See .hermes/plans/engine-reset/qemu-dylib-removal.md.
 
 # Regenerate the project first.
 #
@@ -125,14 +121,14 @@ elif [ -n "$EXE" ]; then
     printf "  ok       %-28s %s\n" "executable present" "$EXE"
 fi
 
-# Both dylibs must be embedded, or the app dies at launch with a dyld error.
+# ANGLE must be embedded, or the app dies at launch with a dyld error.
 #
 # ANGLE is checked here because it was not, and an IPA shipped without it: the
 # app reached qemu_egl_init_dpy_cocoa and aborted with "Couldn't open
 # @rpath/libANGLE-shared.dylib". Everything else in this validation passed. A
 # check that covers one of two required libraries is a check that reports
 # success on a bundle that cannot launch.
-for lib in libqemu-aarch64-softmmu.dylib libANGLE-shared.dylib; do
+for lib in libANGLE-shared.dylib; do
     if [ ! -f "$APP/Frameworks/$lib" ]; then
         echo "  MISSING  Frameworks/$lib" >&2
         rc=1
@@ -141,6 +137,18 @@ for lib in libqemu-aarch64-softmmu.dylib libANGLE-shared.dylib; do
             "$(du -h "$APP/Frameworks/$lib" | cut -f1)"
     fi
 done
+
+# And QEMU must NOT be embedded: it is no longer linked, no longer a dependency,
+# and no longer shipped. Its JIT substrate lives in the app binary now
+# (src/ios-jit/husk-ios-jit.c) and the engine's own symbols are forwarded by
+# QemuEngineShim.c. A copy appearing here means the dependency came back -- worth
+# failing over, because 6.7 MB of IPA is exactly what this change removed.
+if [ -f "$APP/Frameworks/libqemu-aarch64-softmmu.dylib" ]; then
+    echo "  UNEXPECTED  Frameworks/libqemu-aarch64-softmmu.dylib is embedded; the engine is supposed to be gone" >&2
+    rc=1
+else
+    printf "  ok       %-28s %s\n" "qemu engine not embedded" "6.7 MB packed saved"
+fi
 
 # Guest images, firmware, and blank disk seeds required by first launch -- only
 # when this build bundles the guest (HUSK_BUNDLE_GUEST=1). When it does not, their

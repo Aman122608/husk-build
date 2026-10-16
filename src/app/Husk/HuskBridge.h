@@ -1,12 +1,28 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * The app's view of libqemu-aarch64-softmmu.dylib.
+ * The app's view of the QEMU engine and of Husk's own JIT substrate.
+ *
+ * There are two providers here now, and they are deliberately different things:
+ *
+ *   * THE JIT SUBSTRATE (husk_ios_jit_*, husk_ios_available_memory) is compiled
+ *     into the app itself, from src/ios-jit/husk-ios-jit.c + husk-brk.S. It used
+ *     to live inside libqemu-aarch64-softmmu.dylib, which is why removing that
+ *     library used to remove the JIT with it. The native translation layer finds
+ *     it at run time by name (dlsym(RTLD_DEFAULT, "husk_ios_jit_prewarm") --
+ *     src/translation-layer/husk-tl-load.c), which resolves against the main
+ *     executable, so nothing else has to link it.
+ *
+ *   * THE QEMU ENGINE (qemu_init/qemu_main_loop/qemu_cleanup and the display,
+ *     audio, snapshot and balloon bridge that lived beside them) is NO LONGER
+ *     BUNDLED. This header still declares them because Swift still calls these
+ *     names; they are DEFINED by src/app/Husk/QemuEngineShim.c, which forwards to
+ *     the engine when one is present and otherwise does nothing and says so. See
+ *     .hermes/plans/engine-reset/qemu-dylib-removal.md.
  *
  * Deliberately hand-written rather than including QEMU's own headers: ui/console.h
  * pulls in most of the emulator and cannot be compiled by an Xcode target. These
- * declarations must stay in step with src/ios-jit/husk-display.h and
- * src/ios-jit/husk-ios-jit.h, and with system/qemu.symbols in the QEMU tree --
- * a symbol missing from that file links fine and fails at load.
+ * declarations must stay in step with src/ios-jit/husk-ios-jit.h and
+ * src/ios-jit/husk-display.h, and with QemuEngineShim.c.
  */
 #ifndef HUSK_BRIDGE_H
 #define HUSK_BRIDGE_H
@@ -25,12 +41,21 @@ typedef struct HuskFrameInfo {
     uint64_t sequence;
 } HuskFrameInfo;
 
-/* --- QEMU's own public API (system/qemu.symbols) --- */
+/* --- QEMU's own public API (system/qemu.symbols) ---
+ *
+ * Defined by QemuEngineShim.c: a forwarder to the engine when it is present, a
+ * named no-op when it is not. Ask husk_qemu_engine_present() before offering to
+ * start a guest -- never discover it inside qemu_init().
+ */
+bool husk_qemu_engine_present(void);
 void qemu_init(int argc, char **argv);
 void qemu_main_loop(void);
 void qemu_cleanup(void);
 
-/* --- Husk's display/input bridge --- */
+/* --- Husk's display/input bridge ---
+ *
+ * Defined by QemuEngineShim.c; these forward into the engine. They are inert and
+ * named-as-absent when the engine is not bundled. */
 void     husk_display_init(void);
 bool     husk_display_lock_frame(HuskFrameInfo *out);
 void     husk_display_unlock_frame(void);
@@ -39,7 +64,12 @@ void     husk_display_send_pointer(int32_t x, int32_t y, bool button_down);
 bool     husk_display_send_key(const char *qcode_name, bool down);
 void     husk_display_request_update(void);
 
-/* --- Husk's JIT substrate --- */
+/* --- Husk's JIT substrate ---
+ *
+ * Defined by the app itself (src/ios-jit/husk-ios-jit.c + husk-brk.S, compiled
+ * into the app target), NOT by the engine any more. These are the symbols the
+ * native translation layer looks up by name at run time.
+ */
 void husk_ios_jit_install_trap_handler(void);
 /* Claim the JIT region while StikDebug is still attached, before the guest
    download. Pass the same size QEMU will ask for (tb-size). */

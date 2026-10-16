@@ -35,8 +35,17 @@
 
 /*
  * Provide pipe2 for iOS systems where libc does not export it.
+ *
+ * WEAK, and deliberately so. The app binary defines the same function in
+ * src/app/Husk/PipeShim.c (a strong definition, whose constructor rebinds every
+ * loaded image's `pipe2` to it), and when this file is compiled into the app
+ * alongside that one a second strong definition would be a duplicate-symbol
+ * link error. Weak is the correct relationship: the shim wins where it is
+ * present, and this copy is what satisfies the QEMU engine's own build when this
+ * file is compiled inside it (scripts/integrate_husk.sh) and nothing else
+ * defines the symbol.
  */
-__attribute__((visibility("default")))
+__attribute__((weak, visibility("default")))
 int pipe2(int fds[2], int flags)
 {
     if (!fds) {
@@ -72,13 +81,51 @@ int pipe2(int fds[2], int flags)
     return 0;
 }
 
-/* TCG's own W^X toggle. pthread_jit_write_protect_np() is marked unavailable in
- * the iOS SDK -- the symbol exists but the header refuses it -- so QEMU pokes
- * the APRR registers through the comm page instead. This file is compiled
- * inside QEMU's tcg/ directory, so the same header is the right one to use, and
- * using anything else would risk testing a different mechanism from the one the
- * emulator will actually run on. */
+/* TCG's own W^X toggle.
+ *
+ * pthread_jit_write_protect_np() is marked unavailable in the iOS SDK -- the
+ * symbol exists but the header refuses it -- so the call is made by name.
+ *
+ * This file has two homes and the toggle has to work in both. Compiled inside
+ * QEMU's tcg/ directory (scripts/integrate_husk.sh) it takes QEMU's own header,
+ * exactly as before. Compiled into the APP binary -- which is where it lives now
+ * that the QEMU engine is no longer bundled (see
+ * .hermes/plans/engine-reset/qemu-dylib-removal.md) -- QEMU's source tree is not
+ * on the include path, so the same two-entry API is provided here over the
+ * libsystem symbols, which is the mechanism src/translation-layer/husk-tl-load.c
+ * already uses for the same reason. Same call, same polarity (1 = write
+ * protected, i.e. executable).
+ */
+#if defined(__has_include)
+#  if __has_include("tcg/tcg-apple-jit.h")
+#    define HUSK_HAS_QEMU_JIT_HEADER 1
+#  endif
+#endif
+
+#ifdef HUSK_HAS_QEMU_JIT_HEADER
 #include "tcg/tcg-apple-jit.h"
+#else
+#include <dlfcn.h>
+
+static int  (*g_husk_wp_supported)(void);
+static void (*g_husk_wp)(int);
+static int   g_husk_wp_probed;
+
+static int jit_write_protect_supported(void)
+{
+    if (!g_husk_wp_probed) {
+        g_husk_wp_probed = 1;
+        g_husk_wp_supported = (int (*)(void))dlsym(RTLD_DEFAULT, "pthread_jit_write_protect_supported_np");
+        g_husk_wp = (void (*)(int))dlsym(RTLD_DEFAULT, "pthread_jit_write_protect_np");
+    }
+    return g_husk_wp_supported != NULL && g_husk_wp != NULL && g_husk_wp_supported();
+}
+
+static void jit_write_protect(int enabled)
+{
+    if (g_husk_wp) { g_husk_wp(enabled); }
+}
+#endif
 
 /* Maximum verbosity by default: this path is nearly impossible to debug after the
  * fact on device, and every line here is printed at most a handful of times per
@@ -460,7 +507,7 @@ HUSK_EXPORT bool husk_ios_jit_prewarm(size_t bytes)
             husk_prewarmed.rw_addr ? "OK" : "FAILED", bytes);
     /* The first execute gate of the process: the grant is measured live right after the claim, so
      * every later gate has a baseline to differ from. */
-    if (husk_prewarmed.rw_addr) husk_ios_jit_exec_gate("the claim (prewarm)");
+    if (husk_prewarmed.rw_addr) husk_ios_jit_region_gate("the claim (prewarm)");
     return husk_prewarmed.rw_addr != NULL;
 }
 
@@ -654,8 +701,18 @@ static HuskDualMapping husk_ios_jit_allocate_real(size_t bytes)
  * Unlike husk_self_selftest this does NOT pre-check the protection field: the field can be wrong (the
  * whole point), and the call itself is the verdict. It saves and restores the bytes it finds, so a
  * gate can be taken at any time without changing the region.
+ *
+ * THIS IS THE REGION GATE, and it is static: it measures the region THIS FILE holds (husk_prewarmed).
+ * Its name is not the app-facing one, deliberately. The app-facing `husk_ios_jit_exec_gate` is
+ * defined once, in src/translation-layer-next/husk-tl-xmem.c, against the arena the guest actually
+ * runs from -- and this file is now compiled INTO THE APP alongside that file, so a second strong
+ * definition of the same name would be a duplicate-symbol link error. The public name below is a
+ * weak wrapper for the engine's own build, where the layer is not present; the app's strong
+ * definition wins there, exactly as it did when this file lived in the QEMU dylib and the layer's
+ * copy was the app's. The gates this file takes for itself -- the claim, and the detach pair -- call
+ * the static region gate directly, so what the boot log reports is unchanged.
  */
-HUSK_EXPORT bool husk_ios_jit_exec_gate(const char *after)
+static bool husk_ios_jit_region_gate(const char *after)
 {
     static const uint32_t code[2] = { 0x528B4B40u, 0xD65F03C0u };   /* movz w0, #0x5a5a ; ret */
     uint8_t *rx = husk_prewarmed.rx_addr, *rw = husk_prewarmed.rw_addr;
@@ -690,6 +747,16 @@ HUSK_EXPORT bool husk_ios_jit_exec_gate(const char *after)
     return ok;
 }
 
+/*
+ * The public name, WEAK. See the note above husk_ios_jit_region_gate: the layer's arena gate is the
+ * strong definition the app binds to, and this exists so the QEMU engine's own build -- where the
+ * layer is not linked -- still exports the symbol the header declares.
+ */
+HUSK_EXPORT __attribute__((weak)) bool husk_ios_jit_exec_gate(const char *after)
+{
+    return husk_ios_jit_region_gate(after);
+}
+
 void husk_ios_jit_release(HuskDualMapping *m)
 {
     if (m == NULL) {
@@ -719,11 +786,11 @@ void husk_ios_jit_detach(void)
      * in 085540; the gates below are what decides it, on the next run, instead of either claim.
      */
     HUSK_LOG("detaching the debugger: the region's per-entry execute grant is a property of the debugger's presence, so this may cost it -- the gates below measure whether it does");
-    husk_ios_jit_exec_gate("immediately BEFORE the debugger detach");
+    husk_ios_jit_region_gate("immediately BEFORE the debugger detach");
     g_expecting_jit_trap = true;
     husk_brk_jit_detach();
     g_expecting_jit_trap = false;
-    bool still = husk_ios_jit_exec_gate("immediately AFTER the debugger detach");
+    bool still = husk_ios_jit_region_gate("immediately AFTER the debugger detach");
     HUSK_LOG("debugger detached; the JIT region stays mapped and writable through its twin, and "
              "execute %s", still ? "SURVIVES the detach here (the detach is not what costs it)"
                                 : "is gone -- the detach is what cost it on this run");
@@ -883,7 +950,7 @@ bool husk_ios_jit_prewarm(size_t bytes) { (void)bytes; return false; }
 size_t husk_ios_jit_region_size(void) { return 0; }
 void husk_ios_jit_release(HuskDualMapping *m) { (void)m; }
 void husk_ios_jit_detach(void) {}
-bool husk_ios_jit_exec_gate(const char *after) { (void)after; return false; }
+__attribute__((weak)) bool husk_ios_jit_exec_gate(const char *after) { (void)after; return false; }
 bool husk_ios_jit_is_available(void) { return false; }
 bool husk_ios_jit_mapjit_works(void) { return false; }
 const char *husk_ios_jit_self_route(void) { return 0; }

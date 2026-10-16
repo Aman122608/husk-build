@@ -15,10 +15,14 @@ import Foundation
 ///   * **No system disk in Documents.** The guest has simply not been downloaded
 ///     yet; GuestImage already reports this as `.missing`, and it is the user's
 ///     to fix by downloading.
-///   * **The QEMU library itself absent.** This cannot happen: the app links
-///     `libqemu-aarch64-softmmu.dylib` (its symbols are in HuskBridge.h), and the
-///     same library also carries the JIT region (`husk_ios_jit_*`), so the app
-///     would not launch without it.
+///   * **The QEMU library itself absent.** The app no longer links, embeds or
+///     ships `libqemu-aarch64-softmmu.dylib` — the JIT substrate that used to be
+///     compiled into it now lives in the app itself (src/ios-jit), so the engine
+///     can go. Every engine symbol the app calls is declared and defined by
+///     `QemuEngineShim.c`, which forwards to the engine when one is present and
+///     otherwise does nothing and says so. `QemuEngine.present` is that question,
+///     and it is asked before a guest is offered. See
+///     .hermes/plans/engine-reset/qemu-dylib-removal.md.
 ///
 /// Naming the first one is the point. It is a build choice, not a fault, and it
 /// has to read as that rather than as a broken image, a broken download or a

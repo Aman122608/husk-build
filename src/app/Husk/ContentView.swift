@@ -333,6 +333,16 @@ struct ContentView: View {
             runner.guestUnavailable = GuestRuntime.unbundledMessage
             return
         }
+        // And the engine that would run it. Since the JIT substrate moved into the
+        // app (so the engine could leave the bundle), "the payload is here but the
+        // engine is not" is a combination that can actually occur, and it is named
+        // here rather than discovered inside qemu_init().
+        QemuEngine.logAvailability()
+        guard QemuEngine.present else {
+            HuskLog.log("ui", "not starting Android: this build ships without the QEMU engine")
+            runner.guestUnavailable = QemuEngine.absentMessage
+            return
+        }
         HuskLog.log("ui", "JIT is available; starting QEMU")
         // Take the JIT region at the last moment before QEMU, as well as before
         // the download. Whichever comes first wins; the second call is a no-op.

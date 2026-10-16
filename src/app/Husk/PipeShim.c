@@ -14,8 +14,11 @@
  * so the weak symbol resolves to NULL at runtime, causing g_unix_open_pipe()
  * to branch to 0x0 and crash with SIGSEGV (signal 11) inside qemu_init().
  *
- * Using fishhook at process startup, we patch the GOT in all loaded images
- * (including libqemu-aarch64-softmmu.dylib) to point pipe2 to this implementation.
+ * Using fishhook at process startup, we patch the GOT in all loaded images to
+ * point pipe2 to this implementation. This is the strong definition: the copy in
+ * src/ios-jit/husk-ios-jit.c is weak, because that file is compiled into this
+ * same app binary now (it used to be inside libqemu-aarch64-softmmu.dylib, which
+ * the app no longer bundles).
  */
 __attribute__((visibility("default")))
 int pipe2(int fds[2], int flags)

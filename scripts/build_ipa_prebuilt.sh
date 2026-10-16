@@ -32,14 +32,20 @@ APP_LIB="$HUSK_ROOT/build/ios-arm64/lib"
 #                                  somewhere inside QEMU.
 #   HUSK_BUNDLE_GUEST=1            the full guest, as every build had it.
 #
-# What this switch does NOT remove, and why: libqemu-aarch64-softmmu.dylib. Its
-# name says "QEMU", but the same library also exports husk_ios_jit_prewarm /
-# husk_ios_jit_get_mapping (scripts/integrate_husk.sh, system/qemu.symbols) --
-# the JIT region the app claims and the native translation layer looks up by
-# name with dlsym (src/translation-layer/husk-tl-load.c:522,529). Dropping the
-# dylib therefore disables JIT for the guest AND the native runtime at once; it
-# is a library split, not a payload deletion. See
-# .hermes/plans/engine-reset/guest-unbundled.md.
+# What this switch does NOT remove, and why: nothing named QEMU, any more.
+# libqemu-aarch64-softmmu.dylib is no longer linked, embedded or staged at all
+# (it was 33.9 MiB raw, 6.7 MiB packed -- the largest single non-guest entry in
+# the IPA). It used to be kept because the same library also carried the JIT
+# substrate -- husk_ios_jit_prewarm / husk_ios_jit_get_mapping, which the app
+# calls and the native translation layer looks up by name with dlsym
+# (src/translation-layer/husk-tl-load.c:522,529) -- so dropping the dylib
+# disabled JIT for the guest AND the native runtime at once. That substrate now
+# lives in the APP itself (src/ios-jit/husk-ios-jit.c + husk-brk.S, in the Husk
+# target's sources in project.yml), and every engine symbol the app calls is
+# forwarded by src/app/Husk/QemuEngineShim.c with an honest no-op + a named
+# refusal when the engine is absent. The JIT region, the boot selftest, the arena
+# and the EXEC GATE pair are unaffected -- they never needed the engine. See
+# .hermes/plans/engine-reset/qemu-dylib-removal.md.
 HUSK_BUNDLE_GUEST="${HUSK_BUNDLE_GUEST:-0}"
 export HUSK_BUNDLE_GUEST
 
@@ -60,15 +66,26 @@ rm -rf "$WORK/x"
 mkdir -p "$WORK/x"
 ( cd "$WORK/x" && unzip -q "$IPA" )
 DONOR="$WORK/x/Payload/Husk.app/Frameworks"
-for f in libANGLE-shared.dylib libqemu-aarch64-softmmu.dylib; do
+for f in libANGLE-shared.dylib; do
     [ -f "$DONOR/$f" ] || { echo "donor IPA has no $f" >&2; exit 1; }
 done
 [ -d "$DONOR/MoltenVK.framework" ] || { echo "donor IPA has no MoltenVK.framework" >&2; exit 1; }
 
-step "stage ANGLE + QEMU from the donor"
+step "stage ANGLE from the donor"
 mkdir -p "$SYSROOT_LIB" "$APP_LIB"
 install -m 755 "$DONOR/libANGLE-shared.dylib" "$SYSROOT_LIB/libANGLE-shared.dylib"
-install -m 755 "$DONOR/libqemu-aarch64-softmmu.dylib" "$APP_LIB/libqemu-aarch64-softmmu.dylib"
+
+# QEMU is deliberately NOT staged any more, even though the donor has it.
+#
+# The app does not link it (project.yml has no dependency on it), does not embed
+# it, and looks for it only at run time -- so a staged copy would be a build-time
+# file nothing reads. The JIT substrate that made the library load-bearing lives
+# in src/ios-jit and is compiled into the app. Leaving the file unstaged also
+# means a build cannot silently pick it up again by accident.
+step "QEMU engine: NOT staged, NOT linked, NOT embedded"
+echo "  the JIT substrate is compiled into the app (src/ios-jit/husk-ios-jit.c)"
+echo "  the engine's symbols are forwarded by src/app/Husk/QemuEngineShim.c"
+echo "  a guest start with no engine says so by name (QemuEngine.absentMessage)"
 
 # The donor ships MoltenVK as a framework, because that is what its own app
 # embeds. project.yml asks for an xcframework, so wrap the same binary in one
@@ -216,13 +233,14 @@ fi
 ./scripts/package_ipa.sh --trollstore "${OUT%.ipa}.tipa"
 
 step "manifest: which binaries are whose"
-for f in "$SYSROOT_LIB/libANGLE-shared.dylib" "$APP_LIB/libqemu-aarch64-softmmu.dylib"; do
+for f in "$SYSROOT_LIB/libANGLE-shared.dylib"; do
     [ -f "$f" ] && printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -d' ' -f1)" "$(basename "$f")"
 done
 printf '%s  %s\n' "$(shasum -a 256 "$HUSK_ROOT/build/java-runtime/husk-framework.dex" | cut -d' ' -f1)" "java-runtime/husk-framework.dex"
 printf '%s  %s\n' "$(find "$HUSK_ROOT/build/java-runtime" "$HUSK_ROOT/build/android-system" -type f | wc -l | tr -d ' ')" "java-runtime + android-system files"
 echo "graphics stack (ANGLE, MoltenVK): upstream Husk $TAG (unchanged)"
-echo "qemu library (libqemu-aarch64-softmmu.dylib): upstream Husk $TAG (unchanged; also hosts the JIT)"
+echo "qemu library (libqemu-aarch64-softmmu.dylib): NOT BUNDLED (the JIT substrate is in the app binary)"
+echo "jit substrate (husk-ios-jit.c + husk-brk.S): this repo, compiled into the app binary"
 if [ "$HUSK_BUNDLE_GUEST" = "1" ]; then
     echo "Android guest payload: BUNDLED (HUSK_BUNDLE_GUEST=1)"
 else
