@@ -44,7 +44,30 @@
 #include <dlfcn.h>
 #include <libkern/OSCacheControl.h>
 #include <unistd.h>
+#include <time.h>
 #include <utime.h>
+
+/* ------------------------------------------------- app-remembered RW-exec memory
+ *
+ * A guest's OWN writable mapping (b_mmap's RW-only branch, below) is handed the WRITABLE view, so a
+ * store into it is a native store and does not fault. But that branch exists for a JIT (LuaJIT: it maps
+ * near its code, writes machine code, then mprotects it executable). A JIT handed the writable view that
+ * then calls mprotect(PROT_EXEC) reaches tl_xmem_allow_exec, which cannot grant execute to that alias and
+ * refuses with EACCES (b_mprotect, below) -- honest, but a JIT that does not check errno would call into
+ * non-executable memory and die.
+ *
+ * So the fact is REMEMBERED, in the app's own TranslationLayer/<uuid>/... folder: on its next launch that
+ * app is handed the executable view for its writable mappings again (its old behaviour), while every other
+ * title keeps the native stores. The file is `<data dir>/.husk-jit-writable` and holds the package and
+ * version it was recorded for, so a different app or a different version never inherits the note.
+ * DELETE THAT FILE to forget it. See data-out-of-the-executable-view.md.
+ */
+const char *tl_hle_package(void);
+int tl_hle_version_code(void);
+static int  g_rw_mem_loaded;            /* 0 until the note is read for the app now running */
+static bool g_rw_app_needs_exec;        /* this app writes code into writable memory (a JIT) */
+static void rw_exec_memory_load(void);
+static void rw_exec_memory_record(uintptr_t addr, size_t len);
 
 /* ------------------------------------------------------------ path mapping */
 
@@ -73,6 +96,8 @@ static void drop_unfinished(const char *dir, int depth)
 void tl_set_data_dir(const char *dir)
 {
     snprintf(g_data_dir, sizeof(g_data_dir), "%s", dir ? dir : "");
+    g_rw_mem_loaded = 0;                    /* a new app: read ITS RW-exec note (lazily, on first use) */
+    g_rw_app_needs_exec = false;
     if (g_data_dir[0]) drop_unfinished(g_data_dir, 0);
 }
 const char *tl_data_dir(void) { return g_data_dir[0] ? g_data_dir : "/tmp"; }
@@ -1659,9 +1684,114 @@ static bool phone_jit(void)
     return on;
 #endif
 }
+
+/* The guest library symbol that asked for something, from this thread's return addresses. The layer's own
+ * frames (the syscall shim) come first and name no guest library, so the first frame that does is the
+ * guest's call site. Best effort: "?" when nothing names it. */
+static const char *guest_caller_site(const char **lib_out)
+{
+    void *ra[16];
+    int n = backtrace(ra, 16);
+    for (int i = 1; i < n; i++) {
+        const char *lib = NULL; const void *sa = NULL;
+        const char *sym = tl_ld_symbol_at(ra[i], &lib, &sa);
+        if (lib) { if (lib_out) *lib_out = lib; return sym ? sym : "?"; }
+    }
+    if (lib_out) *lib_out = "?";
+    return "?";
+}
+
+/* Read `<data dir>/.husk-jit-writable` for the app now running, once, lazily. When it names THIS app
+ * (package and version match), its writable mappings are handed the executable view again -- its old
+ * behaviour -- so a JIT title still runs. A note for a different app or version is ignored, never
+ * guessed at. Identity is not known until tl_hle_configure has run, so while it is empty the read is
+ * left pending and retried on the next call. */
+static void rw_exec_memory_load(void)
+{
+    if (g_rw_mem_loaded) return;
+    const char *pkg = tl_hle_package();
+    if (!pkg || !pkg[0]) return;                 /* identity not known yet: retry later */
+    g_rw_mem_loaded = 1;
+    g_rw_app_needs_exec = false;
+    int ver = tl_hle_version_code();
+    char path[1120];
+    snprintf(path, sizeof(path), "%s/.husk-jit-writable", tl_data_dir());
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    char hdr[64] = "", pkg_f[256] = "", line[320];
+    int ver_f = -1;
+    if (fgets(line, sizeof(line), f)) sscanf(line, "%63s", hdr);
+    while (fgets(line, sizeof(line), f)) {
+        if (!strncmp(line, "pkg ", 4)) sscanf(line + 4, "%255s", pkg_f);
+        else if (!strncmp(line, "version ", 8)) ver_f = atoi(line + 8);
+    }
+    fclose(f);
+    if (strcmp(hdr, "husk-jit-writable") || strcmp(pkg_f, pkg) || ver_f != ver) {
+        if (hdr[0])
+            tl_log_line("bionic: a remembered RW-exec note at %s is for %s version %d, not %s version %d: ignored (the app gets native stores)",
+                        path, pkg_f[0] ? pkg_f : "(unknown)", ver_f, pkg, ver);
+        return;
+    }
+    g_rw_app_needs_exec = true;
+    tl_log_line("bionic: %s version %d is remembered as an app that writes code into writable memory and marks it executable: its writable mappings are handed the EXECUTABLE view again -- its old behaviour (stores there trap through the store guard, but it runs). Clear this by deleting %s",
+                pkg, ver, path);
+}
+
+/* Remember, in the app's own container, that this app wanted execute on writable memory, so its next
+ * launch gets the executable view for its writable mappings. Written to a sibling `.tmp` then renamed
+ * into place, so a reader never sees a half-written file. Also takes effect for the REST of this run:
+ * once the app has shown it is a JIT, further writable mappings are handed `rx` (its old behaviour). */
+static void rw_exec_memory_record(uintptr_t addr, size_t len)
+{
+    g_rw_app_needs_exec = true;
+    const char *pkg = tl_hle_package();
+    char path[1120], tmp[1160];
+    snprintf(path, sizeof(path), "%s/.husk-jit-writable", tl_data_dir());
+    snprintf(tmp, sizeof(tmp), "%s.tmp", path);
+    FILE *f = fopen(tmp, "w");
+    if (!f) {
+        tl_log_line("bionic: could not remember at %s that %s writes code into writable memory: %s (it will be handed the writable view again next launch)",
+                    path, pkg && pkg[0] ? pkg : "(unknown)", strerror(errno));
+        return;
+    }
+    fprintf(f, "husk-jit-writable 1\n");
+    fprintf(f, "pkg %s\n", pkg && pkg[0] ? pkg : "(unknown)");
+    fprintf(f, "version %d\n", tl_hle_version_code());
+    fprintf(f, "when %lld\n", (long long)time(NULL));
+    fprintf(f, "address %#llx\n", (unsigned long long)addr);
+    fprintf(f, "length %#zx\n", len);
+    fflush(f);
+    if (fclose(f) != 0 || rename(tmp, path) != 0) {
+        tl_log_line("bionic: the RW-exec note %s could not be put in place: %s", path, strerror(errno));
+        remove(tmp);
+        return;
+    }
+    tl_log_line("bionic: remembered in %s that %s version %d writes code into writable memory and marks it executable: its writable mappings get the EXECUTABLE view on the next launch (delete that file to forget it)",
+                path, pkg && pkg[0] ? pkg : "(unknown)", tl_hle_version_code());
+}
+
+/* THE HONEST FAILURE FOR THE JIT CASE. A guest asked for execute on a page in a mapping it was handed
+ * WRITABLE (b_mmap's RW-only branch below), and execute cannot be granted to that view: the writable
+ * view is a vm_remap alias and the debugger's per-entry execute grant is on the other view, so
+ * tl_xmem_allow_exec refuses it. The refusal itself is unchanged (EACCES, never a pretend success);
+ * this line makes it LOUD, once, naming the app, the address and the caller, and records the app so it
+ * gets the executable view back on its next launch. */
+static void rw_exec_refuse_log(void *a, size_t l)
+{
+    static int said;
+    if (said++) return;
+    const char *lib = "?";
+    const char *sym = guest_caller_site(&lib);
+    const char *pkg = tl_hle_package();
+    tl_log_line("husk: RW-exec refused for %s (version %d) at %p (%#zx bytes), asked by %s %s: this app writes code into writable memory and then marks it executable: it needs the executable view and will not run on this device while writable mappings are handed the writable view. The app is remembered and gets the executable view on its next launch",
+                pkg && pkg[0] ? pkg : "(unknown)", tl_hle_version_code(), a, l, lib, sym);
+    rw_exec_memory_record((uintptr_t)a, l);
+}
+
 static void *b_mmap(void *addr, size_t len, int prot, int flags, int fd, long off)
 {
     tl_hp_bump(TL_HP_MMAP);
+    rw_exec_memory_load();                          /* the app's remembered RW-exec behaviour, read once */
     /* A hooking library's trampolines (Geode): executable memory is a piece of the JIT region, written through the other view. */
     if ((prot & PROT_EXEC) && (flags & 0x20) && !(flags & 0x10) && tl_codewrite_enabled()) {
         uint8_t *rx, *rw;
@@ -1683,7 +1813,24 @@ static void *b_mmap(void *addr, size_t len, int prot, int flags, int fd, long of
             memset(rw, 0, n);
             tl_note_once("a JIT's code memory (mmap hinted near the code) comes from the JIT region");
             mm_trace("mmap-jit", rx, len, prot, flags);
-            return rx;
+            /* The guest's OWN writable memory. Handed the EXECUTABLE view (rx), every store into it
+             * TRAPS: the store guard decodes the instruction and carries it through the writable twin at
+             * tl_xmem_delta() -- a signal, a decode and a twin store per 16 bytes of DATA. That traffic,
+             * ~147,000 trapped stores/second, is what capped robot gf at 40 FPS and made its 49-second
+             * load to the main menu (data-out-of-the-executable-view.md §2: the traps are the guest's OWN
+             * spans, not library data pages and not the loader's placement). The pages are the same pages;
+             * the ONLY change is which of the region's two views the guest's pointer NAMES. A store into
+             * the writable view is a native store and does not fault.
+             *
+             * The cost, stated plainly: this branch is here FOR a JIT (the comment above). A guest handed
+             * `rw` that later writes code and calls mprotect(PROT_EXEC) on it reaches tl_xmem_allow_exec,
+             * which cannot grant execute to this vm_remap alias and refuses with EACCES (b_mprotect). That
+             * refusal is honest and LOUD (rw_exec_refuse_log), and the app is REMEMBERED
+             * (rw_exec_memory_record) so on its next launch it is handed the executable view again -- its
+             * old behaviour -- and a JIT title still runs. Only an app that ignores errno would call into
+             * non-executable memory; that is why the refusal is never silent. */
+            if (g_rw_app_needs_exec) return rx;      /* a remembered JIT app: its old behaviour */
+            return rw;                                /* the writable view: stores are native, no trap */
         }
     }
     int df = flags & 0x3;                                   /* MAP_SHARED / MAP_PRIVATE */
@@ -1746,6 +1893,7 @@ static bool anon_contains(uintptr_t addr, size_t len)
 const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void **sym_addr);
 static int b_mprotect(void *a, size_t l, int prot)
 {
+    rw_exec_memory_load();                          /* the app's remembered RW-exec behaviour, read once */
     /* Code a hooking library is about to patch: its permissions stay as they are, and its stores are carried out through
      * the writable view as they fault (husk-tl-codewrite.c). */
     if (tl_codewrite_enabled() && tl_xmem_contains(a)) {
@@ -1761,7 +1909,7 @@ static int b_mprotect(void *a, size_t l, int prot)
                 tl_log_line("husk: xmem exec on the writable view a=%p l=%#zx prot=%d (executable view %p): %s",
                             a, l, prot, (void *)((uintptr_t)a - (uintptr_t)tl_xmem_delta()),
                             ok ? "made executable (the guest's JIT arena)" : "REFUSED; the guest's arena stays non-executable");
-            if (!ok) { tl_set_guest_errno(13); return -1; }  /* EACCES: an honest failure, not a lie */
+            if (!ok) { rw_exec_refuse_log(a, l); tl_set_guest_errno(13); return -1; }  /* EACCES, named: an honest failure, not a lie */
         }
         mm_trace("mprotect", a, l, prot, 0);
         return 0;

@@ -273,3 +273,102 @@ A one-line experiment in `b_mmap`'s RW-only branch — `return rw;` where it ret
 on the phone, read `carried` and the frame rate, then reverted if anything that worked before stops
 working. It is deliberately **not** landed here: it changes when a guest's writable memory becomes
 executable, and that cannot be validated from this box.
+
+## 8. LANDED — the change, the honest JIT failure, the per-app memory, and the readings to confirm it
+
+**Decision: `return rw` in `b_mmap`'s RW-only branch.** The trapped stores are the guest's own
+writable spans (§2), so this is the one change that moves the count. It is landed together with an
+honest named failure for the one case it can regress (a JIT) and a per-app memory so that case is not
+permanent.
+
+Files changed (the layer; no Swift, no other agent's files):
+
+- `src/translation-layer-next/husk-tl-bionic-io.c` — the `return rw` and its comment; the RW-exec
+  memory (`rw_exec_memory_load` / `rw_exec_memory_record`); the honest-failure line
+  (`rw_exec_refuse_log`); the reset of the memory in `tl_set_data_dir`.
+- `src/translation-layer-next/husk-tl-jni-hle.c` — `tl_hle_package()`, so the per-app note can carry
+  the app's real identity (package), beside the existing `tl_hle_version_code()`.
+
+### 8.1 The caller survey (who reaches the RW-only branch, and who relied on it being the executable view)
+
+The branch is guarded by `!(prot & PROT_EXEC) && (prot & PROT_WRITE) && (flags & 0x20) && !(flags & 0x10)`
+… `&& tl_codewrite_enabled() && phone_jit() && tl_xmem_near(addr, 256u << 20)`: **an anonymous
+(`MAP_ANON`), non-`MAP_FIXED`, writable, non-executable mapping ≤ 32 MiB, asked for by the guest while
+`tl_codewrite_enabled()` and on a phone, hinted within 256 MiB of the region.** It is not every
+anonymous writable mapping — only the ones a guest hints near its code, which is exactly the behaviour
+§2 pinned on the guest's own allocator (its synthesized `/proc/self/maps` names libraries at `L->rx`).
+The only caller is the guest, through the `mmap`/`mmap64` shim (`husk-tl-bionic-io.c:2278`).
+
+Who in the layer reads a mapping the branch handed out, and what they assumed:
+
+- `b_munmap` (`:1874`): `if (tl_xmem_contains(a)) return 0;` — true for **either** view, so free is
+  unchanged.
+- `b_madvise`/`anon_zap`: the branch returns **before** `anon_add` (as it did returning `rx`), so
+  `MADV_DONTNEED` handling is unchanged.
+- `kernel_dst` (`:573`): `if (n && tl_xmem_is_rx(p) …)` redirects a kernel `read()` destination to the
+  writable twin. With the guest holding `rw` this test is now **false**, so the kernel writes the
+  destination directly — which is **more** correct (the writable view *is* writable), and the redirect
+  the comment describes is still there for the executable view.
+- `husk-tl-codewrite.c` `put()` (`:69`): only acts when the faulting store is in `tl_xmem_is_rx`.
+  Stores into `rw` do not fault, so the guard is simply not entered — the guard itself is untouched.
+- `write_view_pointer` / `fault_address_region` (`husk-tl-unity-app.c:122,160`): describe a fetch fault
+  in the writable view. A JIT that ignores EACCES and jumps into its `rw` memory now lands here and is
+  reported (the app wakes, Husk stays) instead of being a silent host crash.
+- `ss_where` (`husk-tl-unity-app.c:918`): names the executable view when `tl_xmem_is_rx`; unaffected.
+
+**No caller needs the executable view for a reason other than JIT.** `b_mprotect`'s writable-view
+branch is the only place that cared, and that is the JIT case handled below. Nothing else in the layer
+reads a guest RW mapping as executable.
+
+### 8.2 The honest failure (the one real risk), and the per-app memory
+
+A guest handed `rw` that writes code and calls `mprotect(PROT_EXEC)` reaches `tl_xmem_allow_exec`,
+which cannot grant execute to a `vm_remap` alias and refuses with **EACCES**. The refusal is unchanged
+(`tl_set_guest_errno(13); return -1;`); what is added is that it is never silent:
+
+```
+husk: RW-exec refused for <pkg> (version <n>) at <addr> (<l> bytes), asked by <lib> <sym>: this app
+writes code into writable memory and then marks it executable: it needs the executable view and will
+not run on this device while writable mappings are handed the writable view. The app is remembered and
+gets the executable view on its next launch
+```
+
+(the caller site is the first guest library frame in the thread's return addresses, or `?`.)
+
+**The per-app memory** (`rw_exec_memory_record`) writes `<data dir>/.husk-jit-writable` — i.e. in the
+app's own `TranslationLayer/<uuid>/<engine>-data/` — atomically (`.tmp` + `rename`), holding the
+header, the **package**, the **versionCode**, the time and the refused address. On the next launch
+`rw_exec_memory_load` reads it on first `mmap`/`mprotect`, and **only if package and version both
+match** hands THAT app the executable view for its RW mappings again (its old behaviour); a note for a
+different app or version is ignored, never guessed at, and said so. Once the app shows it is a JIT, the
+rest of the current run also reverts to `rx` (its old behaviour). **To clear it: delete
+`<data dir>/.husk-jit-writable`** (or delete the app's data) — the app then gets native stores again
+and re-records the note only if it asks once more.
+
+### 8.3 The counters to confirm it (no new counters)
+
+`tl_perf_summary` already prints `codewrite carried=… refused=…; arena allocs=… pages=…`. Expected on
+the next robot gf run:
+
+| reading | today (`husk-20261016-093427`) | expected now |
+|---|---|---|
+| `codewrite carried=` | 29,538,738 (~147,000/s) | the **genuine** code writes — robot gf self-modifies nothing, so **0–100** for the run (order 10²–10³ at most) |
+| `codewrite refused=` | 0 | **0** (must not rise) |
+| `arena allocs= / pages=` | 48 / 60,088 | **unchanged** (same pages, different view) |
+| frames / FPS | ~1035, ~40 FPS | **above 40 FPS** |
+| load to the main menu | ~49 s | **shorter** |
+
+If `carried` does not collapse, the trap source is not the mmap view and this change is wrong — which is
+the point of stating the reading before the run. The JIT guard is the `husk: RW-exec refused for …`
+line: its **absence** on robot gf is expected; its **presence** on a LuaJIT-style title is the honest
+record that that title needs the executable view.
+
+### 8.4 Invariants held (re-checked after the change)
+
+No `vm_protect` on the region (none added); the executable view is never written (the branch still
+`memset`s `rw`, and returns it); nothing the guest holds is unmapped (no `munmap` added); no thread that
+ran guest code is ended or joined (none touched); the honest refusal path is intact (EACCES, not a
+pretend grant); the store guard stays for genuine code writes (`husk-tl-codewrite.c` untouched). The
+only behaviour that changes is which view the guest's own writable pointer names, plus a per-app note
+that restores the old view for an app that proves it is a JIT.
+

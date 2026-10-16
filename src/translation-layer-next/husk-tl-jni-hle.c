@@ -1121,6 +1121,8 @@ jobj *tl_hle_activity(void) { return H.activity; }
 /* Where a game's own files live outside its container: the folder Android hands a UE4 build as its external data root. */
 const char *tl_hle_ext_files(void) { return H.ext_files; }
 int tl_hle_version_code(void) { return H.version_code; }
+/* The app's package name, for the layer's per-app memory (b_mmap's RW-exec note, husk-tl-bionic-io.c). */
+const char *tl_hle_package(void) { return H.pkg; }
 /* An app whose activity is its own class (Minecraft's MainActivity) swaps its instance in for the generic one. */
 void tl_hle_set_activity(jobj *a) { H.activity = a; }
 jobj *tl_hle_assets(void) { return H.assets; }
