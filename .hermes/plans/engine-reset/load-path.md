@@ -41,10 +41,14 @@ perf[close] (line 539):                      codewrite carried=29 538 738  refus
 
 `g_emulated++` is incremented **once per signal** in `on_fault` (`husk-tl-codewrite.c:412`): every
 "carry" is a SIGBUS/SIGSEGV round-trip through the executable view's twin. ~28.2 M carries before the
-main menu, at a conservative ~1.7 µs per trap, is **≈48 s** — the whole minute, to within the noise.
-This is the same term the owner reports as "40 FPS"; the guard is out of scope here (the perf pass,
-`performance.md` §"what was deliberately NOT done", left its behaviour alone). It is named here because
-it is what the log's own numbers say the minute is, and it should not be mistaken for the inflate.
+main menu (~575 k/s across the 49 s) is the dominant load-path term by orders of magnitude; a sibling
+change measured the same 29 538 738 total over the whole run and traced its source to `b_mmap`'s RW-only
+divert handing guest writable memory the **executable** view (`husk-tl-bionic-io.c:1534`;
+`.hermes/plans/engine-reset/data-out-of-the-executable-view.md`), i.e. the guest's own writes to its
+writable mmaps fault every time. It is the same term the owner reports as "40 FPS"; the guard is out of
+scope here (the perf pass, `performance.md` §"what was deliberately NOT done", left its behaviour alone).
+It is named here because it is what the log's own numbers say the minute is, and it must not be mistaken
+for the inflate — which is what this task set out to cut, and which is real but ~1 s.
 
 ## 2. Every inflate / re-read on the load path
 
