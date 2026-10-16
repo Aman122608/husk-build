@@ -36,9 +36,11 @@
 static volatile bool g_on;
 static struct sigaction g_prev_bus, g_prev_segv;
 static volatile long g_emulated;
+static volatile long g_emulated_relro;          /* of the carries, the ones whose address is in a RELRO page (measurement) */
 
 bool tl_codewrite_enabled(void) { return g_on; }
 long tl_codewrite_count(void) { return g_emulated; }
+long tl_codewrite_relro_count(void) { return g_emulated_relro; }
 
 static int64_t sext(uint64_t v, int bits) { return (int64_t)(v << (64 - bits)) >> (64 - bits); }
 
@@ -410,6 +412,11 @@ static void on_fault(int sig, siginfo_t *info, void *uc)
             if (emulate(u->uc_mcontext, &why)) {
                 u->uc_mcontext->__ss.__pc += 4;
                 g_emulated++;
+                /* MEASUREMENT, not a behaviour: is this carried store into a PT_GNU_RELRO page? tl_page_plan keeps
+                 * RELRO out of TL_PAGE_W, so the loader names those pages through the executable view and a store
+                 * there reaches this guard even though the bytes are really data. Counted so a run says whether
+                 * naming RELRO through the writable view is worth the change; no line per store, no lock. */
+                if (tl_ld_va_relro(info->si_addr) == 1) g_emulated_relro++;
                 return;
             }
         } else {

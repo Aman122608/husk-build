@@ -116,6 +116,26 @@ const char *tl_ld_symbol_at_any(const void *addr, const char **lib_name, const v
 int tl_ld_va_is_code(const void *addr);
 
 /*
+ * --- THE GUEST-ADDRESS RULE (the one rule every producer of a guest-visible address follows) --------
+ *
+ * A page the guest may STORE to must always be named through the WRITABLE view; only a page the guest
+ * may EXECUTE needs the executable view. One function decides it (husk-tl-ld.c, view_of), and every
+ * place that hands a guest an address computed from a library's vaddr goes through it: sym_value and
+ * image_addr (relocations, dlsym), sym_in_lib (dladdr's dli_saddr), and any later producer.
+ *
+ * The BASE is deliberately NOT subject to the rule: tl_ld_lib_base and dl_iterate_phdr's load bias stay
+ * the EXECUTABLE view's vaddr 0. A guest computes code addresses, symbol offsets and pc-relative
+ * arithmetic from that one base, and code must be executable, so the base is a code address and does not
+ * move. tl_ld_va_relro is the measurement for the one page class the rule cannot yet name writably.
+ */
+
+/* Whether an address (either view) is in a page PT_GNU_RELRO covers: 1 RELRO, 0 in a library but not
+ * RELRO, -1 not in a library. tl_page_plan keeps RELRO out of TL_PAGE_W on purpose, so the rule names
+ * those pages through the executable view and a store there reaches the store guard. Counted (not
+ * changed) so a run measures whether a guest really stores into .data.rel.ro before RELRO is re-planned. */
+int tl_ld_va_relro(const void *addr);
+
+/*
  * Walk loaded libraries the way dl_iterate_phdr does. The callback gets the load
  * bias (the executable view's address of vaddr 0), the library's name, its program
  * headers and their count; a non-zero return stops the walk.

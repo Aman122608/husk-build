@@ -939,8 +939,8 @@ static void tl_perf_summary(const char *tag)
     int w = 0;
     size_t allocs = 0, pages = 0;
     tl_xmem_backing_stats(&allocs, &pages);
-    w = ss_put(line, w, sizeof(line), "perf[%s]: codewrite carried=%ld refused=%ld; arena allocs=%zu pages=%zu;",
-               tag, tl_codewrite_count(), tl_codewrite_refused_count(), allocs, pages);
+    w = ss_put(line, w, sizeof(line), "perf[%s]: codewrite carried=%ld refused=%ld relro=%ld; arena allocs=%zu pages=%zu;",
+               tag, tl_codewrite_count(), tl_codewrite_refused_count(), tl_codewrite_relro_count(), allocs, pages);
     for (int i = 0; i < TL_HP_N; i++) {
         unsigned long c = __atomic_load_n(&tl_hp_count[i], __ATOMIC_RELAXED);
         if (c) w = ss_put(line, w, sizeof(line), " %s=%lu", tl_hp_name(i), c);

@@ -63,6 +63,7 @@ struct tl_lib {
     uint64_t base_vaddr;
     size_t npages;
     uint8_t *pflags;               /* TL_PAGE_* per page */
+    uint64_t relro_vaddr, relro_size; /* what PT_GNU_RELRO covers (vaddrs); 0 when the image has none. For tl_ld_va_relro */
     elf_phdr *phdr;                /* malloc'd copy, file addresses */
     unsigned phnum;
 
@@ -277,17 +278,41 @@ static const elf_sym *sym_at(const tl_lib *L, uint32_t i)
 
 static bool in_code(const tl_lib *L, uint64_t vaddr);   /* below: the executable sections, where instructions live */
 
+/*
+ * ------------------------------------------------------------ THE GUEST-ADDRESS RULE
+ *
+ * The one function that decides which of a library's two views a guest-visible address is named through.
+ * A page the guest may STORE to is named through the WRITABLE view (a store is then a native store and never
+ * reaches the store guard); a page the guest may EXECUTE is named through the EXECUTABLE view (the only view
+ * that carries execute); a page that is neither -- read-only data, and RELRO, which tl_page_plan deliberately
+ * keeps out of TL_PAGE_W -- is named through the executable view (it is readable there, and naming it writable
+ * would invite a store the guest must not make). A page holding both code and data (a small library's code and
+ * data on one page) is writable, so the SECTION the address falls in decides: a function stays executable
+ * whatever else shares its page.
+ *
+ * `is_code` is the caller's own answer when it knows more than the page flags (a symbol's st_info, a code
+ * section). Every producer of a guest-visible address goes through here, so the rule cannot be applied
+ * inconsistently: sym_value and image_addr (relocations, dlsym, the global namespace) and sym_in_lib
+ * (dladdr's dli_saddr). The BASE is not subject to the rule (tl_ld_lib_base, dl_iterate_phdr's bias): it stays
+ * the executable view's vaddr 0, a code address every guest relocation is written against.
+ */
+static uint64_t view_of(const tl_lib *L, uint64_t vaddr, bool is_code)
+{
+    uint64_t off = vaddr - L->base_vaddr;
+    size_t page = (size_t)(off / PAGE);
+    bool writable = page < L->npages && (L->pflags[page] & TL_PAGE_W);
+    if (is_code || !writable) return (uint64_t)(uintptr_t)(L->rx + off);
+    return (uint64_t)(uintptr_t)(L->rw + off);
+}
+
 /* The address a defined symbol is known by: the executable view for code, the writable view for data. The symbol's TYPE
  * alone is not enough -- a hand-written or stripped library marks a function STT_NOTYPE, and giving that the writable
  * view is not a page the CPU fetches (the address-provenance crash). The SECTION the vaddr falls in decides, as it does
  * for image_addr below: a symbol inside an executable section is code whatever its type says. */
 static void *sym_value(const tl_lib *L, const elf_sym *s)
 {
-    uint64_t off = s->st_value - L->base_vaddr;
-    size_t page = (size_t)(off / PAGE);
     bool is_code = (s->st_info & 0xf) == 2 || in_code(L, s->st_value);
-    if (!is_code && page < L->npages && (L->pflags[page] & TL_PAGE_W)) return L->rw + off;
-    return L->rx + off;
+    return (void *)(uintptr_t)view_of(L, s->st_value, is_code);
 }
 
 static const elf_sym *lib_find(const tl_lib *L, const char *name)
@@ -651,7 +676,10 @@ static const char *sym_in_lib(const tl_lib *L, const void *addr, const void **sy
         if (so <= off && (!best || so > best->st_value - L->base_vaddr)) best = s;
     }
     if (!best) return NULL;
-    if (sym_addr) *sym_addr = L->rx + (best->st_value - L->base_vaddr);
+    /* The symbol's address, through THE GUEST-ADDRESS RULE: a DATA symbol's address is named through the writable
+     * view, so a guest that STORES through dladdr's dli_saddr writes natively instead of faulting into the store
+     * guard; a code symbol stays executable. (Before this, the view was always the executable one.) */
+    if (sym_addr) *sym_addr = (const void *)(uintptr_t)view_of(L, best->st_value, in_code(L, best->st_value));
     return sym_name(L, best);
 }
 
@@ -672,19 +700,31 @@ const char *tl_ld_symbol_at_any(const void *addr, const char **lib_name, const v
     return sym_in_lib(L, addr, sym_addr);
 }
 
-/* /proc/self/maps as the app's code sees it: each loaded library, at its address, under the path it was loaded by. */
+/* /proc/self/maps as the app's code sees it: each loaded library, at its address, under the path it was loaded by.
+ *
+ * THE GUEST-ADDRESS RULE reaches here too: the library is DESCRIBED truthfully as the TWO views it really is -- its
+ * executable view (where its code runs and where its code addresses live) and its writable view (where its data is
+ * written). The executable-view line is emitted FIRST, unchanged, so a guest that takes the FIRST mapping for a library
+ * as its base reads exactly the base it always read: the base (tl_ld_lib_base, dl_iterate_phdr's load bias) is the
+ * executable view's vaddr 0 and does NOT move -- every guest relocation and symbol computation is written against it.
+ * The writable-view line only ADDS the truth about where a store to the library's data is native. Both lines are the
+ * same pages, at the same relative offsets, two views apart. */
 size_t tl_ld_maps(char *buf, size_t n, const char *libdir)
 {
     size_t k = 0;
     if (n) buf[0] = 0;
     ld_libs_lock();
-    for (int i = 0; i < G.nlibs && k + 200 < n; i++) {
+    for (int i = 0; i < G.nlibs && k + 400 < n; i++) {
         tl_lib *L = G.libs[i];
         if (!lib_in_session(L)) continue;
         if (L->state < 2) continue;
+        const char *nm = L->soname[0] ? L->soname : base_name(L->name);
         uintptr_t lo = (uintptr_t)L->rx, hi = lo + L->npages * PAGE;
         k += (size_t)snprintf(buf + k, n - k, "%lx-%lx r-xp 00000000 fd:00 %d %s/%s\n", (unsigned long)lo, (unsigned long)hi, 4000 + i,
-                              libdir, L->soname[0] ? L->soname : base_name(L->name));
+                              libdir, nm);
+        uintptr_t wlo = (uintptr_t)L->rw, whi = wlo + L->npages * PAGE;
+        k += (size_t)snprintf(buf + k, n - k, "%lx-%lx rw-p 00000000 fd:00 %d %s/%s\n", (unsigned long)wlo, (unsigned long)whi, 4000 + i,
+                              libdir, nm);
     }
     ld_libs_unlock();
     return k;
@@ -1231,6 +1271,21 @@ int tl_ld_va_is_code(const void *addr)
     return in_code(L, off + L->base_vaddr) ? 1 : 0;
 }
 
+/* Whether an address (in either view) is in a page PT_GNU_RELRO covers: 1 RELRO, 0 in a library but not RELRO, -1 not
+ * in a library. tl_page_plan keeps RELRO out of TL_PAGE_W, so the rule names those pages through the executable view
+ * and a store there reaches the store guard even though the bytes are really data. Read-only and lock-free (called from
+ * the store guard's fault path, where nothing may allocate or block); it only measures, it changes nothing. */
+int tl_ld_va_relro(const void *addr)
+{
+    tl_lib *L = tl_ld_lib_of(addr);
+    if (!L) return -1;
+    if (!L->relro_size) return 0;
+    const uint8_t *a = addr;
+    uint64_t off = (a >= L->rx && a < L->rx + L->npages * PAGE) ? (uint64_t)(a - L->rx) : (uint64_t)(a - L->rw);
+    uint64_t vaddr = off + L->base_vaddr;
+    return (vaddr >= L->relro_vaddr && vaddr < L->relro_vaddr + L->relro_size) ? 1 : 0;
+}
+
 /* An adrp into a page holding code and data both: what the next instructions make of it. "add Xd, Xn, #imm" with Xn the
  * adrp's register forms an address; if that address is code (a callback handed out) the adrp keeps the executable view.
  * Loads and stores through it are data, and get the writable view. */
@@ -1426,18 +1481,10 @@ static inline uint64_t rd64(const uint8_t *p) { uint64_t v; memcpy(&v, p, 8); re
 
 /* An address inside the image as pointer data records it: writable view for data, executable view for code. A small library
  * has code and data on one page, which is then writable; a pointer into its executable sections is still code and must be
- * called through the executable view. */
+ * called through the executable view. THE GUEST-ADDRESS RULE, through its one function (view_of). */
 static uint64_t image_addr(const tl_lib *L, uint64_t vaddr)
 {
-    uint64_t off = vaddr - L->base_vaddr;
-    size_t page = (size_t)(off / PAGE);
-    if (page < L->npages && (L->pflags[page] & TL_PAGE_W)) {
-        if (L->pflags[page] & TL_PAGE_X)
-            for (int r = 0; r < L->ncode; r++)
-                if (vaddr >= L->code[r].start && vaddr < L->code[r].end) return (uint64_t)(uintptr_t)(L->rx + off);
-        return (uint64_t)(uintptr_t)(L->rw + off);
-    }
-    return (uint64_t)(uintptr_t)(L->rx + off);
+    return view_of(L, vaddr, in_code(L, vaddr));
 }
 
 static uint64_t bind_symbol(tl_lib *L, uint32_t symidx, bool *failed)
@@ -1989,6 +2036,7 @@ static tl_lib *map_library(const char *name, uint8_t *file, size_t flen)
     snprintf(L->name, sizeof(L->name), "%s", name);
     L->session = G.session;        /* the session that mapped it: later sessions' lookups skip it */
     L->rx = rx; L->rw = rw; L->base_vaddr = base_vaddr; L->npages = npages; L->pflags = flags;
+    if (has_relro) { L->relro_vaddr = relro.vaddr; L->relro_size = relro.memsz; }   /* for tl_ld_va_relro's measurement */
     L->phdr = phs; L->phnum = eh->e_phnum;
     load_unwind_ranges(L, file, flen, phs, eh->e_phnum);
     if (has_tls) {
