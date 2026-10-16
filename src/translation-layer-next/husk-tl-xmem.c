@@ -1290,6 +1290,24 @@ size_t tl_xmem_size(void)  { return g_x.size; }
 size_t tl_xmem_used_high_water(void) { return g_x.used_hwm; }
 
 /*
+ * What the JIT arena size setting calls "claimed": the size of the region THIS
+ * LAUNCH actually got -- the number the app must show, never the number it asked
+ * for. Once the arena is open that is g_x.size; before any game starts it is the
+ * size of the prewarmed region the layer will use, which is the honest answer at
+ * that point, and 0 if there is none. Defined here, in the layer, because the app
+ * links the layer and not src/ios-jit.
+ */
+size_t husk_ios_jit_region_size(void)
+{
+    if (g_x.open && g_x.size) return g_x.size;
+    {
+        tl_dual_mapping *m = tl_find_stikdebug_prewarmed();
+        return (m && m->size) ? m->size : 0;
+    }
+}
+
+
+/*
  * The session summary's arena line: the high-water mark of the guest's own memory in the region, against the region
  * size it was measured against. Called once, at the session close (husk_tl_session_close), so a run of a title leaves
  * one line that says whether the arena-size setting fits it. `tag` labels the call site. No side effects.
