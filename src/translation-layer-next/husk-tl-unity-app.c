@@ -1295,6 +1295,7 @@ int husk_tl_session_close(void)
                     state_name(from), state_name(gate_from), engine_name(engine));
     }
     tl_perf_summary("close");
+    tl_xmem_report_high_water("close");
     tl_guest_exit_set_close_in_flight(false);
     return verdict;
 }

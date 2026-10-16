@@ -40,6 +40,10 @@ extern bool tl_codewrite_enabled(void) __attribute__((weak));
 static struct {
     uint8_t *rx, *rw;
     size_t size, used;
+    /* The HIGH-WATER MARK of `used` over the run: the peak the guest's own memory ever reached in the region, kept so
+     * the session summary can say "this title peaked at N MiB of the M MiB claimed" -- the number that tells the owner
+     * whether the arena-size setting is too small, too large, or irrelevant for the title (tl_xmem_used_high_water). */
+    size_t used_hwm;
     bool open;
     /* True when the guest-facing view (g_x.rw) carries the JIT authorisation (Fix A): see tl_xmem_guest_view_is_jit. */
     bool guest_view_jit;
@@ -654,6 +658,8 @@ bool tl_xmem_alloc(size_t bytes, uint8_t **rx, uint8_t **rw)
         if (rx) *rx = g_x.rx + start;
         if (rw) *rw = xmem_writable_view() + start;
         g_x.used += n;
+        if (g_x.used > g_x.used_hwm) g_x.used_hwm = g_x.used;   /* the session high-water mark: the peak the guest's own
+                                                                 * memory reached in the region, for the summary line. */
         ok = true;
         /* Back the span just handed out: one store per 4 KiB page through the writable view (a store, not a read, makes
          * the kernel publish the page; the span is fresh, so writing zero is safe).
@@ -1273,6 +1279,29 @@ bool tl_xmem_allow_exec(void *p, size_t n)
 
 size_t tl_xmem_used(void) { return g_x.used; }
 size_t tl_xmem_size(void)  { return g_x.size; }
+
+/*
+ * The HIGH-WATER MARK of the region's use over the run: the peak `used` ever reached (tl_xmem_alloc bumps it and keeps
+ * the maximum). This is the number an arena-size setting is judged by -- "this game peaked at N MiB of the M MiB
+ * claimed" -- and it is a MEASUREMENT, not a wish: it is the same `used` the arena page-backing fault path prints
+ * (husk-tl-unity-app.c arena_page_span), read back at its worst, with the region size it was measured against
+ * (tl_xmem_size) so the two are always quoted together. Read-only; safe any time, and safe on the fatal path.
+ */
+size_t tl_xmem_used_high_water(void) { return g_x.used_hwm; }
+
+/*
+ * The session summary's arena line: the high-water mark of the guest's own memory in the region, against the region
+ * size it was measured against. Called once, at the session close (husk_tl_session_close), so a run of a title leaves
+ * one line that says whether the arena-size setting fits it. `tag` labels the call site. No side effects.
+ */
+void tl_xmem_report_high_water(const char *tag)
+{
+    if (!g_x.open) return;
+    tl_log_line("xmem: arena high-water[%s]: the guest's memory peaked at %zu MiB used of the %zu MiB region claimed "
+                "(peak=%zu bytes, size=%zu bytes) -- a peak close to the claim says this title wants a LARGER arena size "
+                "in Settings; a peak far below it says a smaller claim would do",
+                tag ? tag : "close", g_x.used_hwm >> 20, g_x.size >> 20, g_x.used_hwm, g_x.size);
+}
 const void *tl_xmem_region_base(void) { return g_x.rx; }
 
 bool tl_xmem_guest_view_is_jit(void) { return g_x.open && g_x.guest_view_jit; }

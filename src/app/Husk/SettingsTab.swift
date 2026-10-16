@@ -455,6 +455,9 @@ struct JITSettings: View {
     @State private var autoStart = Onboarding.autoStart
     @AppStorage(JITCoordinator.autoEnableKey) private var autoJIT = false
     @State private var keepAttached = JITBootstrap.keepDebuggerAttached
+    /// The arena-size setting, in MiB (husk.jitArenaMiB). Read at launch -- the region is claimed at boot, before the
+    /// guest download -- so a change here takes effect at the NEXT launch, which the row says plainly.
+    @State private var arenaMiB = JITBootstrap.arenaMiB
 
     private var pairingLabel: String {
         switch jit.pairingSource {
@@ -540,6 +543,24 @@ struct JITSettings: View {
                 // husk-20261015-085540 saying "JIT is on" while the guarded fetch faulted.
                 DetailRow(label: "Guest arena",
                           value: JITBootstrap.measuredDescription,
+                          mono: false)
+                // The arena-size setting: the SAME region the Guest arena row measures. It is claimed at boot, before
+                // the guest download, so this is read at launch and a change takes effect at the NEXT launch. The row
+                // below shows what this launch ACTUALLY claimed and whether it came up mapped and executable, plus the
+                // session high-water mark of the region's use -- never the requested number shown as if it were achieved.
+                Stepper(value: $arenaMiB,
+                        in: JITBootstrap.arenaMinMiB...JITBootstrap.arenaMaxMiB,
+                        step: 64) {
+                    Text("JIT arena size: \(arenaMiB) MiB")
+                }
+                .onChange(of: arenaMiB) { v in
+                    UserDefaults.standard.set(v, forKey: "husk.jitArenaMiB")
+                    HuskLog.log("jit", "arena size set to \(v) MiB -- takes effect at the NEXT launch (the region is "
+                                     + "claimed at boot, before the guest download); this launch keeps the "
+                                     + "\(JITBootstrap.claimedMiB) MiB it claimed")
+                }
+                DetailRow(label: "Claimed & measured",
+                          value: JITBootstrap.arenaSizeDescription,
                           mono: false)
                 DetailRow(label: "Debugger after setup",
                           value: JITBootstrap.detached ? "detached" : "attached",

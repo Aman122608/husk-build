@@ -53,7 +53,51 @@ enum JITBootstrap {
     // 512 MiB since the native runtime runs Minecraft: its main library alone is a 354 MiB image that has to sit in this
     // region, with the stubs the loader places beside it. A larger prewarm is safe for QEMU, which is handed the
     // prewarmed region whenever it is at least what tb-size asks for.
-    static let jitBytes = 512 * 1024 * 1024
+    //
+    // THE SIZE IS NOW A SETTING (husk.jitArenaMiB), read HERE, at launch: the region is claimed at boot, before the guest
+    // download, so a change takes effect at the NEXT launch, never this one. The default is unchanged at 512 MiB, so
+    // nothing moves unless the owner moves it. This is NOT a performance lever -- the frame rate was capped by which VIEW
+    // the guest's writable memory was named through, not by how large the region is (that is fixed) -- but it decides
+    // whether a BIGGER title can hold its code+data+heap, whether a low-memory device can afford the claim, and whether a
+    // game that cannot get the memory it asks for can be told so and retried at a larger number.
+    static let defaultArenaMiB = 512
+
+    /// The arena-size setting's honest range, DERIVED from the layer, not invented:
+    ///
+    ///  - the floor is 64 MiB. husk-tl-xmem.c never claims a smaller region: `grant_self` halves the request down to
+    ///    `size >= (64u << 20)` and stops, and `near_alias`'s largest-fitting-alias loop stops at
+    ///    `want_size >= (64u << 20)`. Below 64 MiB the layer has no region size it will honour, so the setting must not
+    ///    offer one.
+    ///  - the ceiling is 2048 MiB. The region is mapped TWICE (an executable view and a writable twin), and the layer
+    ///    places the twin within 2 GiB of the executable view -- `reach = (uintptr_t)2 << 30` in husk-tl-xmem.c
+    ///    (`near`/`near_alias`) and in src/ios-jit/husk-ios-jit.c's placement of the writable alias. A claim beyond 2 GiB
+    ///    could not keep its two views within that reach, so 2048 MiB is the mechanical ceiling the code supports.
+    ///
+    /// A value outside this range is CLAMPED, with a named log line saying what was asked and what was used -- never
+    /// silently -- and the Settings row shows what was ACTUALLY claimed, not what was asked for.
+    static let arenaMinMiB = 64
+    static let arenaMaxMiB = 2048
+
+    /// The user's arena-size setting, in MiB, clamped to the range above. Persisted across launches (UserDefaults key
+    /// "husk.jitArenaMiB"), defaulting to `defaultArenaMiB` so today's 512 MiB claim is unchanged until he changes it.
+    static var arenaMiB: Int {
+        let stored = UserDefaults.standard.object(forKey: "husk.jitArenaMiB") as? Int ?? defaultArenaMiB
+        return min(max(stored, arenaMinMiB), arenaMaxMiB)
+    }
+
+    /// Whether the stored setting had to be clamped (the raw value is outside `arenaMinMiB...arenaMaxMiB`). The row and
+    /// the launch log both say so when it is; nothing is silently corrected.
+    static var arenaClamped: Bool {
+        let stored = UserDefaults.standard.object(forKey: "husk.jitArenaMiB") as? Int ?? defaultArenaMiB
+        return stored != arenaMiB
+    }
+
+    /// The region size to claim, from the setting. Read at LAUNCH (see the note above `defaultArenaMiB`).
+    static var jitBytes: Int { arenaMiB * 1024 * 1024 }
+
+    /// The size (MiB) the debugger ACTUALLY granted at the claim, or 0 when no region is held. Straight from the layer
+    /// (`husk_ios_jit_region_size`), so the row reports what was claimed, not what was asked.
+    static var claimedMiB: Int { Int(husk_ios_jit_region_size() / (1024 * 1024)) }
 
     /// True once the region is held. The memory budget needs this: after a
     /// prewarm the JIT is already counted in the footprint, so subtracting it
@@ -90,8 +134,17 @@ enum JITBootstrap {
             if works { lastFailure = nil }
             return works
         }
+        // The arena-size setting: what was asked, what the honest range allowed, and what will be used. Never silent.
+        if arenaClamped {
+            let asked = UserDefaults.standard.object(forKey: "husk.jitArenaMiB") as? Int ?? defaultArenaMiB
+            HuskLog.log("jit", "arena size setting: asked \(asked) MiB, but the layer's honest range is "
+                             + "\(arenaMinMiB)-\(arenaMaxMiB) MiB (husk-tl-xmem.c: the region is never claimed below the "
+                             + "64 MiB floor and its twin must stay within 2 GiB of the executable view), so this launch "
+                             + "uses \(arenaMiB) MiB -- CLAMPED, not silently ignored")
+        }
         HuskLog.log("jit", "claiming \(jitBytes / (1024 * 1024)) MiB of JIT memory now, "
-                         + "before the guest download -- the region's execute is the debugger's "
+                         + "before the guest download (arena size \(arenaMiB) MiB, from Settings -- read at launch, so "
+                         + "a change takes effect at the next launch) -- the region's execute is the debugger's "
                          + "per-entry grant, so the debugger is held rather than detached")
         let ok = husk_ios_jit_prewarm(jitBytes)
         if ok {
@@ -310,8 +363,39 @@ enum JITBootstrap {
         }
     }
 
-    // MARK: the verdict, read back from the container
+    /// The arena-size setting, said honestly and all in one place: what is configured for the NEXT launch, what THIS
+    /// launch actually claimed, whether that came up mapped and executable (the layer's own guarded write-then-execute,
+    /// not this app's flag), and the session high-water mark of the region's use against the size it was measured
+    /// against. It never shows the requested number as if it were the achieved one: if the claim failed it says so, and
+    /// the peak is what tells the owner whether his setting matters for a title.
+    static var arenaSizeDescription: String {
+        let configured = "set to \(arenaMiB) MiB"
+            + (arenaClamped ? " (clamped to the layer's honest \(arenaMinMiB)-\(arenaMaxMiB) MiB range)" : "")
+            + " — takes effect at the next launch (the region is claimed at boot); this launch keeps what it claimed"
+        let claimed = claimedMiB
+        guard claimed > 0 else {
+            return configured + "; nothing claimed yet (the region is taken at launch, before the guest download), so the "
+                 + "size above is a request, not a fact"
+        }
+        var s = configured + "; this launch claimed \(claimed) MiB"
+        switch executeVerdict {
+        case .ran:
+            s += ", and it came up mapped and executable (measured: the guarded write-then-execute RAN)"
+        case .faulted(let why):
+            s += ", but the guarded fetch FAULTED — it does NOT run (\(why)); the Guest arena row above is the evidence"
+        case .unmeasured:
+            s += ", not exercised yet (the layer measures it when a game starts)"
+        }
+        let sizeMiB = Int(tl_xmem_size() / (1024 * 1024))
+        let peakMiB = Int(tl_xmem_used_high_water() / (1024 * 1024))
+        if sizeMiB > 0 {
+            s += "; this run's guest memory peaked at \(peakMiB) MiB of the \(sizeMiB) MiB arena it ran from "
+               + "(the region's own high-water mark, from the layer)"
+        }
+        return s
+    }
 
+    // MARK: the verdict, read back from the container
     /// Where the layer writes the last arena verdict at measurement time (`tl_xmem_set_verdict_path`),
     /// and where it records why the run died if a guest fetch fault ends it. In the app's Documents, so
     /// it is readable on the next launch -- the whole point being that the verdict outlives the process.

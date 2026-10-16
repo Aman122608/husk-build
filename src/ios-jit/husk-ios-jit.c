@@ -470,6 +470,14 @@ HUSK_EXPORT HuskDualMapping *husk_ios_jit_get_mapping(void)
     return husk_prewarmed.rw_addr ? &husk_prewarmed : NULL;
 }
 
+/* The size the debugger ACTUALLY granted at the claim, in bytes, or 0 when no region is held. This is the honest basis
+ * for an arena-size setting's row: it shows what was claimed, not what was asked -- the region can come back smaller (or
+ * absent) than the request, and the setting must never display the requested number as if it were the achieved one. */
+HUSK_EXPORT size_t husk_ios_jit_region_size(void)
+{
+    return husk_prewarmed.rw_addr ? husk_prewarmed.size : 0;
+}
+
 HuskDualMapping husk_ios_jit_allocate(size_t bytes)
 {
     /*
@@ -872,6 +880,7 @@ HuskDualMapping husk_ios_jit_allocate(size_t bytes)
     return husk_ios_jit_allocate_real(bytes);
 }
 bool husk_ios_jit_prewarm(size_t bytes) { (void)bytes; return false; }
+size_t husk_ios_jit_region_size(void) { return 0; }
 void husk_ios_jit_release(HuskDualMapping *m) { (void)m; }
 void husk_ios_jit_detach(void) {}
 bool husk_ios_jit_exec_gate(const char *after) { (void)after; return false; }

@@ -120,6 +120,18 @@ void tl_xmem_flush(const void *rx, size_t bytes);
 size_t tl_xmem_used(void);
 size_t tl_xmem_size(void);
 
+/*
+ * The HIGH-WATER MARK of `used` over the run: the peak the guest's own memory ever reached in the region, so a UI can
+ * say "this title peaked at N MiB of the M MiB claimed" and the owner can judge an arena-size setting by a MEASUREMENT
+ * rather than a wish. It is the same `used` the fault path prints, read back at its worst; pair it with tl_xmem_size()
+ * (the region it was measured against). Read-only; safe any time, and safe on the fatal path.
+ */
+size_t tl_xmem_used_high_water(void);
+
+/* One session-summary line stating that high-water mark against the region size it was measured against. Called once at
+ * the session close (husk_tl_session_close); `tag` labels the call site. No side effects, and nothing if no arena opened. */
+void tl_xmem_report_high_water(const char *tag);
+
 /* The arena's per-allocation backing work so far: allocations handed out and 4 KiB pages backed by a volatile store
  * through the writable twin (tl_xmem_alloc). Read-only; safe any time, and used by the perf summary. */
 void tl_xmem_backing_stats(size_t *allocs, size_t *pages);

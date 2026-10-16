@@ -97,6 +97,13 @@ HuskDualMapping husk_ios_jit_allocate(size_t bytes);
  */
 HUSK_EXPORT bool husk_ios_jit_prewarm(size_t bytes);
 
+/*
+ * The size the debugger ACTUALLY granted at the claim, in bytes, or 0 when no region is held. The honest basis for an
+ * arena-size setting's row: it reports what was claimed, not what was asked. Pair it with the layer's own
+ * tl_xmem_size / tl_xmem_used_high_water (husk-tl-xmem.h) for the arena the guest ran from and its peak use.
+ */
+HUSK_EXPORT size_t husk_ios_jit_region_size(void);
+
 /* Release a mapping obtained from husk_ios_jit_allocate(). */
 void husk_ios_jit_release(HuskDualMapping *m);
 
