@@ -25,6 +25,23 @@ public final class AppRunner {
     private static int down;
     private static long downTime;
     private static boolean sPausedByHost;
+    /* How many input deliveries have been written to the log; bounded, so the log stays readable. */
+    private static int sInputNotes;
+
+    /* ---- closing the app, the way Android closes one ---- */
+    /* Set once the layer has asked the app to close. While it is set the app must not start a new round of activity churn
+     * (finish()/startActivity()) under the teardown that is walking the stack, nor re-post Native.exit() from a finish that
+     * the teardown itself provoked. Apps that check read it too. */
+    private static volatile boolean sShuttingDown;
+    /* What the teardown actually did, so the layer's close log can be honest: how many activities it took through each
+     * callback, and whether the posted teardown ever ran at all (an app wedged on its main thread never runs it). */
+    private static volatile boolean sShutdownRan;
+    private static volatile int sShutdownPaused, sShutdownStopped, sShutdownDestroyed;
+    public static boolean isShuttingDown() { return sShuttingDown; }
+    public static boolean huskShutdownRan() { return sShutdownRan; }
+    public static int huskShutdownPaused() { return sShutdownPaused; }
+    public static int huskShutdownStopped() { return sShutdownStopped; }
+    public static int huskShutdownDestroyed() { return sShutdownDestroyed; }
 
     private static ClassLoader sLoader;
     /** The app's class loader, as Android gives every app: a PathClassLoader over its APK and splits. Its classes say they come from
@@ -137,6 +154,89 @@ public final class AppRunner {
         android.app.ActivityThread.currentActivityThread().huskAddApplication(app);
         return app;
     }
+
+    /**
+     * Close the app the way Android does when the user leaves it: every activity, newest first, goes
+     * onPause -> onStop -> onDestroy on the main thread, the Application hears onTerminate, and only then the main looper
+     * is told to quit so AppRunner.run returns and the app's main thread unwinds.
+     *
+     * This is the close the layer never had. On a host-initiated close it only stopped its OWN machinery (looper quit, GL
+     * loop end) and then cleared the activity stack (resetForNewApp) -- no activity was ever asked to stop. An app that
+     * does not quit on its own -- a Unity game, which drives its frames, its Handler messages and its own JNI callbacks
+     * from its own threads -- was therefore never told to close and kept running after the session was reported closed
+     * (the music, and U.handleMessage, outliving the close). Driving the platform lifecycle is the SAFE way to end it:
+     * the app runs its own teardown on its own threads (UnityPlayer.quit stops Unity's threads, a game joins its own), as
+     * it would on a phone.
+     *
+     * Called from the layer's close thread: the work is posted to the main thread, where the lifecycle belongs, and this
+     * returns at once. The layer waits, bounded, for the app's main thread to return; if the post never runs (an app
+     * wedged on the main thread) the layer falls back to quitting the looper directly and says so.
+     */
+    public static void shutdown() {
+        sShuttingDown = true;
+        Handler h = sHandler;
+        boolean posted = h != null && h.post(AppRunner::shutdownOnMain);
+        if (!posted) { Looper l = Looper.getMainLooper(); if (l != null) l.quit(); }   /* no main thread to drive: fall back to the bare quit */
+    }
+
+    /* On the main thread: run the app's lifecycle down, then quit the looper -- the quit comes LAST so that the teardown
+     * above is not the message the quit discards. Each callback is isolated: a game that throws in onStop must still get
+     * onDestroy, or its threads would be left running anyway. */
+    private static void shutdownOnMain() {
+        while (!sStack.isEmpty()) {
+            Activity a = sStack.remove(sStack.size() - 1);          /* newest first, as ActivityThread tears a task down */
+            if (a.isResumedHusk()) {
+                try { a.huskPause(); } catch (Throwable t) { android.util.Log.w("Husk", "onPause at close: " + t); }
+                sShutdownPaused++;
+            }
+            try { a.huskStop(); } catch (Throwable t) { android.util.Log.w("Husk", "onStop at close: " + t); }
+            sShutdownStopped++;
+            try { a.huskDestroy(); } catch (Throwable t) { android.util.Log.w("Husk", "onDestroy at close: " + t); }
+            sShutdownDestroyed++;
+        }
+        Application app = sApp;
+        if (app != null) { try { app.onTerminate(); } catch (Throwable t) { android.util.Log.w("Husk", "onTerminate at close: " + t); } }
+        sShutdownRan = true;
+        Looper l = Looper.getMainLooper();
+        if (l != null) l.quit();
+    }
+
+    /**
+     * Clear this app's per-app state so a different app can run in the same process. Called from the layer when the session
+     * closes (husk-tl-dvm.c: tl_dvm_end_app), before the app's dexes are dropped: every framework class keeps its statics in a
+     * boot class that survives a second launch, so each must be told, or app B would read app A's activity stack, loader,
+     * manifest or theme. The process-wide state (resource ids in S, the Google packages, the phone's layout inflater) is
+     * deliberately left alone. Never throws: a missed clear is a bug for the caller's log, not a reason to abort the close.
+     */
+    public static void resetForNewApp() {
+        sStack.clear();
+        sApp = null;
+        sHandler = null;
+        sLoader = null;
+        down = 0;
+        downTime = 0;
+        sPausedByHost = false;
+        sInputNotes = 0;
+        sShuttingDown = false;
+        sShutdownRan = false;
+        sShutdownPaused = sShutdownStopped = sShutdownDestroyed = 0;
+        for (int i = 0; i < ids.length; i++) { ids[i] = 0; xs[i] = 0; ys[i] = 0; }
+        Manifest.resetForNewApp();
+        ContextImpl.resetForNewApp();
+        /* The resource tables are read from the CURRENT APK and cached for the process, so they belong to the app that
+         * read them: left alone, app B resolved its own ids and names against app A's resources.arsc and threw app A's
+         * Resources$NotFoundException. Cleared with the rest of the per-app statics (see Resources.resetForNewApp). */
+        android.content.res.Resources.resetForNewApp();
+        ViewRoot.resetForNewApp();
+        InputMethods.resetForNewApp();
+        DecorView.resetForNewApp();
+        Web.resetForNewApp();
+        Services.resetForNewApp();
+        Broadcasts.resetForNewApp();
+        KeyStoreProvider.resetForNewApp();
+        ApkSigner.resetForNewApp();
+    }
+
     static final class UncaughtLogger implements Thread.UncaughtExceptionHandler {
         public void uncaughtException(Thread t, Throwable e) {
             android.util.Log.e("AndroidRuntime", "FATAL EXCEPTION: " + t.getName(), e);
@@ -196,8 +296,18 @@ public final class AppRunner {
     }
     /** Context.startActivity: an activity of the app's own, or something the host can open (a web page, mail, the store). */
     public static void startActivity(Context from, Intent i, int request, Bundle opts) {
+        /* The session is closing: an activity started now would be created under the teardown that is walking the stack,
+         * and never destroyed. Drop it and say so, as Android drops a start after the task is gone. */
+        if (sShuttingDown) { android.util.Log.d("Husk", "startActivity ignored during close: " + i); return; }
         Manifest.Component c = Manifest.resolve(i);
         android.util.Log.d("Husk", "startActivity " + i + (c != null ? " -> " + c.name : " (not an activity of this app)"));
+        /* A full-screen ad surface Husk cannot draw or dismiss would cover the game and freeze it (husk.AdSurfaces). Fail it
+         * closed: do not create the activity, tell a caller that asked for a result the user backed out, and say so once. */
+        if (c != null && AdSurfaces.refuse(c.name)) {
+            final Activity caller = from instanceof Activity ? (Activity) from : top();
+            if (request >= 0 && caller != null) sHandler.post(() -> caller.huskActivityResult(request, Activity.RESULT_CANCELED, null));
+            return;
+        }
         if (c != null) {
             final Activity caller = from instanceof Activity ? (Activity) from : top();
             final Intent intent = new Intent(i);
@@ -260,7 +370,12 @@ public final class AppRunner {
         throw new ActivityNotFoundException("No Activity found to handle " + i);
     }
     /** Activity.finish: the one below comes back (with the result when it asked for one). */
-    public static void finish(Activity a) { sHandler.post(() -> finishNow(a, true)); }
+    public static void finish(Activity a) {
+        /* During a host close the teardown is already destroying this activity; a finish it provokes (a game quitting in
+         * onStop) must not post a second finishNow -- that would re-enter the stack walk and could reach Native.exit(). */
+        if (sShuttingDown) return;
+        sHandler.post(() -> finishNow(a, true));
+    }
     private static void finishNow(Activity a, boolean resumeBelow) {
         android.util.Log.d("Husk", "finish " + a.getClass().getName());
         int idx = sStack.indexOf(a);
@@ -309,6 +424,18 @@ public final class AppRunner {
     /** events: [n, then n x (phase, id, xbits, ybits)] -- phase 0 down, 1 move, 2 up, 3 cancel; 4 key (id = code, x = down); 5 back; 6 host pause (id 1) / resume (0); 7 text waiting; 8 insets changed; 9 web view events waiting */
     private static void deliver(int[] ev) {
         int n = ev[0];
+        // The Java end of the input chain: the touch left Husk's queue (husk.Native.pollInput, drained on the app's main
+        // thread) and is being handed to the app. The first few deliveries are written down, with what each event was, so
+        // one run reads host touch -> layer -> queue -> here -> the view dispatch (husk.ViewRoot). A run with the layer's
+        // "queued touch" but no line here is a looper that never polled.
+        if (sInputNotes < 6 && n > 0) {
+            sInputNotes++;
+            StringBuilder b = new StringBuilder("app input: ").append(n).append(" event(s):");
+            for (int k = 0; k < n; k++)
+                b.append(" [phase ").append(ev[1 + 4 * k]).append(", id ").append(ev[2 + 4 * k])
+                 .append(" @ ").append(Float.intBitsToFloat(ev[3 + 4 * k])).append(",").append(Float.intBitsToFloat(ev[4 + 4 * k])).append("]");
+            android.util.Log.d("HuskInput", b.toString());
+        }
         for (int k = 0; k < n; k++) {
             int phase = ev[1 + 4 * k], id = ev[2 + 4 * k];
             float x = Float.intBitsToFloat(ev[3 + 4 * k]), y = Float.intBitsToFloat(ev[4 + 4 * k]);

@@ -21,6 +21,24 @@ public final class ViewRoot implements ViewParent {
     private static int[] sInsets = { 0, 0, 0, 0 };     /* left, top, right, bottom: the notch / status bar and home indicator areas */
     private static int sImeBottom;
     private static ViewRoot sTouchTarget;
+    /* How many touches have been written to the log; bounded, so the log stays readable. */
+    private static int sTouchNotes;
+
+    /** Drop the previous app's windows, its screen bitmap, cached handler, view-id counter, insets and touch target. */
+    static void resetForNewApp() {
+        sRoots.clear();
+        sScreen = null;
+        sCanvas = null;
+        sScheduled = false;
+        sPresentedAny = false;
+        sMain = null;
+        sNextViewId = 0x00100000;
+        sInsets = new int[] { 0, 0, 0, 0 };
+        sImeBottom = 0;
+        sTouchTarget = null;
+        sTouchNotes = 0;
+        sDump = null;
+    }
 
     final View mView;
     WindowManager.LayoutParams mLp;
@@ -325,8 +343,14 @@ public final class ViewRoot implements ViewParent {
         MotionEvent l = MotionEvent.obtain(e);
         l.offsetLocation(-r.mX, -r.mY);
         boolean h = r.mView.dispatchTouchEvent(l);
-        if (TOUCH_LOG && am != MotionEvent.ACTION_MOVE)
+        // The guest end of the input chain: the app's own view was asked to dispatch the touch. The first few touches are
+        // always written down -- the window the touch was given to, whether the view under it took it, and which view that
+        // is -- so one run names the broken hop: a layer "queued touch" with no line here is a queue nobody dispatched, and
+        // a "not handled" here is a view hierarchy that does not take the touch. TL_TOUCH_LOG still logs every one.
+        if ((TOUCH_LOG || sTouchNotes < 6) && am != MotionEvent.ACTION_MOVE) {
+            if (!TOUCH_LOG) sTouchNotes++;
             android.util.Log.d("Touch", MotionEvent.actionToString(am) + " " + l.getX() + "," + l.getY() + " -> window " + r.mView.getClass().getName() + " at " + r.mX + "," + r.mY + " " + r.mW + "x" + r.mH + ": " + (h ? "handled" : "not handled") + ", under it " + deepest(r.mView, l.getX(), l.getY()));
+        }
         if (am == MotionEvent.ACTION_UP || am == MotionEvent.ACTION_CANCEL) sTouchTarget = null;
         return h;
     }
@@ -379,6 +403,34 @@ public final class ViewRoot implements ViewParent {
     public static ViewRoot topTouchable() {
         for (int i = sRoots.size() - 1; i >= 0; i--) if ((sRoots.get(i).mLp.flags & WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) == 0) return sRoots.get(i);
         return null;
+    }
+
+    /**
+     * The deepest visible view under a point on the screen, as Android's hit test walks a window: the top touchable window
+     * takes the touch, then each group hands it to the front-most child that contains it. Null if no window covers the point.
+     * This is what a touch at that point actually goes to -- so a view (a WebView deciding whether it takes touches) can ask
+     * whether the point is really its own, instead of assuming that its window being on top is enough.
+     */
+    public static View hitViewAt(float sx, float sy) {
+        ViewRoot r = topTouchable();
+        if (r == null || r.mRemoved) return null;
+        if (sx < r.mX || sy < r.mY || sx >= r.mX + r.mW || sy >= r.mY + r.mH) return null;
+        View v = r.mView;
+        float x = sx - r.mX, y = sy - r.mY;
+        for (;;) {
+            if (v.getVisibility() != View.VISIBLE) return null;
+            if (!(v instanceof ViewGroup)) return v;
+            ViewGroup g = (ViewGroup) v;
+            View hit = null;
+            for (int i = g.getChildCount() - 1; i >= 0; i--) {
+                View c = g.getChildAt(i);
+                if (c == null || c.getVisibility() != View.VISIBLE) continue;
+                float cx = x + g.getScrollX() - c.getLeft(), cy = y + g.getScrollY() - c.getTop();
+                if (cx >= 0 && cy >= 0 && cx < c.getWidth() && cy < c.getHeight()) { hit = c; x = cx; y = cy; break; }
+            }
+            if (hit == null) return v;
+            v = hit;
+        }
     }
     public static ViewRoot top() { return sRoots.isEmpty() ? null : sRoots.get(sRoots.size() - 1); }
 

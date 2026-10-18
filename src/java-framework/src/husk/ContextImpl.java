@@ -27,6 +27,19 @@ public final class ContextImpl extends Context {
     private Resources.Theme mTheme;
     private int mThemeId;
 
+    /**
+     * Drop the base context and the resources/asset manager built over the previous app's data dir, and the app's caches (its
+     * services and SharedPreferences). The next app's ContextImpl.app() rebuilds them from its own dir.
+     */
+    static void resetForNewApp() {
+        sApp = null;
+        sApplication = null;
+        sAssets = null;
+        sResources = null;
+        sServices.clear();
+        sPrefs.clear();
+    }
+
     private ContextImpl(Resources r) { mResources = r; }
     public static synchronized ContextImpl app() {
         if (sApp == null) {

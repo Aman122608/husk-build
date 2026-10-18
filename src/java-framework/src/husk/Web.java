@@ -31,6 +31,9 @@ public final class Web {
     /** Before any web view or cookie: which app's data store they are. */
     public static synchronized void ensureApp() { if (!sApp) { sApp = true; app(Native.packageName()); } }
 
+    /** The web world was told the previous app's package: the next app must tell it its own. */
+    static void resetForNewApp() { sApp = false; }
+
     public static void deliver() {
         String[] ev = poll();
         if (ev == null) return;

@@ -12,6 +12,8 @@ public final class Services {
     private static final HashMap<String, Service> sRunning = new HashMap<>();
     private static final HashMap<ServiceConnection, String> sBound = new HashMap<>();
     private Services() {}
+    /** Stop tracking the previous app's services: nothing of app A can be reached from app B's component names. */
+    static void resetForNewApp() { sRunning.clear(); sBound.clear(); }
     private static Manifest.Component find(Intent i) {
         if (i.getComponent() != null) { for (Manifest.Component c : Manifest.services) if (c.name.equals(i.getComponent().getClassName())) return c; }
         if (i.getAction() != null) for (Manifest.Component c : Manifest.services) for (Manifest.Filter f : c.filters) if (f.actions.contains(i.getAction())) return c;

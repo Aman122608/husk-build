@@ -9,6 +9,8 @@ import java.util.ArrayList;
 public final class Broadcasts {
     private static final ArrayList<Object[]> sReceivers = new ArrayList<>();
     private Broadcasts() {}
+    /** Drop the previous app's run-time receivers. */
+    static void resetForNewApp() { synchronized (sReceivers) { sReceivers.clear(); } }
     public static Intent register(BroadcastReceiver r, IntentFilter f) {
         synchronized (sReceivers) { sReceivers.add(new Object[] { r, f }); }
         if (f != null && f.hasAction(Intent.ACTION_BATTERY_CHANGED)) {

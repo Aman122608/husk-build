@@ -23,6 +23,20 @@ public class Resources {
     static final Object sLock = new Object();
     private static Resources sSystem;
 
+    /* One line per id (or per unresolved name) for the phone log: what was asked for and whether it was served or refused. A
+     * game's UI is a lot of lookups, so this must stay tiny; a wrong id is asked for in a loop (Doodle Jump's ad SDK asks for
+     * a layout that is not in its APK and inflates the 0), and once per id is enough to name it. */
+    private static final java.util.HashSet<String> sLogged = new java.util.HashSet<>();
+    private static void logOnce(String key, String line) {
+        synchronized (sLock) { if (!sLogged.add(key)) return; }
+        android.util.Log.d("Husk", line);
+    }
+    /** "layout/main" for an id the table knows, "?" otherwise, for a log line (never throws). */
+    private String huskName(int id) {
+        if (id == 0) return "id 0";
+        try { return table(id).typeName(id) + "/" + table(id).keyName(id, mCfg); } catch (Throwable t) { return "?"; }
+    }
+
     private final AssetManager mAssets;
     private final DisplayMetrics mMetrics = new DisplayMetrics();
     private final Configuration mConfig = Configuration.huskDevice();
@@ -78,6 +92,27 @@ public class Resources {
     static ResTable table(int id) { return ((id >>> 24) == 1) ? sFramework : sApp; }
 
     public static Resources getSystem() { synchronized (sLock) { if (sSystem == null) sSystem = new Resources(new AssetManager()); return sSystem; } }
+
+    /**
+     * Forget the tables this app's resources were resolved against, so the next app in this process resolves its own.
+     *
+     * sApp is read once from the CURRENT APK (husk.Native.readApkFile(0, "resources.arsc")) and cached for the whole process
+     * (loadTables() only reads it while it is null). After a swap the cache still held app A's resources.arsc, so app B --
+     * whose own table holds its own string/drawable ids -- was looked up in app A's table: a literal id only B has found no
+     * entry (getValue threw "Resource ID #0x7f..."), and a name only B has resolved to 0 through id 0 (getIdentifier returned
+     * 0, getText(0) threw "Resource ID #0x0"). That is the whole "app B gives app A's error" symptom: the id a caller passes
+     * is fine, the table the id was resolved against belonged to the app before it. The framework table (package 0x01) and
+     * the cached system Resources are dropped with it, so both are rebuilt from the new app's APK on the next construction.
+     * resetForNewApp() (husk.AppRunner) calls this from the session close, before the app's dexes are dropped.
+     */
+    public static void resetForNewApp() {
+        synchronized (sLock) {
+            sApp = null;
+            sFramework = null;
+            sSystem = null;
+            sLogged.clear();
+        }
+    }
     public final AssetManager getAssets() { return mAssets; }
     public DisplayMetrics getDisplayMetrics() { return mMetrics; }
     public Configuration getConfiguration() { return mConfig; }
@@ -110,6 +145,7 @@ public class Resources {
         return false;
     }
     public void getValue(int id, TypedValue out, boolean resolveRefs) throws NotFoundException {
+        if (id == 0) logOnce("getValue:0", "husk: res getValue id=0x0 refused: id 0 is not a resource (an earlier identifier or attribute lookup found nothing)");
         if (!huskValue(id, out, resolveRefs)) throw new NotFoundException("Resource ID #0x" + Integer.toHexString(id));
     }
     public void getValueForDensity(int id, int density, TypedValue out, boolean resolveRefs) { getValue(id, out, resolveRefs); }
@@ -166,6 +202,10 @@ public class Resources {
         if ("android".equals(pkg)) return sFramework.identifier("android", type, n);
         int id = sApp.identifier(null, type, n);
         if (id == 0 && (pkg == null || "android".equals(pkg))) id = sFramework.identifier("android", type, n);
+        /* an id that resolves to nothing: the caller's next move is often to use the 0 (Doodle Jump's ad SDK inflates what this
+         * returned), so the phone log names the lookup and its honest 0 rather than only the crash that follows. */
+        if (id == 0) logOnce("getIdentifier:" + type + "/" + n + "/" + pkg,
+            "husk: res getIdentifier " + n + " type=" + type + " pkg=" + (pkg == null ? "(default)" : pkg) + " -> 0x0 (no such resource)");
         return id;
     }
     public String getResourceName(int id) { String t = getResourceTypeName(id), e = getResourceEntryName(id); return getResourcePackageName(id) + ":" + t + "/" + e; }
@@ -356,6 +396,8 @@ public class Resources {
         TypedValue v = new TypedValue();
         getValue(id, v, true);
         if (v.type != TypedValue.TYPE_STRING) throw new NotFoundException("Resource ID #0x" + Integer.toHexString(id) + " type #0x" + Integer.toHexString(v.type) + " is not valid");
+        logOnce("getLayoutOrXml:" + id, "husk: res get" + Character.toUpperCase(type.charAt(0)) + type.substring(1)
+            + " id=0x" + Integer.toHexString(id) + " (" + huskName(id) + ") served " + v.string);
         return huskXml(v.string.toString(), v.resourceId != 0 ? v.resourceId : id);
     }
     public InputStream openRawResource(int id) { TypedValue v = new TypedValue(); return openRawResource(id, v); }

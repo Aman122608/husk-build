@@ -26,6 +26,20 @@ public final class Manifest {
     public static final ArrayList<String> permissions = new ArrayList<>(), libraries = new ArrayList<>();
     private static boolean sRead;
 
+    /**
+     * Forget the manifest read for the previous app. sRead is a one-shot guard, so it must be false before app B reads its own
+     * or app B silently inherits app A's package, launcher activity and theme.
+     */
+    static void resetForNewApp() {
+        sRead = false;
+        packageName = null; applicationClass = null; versionName = null; appComponentFactory = null;
+        versionCode = 0; minSdk = 21; targetSdk = 34; appTheme = 0; appLabel = 0; appIcon = 0; appFlags = 0;
+        debuggable = false; largeHeap = false; hardwareAccelerated = true; extractNativeLibs = true;
+        appMetaData = new Bundle();
+        activities.clear(); services.clear(); receivers.clear(); providers.clear();
+        permissions.clear(); libraries.clear();
+    }
+
     private static final String NS = "http://schemas.android.com/apk/res/android";
     private static String full(String n) {
         if (n == null) return null;

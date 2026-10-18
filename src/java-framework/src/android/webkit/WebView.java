@@ -18,6 +18,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.AbsoluteLayout;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -776,9 +777,29 @@ public class WebView extends AbsoluteLayout implements android.view.ViewTreeObse
         boolean visible = isAttachedToWindow() && isShown() && getWindowVisibility() == VISIBLE && getWidth() > 0 && getHeight() > 0;
         int[] loc = new int[2];
         if (visible) getLocationOnScreen(loc);
-        // a dialog, popup or menu over the page takes the touches: the page only gets them while its window is the top one
+        // A dialog, popup or menu over the page takes the touches: the page only gets them while its window is the top one.
+        // And the page must be what is under the touch. A page the game's own view covers -- an ad SDK's WebView left behind
+        // the game surface -- still reports its rectangle; if "its window is on top" alone counted as touchable, the host
+        // would hand it every touch over that rectangle (TLUnityUIView.hitTest -> husk_java_web_hit) and the game would never
+        // see one: it would draw, and ignore every touch. So ask Android's own question -- what is the deepest view under the
+        // page's centre -- and take the touches only if that is this page.
         husk.ViewRoot root = visible ? husk.ViewRoot.of(getRootView()) : null;
-        boolean touchable = root != null && root == husk.ViewRoot.topTouchable();
+        boolean touchable = false;
+        if (root != null && root == husk.ViewRoot.topTouchable()) {
+            View under = husk.ViewRoot.hitViewAt(loc[0] + getWidth() / 2f, loc[1] + getHeight() / 2f);
+            // Walk UP from what is under the centre, comparing VIEWS, not ViewParents. A View's getParent returns a
+            // ViewParent, and only some parents are Views (a ViewGroup is; the window root is not) -- so the walk
+            // stops at the first parent that is not a View, which is the root. `this` is a View, and View does not
+            // implement ViewParent, so the one-line form "ViewParent p = under" did not compile at all: javac said
+            // "incompatible types: View cannot be converted to ViewParent", and because the workflow treats that
+            // step as non-fatal the build went green while shipping the donor IPA's frozen framework instead --
+            // so no change to src/java-framework reached any build. Keep this compiling.
+            for (View v = under; v != null; ) {
+                if (v == this) { touchable = true; break; }
+                ViewParent par = v.getParent();
+                v = (par instanceof View) ? (View) par : null;
+            }
+        }
         if (!force && visible == mFrameVisible && touchable == mFrameTouchable && (!visible || (loc[0] == mFrameX && loc[1] == mFrameY && getWidth() == mFrameW && getHeight() == mFrameH))) return;
         mFrameVisible = visible; mFrameTouchable = touchable; mFrameX = loc[0]; mFrameY = loc[1]; mFrameW = getWidth(); mFrameH = getHeight();
         husk.Web.frame(mId, loc[0], loc[1], getWidth(), getHeight(), visible, touchable);

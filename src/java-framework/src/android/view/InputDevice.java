@@ -8,8 +8,8 @@ public final class InputDevice {
     public static InputDevice getDevice(int id) { return id == 1 ? new InputDevice(1) : null; }
     public static int[] getDeviceIds() { return new int[] { 1 }; }
     public int getId() { return id; }
-    public String getName() { return "touchscreen"; }
-    public String getDescriptor() { return "husk-touch"; }
+    public String getName() { return "Husk Touchscreen"; }
+    public String getDescriptor() { return "husk-touchscreen"; }
     public int getSources() { return SOURCE_TOUCHSCREEN; }
     public int getKeyboardType() { return KEYBOARD_TYPE_NONE; }
     public boolean isVirtual() { return false; }
