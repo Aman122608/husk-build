@@ -2375,9 +2375,19 @@ static void report_libcore_natives(const char *lib)
 bool tl_dvm_load_natives(const char *libdir)
 {
     tl_ld_add_search_dir(libdir);
+    /* EVERY one of these three is named when it does not load, because the layer's loader refuses to map a library at all
+     * when it has no executable arena to emit its code into (husk-tl-ld.c, load_locked: "ld: <err>"), and when that
+     * happens libcore's natives are simply never registered -- which is not a Java-runtime bug and must not read as one.
+     * libjavacore.so is the one that matters most: it registers android/system/OsConstantsHolder.initConstants at its
+     * JNI_OnLoad, and java.lang.System.<clinit> calls that native through Runtime.availableProcessors -> OsConstants, so
+     * without it the whole Java world fails with an UnsatisfiedLinkError that points at a class no one touched. */
     bool ok = tl_jni_load_library("libjavacore.so");
+    if (!ok) tl_log_line("dvm: libjavacore.so did not load -- it registers libcore's own natives at JNI_OnLoad, so without "
+                         "it android/system/OsConstantsHolder.initConstants is unbound and java.lang.System.<clinit> cannot "
+                         "run; the loader's own line above names why it would not load (no executable arena is the usual "
+                         "cause: see the xmem/ld lines)");
     report_libcore_natives("libjavacore.so");
-    ok = tl_jni_load_library("libopenjdk.so") && ok;
+    if (!tl_jni_load_library("libopenjdk.so")) { ok = false; tl_log_line("dvm: libopenjdk.so did not load"); }
     report_libcore_natives("libopenjdk.so");
     /* core-icu4j's natives (charset converters, ICU's Java side), which ART loads with the runtime */
     if (!tl_jni_load_library("libicu_jni.so")) tl_log_line("dvm: libicu_jni.so did not load");

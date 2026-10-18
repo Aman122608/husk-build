@@ -84,10 +84,29 @@ bool husk_jit_arena_open(size_t region_bytes, size_t ceiling_bytes, char *err, s
     if (husk_jit_arena_is_open()) return true;
 #if defined(__APPLE__) && !TARGET_OS_OSX
     (void)region_bytes;
-    arena_dual_mapping *(*get)(void) = (arena_dual_mapping *(*)(void))dlsym(RTLD_DEFAULT, "husk_ios_jit_get_mapping");
-    arena_dual_mapping *m = get ? get() : NULL;
+    /*
+     * The substrate's accessor, from src/ios-jit/husk-ios-jit.c -- the same fix, and the same reason, as
+     * husk-tl-load.c's tl_find_stikdebug_prewarmed (read the long note there). From 3.0 that file is compiled into the
+     * SAME image as this one (src/app/project.yml), so a DIRECT call is what reaches the region the app claimed at
+     * launch; the old dlsym-by-name only ever worked while the symbol lived in libqemu-aarch64-softmmu.dylib, and
+     * `visibility("default")` does not put a symbol in a stripped main executable's export trie, so in the app the
+     * lookup returned NULL and this function reported "no JIT region" while a 512 MiB region was held.
+     *
+     * WEAK, so tools/jit-arena-test.c -- which compiles this file alone, on a Mac -- still links: an undefined weak
+     * symbol is NULL there, and its branch (TARGET_OS_OSX) never calls this anyway.
+     */
+    extern arena_dual_mapping *husk_ios_jit_get_mapping(void) __attribute__((weak));
+    arena_dual_mapping *m = husk_ios_jit_get_mapping ? husk_ios_jit_get_mapping() : NULL;
+    void *by_name = dlsym(RTLD_DEFAULT, "husk_ios_jit_get_mapping");
+    if (!m && by_name) m = ((arena_dual_mapping *(*)(void))by_name)();
     if (!m || !m->rw_addr || !m->rx_addr || !m->size) {
-        snprintf(err, errlen, "no JIT region: Husk was not given one by StikDebug at launch");
+        if (!husk_ios_jit_get_mapping && !by_name)
+            snprintf(err, errlen, "no JIT region: husk_ios_jit_get_mapping is not reachable in this process -- neither "
+                                  "compiled into this image nor exported by a loaded dylib -- so the region the app "
+                                  "claimed at launch cannot be found by the layer");
+        else
+            snprintf(err, errlen, "no JIT region: husk_ios_jit_get_mapping returned none -- Husk was not given one by "
+                                  "StikDebug at launch (the [husk-jit] prewarm lines name the claim and its answer)");
         return false;
     }
     if (!husk_jit_arena_open_region(m->rw_addr, m->rx_addr, m->size & ~(HUSK_JIT_ARENA_PAGE - 1), ceiling_bytes)) {

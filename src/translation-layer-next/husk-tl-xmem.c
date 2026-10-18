@@ -652,7 +652,19 @@ static bool xmem_backing_trace(void)
  * this is asked exactly when the region is genuinely shared.
  */
 static bool (*g_reserve)(size_t);
-static void find_reserve(void) { g_reserve = (bool (*)(size_t))dlsym(RTLD_DEFAULT, "husk_ios_jit_reserve_bottom"); }
+static void find_reserve(void)
+{
+    g_reserve = (bool (*)(size_t))dlsym(RTLD_DEFAULT, "husk_ios_jit_reserve_bottom");
+    /* NAMED, once, when it is absent -- and absent is the EXPECTED answer in this tree. That hook is QEMU's: it says how
+     * much of a SHARED region the emulator's translations hold, and QEMU is not an engine of this build (no
+     * libqemu-aarch64-softmmu.dylib is linked or shipped, and scripts/integrate_husk.sh says the export is deliberately
+     * not provided). So a region the layer adopts here is not shared, tl_jit_reserve_bottom is never asked, and no
+     * bottom limit applies. The line exists so a log reader SEES that, instead of inferring it from a missing line --
+     * which is the failure mode this whole pass is fixing. */
+    if (!g_reserve)
+        tl_log_line("xmem: husk_ios_jit_reserve_bottom is not in this process (this build has no QEMU), so the region is "
+                    "not shared and no bottom limit applies: the whole region is the layer's");
+}
 
 /* Takes the region up to `end` from the bottom, unless QEMU holds that part of it (husk-ios-jit.c). No QEMU, no limit. */
 bool tl_jit_reserve_bottom(size_t end)

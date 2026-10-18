@@ -517,54 +517,85 @@ static bool is_valid_dual_mapping(const tl_dual_mapping *m)
     return true;
 }
 
+/*
+ * The substrate's own accessor, from src/ios-jit/husk-ios-jit.c. Declared WEAK and called DIRECTLY, and that is the fix.
+ *
+ * From 3.0 the substrate is compiled into the SAME image as this file (src/app/project.yml compiles ../ios-jit and
+ * ../translation-layer into the app target), so the linker resolves this reference and the call cannot fail the way a
+ * run-time name lookup did -- and it DID fail that way. `HUSK_EXPORT` is only `visibility("default")`: that puts a
+ * symbol in a DYLIB's export trie, which is why 2.0's `dlsym(RTLD_DEFAULT, :husk_ios_jit_get_mapping)` found it (it
+ * lived in libqemu-aarch64-softmmu.dylib), but a MAIN EXECUTABLE's export trie after a release build does not carry it,
+ * so 3.0's lookup returned NULL. The layer then reported "no arena of the layer's own" -- and because the LOADER needs
+ * that arena to emit any library's code (husk-tl-ld.c, load_locked), not one guest .so loaded either: libjavacore.so's
+ * JNI_OnLoad never ran, so the native that libcore's own classes need -- android/system/OsConstantsHolder.initConstants,
+ * called from java.lang.System.<clinit> through Runtime.availableProcessors -> OsConstants -- was never registered, and
+ * the title ran 0 frames. One indirection, two symptoms.
+ *
+ * WEAK rather than strong: the Mac and tool builds (tools/regress/build.sh, tools/jit-arena-test.c) compile this file
+ * WITHOUT src/ios-jit, and an undefined weak symbol is NULL there instead of a link error. The dlsym below is then still
+ * tried, which is exactly the shape 2.0 had.
+ */
+extern tl_dual_mapping *husk_ios_jit_get_mapping(void) __attribute__((weak));
+extern bool husk_ios_jit_prewarm(size_t) __attribute__((weak));
+
+/* One line, once, NAMING what could not be found. A lookup that fails must say so by name: this is the whole reason the
+ * 3.0 failure was invisible -- the only line it produced was about an arena, never about the symbol it was really
+ * looking for. */
+static void report_mapping_missing(void)
+{
+    static int said;
+    if (said++) return;
+    tl_log_line("jit: husk_ios_jit_get_mapping could not be reached -- it is neither compiled into this image nor exported "
+                "by any loaded dylib -- so the region the app claimed at launch cannot be found by the layer; a build that "
+                "compiles src/ios-jit into the app target (src/app/project.yml) reaches it by a direct call instead");
+}
+
 tl_dual_mapping *tl_find_stikdebug_prewarmed(void)
 {
-    tl_dual_mapping *(*get_fn)(void) = (tl_dual_mapping *(*)(void))dlsym(RTLD_DEFAULT, "husk_ios_jit_get_mapping");
-    if (get_fn) {
-        tl_dual_mapping *m = get_fn();
+    /* 1. The substrate in THIS image -- the app's build, and the only route that cannot silently fail. */
+    if (husk_ios_jit_get_mapping) {
+        tl_dual_mapping *m = husk_ios_jit_get_mapping();
         if (is_valid_dual_mapping(m)) return m;
     }
 
-    /* Ensure prewarm has been called in case this attempt ran before QEMU. */
-    bool (*prewarm_fn)(size_t) = (bool (*)(size_t))dlsym(RTLD_DEFAULT, "husk_ios_jit_prewarm");
-    if (prewarm_fn) {
-        prewarm_fn(256 * 1024 * 1024);
+    /* 2. A build that still carries the substrate in a dylib (a copy the loader's global namespace holds). */
+    {
+        tl_dual_mapping *(*get_fn)(void) = (tl_dual_mapping *(*)(void))dlsym(RTLD_DEFAULT, "husk_ios_jit_get_mapping");
+        if (get_fn) {
+            tl_dual_mapping *m = get_fn();
+            if (is_valid_dual_mapping(m)) return m;
+        }
+        if (!husk_ios_jit_get_mapping && !get_fn) report_mapping_missing();
     }
 
-    void *fn = dlsym(RTLD_DEFAULT, "husk_ios_jit_prewarm");
-    if (!fn) return NULL;
-
-    /* 1. Try static offset in libqemu-aarch64-softmmu.dylib (_husk_prewarmed is at 0x1ce6920, prewarm at 0x35d788) */
-    tl_dual_mapping *m = (tl_dual_mapping *)((uintptr_t)fn + 0x1989198);
-    if (is_valid_dual_mapping(m)) {
-        return m;
-    }
-
-    /* 2. Decode the specific adrp+ldr right before epilogue (instruction 36) */
-    const uint32_t *p = (const uint32_t *)fn;
-    for (int i = 30; i < 50; i++) {
-        uint32_t insn = p[i];
-        if ((insn & 0x9F000000u) == 0x90000000u) { /* adrp */
-            uint32_t next = p[i + 1];
-            if ((next & 0xFFC00000u) == 0xF9400000u) { /* ldr Xt, [Xn, #imm] */
-                uint32_t rd = insn & 0x1Fu;
-                uint32_t rn = (next >> 5) & 0x1Fu;
-                if (rd == rn) {
-                    uint64_t immlo = (insn >> 29) & 3u;
-                    uint64_t immhi = (insn >> 5) & 0x7FFFFu;
-                    int64_t imm = (int64_t)((immhi << 2) | immlo);
-                    if (imm & 0x100000) imm -= 0x200000;
-                    uintptr_t pc = (uintptr_t)&p[i];
-                    uintptr_t page = (pc & ~0xFFFull) + (imm << 12);
-                    uint64_t pimm = ((next >> 10) & 0xFFFu) << 3;
-                    tl_dual_mapping *cand = (tl_dual_mapping *)(page + pimm);
-                    if (is_valid_dual_mapping(cand)) {
-                        return cand;
-                    }
-                }
+    /* 3. Ask for the claim, in case this attempt ran before the app prewarmed (the app claims at launch, before the
+     *    guest download, so this is the rare path -- but it is the one the direct call can now take on both sides). */
+    if (husk_ios_jit_prewarm) {
+        (void)husk_ios_jit_prewarm(256 * 1024 * 1024);
+        if (husk_ios_jit_get_mapping) {
+            tl_dual_mapping *m = husk_ios_jit_get_mapping();
+            if (is_valid_dual_mapping(m)) return m;
+        }
+    } else {
+        bool (*prewarm_fn)(size_t) = (bool (*)(size_t))dlsym(RTLD_DEFAULT, "husk_ios_jit_prewarm");
+        if (prewarm_fn) {
+            (void)prewarm_fn(256 * 1024 * 1024);
+            tl_dual_mapping *(*get_fn)(void) = (tl_dual_mapping *(*)(void))dlsym(RTLD_DEFAULT, "husk_ios_jit_get_mapping");
+            if (get_fn) {
+                tl_dual_mapping *m = get_fn();
+                if (is_valid_dual_mapping(m)) return m;
             }
         }
     }
+
+    /*
+     * The static-offset and adrp-decoding probe that used to sit here (fn + 0x1989198, then a scan of the head of
+     * husk_ios_jit_prewarm for an adrp+ldr pair whose target was read as a tl_dual_mapping) is GONE. Both constants were
+     * copied out of libqemu-aarch64-softmmu.dylib, whose layout only that file had; with the substrate in the app
+     * binary they point at whatever mapping happens to lie ~25 MiB past the function, and `is_valid_dual_mapping` reading
+     * a struct there is a crash waiting to happen, not a lookup. Nothing wants it: the accessor above is the substrate's
+     * own answer, and it is now reached by a call the linker checks.
+     */
     return NULL;
 }
 

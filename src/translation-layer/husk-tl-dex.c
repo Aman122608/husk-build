@@ -526,6 +526,18 @@ static tl_dex_file *parse_dex_buffer(tl_dex_context *ctx, uint8_t *data, size_t 
     return dex;
 }
 
+/*
+ * husk-tl-load.c's logger, and in the app it is in the SAME image as this reader (src/app/project.yml compiles
+ * ../translation-layer into the app target), so it is called DIRECTLY -- the same correction as
+ * tl_find_stikdebug_prewarmed in that file. dlsym-by-name only reaches a symbol a DYLIB exports; a stripped main
+ * executable's export trie need not carry one, and here that would silently downgrade every line this reader logs.
+ *
+ * WEAK, because tools/dex-test.c builds this file WITHOUT husk-tl-load.c (see docs/05-...-milestone2-handoff.md):
+ * an undefined weak symbol is NULL there, the name lookup below then still finds a copy in a dylib, and the plain
+ * printf is the last resort it always was.
+ */
+extern void tl_log_line(const char *fmt, ...) __attribute__((weak));
+
 static void dex_log(const char *fmt, ...)
 {
     char buf[512];
@@ -533,6 +545,10 @@ static void dex_log(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
+    if (tl_log_line) {
+        tl_log_line("%s", buf);
+        return;
+    }
     void (*log_fn)(const char *, ...) = (void (*)(const char *, ...))dlsym(RTLD_DEFAULT, "tl_log_line");
     if (log_fn) {
         log_fn("%s", buf);
