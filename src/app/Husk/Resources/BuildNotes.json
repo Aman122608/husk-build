@@ -3,6 +3,19 @@
     {
       "sha": "next",
       "date": "2026-10-18",
+      "title": "Seeing the freeze",
+      "goal": "Same fixes as before, plus the instruments that can finally see WHERE the black screen comes from.",
+      "details": [
+        "The JIT region and the Java failure are fixed in this build too -- it gets 8 frames where it used to get none.",
+        "New: when it stalls, the log now lists the asset reads from just before the freeze, so the last thing it touched is visible.",
+        "New: every running thread is reported with its last lock call and how long ago, not just leftover ones from a previous session.",
+        "New: the frame/render thread is named on its own, because its missing next frame IS the stall.",
+        "New: if a file is missing, the log now names the actual path instead of just 'No such file or directory'."
+      ]
+    },
+    {
+      "sha": "9e86ec9",
+      "date": "2026-10-18",
       "title": "The region fix, and a note on every build",
       "goal": "The translation layer can adopt the JIT region the app has already secured, so guest libraries can load -- and every build now opens with a note like this one saying what it is for.",
       "details": [
