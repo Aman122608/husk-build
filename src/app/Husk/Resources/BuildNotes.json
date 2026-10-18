@@ -3,14 +3,16 @@
     {
       "sha": "next",
       "date": "2026-10-18",
-      "title": "Seeing the freeze",
-      "goal": "Same fixes as before, plus the instruments that can finally see WHERE the black screen comes from.",
+      "title": "Seeing the freeze — and yes, updates can be near one-tap",
+      "goal": "Same fixes as before, plus the instruments that can finally see WHERE the black screen comes from — and the answer to whether Husk can update itself.",
       "details": [
-        "The JIT region and the Java failure are fixed in this build too -- it gets 8 frames where it used to get none.",
-        "New: when it stalls, the log now lists the asset reads from just before the freeze, so the last thing it touched is visible.",
-        "New: every running thread is reported with its last lock call and how long ago, not just leftover ones from a previous session.",
+        "The JIT region and the Java failure are fixed in this build too -- it gets 8 frames where it used to get none, and Lewdest House now runs properly.",
+        "New: when a title stalls, the log lists the asset reads from just before the freeze, so the last thing it touched is visible.",
+        "New: every running thread is reported with its last lock call and how long ago, not just leftovers from a previous session.",
         "New: the frame/render thread is named on its own, because its missing next frame IS the stall.",
-        "New: if a file is missing, the log now names the actual path instead of just 'No such file or directory'."
+        "New: a missing file is named by its real path instead of only 'No such file or directory'.",
+        "You asked whether the app can push its own updates: iOS does NOT let an app install an update for itself. There is no such API, and nothing inside Husk can change that.",
+        "What IS possible, and worth building: Husk can notice a new build exists and download it itself (the Downloads feature already fetches files from a URL), then hand the file to an installer, which needs one tap from you. AltStore and SideStore can do the whole thing automatically from the source file the project already ships -- that is the closest there is to one-tap updates on iOS."
       ]
     },
     {
