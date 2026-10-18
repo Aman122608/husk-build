@@ -38,6 +38,8 @@ struct ContentView: View {
     @ObservedObject private var updates = AppUpdates.shared
     @ObservedObject private var statuses = GameStatusStore.shared
     @State private var showWhatsNew = false
+    /// The note for the build that is running, shown once when it first opens.
+    @State private var showBuildNotes = false
     @AppStorage(Holiday.key) private var holiday = true
 
     var body: some View {
@@ -151,6 +153,8 @@ struct ContentView: View {
                     booting = true
                     start()
                 }
+                // A first install also has a build: its note waits until setup is done.
+                DispatchQueue.main.async { presentBuildNoteIfDue() }
             }
         }
         .sheet(isPresented: $showLogs) { LogView() }
@@ -173,16 +177,25 @@ struct ContentView: View {
         }
         // A game that ended Husk last time: say so, with its report.
         .sheet(item: Binding(get: { showOnboarding ? nil : crash.pending }, set: { crash.pending = $0 }),
-               onDismiss: { if WhatsNew.due { showWhatsNew = true } }) { r in
+               onDismiss: { if WhatsNew.due { showWhatsNew = true } else { DispatchQueue.main.async { presentBuildNoteIfDue() } } }) { r in
             CrashReportSheet(report: r)
         }
         // After an update: what it brought, once.
         .fullScreenCover(isPresented: $showWhatsNew) {
-            WhatsNewSheet { WhatsNew.markSeen(); showWhatsNew = false }
+            WhatsNewSheet {
+                WhatsNew.markSeen(); showWhatsNew = false
+                // After the version's notes, the build's own note, if this build has one to show.
+                DispatchQueue.main.async { presentBuildNoteIfDue() }
+            }
+        }
+        // What THIS build is for, once when it first opens. Non-blocking: a swipe down dismisses it too,
+        // and either way it is marked seen so it is said once. Settings keeps it readable.
+        .sheet(isPresented: $showBuildNotes, onDismiss: { BuildNotes.markSeen() }) {
+            BuildNotesSheet(note: BuildNotes.note, build: BuildNotes.current) { showBuildNotes = false }
         }
         // A newer Husk is on GitHub.
         .alert("Husk \(updates.available?.version ?? "") Is Available", isPresented: Binding(
-                get: { updates.available != nil && !showOnboarding && !showWhatsNew && crash.pending == nil },
+                get: { updates.available != nil && !showOnboarding && !showWhatsNew && !showBuildNotes && crash.pending == nil },
                 set: { if !$0 { updates.dismiss() } })) {
             Button("View Release") {
                 if let page = updates.available?.page { UIApplication.shared.open(page) }
@@ -243,6 +256,7 @@ struct ContentView: View {
             massTest.resume(crash: crash)
             if crash.pending == nil, !massTest.active { router.resumeSwitch() }
             if crash.pending == nil, WhatsNew.due { showWhatsNew = true }
+            if crash.pending == nil { presentBuildNoteIfDue() }
             router.openGuest = { showGuestScreen = true }
             router.startAndroid = { confirmAndroid = true }
             evaluate()
@@ -274,6 +288,17 @@ struct ContentView: View {
     /// Every package Husk holds, from both sides: what the picture index is read for.
     private var showcasePackages: Set<String> {
         Set(tlStore.apps.compactMap(\.packageName) + host.packages.map(\.name))
+    }
+
+    /// Show the note for the build that is running, if this build's note has not been seen.
+    ///
+    /// One thing at a time: nothing is shown over setup, a crash report, or the version's own
+    /// notes, and each of those hands on here when it is done. `BuildNotes.due()` is what makes
+    /// it once per build -- and it is false for a build that never stamped its commit, which
+    /// cannot be told apart from the next one.
+    private func presentBuildNoteIfDue() {
+        guard crash.pending == nil, !showOnboarding, !showWhatsNew, !showBuildNotes, BuildNotes.due() else { return }
+        showBuildNotes = true
     }
 
     private func evaluate() {

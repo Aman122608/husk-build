@@ -23,6 +23,8 @@ struct SettingsTab: View {
                 }
 
                 Section("General") {
+                    row(BuildNotesSettings(), "sparkles", .purple, "What's New in This Build",
+                        BuildNotes.note?.title ?? "No note for this build")
                     row(DiscoverView(), "sparkle.magnifyingglass", .mint, "Discover", "Find apps in F-Droid and other repositories")
                     row(LibrarySettings(), "square.grid.2x2.fill", .blue, "Library", "Your apps and their icons")
                     row(PerformanceSettings(), "speedometer", .orange, "Performance", "Renderer, sound")

@@ -1,0 +1,48 @@
+{
+  "notes": [
+    {
+      "sha": "d11dd48",
+      "date": "2026-10-18",
+      "title": "The engine can use the JIT region",
+      "goal": "The translation layer now reaches the JIT region directly instead of looking it up by name, so it can finally open its arena.",
+      "details": [
+        "Guest libraries can load for the first time, which is what makes java.lang.System initialise.",
+        "If the region still cannot be reached, the log now names that failure instead of quietly reporting no arena.",
+        "Removed a dead fallback that decoded hardcoded offsets from the old emulator dylib -- those were a crash risk."
+      ]
+    },
+    {
+      "sha": "24a3f06",
+      "date": "2026-10-18",
+      "title": "StikDebug is reachable again",
+      "goal": "The hand-off to StikDebug no longer depends on a permission check that LiveContainer breaks.",
+      "details": [
+        "Opening stikjit:// is now attempted for real, and iOS own answer is what is reported.",
+        "A refused scheme query is treated as \"cannot tell\" rather than \"not installed\".",
+        "The attach request goes to StikDebug when running inside LiveContainer, where the built-in helper cannot work."
+      ]
+    },
+    {
+      "sha": "44fcd4a",
+      "date": "2026-10-18",
+      "title": "The JIT latch is gone",
+      "goal": "One failed JIT probe at launch no longer uses up this launch only chance at a JIT region.",
+      "details": [
+        "A failed probe is now remembered as \"nothing answered yet\" instead of \"give up\", so the claim is retried up to 3 times and each attempt names itself in the log.",
+        "A debugger that actively refuses is still never asked twice.",
+        "The app now asks for a real attach once per launch instead of trusting a flag."
+      ]
+    },
+    {
+      "sha": "1c97824",
+      "date": "2026-10-18",
+      "title": "Downloads tile is back",
+      "goal": "The 3.0 port is done, and the way to download apps from your computer is visible again.",
+      "details": [
+        "Home shows an always-there Downloads card with a live status line, reading \"Up to date\" when nothing is happening.",
+        "A second one sits on the Library screen.",
+        "The old emulator engine (QEMU) was removed, so the app is about 8% smaller."
+      ]
+    }
+  ]
+}
