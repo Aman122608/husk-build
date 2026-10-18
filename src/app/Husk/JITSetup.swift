@@ -183,6 +183,15 @@ final class JITCoordinator: ObservableObject {
         guard !autoTried, UserDefaults.standard.bool(forKey: Self.autoEnableKey) else { return }
         autoTried = true
         guard !JITBootstrap.ready else { return }
+        // Inside LiveContainer the built-in helper cannot run, so "turn on JIT at launch" means
+        // StikDebug there -- otherwise the setting is silently skipped on exactly the launch it is
+        // for.
+        if JITBootstrap.isRunningInsideLiveContainer {
+            log("turning JIT on at launch: inside LiveContainer, so handing off to StikDebug")
+            method = .stikDebug
+            enable()
+            return
+        }
         guard HuskBuiltInJIT.isAvailable, hasPairing else {
             log("JIT at launch is on, but built-in StikJIT is not available or not paired; skipped")
             return
@@ -216,6 +225,17 @@ final class JITCoordinator: ObservableObject {
             error = "Turn on Allow JIT in Apps in Dopamine's settings, then open Husk again."
             showSetup = true
         case .builtIn:
+            // Same dead end as the renew path: Built-in StikJIT is unavailable inside LiveContainer,
+            // so the enable goes to StikDebug there rather than opening a walkthrough for a method
+            // that cannot run.
+            if JITBootstrap.isRunningInsideLiveContainer {
+                log("running inside LiveContainer: Built-in StikJIT is unavailable here; enabling with StikDebug")
+                if JITBootstrap.requestAttach() { return }
+                error = "Built-in JIT is unavailable inside LiveContainer, and StikDebug could not be "
+                      + "opened. Install StikDebug, connect LocalDevVPN, and try again."
+                showSetup = true
+                return
+            }
             guard HuskBuiltInJIT.isAvailable, hasPairing else {
                 log("built-in JIT is not set up; opening the walkthrough")
                 showSetup = true
@@ -391,6 +411,20 @@ final class JITCoordinator: ObservableObject {
             error = "The process is marked debugged but no JIT region was granted, and TrollStore could not be "
                   + "opened. In TrollStore's Settings turn on URL Scheme, then turn JIT on and try again."
         case .builtIn:
+            // Built-in StikJIT cannot run inside LiveContainer (JITBuiltIn.unavailableReason says so,
+            // measured), so asking it for the attach is a KNOWN dead end there -- it is exactly the
+            // fallback the 0-frame run took. StikDebug is the route under LiveContainer, so the REAL
+            // attach is asked of it, the same call the `.stikDebug` case makes.
+            if JITBootstrap.isRunningInsideLiveContainer {
+                log("running inside LiveContainer: Built-in StikJIT is unavailable here, so the REAL "
+                    + "attach is asked of StikDebug instead of Husk's helper")
+                if JITBootstrap.requestAttach() { return true }
+                error = "The process is marked debugged but no JIT region was granted. Inside "
+                      + "LiveContainer JIT comes from StikDebug, which could not be opened. Install "
+                      + "StikDebug, connect LocalDevVPN, and turn JIT on."
+                showSetup = true
+                return false
+            }
             // Husk's own helper: the extension request IS what installs the servicer, and it can be made
             // from inside the app, so this is the one method that needs no hand-off at all.
             guard HuskBuiltInJIT.isAvailable else {

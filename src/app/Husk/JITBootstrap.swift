@@ -586,18 +586,39 @@ enum JITBootstrap {
     /// scheme stikjit"`), and views and the JIT resolver call this on every body refresh, which
     /// flooded the log with hundreds of identical lines at the end of the run. Whether an app is
     /// installed does not change within a process, so the probe runs once and the answer is cached;
-    /// it is not re-asked per poll. Nothing about what the probe DECIDES changes -- only how often
-    /// it is asked and logged.
+    /// it is not re-asked per poll.
+    ///
+    /// The VERDICT is the part that changed. `canOpenURL` needs the scheme declared in the app's OWN
+    /// Info.plist under `LSApplicationQueriesSchemes`, and LiveContainer rewrites the guest's
+    /// Info.plist at install -- so under LiveContainer the query answers false for an installed
+    /// StikDebug (measured: the run reports "StikDebug is NOT reachable" and
+    /// `canOpenURL: failed for URL: "stikjit://" - error: "This app is not allowed to query for scheme
+    /// stikjit"`, with 0 frames). `open()` does NOT require queryability; only `canOpenURL` does. So a
+    /// false query is no longer taken as "not installed" when it can be proved unreliable -- it is
+    /// treated as "cannot tell, assume reachable" and the `stikjit://` open attempt produces the real
+    /// answer. Outside LiveContainer the query is trustworthy and its false still means not installed.
     nonisolated(unsafe) static private var stikDebugInstalled: Bool?
 
     static var isStikDebugInstalled: Bool {
         if let known = stikDebugInstalled { return known }
-        let found = URL(string: "stikjit://").map(UIApplication.shared.canOpenURL) ?? false
+        let queryable = URL(string: "stikjit://").map(UIApplication.shared.canOpenURL) ?? false
+        let found = queryable || isRunningInsideLiveContainer
         stikDebugInstalled = found
-        HuskLog.log("jit", "stikjit:// install probe (asked once): StikDebug "
-                         + (found ? "is installed" : "is NOT reachable (not installed, or the "
-                                  + "'stikjit' query scheme is missing from Info.plist) -- answer "
-                                  + "cached for this process, not re-probed per poll"))
+        if queryable {
+            HuskLog.log("jit", "stikjit:// install probe (asked once): StikDebug is installed "
+                             + "(the 'stikjit' query succeeded) -- answer cached for this process")
+        } else if isRunningInsideLiveContainer {
+            HuskLog.log("jit", "stikjit:// install probe (asked once): the query was REFUSED, but this is "
+                             + "a LiveContainer launch (LC_HOME_PATH is set) and LiveContainer rewrites the "
+                             + "guest Info.plist, so LSApplicationQueriesSchemes may be gone even though "
+                             + "the build declares 'stikjit' -- the refusal proves nothing. NOT concluding "
+                             + "'not installed'; StikDebug is treated as reachable and the stikjit:// open "
+                             + "attempt decides. Answer cached for this process")
+        } else {
+            HuskLog.log("jit", "stikjit:// install probe (asked once): StikDebug is NOT reachable (the "
+                             + "'stikjit' query was refused and this is not a LiveContainer launch) -- "
+                             + "answer cached for this process, not re-probed per poll")
+        }
         return found
     }
 
@@ -632,6 +653,18 @@ enum JITBootstrap {
 
     /// A rootless jailbreak (Dopamine and its kin) puts its files in /var/jb and lets apps see it.
     static var isJailbroken: Bool { FileManager.default.fileExists(atPath: "/var/jb") }
+
+    /// Whether Husk is running as a guest of LiveContainer.
+    ///
+    /// LiveContainer sets `LC_HOME_PATH` in the environment of every app it launches; Husk's
+    /// built-in-JIT helper gate reads the same variable (`JITBuiltIn.unavailableReason`), so this is
+    /// that one detector, exposed once so nothing invents a second. It matters to JIT for two
+    /// measured reasons: Built-in StikJIT cannot run here (so StikDebug is the only route), and
+    /// LiveContainer rewrites the guest's Info.plist at install -- which can drop
+    /// `LSApplicationQueriesSchemes` even though the built plist declares `stikjit`, making
+    /// `canOpenURL` answer "This app is not allowed to query for scheme stikjit" for a scheme that IS
+    /// installed. So inside LiveContainer a `canOpenURL` false proves nothing.
+    static var isRunningInsideLiveContainer: Bool { getenv("LC_HOME_PATH") != nil }
 
     /// Whether Husk was already marked as debugged when it was opened, before it asked anything of anyone. That is what a
     /// jailbreak that allows JIT in apps does to every app it launches (Dopamine's "Allow JIT in Apps" setting), and it needs
@@ -702,16 +735,23 @@ enum JITBootstrap {
             return false
         }
 
-        guard UIApplication.shared.canOpenURL(launchURL) else {
-            HuskLog.log("jit", "FAIL: cannot open stikjit:// -- StikDebug is not "
-                             + "installed, or LSApplicationQueriesSchemes is missing "
-                             + "the 'stikjit' entry in Info.plist")
-            return false
-        }
-
+        // Deliberately NOT gated on `canOpenURL`. That check needs the scheme declared in the app's
+        // OWN Info.plist under LSApplicationQueriesSchemes, and LiveContainer rewrites the guest's
+        // Info.plist at install -- so under LiveContainer `canOpenURL("stikjit://")` answers false for
+        // an installed StikDebug, and gating on it is a dead end reached by a permission side effect
+        // (measured: "StikDebug is not reachable", cached for the process, the app never opens
+        // StikDebug, and the region is never granted -- 0 frames). `open()` does not need
+        // queryability; only `canOpenURL` does. So the open IS attempted and the honest verdict comes
+        // from its completion handler: success means iOS routed the scheme to an installed app.
         HuskLog.log("jit", "opening stikjit:// for bundle \(bundleID); "
                          + "Husk will be backgrounded and relaunched after attach")
-        UIApplication.shared.open(launchURL)
+        UIApplication.shared.open(launchURL, options: [:]) { opened in
+            HuskLog.log("jit", opened
+                ? "StikDebug hand-off accepted by iOS -- Husk is being backgrounded to it "
+                  + "(the attach happens there and Husk is relaunched after)"
+                : "FAIL: iOS refused to open stikjit:// -- StikDebug is not installed, or nothing here "
+                  + "handles the 'stikjit' scheme. That refusal, not the query, is the real answer")
+        }
         return true
     }
 
