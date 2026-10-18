@@ -59,6 +59,10 @@ bool tl_javaapp_ended(void);
 /* The render/GL thread's Darwin identity (as the guest-thread census carries it: (unsigned long)pthread_self()), so a
  * stall can name the frame/render thread explicitly; 0 before it starts. */
 unsigned long tl_javaapp_render_thread(void);
+/* The app's main ('main') thread's Darwin identity: the LAYER's own thread the Activity lifecycle and the SurfaceView
+ * callbacks are delivered on (AppRunner.run). Also not a guest pthread_create, so the guest census cannot hold it; a
+ * Unity title stuck on 'starting' waits for a callback that arrives here. 0 before it starts. */
+unsigned long tl_javaapp_main_thread(void);
 
 /* A guest call that means "quit my app" reached the layer (Runtime.exit, System.exit, Process.killProcess, exit()/_exit()).
  * Mark the app ended so its own loops and the state machine unwind -- Husk's process is never ended for it. Idempotent. */

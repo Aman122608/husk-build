@@ -994,8 +994,19 @@ static void ss_where(char *out, size_t n, uintptr_t a)
         Dl_info di;
         if (dladdr((const void *)a, &di) && di.dli_fname) {
             const char *base = strrchr(di.dli_fname, '/'); base = base ? base + 1 : di.dli_fname;
-            snprintf(out, n, "%s +%#lx (%s)", base, (unsigned long)(a - (uintptr_t)di.dli_fbase),
-                     ss_sym_is_lock_helper(base) ? "host lock/wait helper, not guest code" : "host/Darwin code, not a guest image");
+            /* NAME the host call; do not only say "host code". A bare 'libsystem_kernel.dylib +0x6818' cannot be read
+             * off without the exact iOS build's symbol table, and the offset alone is not a datum -- the SYMBOL is.
+             * dladdr reads the loaded image's own symbol table, so __psynch_cvwait / __psynch_mutexwait /
+             * semaphore_wait_trap / mach_msg_trap come back as REAL names: they say which kernel wait a thread is
+             * parked in, which is exactly what a stuck frame thread needs to be named by. '(no symbol)' when the
+             * address is in an unsymbolised or stripped region -- never a guess. */
+            if (di.dli_sname && di.dli_sname[0])
+                snprintf(out, n, "%s %s+%#lx (%s)", base, di.dli_sname,
+                         di.dli_saddr ? (unsigned long)(a - (uintptr_t)di.dli_saddr) : 0ul,
+                         ss_sym_is_lock_helper(di.dli_sname) ? "host lock/wait helper, not guest code" : "host/Darwin code, not a guest image");
+            else
+                snprintf(out, n, "%s +%#lx (%s)", base, (unsigned long)(a - (uintptr_t)di.dli_fbase),
+                         "host/Darwin code, not a guest image; the image has no symbol for this address");
         } else
             snprintf(out, n, "%#lx (in no guest image and no host image the layer can name)", (unsigned long)a);
     }
@@ -1065,6 +1076,85 @@ static unsigned long ss_frame_thread_id(int engine)
 {
     return engine == ENGINE_UNITY ? tl_unity_thread() : engine == ENGINE_JAVA ? tl_javaapp_render_thread() : 0;
 }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * EVERY thread in this process that the guest census cannot see. The census only holds threads the layer created on
+ * the guest's behalf (b_create -> start_thunk); the threads the LAYER starts itself carry no census slot at all:
+ *
+ *   - UnityMain   -- the thread that read lib/arm64-v8a/libil2cpp.so and runs Unity's startup (ENGINE_UNITY's frame
+ *                    thread via tl_unity_thread(); for a Unity title driven through the Java driver, the thread
+ *                    Unity's own native code started);
+ *   - GLThread    -- the Java driver's render thread (tl_javaapp_render_thread()), the frame thread for ENGINE_JAVA;
+ *   - 'main'      -- the Java driver's APP/looper thread (tl_javaapp_main_thread()), where AppRunner.run delivers the
+ *                    Activity lifecycle (onCreate/onStart/onResume) and the SurfaceView callbacks: a Unity title that
+ *                    sits on 'starting' with an idle thread pool is waiting for a callback that arrives HERE;
+ *   - the launch thread and the heartbeat thread.
+ *
+ * The last stall log could name none of them: 'stall-frame: ... GLThread ... pc [libsystem_kernel.dylib +0x6818]' was
+ * the only trace, and UnityMain -- the one thread that was doing the il2cpp load -- never appeared anywhere. This
+ * enumerates the whole process with task_threads (no thread is suspended, ended or joined: only its state is READ,
+ * exactly as ss_thread_pc already does for one thread), skips whatever the census already lists, and prints the rest
+ * with their pc (resolved through ss_where, which now names the host symbol), their argument registers -- the object a
+ * blocking call waits on is its FIRST argument, so x0/x1 make the wait graph visible -- and their role.
+ *
+ * Cold path only: called once per detected stall from ss_probe, never per frame.
+ */
+#if defined(__APPLE__)
+#define TL_SS_HOST_THREADS_MAX 256
+static void ss_host_threads(const tl_guest_thread_info *gt, int ngt, const char *frame_name, unsigned long frame_id)
+{
+    thread_act_array_t list = NULL;
+    mach_msg_type_number_t n = 0;
+    if (task_threads(mach_task_self(), &list, &n) != KERN_SUCCESS || !list) {
+        tl_log_line("stall-host-threads: task_threads failed, so the process's threads cannot be listed -- the layer-started threads (UnityMain, GLThread, the Java app/main thread) stay unnamed this run");
+        return;
+    }
+    unsigned long main_id = tl_javaapp_main_thread();
+    unsigned long unity_id = tl_unity_thread();
+    unsigned long me = (unsigned long)(uintptr_t)pthread_self();
+    int printed = 0, seen = 0;
+    for (mach_msg_type_number_t i = 0; i < n; i++) {
+        mach_port_t tp = list[i];
+        pthread_t pt = pthread_from_mach_thread_np(tp);
+        unsigned long id = (unsigned long)(uintptr_t)pt;
+        int in_census = 0;
+        for (int j = 0; j < ngt; j++) if (gt[j].tid == id) { in_census = 1; break; }
+        if (in_census) continue;                         /* a guest thread: already named above */
+        seen++;
+        if (printed >= TL_SS_HOST_THREADS_MAX) { mach_port_deallocate(mach_task_self(), tp); continue; }
+
+        char nm[32] = "?"; if (pt) pthread_getname_np(pt, nm, sizeof(nm));
+        const char *role =
+            (frame_id && id == frame_id) ? "THE FRAME/RENDER THREAD: its missing next frame IS the stall"
+          : (main_id && id == main_id)   ? "the Java driver's app/main+looper thread: the Activity lifecycle (onCreate/onStart/onResume) and the SurfaceView callbacks are delivered here"
+          : (unity_id && id == unity_id) ? "the layer's UnityMain frame thread (ENGINE_UNITY)"
+          : (id == me)                   ? "this probe's own thread (the heartbeat)"
+          :                                "a layer-started or host thread (the guest census does not hold it)";
+
+        struct __darwin_arm_thread_state64 st;
+        mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
+        if (thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt) != KERN_SUCCESS) {
+            tl_log_line("stall-host-threads:  #%d '%s' (tid %p) -- %s; its thread state is not readable by the layer", printed + 1, nm, (void *)(uintptr_t)id, role);
+        } else {
+            char where[200], lr[200];
+            ss_where(where, sizeof(where), (uintptr_t)st.__pc);
+            ss_where(lr, sizeof(lr), (uintptr_t)st.__lr);
+            tl_log_line("stall-host-threads:  #%d '%s' (tid %p) -- %s; pc [%s]; lr [%s]; wait-args x0=%#lx x1=%#lx x2=%#lx x3=%#lx (the object a blocking call waits on is its FIRST argument -- read these with the pc's symbol to see who waits on what)",
+                        printed + 1, nm, (void *)(uintptr_t)id, role, where, lr,
+                        (unsigned long)st.__x[0], (unsigned long)st.__x[1], (unsigned long)st.__x[2], (unsigned long)st.__x[3]);
+        }
+        printed++;
+        mach_port_deallocate(mach_task_self(), tp);
+    }
+    tl_log_line("stall-host-threads: %d thread(s) in this process are NOT in the guest census (%d listed here)%s; the census can only see threads the layer created on the guest's behalf, so any thread above IS a layer-started or host thread and none of them appeared in the census the stall printed",
+                seen, printed,
+                seen > printed ? " -- the list is bounded, some are not listed" : "");
+    vm_deallocate(mach_task_self(), (vm_address_t)list, (vm_size_t)n * sizeof(thread_t));
+}
+#else
+static void ss_host_threads(const tl_guest_thread_info *gt, int ngt, const char *frame_name, unsigned long frame_id)
+{ (void)gt; (void)ngt; (void)frame_name; (void)frame_id; }
+#endif
 
 static void ss_probe(unsigned long frames, double quiet_s, int epoch)
 {
@@ -1217,6 +1307,13 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
         tl_log_line("stall-frame: the frame/render thread is '%s': the layer does not hold its id on this engine, so it cannot be sampled directly; if it is not one of the guest threads above, it is a layer-started thread and its missing frame is the stall.",
                     frame_name);
     }
+
+    /* The other half of the census: every thread the layer started itself (UnityMain, GLThread, the Java app/main
+     * thread, the launch thread, the heartbeat). The census above cannot hold them, so before this they were invisible
+     * -- the stalled run's frame thread was named and its pc printed as a bare host offset, and UnityMain, which was
+     * running the il2cpp load, appeared nowhere. Their pcs are resolved to host symbol names and their wait objects
+     * (the first argument of the blocking call) are printed, so the wait graph is visible. */
+    ss_host_threads(gt, ngt, frame_name, frame_id);
 
     /* Guest mutexes HELD with a live waiter, with both sites -- the guest-level deadlock the layer lock ledger cannot hold.
      * Read from the census at this stall, so it is named from the owner bytes the lock shim records on every acquisition
