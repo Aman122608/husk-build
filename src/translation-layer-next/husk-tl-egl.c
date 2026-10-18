@@ -9,6 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <TargetConditionals.h>
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/thread_act.h>
+#include <mach/vm_map.h>
+#endif
 
 #include "husk-tl-bionic.h"
 #include "husk-tl-ld.h"
@@ -229,6 +235,34 @@ PASS_BOOL(eglReleaseThread, (void), ())
 
 static const char *w_eglQueryString(EGLDisplay d, EGLint name) { return a_eglQueryString(d, name); }
 static bool g_es31_shim;           /* defined with the rest of the shim, below */
+
+/*
+ * How many ANGLE worker threads are alive in THIS process right now, by ANGLE's own naming of them
+ * ('ANGLE-Worker'). A failed eglCreateContext is a rare, cold event, so it is a fair place to count them: if a refused
+ * creation left a worker behind, the count climbs across the app's retries and the next log proves it; if it is flat,
+ * the workers were made once (ANGLE's own pool) and no attempt leaks one. This shim STARTS no thread of its own --
+ * eglCreateContext only forwards to ANGLE's entry point and returns its result -- so any worker here is ANGLE's, and
+ * this line is the only way to see whether repeated failures accumulate them.
+ * Reads thread NAMES only (pthread_getname_np): nothing is suspended, ended or joined. Returns -1 when the process's
+ * threads cannot be listed, so a missing count is printed as such and never as 0.
+ */
+static int angle_worker_count(void)
+{
+#if defined(__APPLE__)
+    thread_act_array_t list = NULL; mach_msg_type_number_t n = 0; int k = 0;
+    if (task_threads(mach_task_self(), &list, &n) != KERN_SUCCESS || !list) return -1;
+    for (mach_msg_type_number_t i = 0; i < n; i++) {
+        pthread_t pt = pthread_from_mach_thread_np(list[i]);
+        char nm[32] = "";
+        if (pt && pthread_getname_np(pt, nm, sizeof(nm)) == 0 && !strncmp(nm, "ANGLE-Worker", 12)) k++;
+        mach_port_deallocate(mach_task_self(), list[i]);
+    }
+    vm_deallocate(mach_task_self(), (vm_address_t)list, (vm_size_t)n * sizeof(thread_t));
+    return k;
+#else
+    return -1;
+#endif
+}
 static EGLContext w_eglCreateContext(EGLDisplay d, EGLConfig c, EGLContext share, const EGLint *at)
 {
     /* A game that insists on ES 3.1 or 3.2 (Unreal Engine tries 3.2, then 3.1) is given the 3.0 context ANGLE can make: the version it is then told is the shim's. */
@@ -248,7 +282,26 @@ static EGLContext w_eglCreateContext(EGLDisplay d, EGLConfig c, EGLContext share
     if (trace || !ctx) {
         char buf[200]; size_t k = 0;
         for (int i = 0; at && at[i] != EGL_NONE && i < 20 && k + 24 < sizeof(buf); i += 2) k += (size_t)snprintf(buf + k, sizeof(buf) - k, " %#x=%d", at[i], at[i + 1]);
-        tl_log_line("egl: eglCreateContext(share %p,%s ) -> %p%s", share, buf, ctx, ctx ? "" : " (failed)");
+        if (ctx)
+            tl_log_line("egl: eglCreateContext(share %p,%s ) -> %p", share, buf, ctx);
+        else {
+            /* A refusal is where the version question and the worker question are answered, once, cold: what was ASKED
+             * (minor > 0 means the shim did NOT downgrade it -- the 3.1/3.2 downgrade is armed only for an app whose
+             * manifest claims ES 3.1+, or an engine that asks through tl_egl_es31_shim) and how many ANGLE worker
+             * threads exist at this instant (a count that climbs across consecutive refusals proves they accumulate;
+             * an unchanged count says ANGLE made them once). This shim starts no thread of its own. */
+            int minor = 0;
+            for (int i = 0; at && at[i] != EGL_NONE && i < 20; i += 2) if (at[i] == 0x30fb /* EGL_CONTEXT_MINOR_VERSION */) minor = at[i + 1];
+            int workers = angle_worker_count();
+            tl_log_line("egl: eglCreateContext(share %p,%s ) -> NULL (failed): minor asked=%d%s; ANGLE-Worker threads alive now=%s",
+                        share, buf, minor,
+                        (minor > 0 && !g_es31_shim)
+                            ? " and the shim passed it through unchanged (this app's manifest claims no ES 3.1+/3.2, so the downgrade is not armed) -- a later create at minor 0 is what gives the app its 3.0 context"
+                            : " and the shim is in its 3.1/3.2-claiming mode, so this request was already the shim's downgraded one and ANGLE refused that too",
+                        workers < 0 ? "not countable (task_threads failed) -- unknown, never assumed" : (workers ? "printed next (compare it across consecutive refusals)" : "0"));
+            if (workers > 0)
+                tl_log_line("egl:   ANGLE-Worker threads alive at this refusal: %d (if this number climbs across the app's retries, a refused creation is leaving a worker behind; if it is the same each time, ANGLE made them once)", workers);
+        }
     }
     return ctx;
 }

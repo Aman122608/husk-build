@@ -1012,6 +1012,93 @@ static void ss_where(char *out, size_t n, uintptr_t a)
     }
 }
 
+/* ---------------------------------------------------------------------------------------------------------------
+ * THE GUEST STACK, walked at the stall (the frames ABOVE the wait a thread was sampled in).
+ *
+ * A host pc names only the kernel wait ('__semwait_signal', '__psynch_cvwait'); it cannot name the CALLER, and the
+ * caller is the whole question: a thread parked in nanosleep is either idling or inside a retry loop, and only the
+ * frames above the sleep tell the two apart. This is that walk.
+ *
+ * The guest and the layer share the stack -- a guest call into a layer shim pushes the guest's return address there,
+ * and a shim that calls the host's nanosleep pushes the shim's -- so the ARM64 frame-pointer chain from the thread's
+ * saved x29 crosses the shim frames and reaches the guest frames. Every return address is resolved by ss_where (guest
+ * image + nearest symbol, the JIT arena, or a NAMED host frame), so the log line says WHO called nanosleep, not only
+ * that nanosleep was called.
+ *
+ * Safety: reads go through mach_vm_read_overwrite, which returns an error instead of faulting the process when a link
+ * of the chain is unreadable -- a probe that reports a stall must never be able to crash the process it is diagnosing.
+ * A bad link, an unaligned fp, or a chain that does not advance stops the walk and says which happened; a frame is
+ * never invented and a missing link is never filled in. The ARM64e frame records of the layer's own frames can carry a
+ * pointer-auth code in the top bits, so a link whose raw value resolves in no image is retried with the top 16 bits
+ * cleared -- and the raw value is kept whenever neither form resolves, so a plain pointer is never mangled.
+ *
+ * Cold path only: called once per detected stall, from ss_probe, never per frame.
+ */
+#define TL_SS_WALK_MAX 24
+#if defined(__APPLE__)
+/* One word of the thread's stack, read without ever faulting this process. False when it is not readable.
+ * vm_read_overwrite (mach/vm_map.h) returns an error instead of raising a fault, which is the whole point: a probe
+ * that reports a stall must not be able to crash the process it is diagnosing. */
+static bool ss_read_word(uintptr_t addr, uintptr_t *out)
+{
+    vm_size_t got = 0;
+    kern_return_t kr = vm_read_overwrite(mach_task_self(), (vm_address_t)addr, sizeof(uintptr_t),
+                                         (vm_address_t)out, &got);
+    return kr == KERN_SUCCESS && got == sizeof(uintptr_t);
+}
+/* Strip an ARM64e pointer-auth code from a frame link -- only when the raw value lands in no image and the cleared one
+ * does. A plain (unauthenticated) pointer is returned unchanged. */
+static uintptr_t ss_strip_auth(uintptr_t v)
+{
+    uintptr_t s = v & 0x0000ffffffffffffull;
+    if (s == v) return v;
+    const char *lib = NULL; const void *sa = NULL;
+    if (tl_ld_symbol_at_any((const void *)v, &lib, &sa) || tl_xmem_is_rx((const void *)v)) return v;
+    if (tl_ld_symbol_at_any((const void *)s, &lib, &sa) || tl_xmem_is_rx((const void *)s)) return s;
+    return v;
+}
+static void ss_guest_walk(unsigned long tid, const char *who)
+{
+    mach_port_t tp = tid ? pthread_mach_thread_np((pthread_t)(uintptr_t)tid) : 0;
+    if (!tp) {
+        tl_log_line("stall-guest-stack: %s: its mach thread could not be named, so its guest frames cannot be walked this run", who);
+        return;
+    }
+    struct __darwin_arm_thread_state64 st;
+    mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
+    if (thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt) != KERN_SUCCESS) {
+        tl_log_line("stall-guest-stack: %s: its thread state is not readable by the layer, so its guest frames cannot be walked this run", who);
+        return;
+    }
+    uintptr_t fp = (uintptr_t)st.__fp, sp = (uintptr_t)st.__sp;
+    char pcs[200]; ss_where(pcs, sizeof(pcs), (uintptr_t)st.__pc);
+    tl_log_line("stall-guest-stack: %s -- the frames ABOVE it, walked from its saved frame pointer. Its pc is [%s]; fp %p sp %p. The first line below is the RETURN ADDRESS out of the function whose pc was sampled, i.e. its CALLER; each later line is that caller's caller -- so the retrying/lifecycle function is named here, where a bare pc could name it only as '__semwait_signal':",
+                who, pcs, (void *)fp, (void *)sp);
+    int i = 0, broke = 0;
+    for (; i < TL_SS_WALK_MAX; i++) {
+        if (!fp || (fp & 7)) { broke = 1; break; }
+        uintptr_t rec[2];
+        if (!ss_read_word(fp, &rec[0]) || !ss_read_word(fp + sizeof(uintptr_t), &rec[1])) { broke = 1; break; }
+        uintptr_t next = ss_strip_auth(rec[0]);
+        uintptr_t lr   = ss_strip_auth(rec[1]);
+        if (!lr) break;                                  /* a null return address ends the chain cleanly */
+        char where[200]; ss_where(where, sizeof(where), lr);
+        tl_log_line("stall-guest-stack:    frame %-2d fp %p -> lr [%s]", i, (void *)fp, where);
+        if (next <= fp) {                                /* the chain must climb; else it is not a real one */
+            if (next) tl_log_line("stall-guest-stack:    the chain does not climb past %p (next fp %p), so the walk stops here -- what is below is not a valid frame-pointer chain, not a missing frame of ours", (void *)fp, (void *)next);
+            break;
+        }
+        fp = next;
+    }
+    if (broke)
+        tl_log_line("stall-guest-stack:    the chain broke at fp %p (that address is not readable as memory, or fp is not 8-byte aligned); %d frame(s) were walked before it. A break means the code above that frame omitted its frame pointer there -- the thread is NOT necessarily idle.", (void *)fp, i);
+    else if (i >= TL_SS_WALK_MAX)
+        tl_log_line("stall-guest-stack:    the walk reached the %d-frame bound without ending (a deep or bottomless chain); the frames above are not shown", TL_SS_WALK_MAX);
+}
+#else
+static void ss_guest_walk(unsigned long tid, const char *who) { (void)tid; (void)who; }
+#endif
+
 /* One line per N seconds, and once at session close, with the hot-path counters: what the log cannot answer without a
  * line per event -- the store guard's carried/refused traps, the arena's per-allocation backing (allocations and pages
  * backed), and the intercepted calls by name. NEVER per event; the caller gates the cadence (the heartbeat, husk). */
@@ -1314,6 +1401,24 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
      * running the il2cpp load, appeared nowhere. Their pcs are resolved to host symbol names and their wait objects
      * (the first argument of the blocking call) are printed, so the wait graph is visible. */
     ss_host_threads(gt, ngt, frame_name, frame_id);
+
+    /* And the stack of the three threads whose sleep/retry this stall is about: the frame/render thread, the layer's
+     * UnityMain (the layer's own engine thread on ENGINE_UNITY; on ENGINE_JAVA the guest Unity thread that renamed
+     * itself UnityMain), and the Java driver's app/main+looper thread. Their pc only named the kernel wait; this names
+     * the CALLER of that wait -- the function retrying, if this is a retry loop. Only these three: the log stays
+     * bounded, and the 32-thread idle pool has nothing to add.
+     *
+     * Why these three are the ones that matter: the hot-path counters show guest gettimeofday and guest mutex_lock/
+     * unlock climbing while frames stay put (guest code, i.e. exactly the threads above), so if something is looping
+     * it is a GUEST thread that the census saw as parked at the instant it was sampled -- and the only layer-started
+     * guest threads are these. */
+    {
+        unsigned long main_id = tl_javaapp_main_thread();
+        unsigned long unity_id = tl_unity_thread();
+        if (frame_id) ss_guest_walk(frame_id, frame_name);
+        if (unity_id && unity_id != frame_id) ss_guest_walk(unity_id, "UnityMain (the guest engine's main thread)");
+        if (main_id && main_id != frame_id && main_id != unity_id) ss_guest_walk(main_id, "the Java driver's app/main+looper thread");
+    }
 
     /* Guest mutexes HELD with a live waiter, with both sites -- the guest-level deadlock the layer lock ledger cannot hold.
      * Read from the census at this stall, so it is named from the owner bytes the lock shim records on every acquisition
