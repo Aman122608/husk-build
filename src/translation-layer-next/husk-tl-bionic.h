@@ -186,8 +186,9 @@ void tl_guest_thread_new_epoch(void);                             /* a session b
 
 /*
  * Every guest mutex currently HELD that has a live waiter, with both sites. Not a per-5s log line: a scan of the live-thread
- * census at a detected stall, so a stalled app's own lock deadlock is named even when the mutex trace armed after the wait
- * began. Deduped by the guest mutex object (one entry per held mutex, the first live waiter reported for it). holder_tid is
+ * census at a detected stall, so a stalled app's own lock deadlock is named from the owner bytes the lock shim records on
+ * acquisition (no per-wait line -- that would require polling the wait). Deduped by the guest mutex object (one entry per
+ * held mutex, the first live waiter reported for it). holder_tid is
  * 0 when the holder was never recorded (a lock taken before the holder bytes were written). */
 typedef struct {
     unsigned long mutex, waiter_tid, waiter_entry, waiter_site, holder_tid, holder_site;

@@ -16,7 +16,6 @@
 #define _DARWIN_C_SOURCE
 #include "husk-tl-bionic.h"
 #include "husk-tl-ld.h"
-#include "husk-tl-xmem.h"    /* tl_swap_in_progress(): a session boundary the earlier conditional trace keyed off (it is always-on now) */
 
 #include <errno.h>
 #include <pthread.h>
@@ -99,87 +98,40 @@ static int b_mutex_destroy(void *g)
     return 0;
 }
 /*
- * TL_MUTEX_TRACE: remember who last locked each mutex (in the spare bytes of the guest's 40-byte object, which it never
- * touches) and say, when a lock has waited five seconds, who holds it and from where it was locked. For finding what a
- * stuck game is waiting for.
+ * The guest-mutex OWNER RECORD: remember who last locked each mutex (in the spare bytes of the guest's 40-byte object,
+ * which the guest never touches) and from where it was locked, cleared on unlock. This is the cheap always-on part that
+ * lets the STALL-TIME CENSUS name a held mutex and its holder -- tl_guest_mutex_waits() reads w[2]/w[3] at a stall. It is
+ * two stores on acquisition (note_owner) and two on release (b_mutex_unlock), on the HELD-mutex path only, and NOTHING on
+ * the contended path: b_mutex_lock below is a real block on the host pthread mutex, so a guest waiter SLEEPS on it -- it
+ * never spins, never polls.
  *
- * IT IS ON FOR EVERY RUN. The old rule armed it only once a swap had happened (tl_swap_in_progress: a session close, or a
- * stall the probe detected) or with TL_MUTEX_TRACE in the environment -- and nobody can set an environment variable on the
- * phone, so on the device it turned on INSIDE the stall probe, i.e. after the app had already stopped, and the 5 s wait it
- * exists to name had already gone by: the newest log has the swap-stall line and ZERO mutex lines. The trace costs nothing
- * while there is no contention (its own rule keeps the LOG quiet: one line per distinct (waiter site, holder site) pair,
- * and only after 5 s of waiting), so it is armed from run start. TL_MUTEX_TRACE=0 turns it off (a desktop aid for a run
- * whose lock behaviour must not change at all).
- *
- * WHY IT CHANGES BEHAVIOUR, FROM THE CODE (not assumed): when the trace is on, b_mutex_lock no longer blocks in Darwin --
- * it spins with trylock + usleep(200) (a 5 s wait costs ~25000 iterations) and writes the owner into the guest object's
- * spare bytes on every acquisition. That is a behaviour change on EVERY contended lock, not a log line that only appears
- * after 5 s -- accepted, because an instrument that arms after the freeze can only record the silence it was meant to
- * explain, and this one now has to see the wait that IS the freeze.
+ * WHY THERE IS NO PER-WAIT "has waited 5 s" LINE ANY MORE. That line could only be produced by watching a wait in
+ * progress, which meant replacing the blocking lock with a trylock+usleep(200) poll (a 5 s wait cost ~25000 iterations of
+ * it). This project's whole point is performance: an always-on spin loop on EVERY contended guest mutex taxes every run
+ * forever to feed a diagnostic, on a device where a stalled title already gets 8 frames instead of thousands. A diagnostic
+ * may not cost more than the bug it observes, so the poll -- and the line it fed -- is gone. The record above cannot report
+ * a wait IN PROGRESS (nothing is written while a thread is blocked), but the same question ("which held guest mutex is a
+ * live thread blocked on, and from where?") is answered AFTER the fact by the stall-time census from the recorded owner
+ * alone: a mutex HELD with a live waiter still gets named with both sites, and that is the question being asked.
  */
-static bool mutex_trace(void)
-{
-    static int on = -1;
-    if (on < 0) { const char *e = getenv("TL_MUTEX_TRACE"); on = (e && e[0] == '0') ? 0 : 1; }
-    return on;
-}
 static void note_owner(void *g, void *lr) { uint64_t *w = g; w[2] = (uint64_t)(uintptr_t)pthread_self(); w[3] = (uint64_t)(uintptr_t)lr; }
-static void describe_site(char *out, size_t n, uint64_t addr)
-{
-    const char *lib = NULL; const void *sa = NULL;
-    /* Any session: the HOLDER may be a thread parked from the session that was swapped out, whose code is in that
-     * session's image -- which tl_ld_symbol_at skips by design, so the site would print bare hex. Reporting only. */
-    const char *sym = tl_ld_symbol_at_any((void *)(uintptr_t)addr, &lib, &sa);
-    if (lib) snprintf(out, n, "%s %s+%#lx", lib, sym ? sym : "?", sa ? (unsigned long)(addr - (uintptr_t)sa) : 0ul);
-    else snprintf(out, n, "%#llx", (unsigned long long)addr);
-}
-/* One line per DISTINCT (waiter site, holder site) pair, like the codewrite refusal table (husk-tl-codewrite.c) -- never
- * one line per lock and never one per 5 s. Only reached after a lock has already waited 5 s, so the table is cold and the
- * compare/add costs nothing that matters. */
-#define TL_MT_SITES 64
-static struct { char w[48], h[48]; } g_mt_sites[TL_MT_SITES];
-static _Atomic int g_mt_n;
-static bool mt_site_new(const char *w, const char *h)
-{
-    int n = atomic_load_explicit(&g_mt_n, memory_order_relaxed);
-    if (n > TL_MT_SITES) n = TL_MT_SITES;
-    for (int i = 0; i < n; i++) if (!strcmp(g_mt_sites[i].w, w) && !strcmp(g_mt_sites[i].h, h)) return false;
-    int i = atomic_fetch_add(&g_mt_n, 1);
-    if (i < TL_MT_SITES) {
-        snprintf(g_mt_sites[i].w, sizeof(g_mt_sites[i].w), "%s", w);
-        snprintf(g_mt_sites[i].h, sizeof(g_mt_sites[i].h), "%s", h);
-        return true;
-    }
-    return false;
-}
 static int b_mutex_lock(void *g)
 {
     tl_hp_bump(TL_HP_MUTEX_LOCK);
     pthread_mutex_t *m = obj_host(g, make_mutex);
+    void *lr = __builtin_return_address(0);
     /* Mark the thread as inside a guest mutex operation for as long as it is here, so a probe can tell a thread blocked
      * in this lock from an idle one. Cleared on EVERY exit path below. */
-    gt_wait_enter(TL_GW_MUTEX, g, __builtin_return_address(0));
-    if (!mutex_trace()) { int r = rc(pthread_mutex_lock(m)); gt_wait_leave(); return r; }
-    void *lr = __builtin_return_address(0);
-    for (long i = 0;; i++) {
-        int r = pthread_mutex_trylock(m);
-        if (r == 0) { note_owner(g, lr); gt_wait_leave(); return 0; }
-        if (r != EBUSY) { gt_wait_leave(); return rc(r); }
-        usleep(200);
-        if (i == 25000) {
-            uint64_t *w = g; char owner[40] = "?", site[200], waiter[200];
-            pthread_t t = (pthread_t)(uintptr_t)w[2];
-            if (t) pthread_getname_np(t, owner, sizeof(owner));
-            describe_site(site, sizeof(site), w[3]);
-            describe_site(waiter, sizeof(waiter), (uint64_t)(uintptr_t)lr);
-            char me[40] = ""; pthread_getname_np(pthread_self(), me, sizeof(me));
-            if (mt_site_new(waiter, site))
-                tl_log_line("mutex: '%s' has waited 5 s on mutex %p, held by '%s' (locked from %s); waiting at %s", me, g, owner, site, waiter);
-        }
-    }
+    gt_wait_enter(TL_GW_MUTEX, g, lr);
+    /* A real block: the waiter SLEEPS on the host mutex. No trylock, no usleep, no spin -- on the fast path this is one
+     * host pthread_mutex_lock plus the two owner stores below. */
+    int r = pthread_mutex_lock(m);
+    if (r == 0) note_owner(g, lr);   /* the holder's tid + lock site, held until unlock clears it */
+    gt_wait_leave();
+    return rc(r);
 }
-static int b_mutex_trylock(void *g) { int r = pthread_mutex_trylock(obj_host(g, make_mutex)); if (r == 0 && mutex_trace()) note_owner(g, __builtin_return_address(0)); return rc(r); }
-static int b_mutex_unlock(void *g)  { tl_hp_bump(TL_HP_MUTEX_UNLOCK); if (mutex_trace()) ((uint64_t *)g)[2] = 0; return rc(pthread_mutex_unlock(obj_host(g, make_mutex))); }
+static int b_mutex_trylock(void *g) { int r = pthread_mutex_trylock(obj_host(g, make_mutex)); if (r == 0) note_owner(g, __builtin_return_address(0)); return rc(r); }
+static int b_mutex_unlock(void *g)  { tl_hp_bump(TL_HP_MUTEX_UNLOCK); ((uint64_t *)g)[2] = 0; return rc(pthread_mutex_unlock(obj_host(g, make_mutex))); }
 
 static int b_mutexattr_init(long *a)    { *a = 0; return 0; }
 static int b_mutexattr_destroy(long *a) { (void)a; return 0; }
@@ -619,8 +571,9 @@ int tl_guest_thread_census(tl_guest_thread_info *out, int max)
 
 /*
  * Every guest mutex currently HELD that has a live waiter, with both sites -- read from the live-thread census at a
- * detected stall, so a stall names the app's own guest-lock deadlock even when the mutex trace armed after the wait began
- * (the point of arming it, and reporting here, from run start). A thread in TL_GW_MUTEX is blocked in b_mutex_lock on the
+ * detected stall, so a stall names the app's own guest-lock deadlock from the recorded owner alone (there is no per-wait
+ * "5 s" line any more; it would have required polling the wait, which is a permanent CPU cost on every contended lock). A
+ * thread in TL_GW_MUTEX is blocked in b_mutex_lock on the
  * guest mutex in wait_obj; b_mutex_lock wrote the holder's thread and lock site into the mutex's spare bytes (w[2]/w[3],
  * note_owner). Deduped by the mutex object: one entry per held mutex, the first live waiter reported for it. holder_tid is
  * 0 when the holder was never recorded. Never blocks, never allocates; reads guest memory the same way the shim wrote it.

@@ -1191,12 +1191,14 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
     }
 
     /* Guest mutexes HELD with a live waiter, with both sites -- the guest-level deadlock the layer lock ledger cannot hold.
-     * Read from the census at this stall, so it is named even when the mutex trace armed after the wait began. */
+     * Read from the census at this stall, so it is named from the owner bytes the lock shim records on every acquisition
+     * (there is no per-wait "5 s" line: producing one would mean polling the wait, a permanent cost on every contended
+     * lock -- the census answers the same question after the fact). */
     tl_guest_mutex_wait gw[TL_SS_THREADS];
     int ngw = tl_guest_mutex_waits(gw, TL_SS_THREADS);
     if (ngw > TL_SS_THREADS) ngw = TL_SS_THREADS;
     if (ngw == 0)
-        tl_log_line("stall-mutex: no live guest thread is blocked in b_mutex_lock right now, so no guest mutex is held with a live waiter (a waiter names itself in its own 5 s line).");
+        tl_log_line("stall-mutex: no live guest thread is blocked in b_mutex_lock right now, so no guest mutex is held with a live waiter (the census names a held mutex with a waiter from the owner bytes; there is no per-wait 5 s line).");
     for (int i = 0; i < ngw; i++) {
         char wsite[128], hsite[128], wname[32] = "?", hname[32] = "?";
         ss_where(wsite, sizeof(wsite), (uintptr_t)gw[i].waiter_site);
