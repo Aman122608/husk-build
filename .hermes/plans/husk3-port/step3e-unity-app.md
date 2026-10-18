@@ -16,8 +16,8 @@ re-inserted by hand, diff-driven and symbol by symbol.
 
 | file | base (ours) | target (upstream) | merged |
 |---|---|---|---|
-| `husk-tl-unity-app.c` | 1,552 lines / 90,879 B | 742 / 42,161 B | **1,611 lines / 93,120 B** |
-| `husk-tl-unity-app.h` | 220 / 15,304 B | 183 / 12,806 B | **233 / 16,465 B** |
+| `husk-tl-unity-app.c` | 1,552 lines / 90,879 B | 742 / 42,161 B | **1,579 lines / 93,120 B** |
+| `husk-tl-unity-app.h` | 220 / 15,304 B | 183 / 12,806 B | **235 / 16,465 B** |
 | `husk-tl-audio.h` | 1,924 B | 848 B | **1,924 B (ours, a superset)** |
 
 ## Compile check — this one HAS a compiler
