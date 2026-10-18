@@ -1,0 +1,235 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/*
+ * What the app calls to run a game through the native runtime. Starting is asynchronous (the engine takes seconds to
+ * load, and the UI must stay up meanwhile); progress is in the log and in husk_unity_state. An engine cannot be
+ * unloaded, so a started game stays loaded for the life of the process; leaving its screen pauses it.
+ */
+#ifndef HUSK_TL_UNITY_APP_H
+#define HUSK_TL_UNITY_APP_H
+
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * The state of the one run this process can have at a time: IDLE -> STARTING -> RUNNING | FAILED -> ENDED. The session
+ * close takes any live or terminal state to STOPPING while it tears down, then opens the gate back to IDLE from every
+ * terminal marker (STOPPING, ENDED, FAILED) -- never from a live run (RUNNING/STARTING). husk_tl_session_close() is the
+ * ONLY writer of HUSK_UNITY_IDLE.
+ */
+enum { HUSK_UNITY_IDLE = 0, HUSK_UNITY_STARTING = 1, HUSK_UNITY_RUNNING = 2, HUSK_UNITY_FAILED = 3, HUSK_UNITY_ENDED = 4, HUSK_UNITY_STOPPING = 5 };
+
+/* The engines husk_tl_swap_capability() classifies. The numbers mirror the internal ENGINE_* enum in
+ * husk-tl-unity-app.c, so a caller with an ENGINE_* id can pass it straight through. */
+enum {
+    HUSK_TL_ENGINE_UNITY = 0, HUSK_TL_ENGINE_COCOS = 1, HUSK_TL_ENGINE_GAMEACTIVITY = 2,
+    HUSK_TL_ENGINE_SDL = 3, HUSK_TL_ENGINE_UE4 = 4, HUSK_TL_ENGINE_GTA = 5,
+    HUSK_TL_ENGINE_GODOT = 6, HUSK_TL_ENGINE_FLUTTER = 7, HUSK_TL_ENGINE_GAMEMAKER = 8,
+    HUSK_TL_ENGINE_JAVA = 9
+};
+
+/*
+ * What a second, different app in this process can be for an engine. Static, per engine: SWAP_OK, SWAP_PARTIAL (only a
+ * DIFFERENT engine is safe next) or SWAP_NEEDS_RESTART. Never chosen at run time as a substitute -- an unswappable
+ * engine says so and the user relaunches deliberately. The per-engine evidence is in engine-swap-capability.md.
+ */
+enum { SWAP_OK = 0, SWAP_PARTIAL = 1, SWAP_NEEDS_RESTART = 2 };
+
+/* Whether `engine` can go on to a different app in this process, and how cleanly (SWAP_* above). */
+int husk_tl_swap_capability(int engine);
+
+/* The verdict of the last husk_tl_session_close(): a SWAP_* value, or -1 if none has run. */
+int husk_tl_swap_verdict(void);
+
+/*
+ * Close the running app's session so a different app can start later in this process: reset the engine's per-app
+ * BOOKKEEPING (never the memory, never a guest thread), then open the gate to HUSK_UNITY_IDLE LAST. Idempotent; safe
+ * after a FAILED, half-initialised start. Returns SWAP_OK / SWAP_PARTIAL / SWAP_NEEDS_RESTART; on SWAP_NEEDS_RESTART it
+ * refuses (the gate stays closed and the reason is logged) so the user keeps a working game. The only writer of IDLE.
+ */
+int husk_tl_session_close(void);
+
+/* A short string for the UI: "swapped cleanly", the leak CONDITION for a partial close ("N guest thread(s) left
+ * parked; not ours to stop"), "swap failed, relaunch needed", "no session". The partial form names the condition, not
+ * the verdict word, so a caller that prints it after the verdict does not read "leaked (swapped, leaked (...))". */
+const char *husk_tl_swap_status(void);
+
+/*
+ * After a swap, check it really happened -- a swap is done when this passes, not when it was asked for. Runs four
+ * checks: the loaded APK is the one requested, no library from an earlier session is reachable by name, the app now
+ * on screen has presented frames of ITS OWN since the swap (live-session scoped, never a quarantined thread's
+ * ticks), and the accounting is logged. Returns 1 only if all pass. `package` is used only in the log.
+ */
+int husk_tl_verify_swap(const char *apk, const char *package);
+
+/*
+ * Start the game in `apk`. `metal_layer` is the CAMetalLayer it draws into, `width`/`height` its
+ * size in pixels. `angle_dylib` is the bundled libANGLE-shared.dylib; `ca_bundle` a PEM file of root
+ * certificates. Returns false if a game is already started or the arguments are unusable.
+ */
+bool husk_unity_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                       const char *angle_dylib, const char *ca_bundle);
+
+/* The same for a cocos2d-x game (Geometry Dash): a landscape surface, with sound. Status, touch and pause go through the calls below. */
+/* Load Geode (the Geometry Dash mod loader) into the next cocos2d-x game: its release zip and its Android launcher's APK.
+ * NULL turns it off. Call before husk_cocos_launch. */
+void husk_cocos_set_geode(const char *release_zip, const char *launcher_apk);
+bool husk_cocos_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                       const char *angle_dylib, const char *ca_bundle);
+
+/* The same for a game built on Google's GameActivity (Minecraft): a landscape surface, with sound and multi-touch. */
+bool husk_gameactivity_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                              const char *angle_dylib, const char *ca_bundle);
+
+/* The same for an SDL3 game (Beach Buggy Racing 2): landscape, sound, multi-touch. Its libraries may be in a split and
+ * its data in an asset pack, so every other APK is given first with husk_native_add_package. Its activity is the manifest's
+ * launcher activity. */
+bool husk_sdl_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                     const char *angle_dylib, const char *ca_bundle);
+/* The same for a UE4 game (Minecraft Dungeons): landscape, sound, touch and controllers. Its renderer is Vulkan on
+ * MoltenVK -- give its path with husk_ue4_set_vulkan first. Its data is an OBB the APK carries inside itself, mapped in
+ * place. */
+bool husk_ue4_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                     const char *angle_dylib, const char *ca_bundle);
+/* A Godot game (libgodot_android.so: Godot 3 and 4, with GLES2/GLES3 or the Compatibility renderer): sound, multi-touch. */
+bool husk_godot_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                       const char *angle_dylib, const char *ca_bundle);
+/* Rockstar's GTA San Andreas (libGame.so behind the oswrapper): landscape, sound, touch and controllers. Its data is inside the APK. */
+bool husk_gta_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                     const char *angle_dylib, const char *ca_bundle);
+void husk_ue4_set_vulkan(const char *dylib);
+
+/* Flutter apps (libflutter.so): the engine and the app's Dart run natively; Impeller draws through ANGLE. */
+bool husk_flutter_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                         const char *angle_dylib, const char *ca_bundle);
+int  husk_flutter_is_app(const char *apk);
+/* A GameMaker game (YoYo's runner, libyoyo.so). */
+bool husk_gamemaker_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                           const char *angle_dylib, const char *ca_bundle);
+int  husk_gamemaker_orientation(const char *apk);                   /* from options.ini: 1 portrait, 0 landscape, -1 either */
+/* Java apps (libGDX games and other apps whose code is Java) on Husk's Dalvik runtime. The runtime folder (the bundled
+ * java-runtime) and the screen's pixels per dp are set before the launch call. */
+bool husk_java_launch(const char *apk, const char *data_dir, void *metal_layer, int width, int height,
+                      const char *angle_dylib, const char *ca_bundle);
+void husk_java_set_runtime(const char *root, float density);
+void husk_java_back(void);
+/* The host's side of a Java app's views: its keyboard (show, EditorInfo input type and IME options), the clipboard (get returns a
+   malloc'd string or NULL), the share sheet, the orientation the activity asks for. Before husk_java_launch. */
+void husk_java_set_host(void (*keyboard)(int show, int input_type, int ime_options), void (*set_clipboard)(const char *utf8),
+                        char *(*get_clipboard)(void), void (*share)(const char *utf8), void (*orientation)(int android_orientation));
+/* The notch / home indicator areas and the keyboard's height, in surface pixels; before the launch and whenever they change. */
+void husk_java_set_insets(int left, int top, int right, int bottom, int keyboard);
+/* The phone is in dark mode (before the launch): the app's configuration says night. */
+void husk_java_set_night_mode(int night);
+void husk_java_insert_text(const char *utf8);
+void husk_java_delete_backward(void);
+void husk_java_text_action(void);
+void husk_java_keyboard_closed(void);
+/* The system's file picker for a Java app: the app asks with MIME types (comma-separated) and whether several files may be
+   picked; the host shows its document picker and answers with the paths of copies it made in the app's folder (n = 0: cancelled). */
+void husk_java_set_document_picker(void (*pick)(const char *mime_types, int multiple));
+void husk_java_documents_picked(const char *const *paths, int n);
+void husk_java_key(int android_keycode, int down);
+/* A Java app's WebViews are WKWebViews in a container the host puts right under the app's screen view, the same size, at the screen's
+   scale (surface pixels per point). fresh: a new app (1), or the running one shown on a new screen view (0: its pages move over).
+   husk_java_web_hit says whether a touch at a point in the screen view belongs to a web page instead. */
+void husk_java_web_attach(void *screen_view, void *container, float scale, int fresh);
+int husk_java_web_hit(float x, float y);
+void husk_flutter_set_pixel_ratio(float ratio);                      /* the screen's scale, before the launch */
+void husk_flutter_set_insets(int top, int right, int bottom, int left);   /* safe area, in surface pixels */
+void husk_flutter_resize(int width, int height);                     /* the view's new size in pixels, after the launch */
+/* The keyboard for a Flutter app's text fields: the app asks for it (show 1 with the kind, or 0 to hide; on its own thread), and
+ * what is typed goes back. The kind is 0 text, 1 number, 2 email, 3 URL, plus 0x10 multi-line and 0x20 secure. */
+void husk_flutter_set_keyboard_handler(void (*fn)(int show, int kind));
+void husk_flutter_insert_text(const char *utf8);
+void husk_flutter_delete_backward(void);
+void husk_flutter_text_action(void);                                  /* Return */
+bool husk_flutter_text_multiline(void);
+void husk_flutter_set_keyboard_inset(int bottom);                     /* pixels of the view the keyboard covers */
+void husk_flutter_back(void);                                         /* Android's back button */
+void husk_flutter_set_close_handler(void (*fn)(void));                /* the app closed itself */
+/* Where fonts downloaded after install are (the CJK ones): /system/fonts files the bundle lacks are looked for there. */
+void husk_native_set_extra_fonts(const char *dir);
+void husk_native_set_system_files(const char *cacerts_dir, const char *fonts_root);
+/* Another APK of the app about to be launched (a split, an asset pack). Before the launch call; at most three. */
+void husk_native_add_package(const char *apk);
+/* The folder games see as Android's shared storage (/sdcard outside their own Android/data), or NULL for each game's own. */
+void husk_native_set_shared_storage(const char *dir);
+/* Where the layer writes the last arena verdict, so it survives a crash: a file in the app's container, set before a
+   game starts. The layer writes it at measurement time (and again if a guest fetch fault ends the run) and the app's
+   "Guest arena" row reads it on the next launch. NULL or empty turns persistence off. */
+void husk_native_set_arena_verdict_path(const char *path);
+/* The screen's safe-area insets in pixels, for a game that keeps its controls out of a notch (SDL games ask). Before the launch call, or any time. */
+void husk_sdl_set_safe_insets(int left, int top, int right, int bottom);
+/* Whether an SDL game's manifest asks for a portrait screen (the others are landscape). */
+int husk_sdl_apk_is_portrait(const char *apk);
+int husk_apk_orientation(const char *apk);
+int husk_apk_is_game(const char *apk);         /* the manifest files it as a game (appCategory / isGame) */      /* 1 portrait, 0 landscape, -1 the manifest does not say */
+/* 1 when the app needs its split APKs (isSplitRequired, requiredSplitTypes, Play's splits.required) */
+int husk_apk_split_required(const char *apk);
+/* Soft keyboard for an SDL game: the handler is told 1 = show, 2 = hide; typed text goes in with husk_sdl_commit_text, Backspace (67) and Enter (66) with husk_sdl_key. */
+void husk_sdl_set_keyboard_handler(void (*handler)(int action));
+void husk_sdl_commit_text(const char *utf8);
+void husk_sdl_key(int keycode, int down);
+/* Soft keyboard for a cocos2d-x game. The handler is told (on the game's GL thread) 0 = toggle, 1 = show, 2 = hide. */
+void husk_cocos_set_keyboard_handler(void (*handler)(int action));
+/* A Unity game's keyboard (TouchScreenKeyboard): the game asks for it (action 1 with kind = TouchScreenKeyboardType | 0x100 secure
+ * | 0x200 multi-line) or puts it away (2), on its own thread. The keys edit the game's field; finish_text(1) is Done, (0) a dismissal;
+ * husk_unity_text copies the field as it stands. */
+void husk_unity_set_keyboard_handler(void (*handler)(int action, int kind));
+void husk_unity_insert_text(const char *utf8);
+void husk_unity_delete_backward(void);
+void husk_unity_finish_text(int done);
+void husk_unity_text(char *out, unsigned long cap);
+
+/* Soft keyboard for a GameActivity game (Minecraft): 1 = show, 2 = hide; the field's text is kept on the C side. */
+void husk_ga_set_keyboard_handler(void (*handler)(int action));
+void husk_ga_insert_text(const char *utf8);
+void husk_ga_delete_backward(void);
+void husk_ga_editor_action(void);
+void husk_ga_text(char *out, unsigned long cap);
+void husk_cocos_insert_text(const char *utf8);
+void husk_cocos_delete_backward(void);
+void husk_cocos_key_down(int keycode);
+void husk_cocos_request_text(void (*cb)(const char *utf8));    /* what the game's text field holds now; cb runs on the GL thread */
+
+/* A link the game wants opened (terms of use, social buttons). The handler runs on the game's GL thread. */
+void husk_cocos_set_open_url_handler(void (*handler)(const char *url));
+
+/*
+ * Game controllers (GameController on iOS, so Bluetooth ones too). Report a controller when it connects and its state as often as it
+ * changes; what changed is sent to whichever game is running, as the Xbox-style controller Android games expect. `buttons` is a mask of
+ * 1 << TL_PAD_* (A, B, X, Y, L1, R1, left and right stick click, Start, Select, Mode, then D-pad up, down, left, right) -- see
+ * husk-tl-gamepad.h, or HuskGamepad.swift for the same list. Sticks are -1..1 with y up, as iOS reports them; triggers 0..1.
+ */
+void husk_gamepad_connect(int slot, const char *name);
+void husk_gamepad_disconnect(int slot);
+void husk_gamepad_update(int slot, unsigned buttons, float lx, float ly, float rx, float ry, float lt, float rt);
+
+/* The APK of the game started this session, or NULL. An engine cannot be loaded twice, nor two games at once. */
+const char *husk_native_loaded_apk(void);
+
+/* Whether the running game has no touch controls of its own and wants the on-screen controller (a PC game through DXVK). */
+bool husk_native_wants_controller(void);
+
+int  husk_unity_state(void);
+unsigned long husk_unity_frames(void);
+/* The frames the app NOW ON SCREEN has presented in the live session: the per-engine counter measured from the
+   session's own mark, so a thread the swapped-out session left running can never supply them. `epoch_out`
+   (optional) receives the census session epoch the reading belongs to. See the note in husk-tl-unity-app.c. */
+unsigned long husk_tl_frames_live(int *epoch_out);
+typedef struct husk_unity_perf { double fps, mean_ms, max_ms; } husk_unity_perf;
+void husk_unity_perf_snapshot(husk_unity_perf *out);          /* since the last call */
+void husk_unity_touch(int phase, int id, float x, float y);   /* phase 0 down, 1 move, 2 up, 3 cancel */
+void husk_unity_set_paused(bool paused);
+
+/* The app's package name from its manifest into `out`; false if it cannot be read. */
+bool husk_unity_package_name(const char *apk, char *out, unsigned long out_len);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

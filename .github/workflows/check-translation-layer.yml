@@ -1,0 +1,150 @@
+name: check-translation-layer
+
+# The translation layer is plain C that the app target compiles; on a Mac it can be
+# compiled on its own in seconds, against the real iPhoneOS SDK, without building
+# QEMU/ANGLE/MoltenVK first. That is the fast signal that a change to
+# src/translation-layer-next compiles the way the app builds it -- use it before
+# waiting hours on build-ios.yml.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/translation-layer-next/**'
+      - 'src/translation-layer/**'
+      # The JIT substrate is compiled into the app itself now, and this is the only
+      # fast gate over it (the IPA build is the other). See the src/ios-jit step.
+      - 'src/ios-jit/**'
+      - 'src/app/Husk/QemuEngineShim.c'
+      - '.github/workflows/check-translation-layer.yml'
+  pull_request:
+    paths:
+      - 'src/translation-layer-next/**'
+      - 'src/translation-layer/**'
+      - 'src/ios-jit/**'
+      - 'src/app/Husk/QemuEngineShim.c'
+
+jobs:
+  compile:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show SDK
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Compile src/translation-layer-next for arm64-apple-ios
+        run: |
+          set -euo pipefail
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          MIN=16.0
+          # Without nullglob, a glob that matches nothing stays as the literal text and clang is asked
+          # to compile a file called "*.m" -- a loop over files must not invent one when there are none.
+          shopt -s nullglob
+          # The same include dirs the app target uses; the sources define
+          # _DARWIN_C_SOURCE themselves, and no OTHER_CFLAGS are set in project.yml.
+          INC="-Isrc/translation-layer-next -Isrc/translation-layer"
+          mkdir -p /tmp/tl-obj
+          fail=0
+          # *.m as well as *.c: the Vulkan integration that MoltenVK hangs off is Objective-C
+          # (husk-tl-vulkan.m), and compiling only *.c left it outside the gate entirely -- a change
+          # there could only ever be caught five minutes into build-ipa-prebuilt, which is the exact
+          # thing this workflow exists to avoid.
+          for f in src/translation-layer-next/*.c src/translation-layer-next/*.m; do
+            obj="/tmp/tl-obj/$(basename "${f%.c}").o"
+            # The app target sets CLANG_ENABLE_OBJC_ARC = YES and these .m files use __weak, which
+            # does not exist under manual reference counting: without this the gate reports an error
+            # in a file that builds perfectly in the real target. Mirror the app's flags, or the gate
+            # is measuring a build nobody performs.
+            arc=""; case "$f" in *.m) arc="-fobjc-arc";; esac
+            if ! clang -isysroot "$SDK" \
+                   -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
+                   $INC $arc -c "$f" -o "$obj" 2> "/tmp/tl-obj/err.txt"; then
+              echo "::error file=$f::does not compile for arm64-apple-ios"
+              sed -n '1,12p' "/tmp/tl-obj/err.txt"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      # The app target compiles BOTH translation-layer directories, and the older one is where the
+      # loader and the bionic shim live. Compiling only -next left that half unguarded: a missing
+      # <math.h> in husk-tl-shim.c kept this workflow green while build-ipa-prebuilt failed five
+      # minutes in. Check the same set the app builds.
+      - name: Compile src/translation-layer for arm64-apple-ios
+        run: |
+          set -euo pipefail
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          MIN=16.0
+          # This tree has no .m files today, so the glob matches nothing -- and without nullglob that
+          # literal gets compiled as a filename. See the note in the step above.
+          shopt -s nullglob
+          INC="-Isrc/translation-layer-next -Isrc/translation-layer"
+          mkdir -p /tmp/tl-obj-old
+          fail=0
+          for f in src/translation-layer/*.c src/translation-layer/*.m; do
+            obj="/tmp/tl-obj-old/$(basename "${f%.c}").o"
+            arc=""; case "$f" in *.m) arc="-fobjc-arc";; esac
+            if ! clang -isysroot "$SDK" \
+                   -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
+                   $INC $arc -c "$f" -o "$obj" 2> "/tmp/tl-obj-old/err.txt"; then
+              echo "::error file=$f::does not compile for arm64-apple-ios"
+              sed -n '1,12p' "/tmp/tl-obj-old/err.txt"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      # The app target compiles Husk's JIT substrate too now -- src/ios-jit/husk-ios-jit.c
+      # and husk-brk.S, added to the Husk target's sources so the QEMU engine could leave
+      # the bundle (see .hermes/plans/engine-reset/qemu-dylib-removal.md). Neither step
+      # above covers them: they are not in src/translation-layer*, and the only other place
+      # that compiles them is the ninety-minute IPA build. Gate them here, with the same
+      # SDK and target, so a mistake in that file surfaces in a minute.
+      #
+      # No -I for QEMU's tree on purpose: that is the shape the APP compiles it in, where the
+      # file takes its libsystem fallback for tcg/tcg-apple-jit.h instead of QEMU's header
+      # (guarded with __has_include). The QEMU build's own shape is exercised by the
+      # from-source QEMU build, not here.
+      #
+      # What this gate cannot see: a duplicate symbol. husk_ios_jit_exec_gate and pipe2 are
+      # now in the same image as the translation layer's own definitions, which is why both
+      # are weak in husk-ios-jit.c; the link inside build-ipa-prebuilt is what proves it.
+      - name: Compile src/ios-jit + the engine shim for arm64-apple-ios
+        run: |
+          set -euo pipefail
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          MIN=16.0
+          mkdir -p /tmp/jit-obj
+          fail=0
+          for f in src/ios-jit/husk-ios-jit.c src/ios-jit/husk-brk.S; do
+            obj="/tmp/jit-obj/$(basename "${f%.c}").o"
+            if ! clang -isysroot "$SDK" \
+                   -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
+                   -c "$f" -o "$obj" 2> "/tmp/jit-obj/err.txt"; then
+              echo "::error file=$f::does not compile for arm64-apple-ios"
+              sed -n '1,12p' "/tmp/jit-obj/err.txt"
+              fail=1
+            fi
+          done
+          # Every engine entry point the app calls is defined here now.
+          #
+          # husk3.0 port note: src/app/Husk/QemuEngineShim.c belongs to the QEMU
+          # engine-reset and is NOT in this tree yet (this is upstream, whose layer
+          # is older). Skip the shim compile when the file is absent so the fast
+          # gate still passes on the C that *is* here; drop this guard once the
+          # engine-reset lands and the file exists.
+          if [ ! -f src/app/Husk/QemuEngineShim.c ]; then
+            echo "src/app/Husk/QemuEngineShim.c absent in this tree -- skipping the engine-shim compile"
+          elif ! clang -isysroot "$SDK" \
+                 -target "arm64-apple-ios${MIN}" -miphoneos-version-min=${MIN} \
+                 -c src/app/Husk/QemuEngineShim.c -o /tmp/jit-obj/QemuEngineShim.o \
+                 2> /tmp/jit-obj/err-shim.txt; then
+            echo "::error file=src/app/Husk/QemuEngineShim.c::does not compile for arm64-apple-ios"
+            sed -n '1,12p' /tmp/jit-obj/err-shim.txt
+            fail=1
+          fi
+          exit $fail

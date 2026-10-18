@@ -1,0 +1,133 @@
+name: build-ipa-prebuilt
+
+# A runnable IPA in minutes instead of hours, by reusing the graphics/QEMU
+# binaries from a released Husk IPA and compiling only the app. See
+# scripts/build_ipa_prebuilt.sh for why that is sound for a translation-layer
+# change, and what it does not cover.
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_tag:
+        description: Upstream release whose graphics/QEMU binaries to reuse
+        default: "1.1.0"
+      bundle_guest:
+        description: >-
+          Bundle the QEMU-under-Android guest payload (UEFI firmware, pc-bios
+          ROMs, qcow2 seeds)? 0 (default) ships without it -- the VM cannot boot
+          in that IPA but it is ~22 MB smaller. 1 restores the old behaviour.
+        default: "0"
+
+jobs:
+  ipa:
+    # Publishing the IPA as a release asset needs contents: write. Releases are served from a
+    # different endpoint than Actions artifacts, which are METERED: this account hit its artifact
+    # egress limit and that blocked delivery of a build that was otherwise completely fine.
+    permissions:
+      contents: write
+    # macos-26, not macos-14: the app project requires the Xcode 16+ project format
+    # (objectVersion 77) and the vendored StikJIT framework carries a .swiftinterface
+    # built by Apple Swift 6.4, which Xcode 16.2 (macos-14's newest) cannot read.
+    # macos-14 is also deprecated for Actions.
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Toolchain
+        run: |
+          # The project is objectVersion 77, the Xcode 16 format, and the runner's
+          # default Xcode is 15.x, which cannot read it ("Unable to read project").
+          # Pick the newest Xcode installed instead of relying on the default.
+          BEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "selecting $BEST"
+          sudo xcode-select -s "$BEST"
+          xcodebuild -version
+          export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
+          # qemu-img is not optional: the app's "Stage guest image" build phase uses it
+          # to create the firmware and userdata seed images the guest boots from.
+          brew install xcodegen qemu
+          rustup target add aarch64-apple-ios
+          qemu-img --version
+
+      # Husk's Java framework (android.* for apps on the Dalvik runtime) is pure Java, so unlike
+      # ANGLE/QEMU/MoltenVK it needs no Mac toolchain: javac + d8 build it anywhere. It is built here,
+      # FROM THIS REPO, because taking husk-framework.dex from the donor IPA froze it at the donor's
+      # version -- which means no change to src/java-framework could ever reach a build. Non-fatal on
+      # purpose for now: if it fails, scripts/build_ipa_prebuilt.sh falls back to the donor's dex and
+      # says so loudly in the log, rather than failing a build that used to work.
+      - name: Build Husk's Java framework (from this repo)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          JAVA_HOME="$(/usr/libexec/java_home -v 17 2>/dev/null || /usr/libexec/java_home)"
+          echo "JDK: $JAVA_HOME"
+          # R8 8.5+: the d8 in build-tools 34 crashes on these classes (see src/java-framework/build.sh).
+          for V in 8.9.35 8.7.18 8.5.35; do
+            if curl -fsSL -o "$RUNNER_TEMP/r8.jar" "https://maven.google.com/com/android/tools/r8/$V/r8-$V.jar"; then
+              echo "d8 from r8 $V"; break
+            fi
+          done
+          test -s "$RUNNER_TEMP/r8.jar"
+          # Output path matters: scripts/build_ipa_prebuilt.sh removes build/java-runtime before
+          # staging the donor's, so the repo-built dex has to live somewhere that survives that.
+          HUSK_JDK="$JAVA_HOME" HUSK_D8="$RUNNER_TEMP/r8.jar" \
+            bash src/java-framework/build.sh build/husk-framework.dex
+          ls -l build/husk-framework.dex
+
+      - name: Build IPA from upstream binaries
+        env:
+          HUSK_UPSTREAM_TAG: ${{ inputs.upstream_tag }}
+          HUSK_BUNDLE_GUEST: ${{ inputs.bundle_guest }}
+        run: bash ./scripts/build_ipa_prebuilt.sh build/Husk.ipa
+
+      # Checks the ARTIFACT, not the step. The dex step above is deliberately non-fatal, so a missing
+      # JDK or a Maven outage cannot block an iOS build -- but that also meant a COMPILE ERROR in our
+      # own Java went unnoticed: the packaging script fell back to the donor IPA's frozen dex, the
+      # workflow reported success, and the ad refusal, the touchable-web-page rule, the resource
+      # tables and the activity lifecycle were all dead code in every build. A step can fail quietly;
+      # the bytes in the IPA cannot. If this fails, fix the Java -- do not ship the IPA to a phone.
+      - name: Verify the shipped framework dex is built from this repo
+        run: |
+          set -euo pipefail
+          python3 tools/check-shipped-dex.py build/Husk.ipa || {
+            echo "::error::this IPA carries the DONOR's husk-framework.dex, so every change to src/java-framework is dead code in it. Fix the compile error in 'Build Husk's Java framework (from this repo)'."
+            exit 1
+          }
+      - name: Upload logs (also on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuilt-logs-${{ github.run_id }}
+          path: |
+            build/logs/
+            build/DerivedData*/build.log
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Husk-prebuilt-${{ github.sha }}
+          path: |
+            build/Husk.ipa
+            build/Husk.tipa
+          if-no-files-found: error
+          retention-days: 30
+
+      # Artifact downloads are metered and this account is over its egress limit, which is only a
+      # delivery problem -- the build itself succeeded. A release asset is served from a different
+      # endpoint and is not subject to that quota, so every build also publishes itself as a release
+      # with the IPA attached. That is the path the phone downloads from when artifacts will not come.
+      - name: Publish the IPA as a release asset
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="night-$(git rev-parse --short HEAD)"
+          # a re-run of the same commit replaces its own release rather than failing on the existing tag
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" build/Husk.ipa \
+            --title "Husk night $TAG" \
+            --notes "Built from $(git rev-parse HEAD) by build-ipa-prebuilt.yml (run ${{ github.run_id }}). Artifact egress on this account is metered, so this release is the delivery path."
+          echo "release: https://github.com/${{ github.repository }}/releases/download/$TAG/Husk.ipa"

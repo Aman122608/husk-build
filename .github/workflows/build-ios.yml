@@ -1,0 +1,132 @@
+name: build-ios
+
+# Husk builds with Xcode, so only a macOS runner can produce the IPA. This does
+# exactly what scripts/ci_build.sh does on a Mac. The FIRST run takes a couple of
+# hours: it fetches and cross-compiles QEMU, ANGLE and MoltenVK from source.
+#
+# Retries resume. build_ios.sh marks each finished stage with a stamp under
+# build/stamps, and skips a stage whose stamp exists -- so the cache has to carry
+# build/stamps back as well as the built tree. The cache is SAVED EVEN WHEN THE JOB
+# FAILS (if: always()), with a per-run key and a shared restore prefix, so each
+# attempt keeps whatever the last one finished instead of starting from zero.
+#
+# The IPA is signed ad hoc, with Husk's entitlements embedded, and is not tied to a
+# signing team: SideStore/AltStore re-sign at install, TrollStore keeps the
+# entitlements already in the binary. So no secrets are needed here.
+on:
+  # Manual only, or a version tag. A push must NOT kick off a ~2 hour build by
+  # itself; the fast check-translation-layer workflow covers every push instead.
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  ipa:
+    # macos-26, not macos-14: the app project requires the Xcode 16+ project format
+    # (objectVersion 77) and the vendored StikJIT framework carries a .swiftinterface
+    # built by Apple Swift 6.4, which Xcode 16.2 (macos-14's newest) cannot read.
+    # macos-14 is also deprecated for Actions.
+    runs-on: macos-26
+    timeout-minutes: 350            # the first cold build is ~2 hours
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # package_ipa.sh stamps the commit into the bundle
+
+      - name: Free disk space
+        # The Xcode image ships ~14 GB free; QEMU + ANGLE + MoltenVK + sources need more.
+        run: |
+          sudo rm -rf /usr/local/share/dotnet /usr/share/dotnet ~/.dotnet \
+                      ~/Library/Caches/Homebrew/downloads 2>/dev/null || true
+          df -h /
+
+      - name: Toolchain
+        # ci_build.sh and the scripts it calls use these; Xcode and rustup are on the image.
+        run: |
+          # The app project is objectVersion 77, the Xcode 16 format, and the runner's
+          # default Xcode is 15.x, which cannot read it ("Unable to read project").
+          # Without this the ~2 hour build gets all the way to the app and dies there.
+          BEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "selecting $BEST"
+          sudo xcode-select -s "$BEST"
+          xcodebuild -version
+          export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
+          brew install meson ninja pkg-config qemu xcodegen autoconf automake \
+                       libtool gettext gnu-sed coreutils
+          # virglrenderer's gallium meson.build imports yaml, and meson runs under
+          # Homebrew's python3, which does not have it. There is no brew formula for it
+          # (brew install pyyaml fails outright and takes the step with it), so install
+          # it into the interpreter meson will actually use.
+          for PY in /opt/homebrew/bin/python3 python3; do
+              command -v "$PY" >/dev/null 2>&1 || continue
+              "$PY" -c "import yaml" >/dev/null 2>&1 && continue
+              "$PY" -m pip install --break-system-packages --quiet pyyaml 2>/dev/null \
+                || "$PY" -m pip install --quiet pyyaml 2>/dev/null || true
+          done
+          /opt/homebrew/bin/python3 -c "import yaml" \
+            || { echo "meson's python3 still has no yaml; virglrenderer will fail" >&2; exit 1; }
+          rustup target add aarch64-apple-ios
+          qemu-img --version
+
+      # The key is written out in both steps rather than shared through env:, because
+      # the runner context is not available in a workflow-level env: block.
+      - name: Restore build cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            third_party/sources
+            third_party/build
+            third_party/gpu
+            build/ios-arm64
+            build/stamps
+          key: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh','scripts/build_ios.sh','scripts/build_angle_ios.sh','scripts/build_moltenvk_ios.sh','scripts/build_rppairing_ios.sh') }}-${{ github.run_id }}
+          # The newest cache from any earlier run of this workflow, finished or not.
+          restore-keys: |
+            husk-${{ runner.os }}-
+
+      - name: Build IPA + tipa
+        run: bash ./scripts/ci_build.sh build/Husk.ipa
+
+      - name: WebKit revision used
+        # ANGLE comes from an unpinned WebKit HEAD checkout, so a failure is only
+        # reproducible if the revision is recorded.
+        if: always()
+        run: git -C third_party/gpu/webkit rev-parse HEAD 2>/dev/null || echo "(no webkit checkout)"
+
+      - name: Save build cache (also on failure)
+        # if: always() is the whole point: a failed run still hands the next one the
+        # stages it did finish. Stamps make a partial tree safe to reuse.
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            third_party/sources
+            third_party/build
+            third_party/gpu
+            build/ios-arm64
+            build/stamps
+          key: husk-${{ runner.os }}-${{ hashFiles('scripts/sources.sh','scripts/build_ios.sh','scripts/build_angle_ios.sh','scripts/build_moltenvk_ios.sh','scripts/build_rppairing_ios.sh') }}-${{ github.run_id }}
+
+      - name: Upload build logs (also on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: build/logs/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Package artifacts
+        run: |
+          ls -la build/ || true
+          test -f build/Husk.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Husk-${{ github.sha }}
+          path: |
+            build/Husk.ipa
+            build/Husk.tipa
+          if-no-files-found: error
+          retention-days: 30
