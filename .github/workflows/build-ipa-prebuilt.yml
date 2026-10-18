@@ -8,8 +8,16 @@ on:
   workflow_dispatch:
     inputs:
       upstream_tag:
-        description: Upstream release whose graphics/QEMU binaries to reuse
-        default: "1.1.0"
+        description: >-
+          Upstream release whose graphics/QEMU binaries to reuse. It must carry
+          libhuskps4.dylib, upstream's PS4 layer, which cannot be built on a runner:
+          scripts/build_ps4_ios.sh needs two external source trees (Bachata-S4 on branch
+          husk, husk-fex) and upstream's ci_build.sh does not build it either. 1.1.0
+          predates that feature, so staging failed with 'donor IPA has no
+          libhuskps4.dylib'. Verified: 3.0's IPA carries libANGLE-shared.dylib,
+          MoltenVK.framework and libhuskps4.dylib in Payload/Husk.app/Frameworks.
+          The Java donor is separate (HUSK_JAVA_DONOR_TAG, default 2.0) and unchanged.
+        default: "3.0"
       bundle_guest:
         description: >-
           Bundle the QEMU-under-Android guest payload (UEFI firmware, pc-bios
