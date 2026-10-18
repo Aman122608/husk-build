@@ -268,23 +268,6 @@ void tl_egl_offscreen_windows(bool on) { g_offscreen_windows = on; }
 #define MAX_TEX_SURFACES 16
 static struct { EGLSurface s; void *win; int epoch; } g_tex_surf[MAX_TEX_SURFACES];
 static pthread_mutex_t g_tex_lock = PTHREAD_MUTEX_INITIALIZER;
-static void *tex_window_of(EGLSurface s)
-{
-    void *w = NULL;
-    pthread_mutex_lock(&g_tex_lock);
-    for (int i = 0; i < MAX_TEX_SURFACES; i++) if (g_tex_surf[i].s == s && s) { w = g_tex_surf[i].win; break; }
-    pthread_mutex_unlock(&g_tex_lock);
-    return w;
-}
-/* The session epoch a TextureView surface was made in, or -1 when this is not one of them. */
-static int tex_epoch_of(EGLSurface s)
-{
-    int e = -1;
-    pthread_mutex_lock(&g_tex_lock);
-    for (int i = 0; i < MAX_TEX_SURFACES; i++) if (g_tex_surf[i].s == s && s) { e = g_tex_surf[i].epoch; break; }
-    pthread_mutex_unlock(&g_tex_lock);
-    return e;
-}
 /* The Java runtime's compositor (husk-tl-dvm-android.c), where it is linked: it holds the screen's surface, so an app that makes
  * an EGL window of its own (SDL, Unity on a SurfaceView) draws off screen and each swap hands the frame to it, to be put on the
  * screen under the app's views. Two window surfaces on one layer is what a phone refuses (EGL_BAD_ALLOC). */
@@ -293,30 +276,29 @@ __attribute__((weak)) void tl_javaapp_app_pixels(const void *px, int w, int h);
 #define MAX_COMP_SURFACES 8
 /* Each composited surface carries the SESSION epoch it was made in, like the texture ones above. */
 static struct { EGLSurface s; int epoch; } g_comp_surf[MAX_COMP_SURFACES];
-/* The session epoch a composited surface was made in, or -1 when s is not one of them. */
-static int comp_epoch_of(EGLSurface s)
-{
-    int e = -1;
-    if (!s) return -1;
-    pthread_mutex_lock(&g_tex_lock);
-    for (int i = 0; i < MAX_COMP_SURFACES; i++) if (g_comp_surf[i].s == s) { e = g_comp_surf[i].epoch; break; }
-    pthread_mutex_unlock(&g_tex_lock);
-    return e;
-}
 /* Every real WINDOW surface this layer has made, with the session epoch it was made in: the compositor's own surface,
  * or a lone app's engine drawing straight into its layer. A swap from a surface whose session has ended is refused in
  * w_eglSwapBuffers -- the OS-level half of "a closed app cannot present". Bounded; a surface that did not fit is simply
  * left ungated (it keeps the old behaviour), so this table can never stop a live app from drawing. */
 #define MAX_WIN_SURFACES 24
 static struct { EGLSurface s; int epoch; } g_win_surf[MAX_WIN_SURFACES];
-/* The session epoch a real window surface was made in, or -1 when this layer did not make it. */
-static int win_epoch_of(EGLSurface s)
+/* Which of the layer's own surfaces this is and the session it belongs to, in ONE pass under the lock, so a swap pays a
+ * single mutex (the old code took it twice: tex_window_of then comp_surface). `kind_out` is SURF_TEX/COMP/WIN, and
+ * `texwin_out` is the TextureView window to post to. Returns the creation epoch, or -1 when this layer did not make the
+ * surface (a lone app's frame-dump pbuffer, say) -- an unregistered surface is never gated. */
+static int surface_session(EGLSurface s, int *kind_out, void **texwin_out)
 {
-    int e = -1;
+    int e = -1, kind = 0;
+    if (texwin_out) *texwin_out = NULL;
+    if (kind_out) *kind_out = 0;
     if (!s) return -1;
     pthread_mutex_lock(&g_tex_lock);
-    for (int i = 0; i < MAX_WIN_SURFACES; i++) if (g_win_surf[i].s == s) { e = g_win_surf[i].epoch; break; }
+    for (int i = 0; i < MAX_TEX_SURFACES; i++) if (g_tex_surf[i].s == s) { e = g_tex_surf[i].epoch; kind = 1; if (texwin_out) *texwin_out = g_tex_surf[i].win; goto done; }
+    for (int i = 0; i < MAX_COMP_SURFACES; i++) if (g_comp_surf[i].s == s) { e = g_comp_surf[i].epoch; kind = 2; goto done; }
+    for (int i = 0; i < MAX_WIN_SURFACES; i++) if (g_win_surf[i].s == s) { e = g_win_surf[i].epoch; kind = 3; goto done; }
+done:
     pthread_mutex_unlock(&g_tex_lock);
+    if (kind_out) *kind_out = kind;
     return e;
 }
 /* The session just ended (husk_tl_session_close, AFTER the census epoch advanced so the epoch check above is armed).
@@ -494,18 +476,12 @@ static void egl_refuse_dead_swap(EGLSurface s, int made_epoch, int cur_epoch)
 static EGLBoolean w_eglSwapBuffers(EGLDisplay d, EGLSurface s)
 {
     int cur_epoch = tl_guest_thread_epoch();
-    void *texwin = tex_window_of(s);
-    if (texwin) {
-        int te = tex_epoch_of(s);
-        if (te >= 0 && te != cur_epoch) { egl_refuse_dead_swap(s, te, cur_epoch); return EGL_TRUE; }
-        tex_swap(d, s, texwin); return EGL_TRUE;
-    }
-    int ce = comp_epoch_of(s);
-    int made = ce;
-    if (made < 0) made = win_epoch_of(s);          /* a real window surface this layer made: same session rule */
+    int kind = 0; void *texwin = NULL;
+    int made = surface_session(s, &kind, &texwin);   /* one lock: the surface, its kind, and the session it was made in */
     if (made >= 0 && made != cur_epoch) { egl_refuse_dead_swap(s, made, cur_epoch); return EGL_TRUE; }
+    if (kind == 1) { tex_swap(d, s, texwin); return EGL_TRUE; }
     unsigned long n = atomic_fetch_add(&E.presented, 1) + 1;
-    if (ce >= 0) {
+    if (kind == 2) {
         EGLint w = 0, h = 0;
         const uint8_t *px = read_back(d, s, &w, &h);
         if (px && tl_javaapp_app_pixels) tl_javaapp_app_pixels(px, w, h);
