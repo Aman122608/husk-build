@@ -39,6 +39,7 @@ struct ContentView: View {
     @ObservedObject private var statuses = GameStatusStore.shared
     @State private var showWhatsNew = false
     /// The note for the build that is running, shown once when it first opens.
+    /// Drawn into the hierarchy below rather than presented as a sheet -- see the note there.
     @State private var showBuildNotes = false
     @AppStorage(Holiday.key) private var holiday = true
 
@@ -137,6 +138,25 @@ struct ContentView: View {
                     }
             }
 
+            // What THIS build is for, once when it first opens, over everything.
+            //
+            // Drawn into the hierarchy, not presented as a sheet. The only trigger a plain
+            // launch reaches is `presentBuildNoteIfDue()` in the `.onAppear` below, and that
+            // runs during the launch frame, before the window has finished coming up: UIKit
+            // refuses a presentation asked for then and SwiftUI drops it with nothing in the
+            // log. That is why the note never appeared on a plain open (the log shows the
+            // decision was reached -- `[ui] no JIT yet` is the evaluate() call two lines below
+            // the trigger in the same onAppear). A view in the hierarchy cannot be dropped
+            // that way. Marked seen when dismissed, so it is said once per build.
+            if showBuildNotes {
+                BuildNotesPanel(build: BuildNotes.current) {
+                    BuildNotes.markSeen()
+                    withAnimation(.easeInOut(duration: 0.22)) { showBuildNotes = false }
+                }
+                .transition(.opacity)
+                .zIndex(5)
+            }
+
         }
         .tint(theme.accentColor)
         // The user's appearance: the system's, unless they pinned one. Set on the
@@ -188,11 +208,9 @@ struct ContentView: View {
                 DispatchQueue.main.async { presentBuildNoteIfDue() }
             }
         }
-        // What THIS build is for, once when it first opens. Non-blocking: a swipe down dismisses it too,
-        // and either way it is marked seen so it is said once. Settings keeps it readable.
-        .sheet(isPresented: $showBuildNotes, onDismiss: { BuildNotes.markSeen() }) {
-            BuildNotesSheet(note: BuildNotes.note, build: BuildNotes.current) { showBuildNotes = false }
-        }
+        // What THIS build is for is drawn into the hierarchy at the top of the ZStack above, not
+        // presented here: a sheet asked for during the launch frame is silently dropped.
+
         // A newer Husk is on GitHub.
         .alert("Husk \(updates.available?.version ?? "") Is Available", isPresented: Binding(
                 get: { updates.available != nil && !showOnboarding && !showWhatsNew && !showBuildNotes && crash.pending == nil },
@@ -296,9 +314,17 @@ struct ContentView: View {
     /// notes, and each of those hands on here when it is done. `BuildNotes.due()` is what makes
     /// it once per build -- and it is false for a build that never stamped its commit, which
     /// cannot be told apart from the next one.
+    ///
+    /// This is the decision point, and it says what it decided: on a new build the line must be
+    /// the "due" one and the panel above must come up. Its absence is what left the previous run
+    /// with a note that never appeared and no way to tell why.
     private func presentBuildNoteIfDue() {
-        guard crash.pending == nil, !showOnboarding, !showWhatsNew, !showBuildNotes, BuildNotes.due() else { return }
-        showBuildNotes = true
+        guard crash.pending == nil, !showOnboarding, !showWhatsNew, !showBuildNotes else { return }
+        let due = BuildNotes.due()
+        HuskLog.log("build", due
+                    ? "notes: due for \(BuildNotes.identity) -- presenting"
+                    : "notes: already seen \(BuildNotes.identity) -- not showing")
+        if due { withAnimation(.easeInOut(duration: 0.25)) { showBuildNotes = true } }
     }
 
     private func evaluate() {

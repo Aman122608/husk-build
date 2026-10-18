@@ -191,45 +191,53 @@ struct BuildNotesBody: View {
 }
 
 /// The note for the running build, once, when it first opens.
-struct BuildNotesSheet: View {
-    let note: BuildNotes.Note?
+///
+/// Drawn as a full-screen view in `ContentView`'s hierarchy, not presented as a sheet: the
+/// launch-frame presentation it used to be is refused by UIKit and dropped by SwiftUI, so the
+/// note never appeared on a plain open. It covers the tabs exactly as the sheet did and is
+/// dismissed the same way -- the button, or a tap anywhere outside the card -- and either marks
+/// it seen.
+struct BuildNotesPanel: View {
     let build: String
     var done: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.accent)
-                        Text("WHAT THIS BUILD IS FOR")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Theme.textDim)
-                        Spacer(minLength: 0)
+        ZStack {
+            Theme.bg.ignoresSafeArea()
+                .onTapGesture(perform: done)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Theme.accent)
+                            Text("WHAT THIS BUILD IS FOR")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Theme.textDim)
+                            Spacer(minLength: 0)
+                        }
+                        BuildNotesBody(note: BuildNotes.note, build: build)
                     }
-                    BuildNotesBody(note: note, build: build)
+                    .padding(22)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.rowCorner, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.rowCorner, style: .continuous)
+                                .stroke(Theme.hairline, lineWidth: 0.5))
+                    .padding(.horizontal, 18)
+                    .padding(.top, 22)
                 }
-                .padding(22)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.rowCorner, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: Theme.rowCorner, style: .continuous)
-                            .stroke(Theme.hairline, lineWidth: 0.5))
+                Button(action: done) {
+                    Text("Got it")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
                 .padding(.horizontal, 18)
-                .padding(.top, 22)
+                .padding(.vertical, 16)
             }
-            Button(action: done) {
-                Text("Got it")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.accent)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 16)
         }
-        .background(Theme.bg.ignoresSafeArea())
     }
 }
 
