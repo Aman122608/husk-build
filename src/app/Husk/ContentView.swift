@@ -141,6 +141,16 @@ struct ContentView: View {
             Text("Full Android emulation is experimental. It is slow, takes minutes to start, and can freeze or crash Husk. "
                + "Games and apps run much better in the Translation Layer.")
         }
+        // The payload is here but the engine that runs it is not: QemuRunner publishes this and says so by name, rather than
+        // discovering it inside qemu_init() and looking like a hang (#122). Asked before a guest is offered, so the sentence
+        // is the answer to pressing Start.
+        .alert("Android is not in this build", isPresented: Binding(
+                get: { runner.guestUnavailable != nil },
+                set: { if !$0 { runner.guestUnavailable = nil } })) {
+            Button("OK", role: .cancel) { runner.guestUnavailable = nil }
+        } message: {
+            Text(runner.guestUnavailable ?? "")
+        }
         // A game that ended Husk last time: say so, with its report.
         .sheet(item: Binding(get: { showOnboarding ? nil : crash.pending }, set: { crash.pending = $0 }),
                onDismiss: { if WhatsNew.due { showWhatsNew = true } }) { r in
