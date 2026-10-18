@@ -66,7 +66,7 @@ rm -rf "$WORK/x"
 mkdir -p "$WORK/x"
 ( cd "$WORK/x" && unzip -q "$IPA" )
 DONOR="$WORK/x/Payload/Husk.app/Frameworks"
-for f in libANGLE-shared.dylib; do
+for f in libANGLE-shared.dylib libhuskps4.dylib; do
     [ -f "$DONOR/$f" ] || { echo "donor IPA has no $f" >&2; exit 1; }
 done
 [ -d "$DONOR/MoltenVK.framework" ] || { echo "donor IPA has no MoltenVK.framework" >&2; exit 1; }
@@ -74,6 +74,16 @@ done
 step "stage ANGLE from the donor"
 mkdir -p "$SYSROOT_LIB" "$APP_LIB"
 install -m 755 "$DONOR/libANGLE-shared.dylib" "$SYSROOT_LIB/libANGLE-shared.dylib"
+
+# The PS4/console layer, also from the donor, and for a harder reason than ANGLE:
+# scripts/build_ps4_ios.sh builds it from TWO external source trees (Bachata-S4 on
+# branch husk, and husk-fex) that a CI runner does not have, and upstream's own
+# ci_build.sh does not build it either. project.yml embeds and links it (it is
+# opened by path only on iOS 17.4+), so a build without it fails at link with
+# "The file libhuskps4.dylib couldn't be opened because there is no such file".
+# Taking the donor's copy keeps upstream's PS4 support working instead of dropping it.
+step "stage the PS4 layer from the donor"
+install -m 755 "$DONOR/libhuskps4.dylib" "$APP_LIB/libhuskps4.dylib"
 
 # QEMU is deliberately NOT staged any more, even though the donor has it.
 #
