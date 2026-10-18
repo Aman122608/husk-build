@@ -36,6 +36,16 @@ void *tl_egl_resolve(const char *name);
 
 unsigned long tl_egl_frames_presented(void);
 
+/* Frames this layer has handed to the runtime's ON-SCREEN compositor (the visible surface), and swaps it refused
+ * because their surface belonged to a session that has already ended. Monotonic; a session's own count is the
+ * difference from a mark taken when the session started (husk-tl-unity-app.c). */
+unsigned long tl_egl_composited_frames(void);
+unsigned long tl_egl_dropped_frames(void);
+
+/* A session has ended (husk_tl_session_close): drop the frame it had composited and refuse further swaps from the
+ * surfaces it made, so a closed app's parked threads cannot keep presenting. Call AFTER the census epoch advances. */
+void tl_egl_session_ended(void);
+
 #ifdef __cplusplus
 }
 #endif

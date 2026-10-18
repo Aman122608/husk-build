@@ -40,6 +40,8 @@ static struct {
     int frame_every;
     bool latest_only;           /* overwrite latest.bmp instead of keeping every frame */
     atomic_ulong presented;
+    atomic_ulong composited;    /* frames handed to the runtime's on-screen compositor (the visible surface) */
+    atomic_ulong dropped;       /* swaps refused because their surface's session had ended */
     EGLDisplay display;
     pthread_mutex_t lock;
 } E = { .lock = PTHREAD_MUTEX_INITIALIZER };
@@ -111,6 +113,11 @@ bool tl_egl_init(const char *egl_path, const char *gles_path, const char *frame_
 }
 
 unsigned long tl_egl_frames_presented(void) { return atomic_load(&E.presented); }
+/* What a session is actually COMPOSITING to the screen, and how many of its frames were refused because they came from
+ * a session that had already ended. Both monotonic over the process; the session's own reading is a difference from a
+ * mark taken when the session started (husk-tl-unity-app.c: live_frames_mark / live_screen). */
+unsigned long tl_egl_composited_frames(void) { return atomic_load(&E.composited); }
+unsigned long tl_egl_dropped_frames(void) { return atomic_load(&E.dropped); }
 
 /* ------------------------------------------------------------ EGL wrappers */
 
@@ -255,9 +262,11 @@ static EGLint w_eglGetError(void) { return E.ready ? a_eglGetError() : 0x3001; }
 static bool g_offscreen_windows;
 /* A game that draws with Vulkan on the window's layer still makes an OpenGL ES context first, to read what the device offers. The layer is MoltenVK's, so ANGLE gets a buffer instead. */
 void tl_egl_offscreen_windows(bool on) { g_offscreen_windows = on; }
-/* surfaces made on a TextureView's window: off-screen, read back into its SurfaceTexture at each swap */
+/* surfaces made on a TextureView's window: off-screen, read back into its SurfaceTexture at each swap.
+ * Each carries the SESSION epoch it was made in, so a swap from it after that session has ended can be
+ * refused: a thread left parked by a close must not keep presenting (see w_eglSwapBuffers). */
 #define MAX_TEX_SURFACES 16
-static struct { EGLSurface s; void *win; } g_tex_surf[MAX_TEX_SURFACES];
+static struct { EGLSurface s; void *win; int epoch; } g_tex_surf[MAX_TEX_SURFACES];
 static pthread_mutex_t g_tex_lock = PTHREAD_MUTEX_INITIALIZER;
 static void *tex_window_of(EGLSurface s)
 {
@@ -267,20 +276,58 @@ static void *tex_window_of(EGLSurface s)
     pthread_mutex_unlock(&g_tex_lock);
     return w;
 }
+/* The session epoch a TextureView surface was made in, or -1 when this is not one of them. */
+static int tex_epoch_of(EGLSurface s)
+{
+    int e = -1;
+    pthread_mutex_lock(&g_tex_lock);
+    for (int i = 0; i < MAX_TEX_SURFACES; i++) if (g_tex_surf[i].s == s && s) { e = g_tex_surf[i].epoch; break; }
+    pthread_mutex_unlock(&g_tex_lock);
+    return e;
+}
 /* The Java runtime's compositor (husk-tl-dvm-android.c), where it is linked: it holds the screen's surface, so an app that makes
  * an EGL window of its own (SDL, Unity on a SurfaceView) draws off screen and each swap hands the frame to it, to be put on the
  * screen under the app's views. Two window surfaces on one layer is what a phone refuses (EGL_BAD_ALLOC). */
 __attribute__((weak)) bool tl_javaapp_compositing(void);
 __attribute__((weak)) void tl_javaapp_app_pixels(const void *px, int w, int h);
 #define MAX_COMP_SURFACES 8
-static EGLSurface g_comp_surf[MAX_COMP_SURFACES];
-static bool comp_surface(EGLSurface s)
+/* Each composited surface carries the SESSION epoch it was made in, like the texture ones above. */
+static struct { EGLSurface s; int epoch; } g_comp_surf[MAX_COMP_SURFACES];
+/* The session epoch a composited surface was made in, or -1 when s is not one of them. */
+static int comp_epoch_of(EGLSurface s)
 {
-    bool r = false;
+    int e = -1;
+    if (!s) return -1;
     pthread_mutex_lock(&g_tex_lock);
-    for (int i = 0; i < MAX_COMP_SURFACES && s; i++) if (g_comp_surf[i] == s) r = true;
+    for (int i = 0; i < MAX_COMP_SURFACES; i++) if (g_comp_surf[i].s == s) { e = g_comp_surf[i].epoch; break; }
     pthread_mutex_unlock(&g_tex_lock);
-    return r;
+    return e;
+}
+/* Every real WINDOW surface this layer has made, with the session epoch it was made in: the compositor's own surface,
+ * or a lone app's engine drawing straight into its layer. A swap from a surface whose session has ended is refused in
+ * w_eglSwapBuffers -- the OS-level half of "a closed app cannot present". Bounded; a surface that did not fit is simply
+ * left ungated (it keeps the old behaviour), so this table can never stop a live app from drawing. */
+#define MAX_WIN_SURFACES 24
+static struct { EGLSurface s; int epoch; } g_win_surf[MAX_WIN_SURFACES];
+/* The session epoch a real window surface was made in, or -1 when this layer did not make it. */
+static int win_epoch_of(EGLSurface s)
+{
+    int e = -1;
+    if (!s) return -1;
+    pthread_mutex_lock(&g_tex_lock);
+    for (int i = 0; i < MAX_WIN_SURFACES; i++) if (g_win_surf[i].s == s) { e = g_win_surf[i].epoch; break; }
+    pthread_mutex_unlock(&g_tex_lock);
+    return e;
+}
+/* The session just ended (husk_tl_session_close, AFTER the census epoch advanced so the epoch check above is armed).
+ * Two things, together, end the closing app's ability to present: (1) the frame it had composited is dropped from the
+ * runtime's on-screen compositor, so a render thread still running cannot keep redrawing the dead app's last frame;
+ * (2) every surface it made now carries an older epoch, so any further swap from its quarantined threads is refused
+ * above. This is the FRAMES being cut off, never the threads being killed -- the close leaves them parked by design. */
+void tl_egl_session_ended(void)
+{
+    if (tl_javaapp_app_pixels) tl_javaapp_app_pixels(NULL, 0, 0);
+    tl_log_line("egl: session ended: the composited frame is dropped and swaps from this session's surfaces are refused (a closed app cannot present into the screen)");
 }
 /* The current frame of a surface, read back (bottom-up RGBA, in a buffer of this thread's). */
 static const uint8_t *read_back(EGLDisplay d, EGLSurface s, EGLint *pw, EGLint *ph)
@@ -311,7 +358,7 @@ static EGLSurface w_eglCreateWindowSurface(EGLDisplay d, EGLConfig cfg, void *wi
         EGLSurface s = a_eglCreatePbufferSurface(d, cfg, pb);
         if (s) {
             pthread_mutex_lock(&g_tex_lock);
-            for (int i = 0; i < MAX_TEX_SURFACES; i++) if (!g_tex_surf[i].s) { g_tex_surf[i].s = s; g_tex_surf[i].win = win; break; }
+            for (int i = 0; i < MAX_TEX_SURFACES; i++) if (!g_tex_surf[i].s) { g_tex_surf[i].s = s; g_tex_surf[i].win = win; g_tex_surf[i].epoch = tl_guest_thread_epoch(); break; }
             pthread_mutex_unlock(&g_tex_lock);
         }
         tl_log_line("egl: TextureView window %dx%d -> off-screen surface %p", pb[1], pb[3], s);
@@ -322,7 +369,7 @@ static EGLSurface w_eglCreateWindowSurface(EGLDisplay d, EGLConfig cfg, void *wi
         EGLSurface s = a_eglCreatePbufferSurface(d, cfg, pb);
         if (s) {
             pthread_mutex_lock(&g_tex_lock);
-            for (int i = 0; i < MAX_COMP_SURFACES; i++) if (!g_comp_surf[i]) { g_comp_surf[i] = s; break; }
+            for (int i = 0; i < MAX_COMP_SURFACES; i++) if (!g_comp_surf[i].s) { g_comp_surf[i].s = s; g_comp_surf[i].epoch = tl_guest_thread_epoch(); break; }
             pthread_mutex_unlock(&g_tex_lock);
         }
         tl_log_line("egl: window %dx%d -> surface %p, composited under the app's views", pb[1], pb[3], s);
@@ -344,6 +391,11 @@ static EGLSurface w_eglCreateWindowSurface(EGLDisplay d, EGLConfig cfg, void *wi
     }
     void *layer = tl_nwindow_native(win);
     EGLSurface s = a_eglCreateWindowSurface(d, cfg, layer, at);
+    if (s) {
+        pthread_mutex_lock(&g_tex_lock);
+        for (int i = 0; i < MAX_WIN_SURFACES; i++) if (!g_win_surf[i].s) { g_win_surf[i].s = s; g_win_surf[i].epoch = tl_guest_thread_epoch(); break; }
+        pthread_mutex_unlock(&g_tex_lock);
+    }
     tl_log_line("egl: window surface %p on layer %p (%dx%d), eglGetError %#x", s, layer, tl_nwindow_width(win), tl_nwindow_height(win), a_eglGetError());
     return s;
 }
@@ -351,8 +403,9 @@ static EGLBoolean w_eglDestroySurface(EGLDisplay d, EGLSurface s)
 {
     pthread_mutex_lock(&g_tex_lock);
     for (int i = 0; i < MAX_TEX_SURFACES; i++) if (g_tex_surf[i].s == s) g_tex_surf[i].s = NULL;
+    for (int i = 0; i < MAX_WIN_SURFACES && s; i++) if (g_win_surf[i].s == s) g_win_surf[i].s = NULL;
     bool comp = false;
-    for (int i = 0; i < MAX_COMP_SURFACES && s; i++) if (g_comp_surf[i] == s) { g_comp_surf[i] = NULL; comp = true; }
+    for (int i = 0; i < MAX_COMP_SURFACES && s; i++) if (g_comp_surf[i].s == s) { g_comp_surf[i].s = NULL; comp = true; }
     pthread_mutex_unlock(&g_tex_lock);
     if (comp && tl_javaapp_app_pixels) tl_javaapp_app_pixels(NULL, 0, 0);
     return a_eglDestroySurface(d, s);
@@ -425,15 +478,38 @@ static void tex_swap(EGLDisplay d, EGLSurface s, void *win)
     a_glBindFramebuffer(0x8CA8, (unsigned)old_fb);
     tl_nwindow_post(win, buf, w, h, true);
 }
+/* A swap from a surface whose session has ended is refused: the guest thread that made it was QUARANTINED by the
+ * close (this project never stops a thread that ran guest code), and it may keep swapping for as long as it runs --
+ * but a closed app's frames must not reach the screen, which is exactly the "it booted Lewdest House's menu with dead
+ * buttons" symptom when the next app's session is live. The surface carries the session epoch it was made in; the
+ * live session is tl_guest_thread_epoch(). Bounded logging, one atomic per refused frame. */
+static void egl_refuse_dead_swap(EGLSurface s, int made_epoch, int cur_epoch)
+{
+    atomic_fetch_add(&E.dropped, 1);
+    static atomic_int noted;
+    if (atomic_fetch_add(&noted, 1) < 4)
+        tl_log_line("egl: refused a swap from a session that has ended (surface %p was made in session epoch %d; the live session is epoch %d) -- a closed app cannot present into the screen",
+                    s, made_epoch, cur_epoch);
+}
 static EGLBoolean w_eglSwapBuffers(EGLDisplay d, EGLSurface s)
 {
+    int cur_epoch = tl_guest_thread_epoch();
     void *texwin = tex_window_of(s);
-    if (texwin) { tex_swap(d, s, texwin); return EGL_TRUE; }
+    if (texwin) {
+        int te = tex_epoch_of(s);
+        if (te >= 0 && te != cur_epoch) { egl_refuse_dead_swap(s, te, cur_epoch); return EGL_TRUE; }
+        tex_swap(d, s, texwin); return EGL_TRUE;
+    }
+    int ce = comp_epoch_of(s);
+    int made = ce;
+    if (made < 0) made = win_epoch_of(s);          /* a real window surface this layer made: same session rule */
+    if (made >= 0 && made != cur_epoch) { egl_refuse_dead_swap(s, made, cur_epoch); return EGL_TRUE; }
     unsigned long n = atomic_fetch_add(&E.presented, 1) + 1;
-    if (comp_surface(s)) {
+    if (ce >= 0) {
         EGLint w = 0, h = 0;
         const uint8_t *px = read_back(d, s, &w, &h);
         if (px && tl_javaapp_app_pixels) tl_javaapp_app_pixels(px, w, h);
+        atomic_fetch_add(&E.composited, 1);
         if (n <= 3 || n % 600 == 0) tl_log_line("egl: swap #%lu (composited)", n);
         return EGL_TRUE;
     }

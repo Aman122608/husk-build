@@ -35,6 +35,7 @@
 #include "husk-tl-codewrite.h"
 #include "husk-tl-godot.h"
 #include "husk-tl-unity.h"
+#include "husk-tl-egl.h"
 #include "husk-tl-audio.h"
 #include "husk-tl-geode.h"
 
@@ -105,9 +106,14 @@ static unsigned long engine_frames_for(int engine);
  * reports only the frames presented since. A read that finds the epoch has moved on since the mark
  * reports 0 -- "no frame of this app's own" -- never an earlier session's frames.
  */
-static struct { int epoch; unsigned long base; } g_live_frames = { -1, 0 };
+static struct { int epoch; unsigned long base, comp_base, drop_base; } g_live_frames = { -1, 0, 0, 0 };
 static void live_frames_mark(void);
 unsigned long husk_tl_frames_live(int *epoch_out);
+/* The frames this session has COMPOSITED to the screen and the swaps it refused because their surface belonged to a
+ * session that has ended -- both read from the EGL layer (tl_egl_composited_frames / tl_egl_dropped_frames) and both
+ * keyed to the SAME session mark, so the heartbeat can say what is really on the way to the screen, named, not only
+ * what this engine's own counter reports. Defined beside husk_tl_frames_live. */
+static void live_screen(unsigned long *composited, unsigned long *dropped, int *epoch_out);
 
 static struct {
     atomic_int state;
@@ -362,6 +368,8 @@ static void guest_exit(int status)
 static void tl_swapstall_tick(unsigned long frames, bool running, int epoch);
 /* The periodic hot-path counter summary, defined below beside the buffer helper it shares with the stall probe. */
 static void tl_perf_summary(const char *tag);
+/* The app now on screen, by name; defined below beside the stall probe. */
+static void ss_app_name(char *out, size_t n);
 
 /* Says every few seconds that the engine is alive and how much memory the phone says is left: without it a silent death
  * cannot be told from a frozen game, or a jetsam kill from a crash. */
@@ -369,7 +377,7 @@ static void *heartbeat_thread(void *arg)
 {
     (void)arg;
     pthread_setname_np("husk-unity-hb");
-    unsigned long last = 0;
+    unsigned long last = 0, last_comp = 0, last_drop = 0;
     for (int tick = 0;; tick++) {
         if (tick < 40) usleep(500000); else sleep(3);          /* twice a second for the first twenty seconds */
         /* The LIVE SESSION's own frames, never a process-global counter a quarantined thread can still tick
@@ -379,10 +387,21 @@ static void *heartbeat_thread(void *arg)
         unsigned long f = husk_tl_frames_live(&ep);
         unsigned long delta = f >= last ? f - last : 0;
         last = f;
+        /* What this session is COMPOSITING, not only what its engine's own counter says: the EGL layer's reading of
+         * frames handed to the on-screen compositor, and of swaps it refused because their surface belonged to a
+         * session that has ended. A closed app whose threads were parked but kept presenting used to be invisible
+         * here -- "0 frames" while `egl: swap #N (composited)` climbed -- so now the same line carries both, named. */
+        unsigned long comp = 0, drop = 0;
+        live_screen(&comp, &drop, NULL);
+        unsigned long dcomp = comp >= last_comp ? comp - last_comp : 0; last_comp = comp;
+        unsigned long ddrop = drop >= last_drop ? drop - last_drop : 0; last_drop = drop;
+        char scr_app[240]; ss_app_name(scr_app, sizeof(scr_app));
 #if TARGET_OS_IPHONE
-        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d), %zu MiB left before jetsam", f, delta, ep, os_proc_available_memory() >> 20);
+        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d), %zu MiB left before jetsam; on screen: %lu frame(s) composited (+%lu) from '%s', %lu swap(s) (+%lu) refused from a session that has ended",
+                    f, delta, ep, os_proc_available_memory() >> 20, comp, dcomp, scr_app, drop, ddrop);
 #else
-        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d)", f, delta, ep);
+        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d); on screen: %lu frame(s) composited (+%lu) from '%s', %lu swap(s) (+%lu) refused from a session that has ended",
+                    f, delta, ep, comp, dcomp, scr_app, drop, ddrop);
 #endif
         /* A swapped-in app that presented a frame and then stopped drawing may be blocked on a layer lock a parked thread
          * holds (tl_swapstall_tick). This is where such a stall names itself, once per stall. */
@@ -1074,9 +1093,18 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
     }
 
     char app[240]; ss_app_name(app, sizeof(app));
+    unsigned long comp = 0, drop = 0; live_screen(&comp, &drop, NULL);
+    if (frames == 0)
+        w = ss_put(line, w, sizeof(line),
+                   "swap-stall: the app now on screen (%s) has presented NO frame of its own since the swap (0 frames) and is RUNNING (engine %s, state %s, session epoch %d) -- a live session that presents nothing of its own is a stall, not an absence of one, and it can no longer be masked by a thread the swapped-out session left running (those are refused now: see 'refused' below); layer locks:",
+                   app, engine_name(A.engine), state_name(atomic_load(&A.state)), epoch);
+    else
+        w = ss_put(line, w, sizeof(line),
+                   "swap-stall: the app now on screen (%s) presented %lu frame(s) of its own since the swap, then no new frame for %.1f s while RUNNING (engine %s, state %s, session epoch %d) -- counted from the live session only, never from a thread the swapped-out session left running; the difference from this app run alone is exactly what the swap left behind; layer locks:",
+                   app, frames, quiet_s, engine_name(A.engine), state_name(atomic_load(&A.state)), epoch);
     w = ss_put(line, w, sizeof(line),
-               "swap-stall: the app now on screen (%s) presented %lu frame(s) of its own since the swap, then no new frame for %.1f s while RUNNING (engine %s, state %s, session epoch %d) -- counted from the live session only, never from a thread the swapped-out session left running; the difference from this app run alone is exactly what the swap left behind; layer locks:",
-               app, frames, quiet_s, engine_name(A.engine), state_name(atomic_load(&A.state)), epoch);
+               " [on screen this session: %lu frame(s) composited, %lu swap(s) refused from a session that has ended -- a non-zero refused count is a closed app whose parked threads still tried to present]",
+               comp, drop);
     for (int i = 0; i < nlk; i++) {
         int is_parked = 0;
         if (lk[i].depth > 0) {
@@ -1225,7 +1253,11 @@ static void tl_swapstall_tick(unsigned long frames, bool running, int epoch)
     if (frames != g_ss_last_frames) {          /* the app is drawing: any earlier stall ended, arm a fresh one */
         g_ss_last_frames = frames; g_ss_last_progress = now; g_ss_printed = 0; return;
     }
-    if (frames == 0) { g_ss_last_progress = now; return; }   /* nothing presented yet: not a stall on a frame */
+    /* The frame count has NOT moved. A count stuck at 0 is a stall like any other: a session that presents nothing of
+     * its own -- never a first frame, or none since the last tick -- was invisible here before, because the old code
+     * treated 0 as "nothing presented yet" and RESET the quiet clock every poll, so a session stuck at 0 from the start
+     * could never trip the probe (the log's "session epoch 2" sat at 0 frames while a closed app's egl swaps climbed).
+     * The clock now runs from the last frame (or from RUNNING, at the start), so 0 trips it too. */
     if (g_ss_secs < 0) { const char *s = getenv("TL_SWAPSTALL_SECS"); g_ss_secs = s ? atoi(s) : TL_SS_SECS_DEFAULT; if (g_ss_secs <= 0) g_ss_secs = TL_SS_SECS_DEFAULT; }
     double quiet = (now.tv_sec - g_ss_last_progress.tv_sec) + (now.tv_nsec - g_ss_last_progress.tv_nsec) / 1e9;
     if (g_ss_printed || quiet < (double)g_ss_secs) return;
@@ -1425,6 +1457,13 @@ int husk_tl_session_close(void)
      * "from an earlier session", so the stall probe can tell a parked thread from this session's own (tl_swapstall_tick). */
     tl_guest_thread_new_epoch();
 
+    /* THE CLOSED APP STOPS PRESENTING HERE. The epoch just advanced, so every surface the closing app made now
+     * carries an older epoch and any further swap from its quarantined threads is refused (husk-tl-egl.c:
+     * w_eglSwapBuffers / egl_refuse_dead_swap); and the frame it had composited is dropped from the runtime's
+     * on-screen compositor, so a render thread still running cannot keep redrawing the dead app's last frame. This
+     * ends the app's ability to PRESENT -- its threads are left parked, not stopped, by design. */
+    tl_egl_session_ended();
+
     /* The frame ledger is keyed to the SAME boundary, so it needs no second notion of a session: the frames a
      * later verdict counts start here (husk_tl_frames_live). launch() re-marks with the new engine's own counter,
      * and a close with no relaunch leaves the ledger at "no frame of this app's own". */
@@ -1569,6 +1608,8 @@ static void live_frames_mark(void)
 {
     g_live_frames.epoch = tl_guest_thread_epoch();
     g_live_frames.base  = engine_frames();
+    g_live_frames.comp_base = tl_egl_composited_frames();
+    g_live_frames.drop_base = tl_egl_dropped_frames();
 }
 unsigned long husk_tl_frames_live(int *epoch_out)
 {
@@ -1577,6 +1618,18 @@ unsigned long husk_tl_frames_live(int *epoch_out)
     if (g_live_frames.epoch != cur) return 0;                     /* a session boundary passed since the mark: nothing counted here is this app's */
     unsigned long f = engine_frames();
     return f >= g_live_frames.base ? f - g_live_frames.base : 0;  /* never a wrapped delta */
+}
+/* The frames this session has actually COMPOSITED to the screen and the swaps it refused because they came from a
+ * session that has ended, each measured from the session's own mark -- the same boundary husk_tl_frames_live uses.
+ * An epoch past the mark reports 0, never an earlier session's numbers. */
+static void live_screen(unsigned long *composited, unsigned long *dropped, int *epoch_out)
+{
+    int cur = tl_guest_thread_epoch();
+    if (epoch_out) *epoch_out = cur;
+    if (g_live_frames.epoch != cur) { if (composited) *composited = 0; if (dropped) *dropped = 0; return; }
+    unsigned long c = tl_egl_composited_frames(), d = tl_egl_dropped_frames();
+    if (composited) *composited = c >= g_live_frames.comp_base ? c - g_live_frames.comp_base : 0;
+    if (dropped)    *dropped    = d >= g_live_frames.drop_base ? d - g_live_frames.drop_base : 0;
 }
 unsigned long husk_unity_frames(void) { return engine_frames(); }
 void husk_unity_perf_snapshot(husk_unity_perf *out)
