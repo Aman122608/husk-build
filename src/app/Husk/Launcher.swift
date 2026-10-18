@@ -234,10 +234,12 @@ struct HomeView: View {
         .frame(height: 44)
     }
 
-    /// Work under way, and JIT when it is off: what Home's tiles used to say.
+    /// The way in, then work under way, and JIT when it is off. Downloads is first and always: the sheet it opens is
+    /// how a computer on the Wi-Fi hands over apps, and it has to be findable with nothing on screen to prompt it.
     @ViewBuilder
     private var notices: some View {
         VStack(spacing: 8) {
+            DownloadsTile()
             if let busy = incoming.preparing { BusyStrip(text: busy) }
             if let busy = store.busy { BusyStrip(text: busy) }
             if let busy = host.busy { BusyStrip(text: busy) }
@@ -612,6 +614,62 @@ private struct JITNotice: View {
     }
 }
 
+/// Downloads, always there: the way to the sheet that adds apps from a computer on the Wi-Fi, and the state of what is
+/// coming in. 2.0 said this on a tile on Home; 3.0 had moved the sheet behind the avatar, so it is put back where it can
+/// be seen whether or not anything is happening -- the status line is never blank, since a control that shows nothing
+/// reads as nothing to press.
+private struct DownloadsTile: View {
+    @ObservedObject private var downloads = Downloads.shared
+    @ObservedObject private var updates = AppUpdates.shared
+    @ObservedObject private var guest = GuestImage.shared
+    @ObservedObject private var router = Router.shared
+
+    /// What to say under the word: the same reading as the notice below, with a floor of "Up to date".
+    private var status: String {
+        let running = downloads.jobs.filter { !$0.complete && !$0.paused && !$0.failed }
+        if !running.isEmpty {
+            let total = running.reduce(Int64(0)) { $0 + $1.total }
+            let got = running.reduce(Int64(0)) { $0 + $1.received }
+            let pct = total > 0 ? " · \(Int(Double(got) / Double(total) * 100))%" : ""
+            return "\(running.count) downloading\(pct)"
+        }
+        if downloads.jobs.contains(where: \.failed) { return "Something failed" }
+        if let release = updates.available { return "Husk \(release.version) is out" }
+        if guest.update.isSomething { return "Android update ready" }
+        return "Up to date"
+    }
+
+    var body: some View {
+        Button { router.showDownloads = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Theme.accent)
+                    .frame(width: 34, height: 34)
+                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Downloads")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Console.text)
+                    Text(status)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Console.textDim)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Console.textDim)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .background(Console.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Console.hairline, lineWidth: 0.5))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(CardButtonStyle())
+        .accessibilityLabel("Downloads")
+        .accessibilityHint(status)
+    }
+}
+
 /// Downloads at a glance, only while there is something to say: what is coming in, a failure, an update.
 private struct DownloadsNotice: View {
     @ObservedObject private var downloads = Downloads.shared
@@ -811,6 +869,9 @@ struct LibraryScreen: View {
                         .accessibilityLabel("Games or Apps")
                     }
                     SearchField(text: $query, prompt: "Search games and apps")
+                    // Where apps come from, beside the apps themselves: the same card Home shows, so the computer's
+                    // folder is findable from the Library too.
+                    DownloadsTile()
                     if let busy = store.busy { BusyStrip(text: busy) }
                     if let busy = host.busy { BusyStrip(text: busy) }
 
