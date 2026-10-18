@@ -356,6 +356,70 @@ final class JITCoordinator: ObservableObject {
             })
     }
 
+    /// Renew the ATTACH when this process is only MARKED debugged and no region was ever granted.
+    ///
+    /// `CS_DEBUGGED` is not "a servicer is answering": it is set for a process a launcher marked, and
+    /// it is left behind by a debugger that let go. On a TXM device it grants no executable memory by
+    /// itself, so the claim at launch goes to nobody, and the old build then refused every later claim
+    /// (`husk_ios_jit_prewarm` returned false from then on) -- the region was never granted, the arena
+    /// was never created, and every title sat at 0 frames with the log saying "StikDebug is not servicing
+    /// traps" and not one further probe. The working log is the other order: the region is claimed while
+    /// the servicer that answered is attached. So ask Husk's own method for a real attach, ONCE per
+    /// process, and let the next foreground pass claim the region then -- StikDebug by its `stikjit://`
+    /// hand-off (the user's own flow), Husk's helper by an extension request, and for a jailbreak say
+    /// which setting to turn on. Nothing is claimed here and no `brk` is issued: the attach is the whole
+    /// of what is asked for, and a method that cannot be asked from inside the app says so instead.
+    @discardableResult
+    func renewAttachAfterUnservicedClaim() -> Bool {
+        // And only when there is genuinely nothing else: on an OS where a plain MAP_JIT mapping executes,
+        // the layer can make its own region and no attach is needed (the pre-iOS-26 routes).
+        guard JITBootstrap.markedDebuggedWithoutRegion, !JITBootstrap.mapJITWorks,
+              !renewedAfterUnservicedClaim else { return false }
+        renewedAfterUnservicedClaim = true
+        let method = resolvedMethod
+        log("the process is marked debugged but no JIT region was granted: the flag is set with nothing "
+            + "answering a brk (a launcher marks it, or a debugger that let go leaves it behind), and on this "
+            + "device it grants no executable memory by itself. Asking \(method.title) for a REAL attach, once, "
+            + "so the next foreground pass can claim the region while the servicer is attached")
+        switch method {
+        case .stikDebug:
+            if JITBootstrap.requestAttach() { return true }
+            error = "The process is marked debugged, but nothing that answers a JIT request is attached, and "
+                  + "StikDebug could not be opened. Install StikDebug and turn JIT on, or set up Built-in StikJIT."
+        case .trollStore:
+            if JITBootstrap.requestTrollStoreAttach() { awaitTrollStore(); return true }
+            error = "The process is marked debugged but no JIT region was granted, and TrollStore could not be "
+                  + "opened. In TrollStore's Settings turn on URL Scheme, then turn JIT on and try again."
+        case .builtIn:
+            // Husk's own helper: the extension request IS what installs the servicer, and it can be made
+            // from inside the app, so this is the one method that needs no hand-off at all.
+            guard HuskBuiltInJIT.isAvailable else {
+                error = HuskBuiltInJIT.unavailableReason
+                showSetup = true
+                return false
+            }
+            guard hasPairing else {
+                error = "The process is marked debugged but no JIT region was granted, and Built-in StikJIT is not "
+                      + "paired yet. Pair this device or import its pairing file, then try again."
+                showSetup = true
+                return false
+            }
+            enableBuiltIn()
+            return true
+        case .jailbreak:
+            error = "The process is marked debugged but no JIT region was granted. Turn on Allow JIT in Apps in "
+                  + "Dopamine's settings, then open Husk again."
+        case .automatic:
+            break
+        }
+        showSetup = true
+        return false
+    }
+
+    /// The once-per-process guard for the ask above: a servicer that never answers must not turn every
+    /// foreground pass into another attach (and every attach into another claim attempt).
+    private var renewedAfterUnservicedClaim = false
+
     /// Renew the debugger's presence before a run starts, when it is no longer there.
     ///
     /// The JIT region is one-shot; the grant is not. The grant is the debugger's *presence*, and a

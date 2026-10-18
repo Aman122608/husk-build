@@ -521,6 +521,17 @@ enum JITBootstrap {
     /// Use `isDebuggerAttached` for that, and this afterwards to confirm it worked.
     static var isLive: Bool { husk_ios_jit_is_available() }
 
+    /// Whether this process is only MARKED debugged while no JIT region is held -- the state that
+    /// left every title at 0 frames.
+    ///
+    /// `CS_DEBUGGED` is not "a servicer is answering". It is set for a process a launcher marked, and
+    /// it is left behind by a debugger that let go; on a TXM device it grants no executable memory by
+    /// itself. So `ready` can be true (the flag is set) while nothing answers a `brk` -- and the app
+    /// then has to ASK its own method for a real attach rather than rest on the flag. That ask is
+    /// `JITCoordinator.renewAttachAfterUnservicedClaim`, and the claim itself is left open for it
+    /// (`husk_ios_jit_prewarm` may ask again when the last probe went to nobody).
+    static var markedDebuggedWithoutRegion: Bool { isDebuggerAttached && !prewarmed }
+
     /// The actual precondition for starting the guest: StikDebug has attached.
     ///
     /// Checked with csops/CS_DEBUGGED rather than the `brk #0x69` probe, because

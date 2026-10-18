@@ -298,7 +298,17 @@ struct ContentView: View {
         // attaches, while it is still running. Waiting for the Start button means
         // iOS has often suspended the debugger, causing unserviced brk freezes.
         // After the first call this is a no-op, and on success it also detaches the debugger.
-        JITBootstrap.prewarm()
+        // When the claim fails and this process is only MARKED debugged, the flag is the whole
+        // explanation and the app must not rest on it: `CS_DEBUGGED` is set for a process a launcher
+        // marked, it is left behind by a debugger that let go, and on this device it grants no
+        // executable memory by itself. So ask our own method for a REAL attach -- once -- and stop
+        // here: without a region there is nothing to run a guest in, and the next foreground pass is
+        // what claims the region (JITCoordinator.renewAttachAfterUnservicedClaim; the claim itself is
+        // left open for exactly this case in husk_ios_jit_prewarm). This is the order the working log
+        // shows, and its absence is what left every title at 0 frames.
+        if !JITBootstrap.prewarm(), jit.renewAttachAfterUnservicedClaim() {
+            return
+        }
 
         // Start on launch, when that is what was asked for.
         //
@@ -369,6 +379,14 @@ struct ContentView: View {
         // because on that OS it does not need to, and Husk read that as "no
         // executable memory" and refused to start a guest that would have run.
         if !JITBootstrap.prewarm(), !JITBootstrap.isLive {
+            // A process that is only MARKED debugged refuses the claim (see markdown above), and the
+            // Start button is the natural place to ask for the attach that fixes it: the next pass
+            // claims the region with the servicer attached, so the run starts then instead of dying
+            // at 0 frames now.
+            if jit.renewAttachAfterUnservicedClaim() {
+                booting = false
+                return
+            }
             guard JITBootstrap.mapJITWorks else {
                 HuskLog.log("jit", "refusing to start QEMU: no trap servicer is "
                                  + "answering and MAP_JIT does not execute here")

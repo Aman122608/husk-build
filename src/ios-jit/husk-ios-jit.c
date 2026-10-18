@@ -524,12 +524,55 @@ static bool husk_ios_jit_region_gate(const char *after);   /* file scope: static
 static HuskDualMapping husk_prewarmed;
 static bool husk_prewarm_done;
 
+/*
+ * Whether the last claim attempt's probe was answered by NOBODY -- and this one is about safety,
+ * not only about the diagnostic.
+ *
+ * The cheap probe (`brk #0x69`, husk-brk.S) comes back 0 when our own SIGTRAP handler stepped over
+ * it, which is proof that no debugger was holding this task's stop for it. With nothing attached, a
+ * repeat of the ask cannot be a stop the process waits on, and the region is still unclaimed, so the
+ * ask may be made again: the one-shot rule exists to stop us trapping into a servicer that IS there
+ * and does not answer (that ask hangs the process), and it does not apply to a process that was
+ * merely MARKED debugged.
+ *
+ * The opposite reading is the dangerous one, and it is what clears this: a probe that was ANSWERED
+ * (or a grant that failed after one) means a servicer is attached, so the next ask could be a stop it
+ * holds -- that ask is never repeated.
+ */
+static bool g_last_probe_found_nothing;
+
+/* Bounded, so a device with nothing to answer can never turn every foreground pass into a trap. */
+enum { kClaimAttemptsMax = 3 };
+static int g_claim_attempts;
+
 HUSK_EXPORT bool husk_ios_jit_prewarm(size_t bytes)
 {
+    if (husk_prewarmed.rw_addr) {
+        return true;   /* the region is held: a repeated call is a no-op, not a second claim */
+    }
+    /*
+     * A claim that was refused by a servicer that IS there is final -- never ask that twice.
+     * A claim that went to nobody is not: `CS_DEBUGGED` is set for a process a launcher marked, and
+     * it is left behind by a debugger that let go, and on a TXM device that flag grants no memory by
+     * itself. The old build treated the first such failure as the end of the process's only chance
+     * (this function returned false from then on, and husk_ios_jit_allocate refused too), so a
+     * process marked debugged with no servicer attached could never be given a region: the arena was
+     * never created, and every title sat at 0 frames. The working log is the other order -- the
+     * region is claimed while the servicer that answered is attached -- so the claim is left open for
+     * that to happen here too, up to a bounded number of attempts.
+     */
+    if (husk_prewarm_done && !(g_last_probe_found_nothing && g_claim_attempts < kClaimAttemptsMax)) {
+        return false;
+    }
     if (husk_prewarm_done) {
-        return husk_prewarmed.rw_addr != NULL;
+        fprintf(stderr, "[husk-jit] prewarm: the last claim went to nobody (the probe returned 0), so this process "
+                        "is marked debugged with no servicer attached -- and the flag alone grants no executable "
+                        "memory here. Asking again (attempt %d of %d); the region is still unclaimed, so there is "
+                        "nothing to give up, and nothing attached that a brk could hang on\n",
+                g_claim_attempts + 1, kClaimAttemptsMax);
     }
     husk_prewarm_done = true;
+    g_claim_attempts++;
     husk_prewarmed = husk_ios_jit_allocate_real(bytes);
     fprintf(stderr, "[husk-jit] prewarm %s: %zu bytes -- the region's execute is the debugger's "
                     "per-entry grant, so this build holds the debugger for the run instead of "
@@ -575,17 +618,25 @@ HuskDualMapping husk_ios_jit_allocate(size_t bytes)
         return husk_prewarmed;
     }
     /*
-     * No second trap after a prewarm already went unanswered.
-     * Inside qemu_init there is even less chance StikDebug is listening, and a
-     * debugger that is attached but not answering keeps the whole process
-     * stopped on the brk, so the app freezes. Failing here lets region.c
-     * fall back to MAP_JIT, or lets qemu_init report the error.
+     * No second trap after a prewarm that a servicer REFUSED: inside qemu_init there is even less
+     * chance StikDebug is listening, and a debugger that is attached but not answering keeps the
+     * whole process stopped on the brk, so the app freezes. Failing here lets region.c fall back to
+     * MAP_JIT, or lets qemu_init report the error.
+     *
+     * With nothing attached, though, there is nothing to keep stopped, and the region is still
+     * unclaimed -- so that ask is left open here too, under the same bound as the prewarm entry
+     * (g_last_probe_found_nothing, kClaimAttemptsMax), which is what a later servicer needs.
      */
-    if (husk_prewarm_done) {
+    if (husk_prewarm_done && !(g_last_probe_found_nothing && g_claim_attempts < kClaimAttemptsMax)) {
         fprintf(stderr, "[husk-jit] prewarm failed earlier; not trapping again\n");
         HuskDualMapping none = { NULL, NULL, 0 };
         return none;
     }
+    if (husk_prewarm_done) {
+        fprintf(stderr, "[husk-jit] prewarm failed earlier with nothing answering; asking once more "
+                        "(attempt %d of %d)\n", g_claim_attempts + 1, kClaimAttemptsMax);
+    }
+    g_claim_attempts++;
     return husk_ios_jit_allocate_real(bytes);
 }
 
@@ -602,12 +653,24 @@ static HuskDualMapping husk_ios_jit_allocate_real(size_t bytes)
     uint64_t probe = husk_brk_probe();
     g_expecting_jit_trap = false;
     if (probe == 0) {
+        /*
+         * Nothing answered. This is also the measurement that says a later ask is SAFE: our own
+         * handler stepping over the brk proves no debugger was holding this task's stop for it, so
+         * there is nothing attached for a repeat to hang on, and the region is still unclaimed
+         * (see g_last_probe_found_nothing, and husk_ios_jit_prewarm).
+         */
+        g_last_probe_found_nothing = true;
         HUSK_LOG("#%llu: StikDebug is NOT servicing traps -- probe returned 0, which "
                  "is our own SIGTRAP handler stepping over an unanswered brk. "
                  "Trying to make %zu bytes without it.",
                  (unsigned long long)n, bytes);
         return husk_self_dual_mapping(bytes);
     }
+    /*
+     * Answered: a servicer IS attached. Whatever happens from here, a repeated ask could be a stop it
+     * holds, so this claim is now the process's last (success or failure).
+     */
+    g_last_probe_found_nothing = false;
 
     uint32_t probe_lo = (uint32_t)probe;
     if (probe_lo == (uint32_t)HUSK_PROBE_MAGIC ||
