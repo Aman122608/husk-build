@@ -3,14 +3,27 @@
     {
       "sha": "next",
       "date": "2026-10-18",
+      "title": "The note finally shows, and the freeze gets a stack",
+      "goal": "Each build's note now actually appears when you open a new one, and the freeze report can name the guest function that is looping.",
+      "details": [
+        "Fixed: a new build's note did NOT appear even though the app knew about it. It was being opened as a pop-up the way iOS silently drops during launch; it is now part of the screen instead, so it shows.",
+        "Settings > This Build still shows the note for the build you are running, any time you want to re-read it.",
+        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
+        "New: the freeze report now walks the app's own call stack, so the next log names the guest function that keeps running in a loop instead of only showing that a thread is asleep.",
+        "Settled this round: the app DOES get a working OpenGL ES 3.0 context and a renderer. The refused ES 3.2 / 3.1 requests are not the cause, so nothing was changed for them.",
+        "Also fixed earlier in this build's line: a closed game can no longer keep showing its screen and swallowing your taps after you open another one."
+      ]
+    },
+    {
+      "sha": "9883b36",
+      "date": "2026-10-18",
       "title": "A closed game stops haunting the screen",
       "goal": "A closed app can no longer put its frames on the screen or swallow your taps, and the freeze report now names the threads that used to be invisible.",
       "details": [
-        "Fixed: after closing one game and opening another, the screen could keep showing the CLOSED game's menu with buttons that did nothing. A finished session can no longer present frames, so the new game owns the screen and your taps.",
+        "Fixed: after closing one game and opening another, the screen could keep showing the CLOSED game's menu with buttons that did nothing.",
         "If you saw a stale picture for a moment, that part is not ours to erase -- the layer can stop a dead app drawing, but it cannot remove a frame iOS has already put on the glass.",
         "Still open, and here is the workaround: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Open Lewdest House first, close it, then Robot Girlfriend -- the same build runs it to 700+ frames that way.",
-        "The freeze report now lists EVERY thread in the process, including the ones Husk starts itself, with the NAME of the call each thread is blocked in instead of a bare address.",
-        "The heartbeat now says what is actually on screen and how many frames were refused from a session that has ended, instead of reporting 0 frames while a dead app was still drawing."
+        "The freeze report now lists EVERY thread in the process, including the ones Husk starts itself, with the NAME of the call each thread is blocked in instead of a bare address."
       ]
     },
     {
@@ -21,7 +34,6 @@
       "details": [
         "The JIT region and the Java failure are fixed in this build too -- it gets 8 frames where it used to get none, and Lewdest House now runs properly.",
         "New: when a title stalls, the log lists the asset reads from just before the freeze, so the last thing it touched is visible.",
-        "New: every running thread is reported with its last lock call and how long ago, not just leftovers from a previous session.",
         "You asked whether the app can push its own updates: iOS does NOT let an app install an update for itself. There is no such API, and nothing inside Husk can change that.",
         "What IS possible: Husk can notice a new build and download it itself, then hand it to an installer, which needs one tap from you. AltStore and SideStore can do the whole thing automatically from the source file the project already ships."
       ]
@@ -44,8 +56,7 @@
       "goal": "The translation layer now reaches the JIT region directly instead of looking it up by name, so it can finally open its arena.",
       "details": [
         "Guest libraries can load for the first time, which is what makes java.lang.System initialise.",
-        "If the region still cannot be reached, the log now names that failure instead of quietly reporting no arena.",
-        "Removed a dead fallback that decoded hardcoded offsets from the old emulator dylib -- those were a crash risk."
+        "If the region still cannot be reached, the log now names that failure instead of quietly reporting no arena."
       ]
     },
     {
@@ -66,8 +77,7 @@
       "goal": "One failed JIT probe at launch no longer uses up this launch only chance at a JIT region.",
       "details": [
         "A failed probe is now remembered as \"nothing answered yet\" instead of \"give up\", so the claim is retried up to 3 times and each attempt names itself in the log.",
-        "A debugger that actively refuses is still never asked twice.",
-        "The app now asks for a real attach once per launch instead of trusting a flag."
+        "A debugger that actively refuses is still never asked twice."
       ]
     },
     {
