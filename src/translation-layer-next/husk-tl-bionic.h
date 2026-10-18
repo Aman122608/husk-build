@@ -138,13 +138,25 @@ static inline void tl_hp_bump(int which)
 int tl_guest_thread_live_count(void);
 
 /*
- * The swapped-in app's OWN first-frame path, the PAIRED instrument. The stall probe's verdict, when no parked thread
- * holds a layer lock, points at the new app's onResume/launch and its asset/asset-file reads. This records the first N
- * APK-asset reads of a session that began after a swap (and any that FAIL), so if the guest-lock story is wrong the log
- * already shows what the new app was reading when it froze. Bounded per session, and off the hot path: a lone app pays
- * one atomic load and nothing else (TL_ASSET_TRACE=1 forces it on for a single-app run). `ok` is 1 for a read served,
- * 0 for one that failed. */
+ * The app's OWN reads leading up to a freeze, the PAIRED instrument. The stall probe's verdict, when no parked thread
+ * holds a layer lock, points here: at the app's onResume/launch and its asset/asset-file reads. An ALWAYS-ARMED,
+ * fixed-capacity ring records the most recent APK-asset reads (entry name, served/failed, and the reading thread) without
+ * one log line per read -- because the old swap-gated trace turned ON only after a stall was detected, when the app had
+ * already stopped reading, so it could only ever record the silence it was meant to explain. The ring is dumped, oldest
+ * first, when a stall is detected and at session close. The hot path is one relaxed atomic add and a bounded copy; no
+ * allocation, no lock, no log line while the app runs. TL_ASSET_TRACE=1 still logs each read as it happens (a desktop
+ * aid). `ok` is 1 for a read served, 0 for one that failed, -1 for an attempt/open. */
 void tl_asset_read_note(const char *what, int ok, int err);
+/* Dump the asset ring, oldest first, labelled `tag`; a no-op if nothing was recorded. Called at a detected stall and at
+ * the session boundary. */
+void tl_asset_ring_dump(const char *tag);
+/* Forget the ring at a session boundary, after the close dump: the next app starts with its own. */
+void tl_asset_ring_reset(void);
+
+/* The paths a failed open() looked in, most recent first, always armed and bounded (once per distinct path). The guest
+ * reports a native ENOENT as a bare IOException with no path ("No such file or directory"), so when libcore's natives
+ * fail to load the loader prints this instead of only the errno. */
+void tl_open_fail_dump(const char *why);
 
 /*
  * WHO those live threads are, so a stall can name itself. The counter can say a close left 35 threads running and cannot
@@ -161,12 +173,26 @@ typedef struct {
      * outside -- so the shim records it (it is the shim's own b_mutex_lock/b_cond_wait/b_sem_wait that is running) and
      * the stall probe reports it. wait_obj/wait_site are the object waited on and where the wait was entered. */
     unsigned long wait_kind, wait_obj, wait_site;
+    /* The LAST shim lock call this thread entered and when it did (monotonic ns), so a stall can say what a thread that is
+     * not blocked RIGHT NOW was last doing inside a shim and how long ago. `wait_kind` above stays the CURRENT state
+     * (cleared when the shim returns); these persist across the return. last_kind is 0 when the thread never entered one. */
+    unsigned long last_kind, last_site, last_ns;
 } tl_guest_thread_info;
 /* wait_kind values (TL_GW_*), shared with husk-tl-bionic-pthread.c's census writer. */
 enum { TL_GW_NONE = 0, TL_GW_MUTEX = 1, TL_GW_COND = 2, TL_GW_SEM = 3, TL_GW_RWLOCK = 4 };
 int  tl_guest_thread_census(tl_guest_thread_info *out, int max);   /* live count (may exceed max); fills up to max */
 int  tl_guest_thread_epoch(void);                                  /* the current session epoch */
 void tl_guest_thread_new_epoch(void);                             /* a session boundary: later threads are this session's */
+
+/*
+ * Every guest mutex currently HELD that has a live waiter, with both sites. Not a per-5s log line: a scan of the live-thread
+ * census at a detected stall, so a stalled app's own lock deadlock is named even when the mutex trace armed after the wait
+ * began. Deduped by the guest mutex object (one entry per held mutex, the first live waiter reported for it). holder_tid is
+ * 0 when the holder was never recorded (a lock taken before the holder bytes were written). */
+typedef struct {
+    unsigned long mutex, waiter_tid, waiter_entry, waiter_site, holder_tid, holder_site;
+} tl_guest_mutex_wait;
+int tl_guest_mutex_waits(tl_guest_mutex_wait *out, int max);   /* live count (may exceed max); fills up to max */
 
 #ifdef __cplusplus
 }

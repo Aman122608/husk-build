@@ -2353,6 +2353,11 @@ static void report_libcore_natives(const char *lib)
     char b[400];
     const char *desc = tl_dvm_describe_pending(b, sizeof(b));
     tl_log_line("dvm: loading libcore's natives (%s) threw %s", lib, desc ? desc : "?");
+    /* A bare "No such file or directory" is a native ENOENT reported WITHOUT its path (libcore's JNU_*ThrowWithLastError
+     * puts strerror(errno) in the Throwable and no file name; the stack trace is empty because it was thrown natively).
+     * Name the files a failed open() looked in, so the log says WHICH path was missing instead of only the errno -- the
+     * missing path is one of these. */
+    if (desc && strstr(desc, "No such file")) tl_open_fail_dump(lib);
     static atomic_int shown;
     jobj *e = tl_jni_pending_object();
     if (e && atomic_fetch_add(&shown, 1) < 3) {

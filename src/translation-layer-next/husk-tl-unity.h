@@ -37,6 +37,10 @@ bool tl_unity_run(void);
 /* Frames rendered so far. */
 unsigned long tl_unity_frames(void);
 
+/* The UnityMain thread's Darwin identity (as the guest-thread census carries it: (unsigned long)pthread_self()), so a
+ * stall can name the frame/render thread explicitly; 0 before it starts. */
+unsigned long tl_unity_thread(void);
+
 /*
  * A touch, in screen pixels with y down. phase 0 begins it, 1 moves it, 2 ends it (3 cancels all).
  * `id` names the finger. Safe to call from any thread.

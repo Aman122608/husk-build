@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdatomic.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -187,6 +188,11 @@ bool tl_unity_run(void)
     U.thread_started = true;
     return true;
 }
+
+/* The UnityMain thread's Darwin identity as the guest-thread census carries it, so a stall can name the frame thread
+ * explicitly: it presents this engine's frames, so its missing next frame IS the stall. It is the LAYER's thread (started
+ * here, not by guest pthread_create), so it is not in the census -- this is the only handle on it. 0 before it starts. */
+unsigned long tl_unity_thread(void) { return (unsigned long)(uintptr_t)U.thread; }
 
 /* -------------------------------------------------------------- keyboard */
 

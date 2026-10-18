@@ -1010,11 +1010,48 @@ static void ss_app_name(char *out, size_t n)
 }
 
 #define TL_SS_THREADS 160
+
+/* Monotonic ns, the same clock husk-tl-bionic-pthread.c's census stamps a thread's last shim with, so the ages the stall
+ * prints are differences of like readings. */
+static unsigned long ss_now_ns(void)
+{
+    struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (unsigned long)ts.tv_sec * 1000000000ul + (unsigned long)ts.tv_nsec;
+}
+/* The shim a TL_GW_* marker names, for the per-thread report. */
+static const char *ss_shim_name(unsigned long kind)
+{
+    return kind == TL_GW_MUTEX  ? "b_mutex_lock"
+         : kind == TL_GW_COND   ? "b_cond_wait"
+         : kind == TL_GW_SEM    ? "b_sem_wait"
+         : kind == TL_GW_RWLOCK ? "b_rwlock_lock" : "a shim lock";
+}
+/* The thread that presents THIS engine's frames -- the one whose missing next frame IS the stall. */
+static const char *ss_frame_thread_name(int engine)
+{
+    switch (engine) {
+    case ENGINE_UNITY:    return "UnityMain";
+    case ENGINE_JAVA:     return "GLThread";
+    case ENGINE_GAMEMAKER:return "GLThread";
+    case ENGINE_COCOS:    return "GLThread";
+    case ENGINE_GODOT:    return "GLThread";
+    case ENGINE_SDL:      return "SDLThread";
+    case ENGINE_GAMEACTIVITY: return "UiThread";
+    default:              return "the engine's render/main thread";
+    }
+}
+/* Its Darwin identity if the layer holds one (Unity and the Java driver start it themselves, so it is NOT in the census;
+ * a 0 means the layer does not hold the id on this engine and cannot sample it). */
+static unsigned long ss_frame_thread_id(int engine)
+{
+    return engine == ENGINE_UNITY ? tl_unity_thread() : engine == ENGINE_JAVA ? tl_javaapp_render_thread() : 0;
+}
+
 static void ss_probe(unsigned long frames, double quiet_s, int epoch)
 {
-    /* A stall has been DETECTED: turn on the diagnostics a swap needs for the rest of the run (the guest-mutex trace, and
-     * the swapped-in asset trace), because the phone launches the IPA and nobody can set an environment variable on the
-     * device -- the layer decides. Idempotent, one atomic store. */
+    /* A stall has been DETECTED. The guest-mutex trace and the asset-read ring are armed from run start now (they no longer
+     * wait for this moment, which is what left the newest log with zero asset and zero mutex lines), but the swap-in-progress
+     * flag is still set here: other code reads it as "the layer is in the post-stall/swap state". Idempotent, one atomic store. */
     tl_swap_in_progress_set(1);
     char line[2000];
     int w = 0;
@@ -1092,8 +1129,90 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
                    lk[held_parked].name ? lk[held_parked].name : "a layer lock");
     else
         w = ss_put(line, w, sizeof(line),
-                   " VERDICT: no parked thread holds any layer lock the layer can see, so this stall is NOT the swap's quarantine -- look next at the app's OWN first-frame path (its onResume/launch and its own asset/asset-file reads). A guest-level lock (a bionic pthread mutex, a JVM monitor) is not in this ledger, so TWO paired instruments now cover it, both turned on by this stall: the guest-mutex trace (husk-tl-bionic-pthread.c) now runs by itself after a swap and names, ONCE per distinct (waiter site, holder site) pair, a guest mutex that has waited 5 s with its holder and both sites; and the swapped-in asset trace (husk-tl-bionic-io.c) now logs the first APK-asset reads of this session (and any that FAIL), so if the guest-lock story is wrong the log already shows what the new app was reading when it froze. Each parked thread above is marked LOCK-WAITING (blocked inside a shim lock) or idle/not in a guest lock -- those are different states.");
+                   " VERDICT: no parked thread holds any layer lock the layer can see, so this stall is NOT the swap's quarantine -- look next at the app's OWN first-frame path (its onResume/launch and its own asset/asset-file reads). A guest-level lock (a bionic pthread mutex, a JVM monitor) is not in this ledger, so the lines that follow name it: EVERY live guest thread (not only the parked ones) with its last shim and lock state, every guest mutex held with a live waiter and both sites, the frame/render thread by name, and the app's OWN last asset reads from an always-armed ring (recorded before the freeze, not armed by it).");
     if (w > 0) tl_log_line("%s", line);
+
+    /* ---------------------------------------------------------------------------------------------------------------
+     * EVERY live guest thread, not only the parked ones. The old ledger annotated only threads whose epoch was behind the
+     * current one (gt[i].epoch < cur): it counted the 32 live threads of THIS session and then accounted for none of them,
+     * which is exactly the population the stuck one is in. One line per thread, so a stall names its own mechanism and no
+     * single line has to carry the whole census.
+     */
+    const char *frame_name = ss_frame_thread_name(A.engine);
+    unsigned long frame_id = ss_frame_thread_id(A.engine);
+    unsigned long now_ns = ss_now_ns();
+    tl_log_line("stall-threads: %d guest thread(s) counted live (%d this session, %d parked from an earlier session, epoch %d); the FRAME/RENDER thread is '%s'%s:",
+                ngt, ngt - parked, parked, cur, frame_name,
+                frame_id ? "" : " (this engine's frame thread, if any, is a layer-started thread)");
+    int shown_all = 0;
+    for (int j = 0; j < ngt && shown_all < TL_SS_THREADS; j++) {
+        char nm[32] = "?"; pthread_getname_np((pthread_t)(uintptr_t)gt[j].tid, nm, sizeof(nm));
+        char ent[160]; ss_where(ent, sizeof(ent), (uintptr_t)gt[j].entry);
+        uintptr_t pc = 0; bool have = ss_thread_pc(gt[j].tid, &pc);
+        char pcs[160];
+        if (have) ss_where(pcs, sizeof(pcs), pc); else snprintf(pcs, sizeof(pcs), "not readable by the layer");
+        const char *sess = gt[j].epoch < cur ? "PARKED, an earlier session" : "this session";
+        const char *state = gt[j].wait_kind ? "BLOCKED inside a shim lock" : "not in a shim lock (idle, or running guest code outside one)";
+        char last[220];
+        if (gt[j].last_kind && gt[j].last_ns) {
+            char lsite[128]; ss_where(lsite, sizeof(lsite), (uintptr_t)gt[j].last_site);
+            double ago = now_ns > gt[j].last_ns ? (double)(now_ns - gt[j].last_ns) / 1e9 : 0;
+            snprintf(last, sizeof(last), "last shim %s at %s (%.1f s ago)", ss_shim_name(gt[j].last_kind), lsite, ago);
+        } else snprintf(last, sizeof(last), "no shim lock call recorded for this thread");
+        int is_frame = frame_id && frame_id == gt[j].tid;
+        if (gt[j].wait_obj)
+            tl_log_line("stall-threads:  #%d '%s' [%s] entry [%s] pc [%s]; %s; %s; wait-object %p%s",
+                        shown_all + 1, nm, sess, ent, pcs, state, last, (void *)(uintptr_t)gt[j].wait_obj,
+                        is_frame ? "  <<< FRAME/RENDER THREAD: its next frame is the one that is missing" : "");
+        else
+            tl_log_line("stall-threads:  #%d '%s' [%s] entry [%s] pc [%s]; %s; %s; wait-object (none)%s",
+                        shown_all + 1, nm, sess, ent, pcs, state, last,
+                        is_frame ? "  <<< FRAME/RENDER THREAD: its next frame is the one that is missing" : "");
+        shown_all++;
+    }
+    if (shown_all == 0)
+        tl_log_line("stall-threads:  (no guest thread is in the census: every thread is one the layer started itself)");
+
+    /* The frame/render thread itself, named explicitly. For Unity and the Java driver it is a LAYER-started thread (not a
+     * guest pthread_create), so it is not in the census above -- yet its missing next frame IS the stall. Sample its pc. */
+    if (frame_id) {
+        uintptr_t fpc = 0; bool fh = ss_thread_pc(frame_id, &fpc);
+        char fw[200];
+        if (fh) ss_where(fw, sizeof(fw), fpc); else snprintf(fw, sizeof(fw), "not readable by the layer");
+        int in_census = 0;
+        for (int j = 0; j < ngt; j++) if (frame_id == gt[j].tid) in_census = 1;
+        tl_log_line("stall-frame: the frame/render thread is '%s' (tid %p, %s): pc [%s] -- this is the thread whose missing next frame IS the stall.",
+                    frame_name, (void *)(uintptr_t)frame_id,
+                    in_census ? "it is one of the guest threads listed above" : "the layer starts it itself (not a guest pthread_create), so it is NOT in the guest-thread census above",
+                    fw);
+    } else {
+        tl_log_line("stall-frame: the frame/render thread is '%s': the layer does not hold its id on this engine, so it cannot be sampled directly; if it is not one of the guest threads above, it is a layer-started thread and its missing frame is the stall.",
+                    frame_name);
+    }
+
+    /* Guest mutexes HELD with a live waiter, with both sites -- the guest-level deadlock the layer lock ledger cannot hold.
+     * Read from the census at this stall, so it is named even when the mutex trace armed after the wait began. */
+    tl_guest_mutex_wait gw[TL_SS_THREADS];
+    int ngw = tl_guest_mutex_waits(gw, TL_SS_THREADS);
+    if (ngw > TL_SS_THREADS) ngw = TL_SS_THREADS;
+    if (ngw == 0)
+        tl_log_line("stall-mutex: no live guest thread is blocked in b_mutex_lock right now, so no guest mutex is held with a live waiter (a waiter names itself in its own 5 s line).");
+    for (int i = 0; i < ngw; i++) {
+        char wsite[128], hsite[128], wname[32] = "?", hname[32] = "?";
+        ss_where(wsite, sizeof(wsite), (uintptr_t)gw[i].waiter_site);
+        ss_where(hsite, sizeof(hsite), (uintptr_t)gw[i].holder_site);
+        pthread_getname_np((pthread_t)(uintptr_t)gw[i].waiter_tid, wname, sizeof(wname));
+        if (gw[i].holder_tid) pthread_getname_np((pthread_t)(uintptr_t)gw[i].holder_tid, hname, sizeof(hname));
+        tl_log_line("stall-mutex: guest mutex %p is HELD by '%s' (tid %p) locked at %s, with a live waiter '%s' (tid %p) blocked at %s -- a guest-level lock (bionic pthread mutex), not in the layer lock ledger; if the holder is a parked thread, the guest deadlock IS the quarantine.",
+                    (void *)(uintptr_t)gw[i].mutex,
+                    gw[i].holder_tid ? hname : "UNRECORDED", (void *)(uintptr_t)gw[i].holder_tid,
+                    gw[i].holder_tid ? hsite : "(the holder was never written: the lock was taken before the trace could note it)",
+                    wname, (void *)(uintptr_t)gw[i].waiter_tid, wsite);
+    }
+
+    /* The app's OWN reads leading up to this freeze, oldest first -- recorded whatever the run, so it exists for a stall in a
+     * lone (never-swapped) app too, which the old swap-gated trace could never show. */
+    tl_asset_ring_dump("stall");
 }
 
 static void tl_swapstall_tick(unsigned long frames, bool running, int epoch)

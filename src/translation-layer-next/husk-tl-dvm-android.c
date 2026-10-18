@@ -835,6 +835,10 @@ NAT(EN_swap)
 }
 /* the GL thread Husk drives GLSurfaceView from: there EGL10 answers for the context it made */
 static pthread_t g_render_thread;
+/* Its Darwin identity as the guest-thread census carries it, so a stall can name the frame/render thread explicitly -- it
+ * presents this app's frames, so its missing next frame IS the stall. It is the LAYER's thread, not a guest pthread_create,
+ * so it is not in the census; this is the only handle on it. 0 before it starts. */
+unsigned long tl_javaapp_render_thread(void) { return (unsigned long)(uintptr_t)g_render_thread; }
 NAT(EN_isRenderThread) { (void)self; (void)a; ret->j = 0; ret->z = pthread_equal(pthread_self(), g_render_thread) != 0; return true; }
 NAT(EN_hide) { (void)self; (void)a; (void)ret; pthread_mutex_lock(&E2.lk); E2.on = false; E2.seq++; pthread_mutex_unlock(&E2.lk); return true; }
 static const struct { const char *name, *sig; dvm_native_fn fn; } k_eglnative[] = {

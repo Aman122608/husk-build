@@ -16,7 +16,7 @@
 #define _DARWIN_C_SOURCE
 #include "husk-tl-bionic.h"
 #include "husk-tl-ld.h"
-#include "husk-tl-xmem.h"    /* tl_swap_in_progress(): the guest-mutex trace turns on by itself after a swap */
+#include "husk-tl-xmem.h"    /* tl_swap_in_progress(): a session boundary the earlier conditional trace keyed off (it is always-on now) */
 
 #include <errno.h>
 #include <pthread.h>
@@ -103,22 +103,24 @@ static int b_mutex_destroy(void *g)
  * touches) and say, when a lock has waited five seconds, who holds it and from where it was locked. For finding what a
  * stuck game is waiting for.
  *
- * WHO TURNS IT ON: TL_MUTEX_TRACE forces it on. Otherwise the LAYER decides -- it is on once a swap has happened
- * (tl_swap_in_progress: a session close, or a stall the probe detected), for the rest of the run. The phone launches the
- * IPA and nobody can set an environment variable on the device, and the swapped-in app is the one a quarantined guest
- * lock can wedge. A lone app pays one atomic load per lock and nothing else.
+ * IT IS ON FOR EVERY RUN. The old rule armed it only once a swap had happened (tl_swap_in_progress: a session close, or a
+ * stall the probe detected) or with TL_MUTEX_TRACE in the environment -- and nobody can set an environment variable on the
+ * phone, so on the device it turned on INSIDE the stall probe, i.e. after the app had already stopped, and the 5 s wait it
+ * exists to name had already gone by: the newest log has the swap-stall line and ZERO mutex lines. The trace costs nothing
+ * while there is no contention (its own rule keeps the LOG quiet: one line per distinct (waiter site, holder site) pair,
+ * and only after 5 s of waiting), so it is armed from run start. TL_MUTEX_TRACE=0 turns it off (a desktop aid for a run
+ * whose lock behaviour must not change at all).
  *
- * WHY CONDITIONAL, FROM THE CODE (not assumed): when the trace is on, b_mutex_lock no longer blocks in Darwin -- it
- * spins with trylock + usleep(200) (a 5 s wait costs ~25000 iterations) and writes the owner into the guest object's
+ * WHY IT CHANGES BEHAVIOUR, FROM THE CODE (not assumed): when the trace is on, b_mutex_lock no longer blocks in Darwin --
+ * it spins with trylock + usleep(200) (a 5 s wait costs ~25000 iterations) and writes the owner into the guest object's
  * spare bytes on every acquisition. That is a behaviour change on EVERY contended lock, not a log line that only appears
- * after 5 s. (The LOG is bounded either way: one line per distinct pair, below.) So it is turned on only where a swap
- * makes a stuck lock the live hypothesis.
+ * after 5 s -- accepted, because an instrument that arms after the freeze can only record the silence it was meant to
+ * explain, and this one now has to see the wait that IS the freeze.
  */
 static bool mutex_trace(void)
 {
-    if (tl_swap_in_progress()) return true;
     static int on = -1;
-    if (on < 0) on = getenv("TL_MUTEX_TRACE") ? 1 : 0;
+    if (on < 0) { const char *e = getenv("TL_MUTEX_TRACE"); on = (e && e[0] == '0') ? 0 : 1; }
     return on;
 }
 static void note_owner(void *g, void *lr) { uint64_t *w = g; w[2] = (uint64_t)(uintptr_t)pthread_self(); w[3] = (uint64_t)(uintptr_t)lr; }
@@ -523,7 +525,7 @@ int tl_guest_thread_live_count(void) { return atomic_load(&g_guest_threads); }
  */
 enum { GT_FREE = 0, GT_CLAIMING = 1, GT_PRESENT = 2 };
 #define TL_GT_SLOTS 128
-static struct { _Atomic int live; _Atomic unsigned long tid, entry; _Atomic int epoch; _Atomic unsigned long wait_kind, wait_obj, wait_site; } g_gt[TL_GT_SLOTS];
+static struct { _Atomic int live; _Atomic unsigned long tid, entry; _Atomic int epoch; _Atomic unsigned long wait_kind, wait_obj, wait_site; _Atomic unsigned long last_kind, last_ns; } g_gt[TL_GT_SLOTS];
 static _Atomic int g_epoch;
 int  tl_guest_thread_epoch(void) { return atomic_load(&g_epoch); }
 void tl_guest_thread_new_epoch(void) { atomic_fetch_add(&g_epoch, 1); }
@@ -533,15 +535,28 @@ void tl_guest_thread_new_epoch(void) { atomic_fetch_add(&g_epoch, 1); }
  * which then skip the marker entirely. */
 static __thread int g_my_slot = -1;
 
-/* See the forward declaration. Record WHY this thread is inside a lock, then clear it when it leaves. wait_obj/wait_site
- * are stored BEFORE wait_kind is published (release), so a reader that acquire-loads a non-zero wait_kind sees them valid.
- * TL_GW_* is husk-tl-bionic.h's. Never blocks, never allocates. */
+/* Monotonic nanoseconds, for the census: how long a thread has been inside the shim it is in (or since the last one it
+ * entered). CLOCK_MONOTONIC on Darwin; the value is only ever subtracted from another reading of the same clock. */
+static unsigned long gt_now_ns(void)
+{
+    struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (unsigned long)ts.tv_sec * 1000000000ul + (unsigned long)ts.tv_nsec;
+}
+
+/* See the forward declaration. Record WHY this thread is inside a lock, then clear the CURRENT marker when it leaves.
+ * wait_obj/wait_site are stored BEFORE wait_kind is published (release), so a reader that acquire-loads a non-zero
+ * wait_kind sees them valid. last_kind/last_ns PERSIST across the return (last_site is wait_site, which is not cleared):
+ * they are the last shim this thread entered and when, so a stall can say what a thread that is not blocked right now was
+ * last doing inside a shim. TL_GW_* is husk-tl-bionic.h's. Never blocks, never allocates. */
 static void gt_wait_enter(int kind, const void *obj, void *lr)
 {
     int s = g_my_slot;
     if (s < 0) return;
+    unsigned long ns = gt_now_ns();
     atomic_store_explicit(&g_gt[s].wait_obj, (unsigned long)(uintptr_t)obj, memory_order_relaxed);
     atomic_store_explicit(&g_gt[s].wait_site, (unsigned long)(uintptr_t)lr, memory_order_relaxed);
+    atomic_store_explicit(&g_gt[s].last_ns, ns, memory_order_relaxed);
+    atomic_store_explicit(&g_gt[s].last_kind, (unsigned long)kind, memory_order_release);
     atomic_store_explicit(&g_gt[s].wait_kind, (unsigned long)kind, memory_order_release);
 }
 static void gt_wait_leave(void)
@@ -560,6 +575,8 @@ static void gt_enter(const void *entry)
         atomic_store(&g_gt[i].entry, (unsigned long)(uintptr_t)entry);
         atomic_store(&g_gt[i].epoch, atomic_load(&g_epoch));
         atomic_store_explicit(&g_gt[i].wait_kind, TL_GW_NONE, memory_order_relaxed);
+        atomic_store_explicit(&g_gt[i].last_kind, TL_GW_NONE, memory_order_relaxed);
+        atomic_store_explicit(&g_gt[i].last_ns, 0, memory_order_relaxed);
         g_my_slot = i;
         atomic_store_explicit(&g_gt[i].live, GT_PRESENT, memory_order_release);
         return;
@@ -591,6 +608,41 @@ int tl_guest_thread_census(tl_guest_thread_info *out, int max)
             out[n].wait_kind = atomic_load_explicit(&g_gt[i].wait_kind, memory_order_acquire);
             out[n].wait_obj  = atomic_load(&g_gt[i].wait_obj);
             out[n].wait_site = atomic_load(&g_gt[i].wait_site);
+            out[n].last_kind = atomic_load_explicit(&g_gt[i].last_kind, memory_order_acquire);
+            out[n].last_site = out[n].wait_site;   /* not cleared on leave: it is the last shim's site */
+            out[n].last_ns   = atomic_load(&g_gt[i].last_ns);
+        }
+        n++;
+    }
+    return n;
+}
+
+/*
+ * Every guest mutex currently HELD that has a live waiter, with both sites -- read from the live-thread census at a
+ * detected stall, so a stall names the app's own guest-lock deadlock even when the mutex trace armed after the wait began
+ * (the point of arming it, and reporting here, from run start). A thread in TL_GW_MUTEX is blocked in b_mutex_lock on the
+ * guest mutex in wait_obj; b_mutex_lock wrote the holder's thread and lock site into the mutex's spare bytes (w[2]/w[3],
+ * note_owner). Deduped by the mutex object: one entry per held mutex, the first live waiter reported for it. holder_tid is
+ * 0 when the holder was never recorded. Never blocks, never allocates; reads guest memory the same way the shim wrote it.
+ */
+int tl_guest_mutex_waits(tl_guest_mutex_wait *out, int max)
+{
+    int n = 0;
+    for (int i = 0; i < TL_GT_SLOTS; i++) {
+        if (atomic_load_explicit(&g_gt[i].live, memory_order_acquire) != GT_PRESENT) continue;
+        if (atomic_load_explicit(&g_gt[i].wait_kind, memory_order_acquire) != TL_GW_MUTEX) continue;
+        unsigned long obj = atomic_load(&g_gt[i].wait_obj);
+        if (!obj) continue;
+        int dup = 0;
+        for (int k = 0; out && k < n && k < max; k++) if (out[k].mutex == obj) { dup = 1; break; }
+        if (!dup && out && n < max) {
+            const uint64_t *w = (const uint64_t *)(uintptr_t)obj;   /* the same 40-byte object the shim's note_owner wrote */
+            out[n].mutex       = obj;
+            out[n].waiter_tid  = atomic_load(&g_gt[i].tid);
+            out[n].waiter_entry = atomic_load(&g_gt[i].entry);
+            out[n].waiter_site = atomic_load(&g_gt[i].wait_site);
+            out[n].holder_tid  = w[2];
+            out[n].holder_site = w[3];
         }
         n++;
     }

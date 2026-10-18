@@ -56,6 +56,9 @@ void tl_javaapp_documents_picked(const char *const *paths, int n);
 void tl_javaapp_set_insets(int left, int top, int right, int bottom, int ime_bottom);
 unsigned long tl_javaapp_frames(void);
 bool tl_javaapp_ended(void);
+/* The render/GL thread's Darwin identity (as the guest-thread census carries it: (unsigned long)pthread_self()), so a
+ * stall can name the frame/render thread explicitly; 0 before it starts. */
+unsigned long tl_javaapp_render_thread(void);
 
 /* A guest call that means "quit my app" reached the layer (Runtime.exit, System.exit, Process.killProcess, exit()/_exit()).
  * Mark the app ended so its own loops and the state machine unwind -- Husk's process is never ended for it. Idempotent. */

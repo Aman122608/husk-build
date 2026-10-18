@@ -797,41 +797,77 @@ void tl_io_reset_for_new_app(void)
 
     tl_log_line("husk: app state reset: renpy platform flag off, %d virtual-file name(s) dropped, %d stale descriptor redirect(s) swept, jar cache closed=%d",
                 nvfiles, swept, jar);
+    /* The reads of the app that just ended, oldest first, once at the boundary -- then forget them, so the next app's ring is its own. */
+    tl_asset_ring_dump("close");
+    tl_asset_ring_reset();
     /* Where the load path spent its time, once, at the session boundary -- never per event. */
     tl_load_summary("close");
 }
 
 /*
- * The swapped-in app's OWN first-frame path, the PAIRED instrument. The stall probe's verdict, when no parked thread holds
- * a layer lock, points here: at the new app's onResume/launch and its asset/asset-file reads. When a swap has happened
- * (tl_swap_in_progress) this logs the first APK-asset reads of THIS session and any that FAIL -- so if the guest-lock story
- * is wrong, the log already shows what the new app was reading when it froze. Bounded per session and OFF THE HOT PATH:
- * before any swap the only cost is one atomic load; after the budgets are spent the counters short-circuit.
- * TL_ASSET_TRACE=1 forces it on for a single-app run. The budgets reset when the session EPOCH advances (the swap
- * boundary), so each swapped-in app gets its own, and a later app is not starved by an earlier one's reads.
- * `ok` -1 = attempt, 1 = served, 0 = failed.
+ * The app's OWN reads leading up to a freeze, the PAIRED instrument. The stall probe's verdict, when no parked thread
+ * holds a layer lock, points here: at the app's onResume/launch and its asset/asset-file reads.
+ *
+ * It is an ALWAYS-ARMED, fixed-capacity ring, not a swap-gated logger, because the old trace turned ON only at the moment
+ * a stall was DETECTED (tl_swap_in_progress_set(1) inside ss_probe): by then the app had already stopped reading, so it
+ * could only ever record the silence it was meant to explain (the newest log has the swap-stall line and ZERO asset
+ * lines). The ring holds the most recent reads whatever the run, so a stall can dump what came BEFORE the freeze.
+ *
+ * The hot path is one relaxed atomic fetch_add (this read's sequence number) and a bounded copy of the entry name, the
+ * ok/err and the reading thread into slot (seq-1) % N; no allocation, no lock, no log line while the app runs. The
+ * sequence is published LAST (release), so a dumper never treats a half-written name as current. TL_ASSET_TRACE=1 still
+ * logs every read as it happens (a desktop aid); it is no longer what makes the record exist. `ok` -1 = attempt, 1 =
+ * served, 0 = failed.
  */
-#define TL_ASSET_TRACE_TRY  24
-#define TL_ASSET_TRACE_OK   24
-#define TL_ASSET_TRACE_FAIL 16
-static int g_asset_try_n, g_asset_ok_n, g_asset_fail_n;
-static int g_asset_forced = -1, g_asset_epoch = -1;
+#define TL_ASSET_RING 64
+#define TL_ASSET_NAME 160
+typedef struct {
+    unsigned long seq;              /* this read's number, published after the fields below (all access is through __atomic_*); 0 = never written */
+    int ok, err;
+    char name[TL_ASSET_NAME];
+    unsigned long tid;              /* the reading thread, resolved to a name only at dump time (keeps the hot path cheap) */
+} asset_rec;
+static asset_rec g_asset_ring[TL_ASSET_RING];
+static unsigned long g_asset_writes;    /* how many reads recorded, ever (accessed only through __atomic_*) */
+static int g_asset_forced = -1;
 void tl_asset_read_note(const char *what, int ok, int err)
 {
     if (g_asset_forced < 0) g_asset_forced = getenv("TL_ASSET_TRACE") ? 1 : 0;
-    if (!g_asset_forced && !tl_swap_in_progress()) return;      /* a lone app pays an atomic load and nothing else */
-    int ep = tl_guest_thread_epoch();
-    if (ep != g_asset_epoch) { g_asset_epoch = ep; g_asset_try_n = g_asset_ok_n = g_asset_fail_n = 0; }
-    int slot = ok < 0 ? __atomic_fetch_add(&g_asset_try_n, 1, __ATOMIC_RELAXED)
-             : ok      ? __atomic_fetch_add(&g_asset_ok_n, 1, __ATOMIC_RELAXED)
-                       : __atomic_fetch_add(&g_asset_fail_n, 1, __ATOMIC_RELAXED);
-    int cap = ok < 0 ? TL_ASSET_TRACE_TRY : ok ? TL_ASSET_TRACE_OK : TL_ASSET_TRACE_FAIL;
-    if (slot >= cap) return;
-    char me[32] = "?"; pthread_getname_np(pthread_self(), me, sizeof(me));
     const char *name = (what && what[0]) ? what : "(unnamed entry)";
-    if (ok < 0)      tl_log_line("asset[swap]: opening '%s' (read %d) by '%s' -- the swapped-in app's first-frame path", name, slot + 1, me);
-    else if (ok)     tl_log_line("asset[swap]: read '%s' served by '%s'", name, me);
-    else             tl_log_line("asset[swap]: read of '%s' FAILED (errno %d) by '%s' -- the swapped-in app's first-frame path reached this read", name, err, me);
+    unsigned long w = __atomic_fetch_add(&g_asset_writes, 1, __ATOMIC_RELAXED) + 1;
+    asset_rec *r = &g_asset_ring[(w - 1) % TL_ASSET_RING];
+    r->ok = ok; r->err = err;
+    snprintf(r->name, sizeof(r->name), "%s", name);
+    r->tid = (unsigned long)(uintptr_t)pthread_self();
+    __atomic_store_n(&r->seq, w, __ATOMIC_RELEASE);
+    if (g_asset_forced) {
+        char me[32] = "?"; pthread_getname_np(pthread_self(), me, sizeof(me));
+        if (ok < 0)      tl_log_line("asset: opening '%s' by '%s' (the app's first-frame path)", name, me);
+        else if (ok)     tl_log_line("asset: read '%s' served by '%s'", name, me);
+        else             tl_log_line("asset: read of '%s' FAILED (errno %d) by '%s'", name, err, me);
+    }
+}
+void tl_asset_ring_dump(const char *tag)
+{
+    unsigned long n = __atomic_load_n(&g_asset_writes, __ATOMIC_RELAXED);
+    if (!n) return;
+    unsigned long cnt = n < TL_ASSET_RING ? n : TL_ASSET_RING;
+    unsigned long first = n - cnt + 1;
+    tl_log_line("asset[%s]: the %lu asset read(s) recorded before this point, oldest first (#%lu..#%lu of %lu this session) -- these are the app's OWN last reads, so the freeze happened after (or inside) the last one:",
+                tag, cnt, first, n, n);
+    for (unsigned long w = first; w <= n; w++) {
+        asset_rec *r = &g_asset_ring[(w - 1) % TL_ASSET_RING];
+        if (__atomic_load_n(&r->seq, __ATOMIC_ACQUIRE) != w) continue;      /* overwritten while we read: skip, never a torn name */
+        char me[32] = "?"; pthread_getname_np((pthread_t)(uintptr_t)r->tid, me, sizeof(me));
+        if (r->ok < 0)      tl_log_line("asset[%s]: #%lu opening '%s' by '%s'", tag, w, r->name, me);
+        else if (r->ok)     tl_log_line("asset[%s]: #%lu read '%s' served by '%s'", tag, w, r->name, me);
+        else                tl_log_line("asset[%s]: #%lu read of '%s' FAILED (errno %d) by '%s'", tag, w, r->name, r->err, me);
+    }
+}
+void tl_asset_ring_reset(void)
+{
+    for (int i = 0; i < TL_ASSET_RING; i++) __atomic_store_n(&g_asset_ring[i].seq, 0, __ATOMIC_RELAXED);
+    __atomic_store_n(&g_asset_writes, 0, __ATOMIC_RELAXED);
 }
 
 /* One line per distinct entry: that an APK entry was resolved (name, size, how served), and that one asked for is not in
@@ -1051,6 +1087,39 @@ static void tl_note_missing_data(const char *path, int e)
     if (nsaid < 16) snprintf(said[nsaid++], sizeof(said[0]), "%s", path);
     tl_log_line("husk: the runtime's own data file could not be opened: %s (errno %d); the Java code that wanted it fails in a static initialiser with a bare NullPointerException", path, e);
 }
+
+/*
+ * The paths a failed open() looked in, in the order first seen -- always armed, bounded, once per distinct path. libcore's
+ * own native code reports an ENOENT as a bare IOException ("No such file or directory") with NO path, so a boot that dies
+ * inside libcore's natives says only the errno (this run: "dvm: loading libcore's natives (libopenjdk.so) threw
+ * java.io.IOException: No such file or directory"). The DVM's natives loader dumps this table when such an exception is
+ * pending, so the next log names the FILE (or directory) that was missing. Only failed opens are recorded, so a successful
+ * open pays nothing; recording a failure is a bounded string copy plus a short dedupe scan, off the hot path by definition.
+ */
+#define TL_OPEN_FAIL_MAX 32
+static struct { char path[192]; int err; } g_open_fail[TL_OPEN_FAIL_MAX];
+static int g_open_fail_n;                       /* how many DISTINCT failing paths were seen, ever (kept up to the cap) */
+static void tl_open_fail_note(const char *path, int err)
+{
+    if (!path || !path[0]) return;
+    int kept = g_open_fail_n < TL_OPEN_FAIL_MAX ? g_open_fail_n : TL_OPEN_FAIL_MAX;
+    for (int i = 0; i < kept; i++) if (!strcmp(g_open_fail[i].path, path)) return;      /* once per distinct path */
+    if (g_open_fail_n < TL_OPEN_FAIL_MAX) {
+        snprintf(g_open_fail[g_open_fail_n].path, sizeof(g_open_fail[0].path), "%s", path);
+        g_open_fail[g_open_fail_n].err = err;
+    }
+    g_open_fail_n++;                            /* still counted past the cap, so the dump can say how many more */
+}
+void tl_open_fail_dump(const char *why)
+{
+    int n = g_open_fail_n < TL_OPEN_FAIL_MAX ? g_open_fail_n : TL_OPEN_FAIL_MAX;
+    if (!n) return;
+    tl_log_line("open[%s]: the %d path(s) a failed open() looked in, in the order first seen -- the file the guest reports only as \"No such file or directory\" is one of these:", why, n);
+    for (int i = 0; i < n; i++)
+        tl_log_line("open[%s]: '%s' (errno %d)", why, g_open_fail[i].path, g_open_fail[i].err);
+    if (g_open_fail_n > TL_OPEN_FAIL_MAX)
+        tl_log_line("open[%s]: (%d more distinct path(s) failed but were not kept: the table is bounded)", why, g_open_fail_n - TL_OPEN_FAIL_MAX);
+}
 static int b_open(const char *path, int flags, unsigned mode)
 {
     tl_hp_bump(TL_HP_OPEN);
@@ -1119,7 +1188,7 @@ static int b_open(const char *path, int flags, unsigned mode)
     TL_ERRNO_END();
     { static int tr = -1, said; if (tr < 0) tr = getenv("TL_FILE_TRACE") ? atoi(getenv("TL_FILE_TRACE")) : 0; if (tr && said++ < (tr > 1 ? 4000000 : 20000)) tl_log_line("file: open(%s, %#x) -> %d%s", path, flags, fd, fd < 0 ? (e == ENOENT ? " ENOENT" : " error") : ""); }
     if (fd >= 0) vfd_take_over(fd);   /* an ordinary file opened on this number: no redirect of an older file may survive onto it */
-    if (fd < 0 && e == ENOENT) { tl_note_missing_file(real); tl_note_missing_data(real, e); }   /* name the host path it looked in, not just the guest one */
+    if (fd < 0 && e == ENOENT) { tl_open_fail_note(real, e); tl_note_missing_file(real); tl_note_missing_data(real, e); }   /* name the host path it looked in, not just the guest one */
     return fd;
 }
 static int b___open_2(const char *path, int flags) { return b_open(path, flags, 0); }
@@ -2558,7 +2627,8 @@ static int b_openat(int dirfd, const char *path, int flags, unsigned mode)
 {
     if (at_plain(dirfd, path)) return b_open(path, flags, mode);
     if ((flags & 3) == 0) fill_lib_standin_at(dirfd, path);
-    TL_ERRNO_BEGIN(); int fd = openat(dirfd, path, oflags_to_darwin(flags), mode); TL_ERRNO_END();
+    TL_ERRNO_BEGIN(); int fd = openat(dirfd, path, oflags_to_darwin(flags), mode); int e = errno; TL_ERRNO_END();
+    if (fd < 0 && e == ENOENT) tl_open_fail_note(path, e);
     return fd;
 }
 static int b_unlinkat(int dirfd, const char *path, int flags)
