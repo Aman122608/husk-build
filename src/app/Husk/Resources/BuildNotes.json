@@ -1,6 +1,18 @@
 {
   "notes": [
     {
+      "sha": "next",
+      "date": "2026-10-18",
+      "title": "The region fix, and a note on every build",
+      "goal": "The translation layer can adopt the JIT region the app has already secured, so guest libraries can load -- and every build now opens with a note like this one saying what it is for.",
+      "details": [
+        "This is the build that should finally get a Unity title past 0 frames.",
+        "In the log, look for 'jni: libjavacore.so JNI_OnLoad' and for the failed to initialize Java/lang/System message to be gone.",
+        "If the region still cannot be reached, the log names that failure by name instead of quietly reporting no arena.",
+        "From now on every build opens with a short note like this one, and it is re-readable under Settings, This Build."
+      ]
+    },
+    {
       "sha": "d11dd48",
       "date": "2026-10-18",
       "title": "The engine can use the JIT region",

@@ -61,8 +61,27 @@ enum BuildNotes {
 
     // MARK: - the notes
 
-    /// The note for the running build, or nil when this build is unlisted.
-    static var note: Note? { all.first { $0.sha == current } }
+    /// The note to show for this build, or nil when there is nothing to show.
+    ///
+    /// An exact sha match wins. When there is none, the NEWEST entry is used --
+    /// because on this project a CI build can never match itself. The note file
+    /// has to be present in the tree the IPA is built from, and package_ipa.sh
+    /// stamps `HuskBuildCommit` from that same commit, so the entry describing
+    /// build N would have to be authored before N's sha existed. That is a fixed
+    /// point, not a missing note: the old exact-match-only lookup showed "No note
+    /// for this build" on every CI build, which told the owner nothing.
+    ///
+    /// `noteIsExact` says which of the two happened, and the view says so too, so
+    /// a fallback note can never pass itself off as this build's own.
+    static var note: Note? {
+        guard !current.isEmpty else { return nil }
+        return all.first { $0.sha == current } ?? all.first
+    }
+
+    /// Whether `note` is this build's own entry rather than the newest available.
+    static var noteIsExact: Bool {
+        !current.isEmpty && all.contains { $0.sha == current }
+    }
 
     /// Every note in the file, in the order the file lists them (newest first).
     static let all: [Note] = load()
@@ -109,6 +128,9 @@ enum BuildNotes {
 struct BuildNotesBody: View {
     let note: BuildNotes.Note?
     let build: String
+    /// Whether this note is this build's own entry. Defaults to the running
+    /// build's answer, so callers need not thread it through.
+    var exact: Bool = BuildNotes.noteIsExact
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -120,6 +142,12 @@ struct BuildNotesBody: View {
                     Text("Build \(build) · \(note.date)")
                         .font(.caption)
                         .foregroundStyle(Theme.textDim)
+                    if !exact {
+                        Text("Latest note in the file — this build has no note of its own yet.")
+                            .font(.caption)
+                            .foregroundStyle(Theme.textDim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 Text(note.goal)
                     .font(.system(size: 16))
@@ -219,7 +247,8 @@ struct BuildNotesSettings: View {
                 DetailRow(label: "Date", value: BuildNotes.note?.date ?? "—", mono: false)
             } footer: {
                 Text("A note is shown once, the first time its build opens, and can be read again here. "
-                   + "Notes are written per build, keyed by the commit the build was made from.")
+                   + "Notes are written per build and keyed by the commit the build was made from; "
+                   + "when a build has no note of its own, the newest note in the file is shown and says so.")
             }
         }
         .navigationTitle("This Build")
