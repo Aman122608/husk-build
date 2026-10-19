@@ -2796,6 +2796,7 @@ static void probe_image_identity(void)
 
 static volatile int g_mach_ok = -1;                 /* -1 untested, 0 FAILED (fall back), 1 round-trips here */
 static volatile sig_atomic_t g_mach_test_ran;
+static volatile sig_atomic_t g_mach_dispatch_ran;   /* did the redirected thread actually run mach_sig_dispatch? */
 static volatile int g_mach_test_done;
 
 static void mach_test_handler(int gsig, siginfo_t *info, void *uc)
@@ -2833,6 +2834,7 @@ __attribute__((naked, used)) static void mach_sig_restore(struct __darwin_arm_th
 static void mach_sig_dispatch(int gsig, siginfo_t *info, ucontext_t *uc)
 {
     mcontext_t mc = uc->uc_mcontext;
+    g_mach_dispatch_ran++;
     host_signal_entry(tl_signal_to_darwin(gsig), info, uc);
     uintptr_t pc = (uintptr_t)arm_thread_state64_get_pc(mc->__ss);
     mach_sig_restore(&mc->__ss, pc);
@@ -2845,6 +2847,10 @@ static int mach_sig_deliver(pthread_t target, int gsig)
     mach_port_t tp = pthread_mach_thread_np(target);
     if (!tp) return -1;
     if (thread_suspend(tp) != KERN_SUCCESS) return -1;
+    /* A thread parked in an interruptible syscall (nanosleep, futex, poll -- where a guest thread waits) keeps its PC in
+     * the kernel; a thread_set_state PC change is then lost when the syscall returns. thread_abort_safely brings it back to
+     * a safe point in user space first (KERN_FAILURE simply means it was not in a syscall, so nothing to abort). */
+    thread_abort_safely(tp);
     struct __darwin_arm_thread_state64 st;
     mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
     if (thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt) != KERN_SUCCESS) {
@@ -2884,7 +2890,7 @@ static void *mach_test_thread(void *arg)
 /* One-shot: prove the redirect -> handler -> setcontext -> continue round-trip on THIS device before trusting it with a GC. */
 static void tl_signal_mach_selftest(void)
 {
-    g_mach_test_ran = 0; g_mach_test_done = 0;
+    g_mach_test_ran = 0; g_mach_test_done = 0; g_mach_dispatch_ran = 0;
     int T = 21;                                    /* an unused bionic signal (the collector uses 30/24) */
     void *sh = g_guest_sig[T].handler; int sf = g_guest_sig[T].flags;
     g_guest_sig[T].handler = (void *)(uintptr_t)mach_test_handler; g_guest_sig[T].flags = 0;
@@ -2901,10 +2907,10 @@ static void tl_signal_mach_selftest(void)
     g_mach_test_done = 1; pthread_join(th, NULL);
     g_guest_sig[T].handler = sh; g_guest_sig[T].flags = sf;
     g_mach_ok = (delivered == 0 && g_mach_test_ran > 0) ? 1 : 0;
-    tl_log_line("signal-mach: selftest %s (deliver=%d, handler ran %d time(s)) -- Mach thread-control delivery of a guest "
-                "signal %s on this device, so a guest stop-the-world signal will %s be delivered despite the tracer",
-                g_mach_ok ? "PASS" : "FAIL", delivered, (int)g_mach_test_ran,
-                g_mach_ok ? "round-trips (redirect -> handler -> setcontext -> the target continued)" : "does NOT round-trip",
+    tl_log_line("signal-mach: selftest %s (deliver=%d, dispatch ran %d time(s), handler ran %d time(s)) -- Mach thread-control "
+                "delivery of a guest signal %s on this device, so a guest stop-the-world signal will %s be delivered despite the tracer",
+                g_mach_ok ? "PASS" : "FAIL", delivered, (int)g_mach_dispatch_ran, (int)g_mach_test_ran,
+                g_mach_ok ? "round-trips (redirect -> handler -> restore -> the target continued)" : "does NOT round-trip",
                 g_mach_ok ? "now" : "NOT (every send falls back to pthread_kill)");
 }
 
