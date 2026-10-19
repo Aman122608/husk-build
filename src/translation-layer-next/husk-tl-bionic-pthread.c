@@ -656,8 +656,11 @@ static int b_kill(pthread_t t, int sig)
 {
     if (getenv("TL_SIGNAL_TRACE")) { char nm[32] = "", tn[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); pthread_getname_np(t, tn, sizeof(tn)); tl_log_line("signal[%s]: pthread_kill(%s, %d)", nm, tn, sig); }
     int d = tl_signal_to_darwin(sig);
-    if (d < 0) return 22;
-    return rc(pthread_kill(t, d));
+    if (d < 0) { tl_signal_note_send(sig, t, 1); return 22; }
+    int r = rc(pthread_kill(t, d));
+    /* The ledger names the thread the signal was aimed at only for its first two sends; ESRCH (the thread is gone) is not a refusal. */
+    tl_signal_note_send(sig, t, r != 0 && r != 3);
+    return r;
 }
 
 static int b_setname_np(pthread_t t, const char *name)

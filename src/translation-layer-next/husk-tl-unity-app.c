@@ -1669,6 +1669,14 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
      * spinning, which the bare pc of the sampler cannot. Both are cold (this probe runs once per detected stall). */
     { char own[520]; ss_own_egl(own, sizeof(own)); tl_log_line("stall-%s", own); }
     ss_callsites("stall-callsite");
+
+    /* THE TWO CROSS-THREAD DELIVERIES this stall could not previously rule in or out, both from counters:
+     *   - an ALooper fd registered WITH a callback: does the thread that owns that looper ever poll it, and did the
+     *     callback ever run (Unity's player registers a self-pipe this way and blocks until it is serviced);
+     *   - a signal sent to a thread: did the guest's handler RUN on the thread it was aimed at (Boehm GC's stop-the-world
+     *     suspension of il2cpp is exactly this handshake, and one thread that never runs its handler hangs the engine). */
+    tl_looper_report("stall-looper");
+    tl_signal_report("stall-signal");
 }
 
 static void tl_swapstall_tick(unsigned long frames, bool running, int epoch)
@@ -1780,6 +1788,10 @@ int husk_tl_session_close(void)
     tl_log_line("delivery[close]: the app's own lifecycle/window/surface/looper deliveries of this session are the 'D/HuskDelivery' lines above; a step with no line was never delivered to the app, and a 'post #n' with no 'dispatch #n' is a message the looper never took");
     { char own[520]; ss_own_egl(own, sizeof(own)); tl_log_line("delivery[close]: %s", own); }
     ss_callsites("close-callsite");
+    /* Every ALooper the guest prepared (was it ever polled, and were its registered callbacks ever delivered) and every
+     * guest signal (installed, sent, and did the handler run on the thread it was aimed at). Both are counters. */
+    tl_looper_report("delivery[close]: looper");
+    tl_signal_report("delivery[close]: signal");
 
     /* THE FATAL-TIME MEASUREMENT, taken HERE on this normal thread -- NOT in the crash reporter's signal handler (see
      * tl_xmem_report_fault_time). A no-op when no guest fault was recorded and on a host with no arena. */

@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +104,19 @@ void tl_set_guest_errno(int guest_errno);
 /* Signal numbers: Linux <-> Darwin. 0 and negative on no equivalent. */
 int tl_signal_to_darwin(int linux_sig);
 int tl_signal_from_darwin(int darwin_sig);
+
+/* The signal-delivery ledger (husk-tl-bionic.c): did the guest's handler get INSTALLED, was the signal SENT, and did the
+ * handler RUN on the thread it was sent to. A cross-thread handshake that hangs (Boehm GC's stop-the-world is the one that
+ * matters for il2cpp) hangs because one of the three did not happen, and no other line in a run says which. */
+void tl_signal_note_install(int guest_sig, int darwin_sig);
+void tl_signal_note_send(int guest_sig, pthread_t target, int refused);
+void tl_signal_note_run(int guest_sig);
+void tl_signal_report(const char *tag);
+
+/* The ALooper delivery ledger (husk-tl-bionic-ndk.c): one line per guest ALooper with how often it was polled, by which
+ * thread, and whether the callbacks registered on it were ever delivered -- the question "a guest registered an fd with a
+ * callback and woke the looper: did the callback ever run" answered from one log, read by the stall probe and the close. */
+void tl_looper_report(const char *tag);
 
 /* Android system properties, for __system_property_get and Java's Build. */
 const char *tl_sysprop(const char *name);

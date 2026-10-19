@@ -2209,6 +2209,7 @@ static void host_signal_entry(int dsig, siginfo_t *info, void *uctx)
 {
     int gsig = tl_signal_from_darwin(dsig);
     sig_trace("delivered", gsig);
+    tl_signal_note_run(gsig);
     void *h = g_guest_sig[gsig < 32 ? gsig : 0].handler;
     if (!h || h == (void *)1) return;
     ucontext_t *uc = uctx;
@@ -2242,9 +2243,19 @@ static int is_fault_signal(int g) { return g == 4 || g == 5 || g == 6 || g == 7 
 
 static int b_sigaction(int sig, const guest_sigaction *act, guest_sigaction *old)
 {
-    if (sig <= 0 || sig >= 32) { tl_set_guest_errno(22); return -1; }
+    if (sig <= 0 || sig >= 32) {
+        /* Android's real-time signals (32..64) have no Darwin equivalent: the layer has no number to install the
+         * guest's handler on or to deliver it with. Said once, in the layer's own words, because the guest's own
+         * report of this ("setting blocked thread signal handler failed: Invalid argument" from libcore's
+         * AsynchronousCloseMonitor) is the only other trace of it. */
+        tl_note_once("sigaction refused a bionic signal >= 32: Darwin has no real-time signals, so the layer has no "
+                     "number to install the guest's handler on -- Android's real-time signals are not delivered");
+        tl_set_guest_errno(22);
+        return -1;
+    }
     int d = tl_signal_to_darwin(sig);
     if (d <= 0) { tl_set_guest_errno(22); return -1; }
+    tl_signal_note_install(sig, d);
     if (old) {
         memset(old, 0, sizeof(*old));
         old->handler = g_guest_sig[sig].handler;
@@ -2312,7 +2323,7 @@ static void note_signal(const char *how, int sig)
 {
     if (sig == 6 || sig == 9 || sig == 11 || sig == 15 || sig == 3) tl_log_line("bionic: guest asked for signal %d (%s)", sig, how);
 }
-static int b_raise(int sig) { note_signal("raise", sig); int d = tl_signal_to_darwin(sig); if (d < 0) { tl_set_guest_errno(22); return -1; } return raise(d); }
+static int b_raise(int sig) { note_signal("raise", sig); int d = tl_signal_to_darwin(sig); if (d < 0) { tl_signal_note_send(sig, pthread_self(), 1); tl_set_guest_errno(22); return -1; } tl_signal_note_send(sig, pthread_self(), 0); return raise(d); }
 
 
 /* ------------------------------------------------- raw Linux system calls */

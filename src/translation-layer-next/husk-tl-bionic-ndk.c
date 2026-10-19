@@ -32,9 +32,27 @@
  * and whatever the guest registered on it (the Choreographer's pipe, an AInputQueue);
  * a delivery trace of prepare/addFd/wake/callback is written here, bounded (LOOPER_NOTES).
  */
-typedef struct looper_fd { int fd, ident, events; void *callback, *data; struct looper_fd *next; } looper_fd;
-typedef struct tl_looper { int wake[2]; atomic_int refs; pthread_t thread; struct tl_looper *next; pthread_mutex_t mu; looper_fd *fds; } tl_looper;
+typedef struct looper_fd {
+    int fd, ident, events; void *callback, *data;
+    char from[32];                 /* the thread that registered it, named while that thread was alive */
+    struct looper_fd *next;
+} looper_fd;
+/* Per-fd delivery counts, in a fixed table INSIDE the looper rather than in the fd node: a node can be freed by
+ * ALooper_removeFd while a poll is mid-delivery (the poll works on a copy of the node for exactly that reason), so a
+ * counter that lives in the node could be incremented after its free. The table is scanned on a DELIVERED callback only
+ * (at most the display rate) and the scan is of plain ints, so a delivery costs one atomic add and no lock. */
+#define LOOPER_DELIV 32
+typedef struct tl_looper {
+    int wake[2]; atomic_int refs; pthread_t thread; struct tl_looper *next; pthread_mutex_t mu; looper_fd *fds;
+    atomic_int polls, wakes, callbacks;   /* the ALooper delivery ledger: see tl_looper_report */
+    struct { int fd; atomic_int hits; } deliv[LOOPER_DELIV];
+    char owner[32], poller[32];           /* the thread that prepared it, and the last thread seen polling it */
+    struct tl_looper *all_next;           /* every looper ever made, so the stall probe can find them */
+} tl_looper;
 static __thread tl_looper *t_looper;
+/* Loopers are never freed (a thread's looper lives as long as the informational one does), so a report can walk them all. */
+static tl_looper *g_all_loopers;
+static pthread_mutex_t g_all_loopers_mu = PTHREAD_MUTEX_INITIALIZER;
 
 /* ---------------------------------------------------------------------------------------------------------------
  * A BOUNDED DELIVERY TRACE of the NDK side of the same question the Java side answers: who posted to a thread's
@@ -61,6 +79,16 @@ static tl_looper *looper_make(void)
     atomic_init(&l->refs, 1);
     pthread_mutex_init(&l->mu, NULL);
     l->thread = pthread_self();
+    /* Named WHERE it was made: a thread may rename itself later (Unity's player thread is "Thread-1" when it prepares
+     * its looper and "UnityMain" by the time it registers a fd on it), and a report that only knew the later name could
+     * not tell a looper's owner from the thread that later used it. */
+    pthread_getname_np(l->thread, l->owner, sizeof(l->owner));
+    if (!l->owner[0]) snprintf(l->owner, sizeof(l->owner), "(unnamed)");
+    snprintf(l->poller, sizeof(l->poller), "(never polled)");
+    pthread_mutex_lock(&g_all_loopers_mu);
+    l->all_next = g_all_loopers;
+    g_all_loopers = l;
+    pthread_mutex_unlock(&g_all_loopers_mu);
     return l;
 }
 static void *b_ALooper_prepare(int opts)
@@ -88,6 +116,7 @@ static void b_ALooper_release(tl_looper *l) { (void)l; }
 static void b_ALooper_wake(tl_looper *l)
 {
     if (!l) return;
+    atomic_fetch_add(&l->wakes, 1);
     char c = 1;
     (void)!write(l->wake[1], &c, 1);
     /* A wake is the NDK half of "the queue was woken": the only way another thread rouses a looper's poll. A wake whose
@@ -101,14 +130,24 @@ static void b_ALooper_wake(tl_looper *l)
 static int b_ALooper_addFd(tl_looper *l, int fd, int ident, int events, void *callback, void *data)
 {
     if (!l || fd < 0) return -1;
+    char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm)); if (!nm[0]) snprintf(nm, sizeof(nm), "?");
     pthread_mutex_lock(&l->mu);
     looper_fd *f = l->fds;
     while (f && f->fd != fd) f = f->next;
     if (!f) { f = calloc(1, sizeof(*f)); f->next = l->fds; l->fds = f; }
     f->fd = fd; f->ident = ident; f->events = events; f->callback = callback; f->data = data;
+    snprintf(f->from, sizeof(f->from), "%s", nm);
+    /* its delivery slot: a re-registered fd starts its count over */
+    int slot = -1, free_slot = -1;
+    for (int d = 0; d < LOOPER_DELIV; d++) {
+        if (l->deliv[d].fd == fd) { slot = d; break; }
+        if (free_slot < 0 && l->deliv[d].fd == 0) free_slot = d;
+    }
+    if (slot < 0) slot = free_slot >= 0 ? free_slot : (int)((unsigned)fd % LOOPER_DELIV);
+    l->deliv[slot].fd = fd;
+    atomic_store(&l->deliv[slot].hits, 0);
     pthread_mutex_unlock(&l->mu);
-    { char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
-      LOOPER_NOTE(addfd, "looper: ALooper_addFd fd %d ident %d events %#x callback %s registered from '%s' (a message/fd the guest wants delivered on the poll thread)", fd, ident, events, callback ? "SET" : "none (the poll returns the ident to the caller)", nm); }
+    LOOPER_NOTE(addfd, "looper: ALooper_addFd fd %d ident %d events %#x callback %s registered from '%s' (a message/fd the guest wants delivered on the poll thread)", fd, ident, events, callback ? "SET" : "none (the poll returns the ident to the caller)", nm);
     b_ALooper_wake(l);
     return 1;
 }
@@ -130,6 +169,15 @@ static int b_ALooper_pollOnce(int timeout_ms, int *out_fd, int *out_events, void
     if (out_events) *out_events = 0;
     if (out_data) *out_data = NULL;
     if (!l) return ALOOPER_POLL_ERROR;
+    /* The ledger's first half: that this looper WAS polled, and by which thread. One relaxed add per poll (the callers
+     * poll at most a few hundred times a second -- the Java bridge polls non-blocking at 8 ms, Unity's own looper thread
+     * blocks in poll() and wakes on an fd), and a sampled name: a report that finds a looper with zero polls knows
+     * nothing registered on it could ever have been delivered. */
+    int np = atomic_fetch_add(&l->polls, 1) + 1;
+    if ((np & 0xfff) == 1) {
+        char nm[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); if (!nm[0]) snprintf(nm, sizeof(nm), "(unnamed)");
+        snprintf(l->poller, sizeof(l->poller), "%s", nm);
+    }
     struct pollfd pfds[32];
     looper_fd snap[31];
     int n = 0;
@@ -153,6 +201,12 @@ static int b_ALooper_pollOnce(int timeout_ms, int *out_fd, int *out_events, void
         int ev = ((pfds[i].revents & POLLIN) ? ALOOPER_EVENT_INPUT : 0) | ((pfds[i].revents & POLLOUT) ? ALOOPER_EVENT_OUTPUT : 0)
                | ((pfds[i].revents & POLLERR) ? ALOOPER_EVENT_ERROR : 0) | ((pfds[i].revents & POLLHUP) ? ALOOPER_EVENT_HANGUP : 0);
         if (f->callback) {
+            /* The DELIVERY end of an addFd/wake: the callback ran on the polling thread, and this fd's own count is bumped
+             * so the report can say which registered fd has NEVER been serviced. Both are lock-free: one atomic add for the
+             * looper's total, and a scan of the looper's fixed delivery table (plain ints, no mutex) for this fd's slot --
+             * a node in the fd LIST cannot be used here because a concurrent ALooper_removeFd may have freed it. */
+            atomic_fetch_add(&l->callbacks, 1);
+            for (int d = 0; d < LOOPER_DELIV; d++) if (l->deliv[d].fd == f->fd) { atomic_fetch_add(&l->deliv[d].hits, 1); break; }
             { static int tr = -1; if (tr < 0) tr = getenv("TL_LOOPER_TRACE") ? 1 : 0; if (tr) tl_log_line("looper: callback for fd %d (%d fds watched)", f->fd, n - 1); }
             /* The DELIVERY end of an addFd/wake: the callback ran on the polling thread. A registered fd whose callback
              * never appears here is the other half of "the signal the app never receives". */
@@ -177,6 +231,64 @@ static int b_ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void 
         timeout_ms = 0;
     }
 }
+
+/*
+ * THE ALooper DELIVERY LEDGER, read by the stall probe and the close.
+ *
+ * The delivery trace above writes the first LOOPER_NOTES events of each kind, which is enough to see a single addFd
+ * and a single wake; it cannot answer the question a hang actually asks: was this looper EVER polled, by which thread,
+ * and did the callback registered on it ever run. Both are counters now, so the answer is a number and not an inference:
+ * a looper with zero polls is one where nothing registered on it can ever be delivered (the owner thread never entered
+ * pollOnce at all -- the bridge that polls it is android.os.MessageQueue.next -> nativeLooperPoll on the SAME thread, so
+ * a thread that stopped running its Java loop has stopped polling), and an fd whose own hit count is 0 while its looper
+ * has polls of its own is an fd that never became readable (the guest's own write never happened). Those are different
+ * bugs, and this line is what tells them apart.
+ */
+void tl_looper_report(const char *tag)
+{
+    tl_looper *all[64];
+    int nall = 0;
+    pthread_mutex_lock(&g_all_loopers_mu);
+    for (tl_looper *l = g_all_loopers; l && nall < 64; l = l->all_next) all[nall++] = l;
+    pthread_mutex_unlock(&g_all_loopers_mu);
+    if (!nall) { tl_log_line("%s: no guest thread ever prepared an ALooper this run, so no fd can have been watched on one", tag); return; }
+    int starving = 0, undelivered = 0, watched = 0;
+    for (int i = 0; i < nall; i++) {
+        tl_looper *l = all[i];
+        int polls = atomic_load(&l->polls), wakes = atomic_load(&l->wakes), cbs = atomic_load(&l->callbacks);
+        char owner[32], poller[32];
+        snprintf(owner, sizeof(owner), "%s", l->owner);
+        snprintf(poller, sizeof(poller), "%s", l->poller);
+        pthread_mutex_lock(&l->mu);
+        int fd[16], ident[16], events[16], iscb[16], hits[16];
+        char from[16][32];
+        int nf = 0;
+        for (looper_fd *f = l->fds; f && nf < 16; f = f->next) {
+            fd[nf] = f->fd; ident[nf] = f->ident; events[nf] = f->events; iscb[nf] = f->callback != NULL;
+            hits[nf] = 0;
+            for (int d = 0; d < LOOPER_DELIV; d++) if (l->deliv[d].fd == f->fd) { hits[nf] = atomic_load(&l->deliv[d].hits); break; }
+            snprintf(from[nf], sizeof(from[nf]), "%s", f->from[0] ? f->from : "?");
+            nf++;
+        }
+        pthread_mutex_unlock(&l->mu);
+        tl_log_line("%s: ALooper of '%s' (tid %p): polled %d time(s) by '%s' (name sampled), wakes %d, callbacks delivered %d, %d fd(s) watched",
+                    tag, owner, (void *)l->thread, polls, polls ? poller : "(the owner never entered pollOnce)", wakes, cbs, nf);
+        if (!polls && nf) starving++;
+        for (int k = 0; k < nf; k++) {
+            watched++;
+            if (iscb[k] && !hits[k]) undelivered++;
+            tl_log_line("%s:   fd %d ident %d events %#x callback %s registered by '%s' -- its callback has been delivered %d time(s)%s",
+                        tag, fd[k], ident[k], events[k], iscb[k] ? "SET" : "none (the poll returns the ident)",
+                        from[k], hits[k], hits[k] ? "" : " -- NEVER");
+        }
+    }
+    /* The one sentence the stall needed and could not have: which kind of missing delivery this is. */
+    tl_log_line("%s: ALooper verdict: %d looper(s), %d fd(s) watched, %d fd(s) with a callback that has NEVER been delivered, %d looper(s) never polled -- %s",
+                tag, nall, watched, undelivered, starving,
+                undelivered ? "an fd that was registered with a callback and never serviced is delivered by the thread that owns its looper, and only there: the looper line above says whether that thread ever polled (a poll of 0 says it did not -- the thread stopped running the loop that polls its own ALooper) and whether the fd ever became readable"
+                            : "every registered fd has been serviced at least once (a hang whose fd was registered and never serviced is not this one)");
+}
+
 
 /* ----------------------------------------------------------- choreographer */
 /*
