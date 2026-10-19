@@ -525,6 +525,21 @@ void tl_ld_interpose(const char *name, void *fn)
     if (g_ninterpose < MAX_INTERPOSE) { snprintf(g_interpose[g_ninterpose].name, sizeof(g_interpose[0].name), "%s", name); g_interpose[g_ninterpose++].fn = fn; }
 }
 
+/* The post-relocation hook (husk-tl-ld.h). One slot: the translation layer registers at most one, and a run
+ * that registers none takes no branch anywhere but here. */
+static tl_ld_load_hook g_load_hook;
+void tl_ld_set_load_hook(tl_ld_load_hook hook) { g_load_hook = hook; }
+
+/* Read n bytes of a library's link-time address through the guest's writable view (husk-tl-ld.h). */
+bool tl_ld_read(tl_lib *lib, uint64_t vaddr, void *out, size_t n)
+{
+    if (!lib || !out || !n) return false;
+    uint64_t off = vaddr - lib->base_vaddr;
+    if (vaddr < lib->base_vaddr || off > lib->npages * PAGE || n > lib->npages * PAGE - off) return false;
+    memcpy(out, lib->rw + off, n);
+    return true;
+}
+
 /* The C++ runtime's exception machinery. Geometry Dash carries its own copy; Geode and its mods are built against
  * libc++_shared, and an exception thrown by one runtime cannot be caught by the other. So everything but the game itself
  * takes these from libc++_shared, as Geode's own Android launcher arranges. */
@@ -2309,6 +2324,9 @@ static tl_lib *load_locked(const char *name, int depth, bool system)
     unsigned long long trel = tl_load_now_ns();
     if (!relocate(L)) return NULL;
     tl_load_add(TL_LOAD_MAP, tl_load_now_ns() - trel, 0);       /* relocating + adrp patching: the CPU after the bytes arrive */
+    /* The image exists and is relocated, its constructors have not run: the one window in which a site
+     * inside it can be instrumented before the guest's own code reaches it (husk-tl-startup-trace.c). */
+    if (g_load_hook) g_load_hook(L);
     return L;
 }
 

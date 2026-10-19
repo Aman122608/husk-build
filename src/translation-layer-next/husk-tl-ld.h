@@ -50,6 +50,22 @@ const char *tl_ld_apk_path_at(int index);
 /* Bind every later import of `name` to `fn` instead of the library that defines it (the original is still reachable with tl_ld_sym). Call before the libraries load. */
 void tl_ld_interpose(const char *name, void *fn);
 
+/*
+ * A callback when a library has been mapped, its dependencies loaded and its relocations applied, and
+ * before its constructors run. A site inside the app's own code has to be instrumented in that window:
+ * after the mapping exists (the address is known) and before the guest can reach it. Registered with
+ * tl_ld_set_load_hook; NULL by default, so a run that registers nothing behaves exactly as before.
+ */
+typedef void (*tl_ld_load_hook)(tl_lib *lib);
+void tl_ld_set_load_hook(tl_ld_load_hook hook);
+
+/*
+ * Read `n` bytes of a loaded library's link-time address through the guest's own (writable) view.
+ * For an instrument that must check what an image actually holds at a site before it patches it
+ * (husk-tl-startup-trace.c). False when the range is not inside the image's mapped pages.
+ */
+bool tl_ld_read(tl_lib *lib, uint64_t vaddr, void *out, size_t n);
+
 /* Whether one of the APKs carries this arm64 library (an engine is told by the libraries it ships). */
 bool tl_ld_has_lib(const char *name);
 int tl_ld_apk_libs(void (*cb)(const char *name, uint64_t size, void *user), void *user);

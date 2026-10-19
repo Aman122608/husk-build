@@ -18,6 +18,7 @@
 #include "husk-tl-gamepad.h"
 #include "husk-tl-jni.h"
 #include "husk-tl-ld.h"
+#include "husk-tl-startup-trace.h"
 
 void tl_jni_hle_install(void);
 void tl_hle_configure(const char *pkg, const char *apk, const char *data, int w, int h);
@@ -60,6 +61,9 @@ static void *native_of(const char *cls, const char *name, const char *sig)
 bool tl_unity_start(const tl_unity_config *cfg)
 {
     U.cfg = *cfg;
+    /* Before anything loads: the startup breadcrumbs have to be in place before the engine's own
+     * libraries are mapped and run, or the window they trace is already over (husk-tl-startup-trace.c). */
+    tl_startup_trace_arm();
     tl_set_data_dir(cfg->data_dir);
     tl_nwindow_configure(cfg->width, cfg->height, cfg->metal_layer);
     int n = tl_dexidx_open(cfg->apk_path);
@@ -146,10 +150,15 @@ static void *unity_main(void *arg)
         keyboard_deliver();
         struct timespec t0, t1;
         clock_gettime(CLOCK_MONOTONIC, &t0);
+        /* One shot, on the first iteration only: the player loop's first execution, and whether it
+         * ever came back. If the second line never appears, the engine's own startup is where it
+         * stopped (husk-tl-startup-trace.c); the check itself is a static in the trace, not a cost. */
+        tl_startup_trace_render(0, 0);
         uint8_t keep = ((uint8_t (*)(void *, void *))render)(tl_jni_env(), U.player);
         clock_gettime(CLOCK_MONOTONIC, &t1);
         {
             unsigned long long ns = (unsigned long long)((t1.tv_sec - t0.tv_sec) * 1000000000ll + (t1.tv_nsec - t0.tv_nsec));
+            tl_startup_trace_render(1, ns);
             atomic_fetch_add(&U.perf_ns, ns);
             atomic_fetch_add(&U.perf_frames, 1);
             unsigned long long m = atomic_load(&U.perf_max_ns);
@@ -456,4 +465,7 @@ void tl_unity_stop(void)
 {
     atomic_store(&U.stop, true);
     if (U.thread_started) pthread_join(U.thread, NULL);
+    /* One line that answers "how far did the engine's own startup get?" with the milestones it never
+     * reached, so a reviewer does not have to read the log for absences (husk-tl-startup-trace.c). */
+    tl_startup_trace_report();
 }
