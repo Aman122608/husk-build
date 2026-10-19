@@ -149,6 +149,12 @@ void tl_signal_note_mask_clear_failed(int pthread_sigmask_rc, unsigned long mask
  * thread whose mask swallows it. One line per signal. */
 void tl_signal_note_mask_unblocked(int guest_sig, int darwin_sig, int rc);
 void tl_signal_report(const char *tag);
+/* READ BACK the disposition of a Darwin signal with Darwin's own sigaction(d, NULL, &cur) -- the fact the ledger cannot
+ * see. Fills `out` with the address, its nearest symbol and its image (base), classified against THIS image's
+ * host_signal_entry: SIG_DFL / SIG_IGN (Darwin DISCARDS a send of it), OURS, ANOTHER HANDLER in this image, or ANOTHER
+ * IMAGE'S handler (a different Mach-O installed it, so this image's ledger can never count its runs). Does the work only
+ * when called; callers gate it to once per signal. */
+void tl_signal_describe_disposition(int darwin_sig, char *out, size_t cap);
 
 /* The one-shot signal self-test (husk-tl-bionic-io.c): installs its OWN probe handler on a Darwin signal the layer owns,
  * sends it to a thread the layer owns, and reports PASS/FAIL with the errno -- answering, by measurement on the device,

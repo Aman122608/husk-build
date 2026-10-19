@@ -39,6 +39,8 @@ const char *tl_ld_main_apk(void);
 #include <sys/mount.h>
 #include <sys/select.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
+#include <sys/proc.h>
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <mach/mach.h>
@@ -2519,6 +2521,8 @@ static int probe_deliver_self(int dsig, int *errno_out, int *ran_out,
     sigemptyset(&sa.sa_mask);
     errno = 0;
     if (sigaction(dsig, &sa, &old) != 0) { *errno_out = errno ? errno : EINVAL; *ran_out = 0; return -1; }
+    { char desc[320]; tl_signal_describe_disposition(dsig, desc, sizeof(desc));   /* READ THE PROBE INSTALL BACK */
+      tl_log_line("signal-selftest: Darwin %d SELF-DIRECTED: the probe handler was installed with Darwin's own sigaction; the install reads back as: %s", dsig, desc); }
     if (mask_before_out) { *mask_before_out = 0; probe_own_mask(mask_before_out); }
     unsigned long before = tl_signal_probe_count();
     errno = 0;
@@ -2550,6 +2554,8 @@ static int probe_deliver_thread(int dsig, probe_target *t, int *errno_out)
     *errno_out = 0;
     errno = 0;
     if (sigaction(dsig, &sa, &old) != 0) { *errno_out = errno ? errno : EINVAL; return -1; }
+    { char desc[320]; tl_signal_describe_disposition(dsig, desc, sizeof(desc));   /* READ THE INSTALL BACK before the send */
+      tl_log_line("signal-selftest: Darwin %d CROSS-THREAD: the probe handler was installed with Darwin's own sigaction; the install reads back as: %s", dsig, desc); }
     pthread_attr_t at;
     pthread_attr_init(&at);
     pthread_attr_setstacksize(&at, 512u << 10);
@@ -2567,6 +2573,116 @@ static int probe_deliver_thread(int dsig, probe_target *t, int *errno_out)
     if (!atomic_load(&t->done) && tl_signal_probe_count() != before) t->ran = 1;   /* it ran but has not reported yet */
     sigaction(dsig, &old, NULL);
     return 0;
+}
+
+/* ---------------------------------------------------------------- disposition READ-BACK (the ledger's blind spot)
+ * What the process ACTUALLY has installed on a Darwin signal, read with Darwin's own sigaction(d, NULL, &cur) -- the one
+ * fact a send/run ledger cannot see, and the discriminator between the three ways "accepted but never ran" looks:
+ *   reads back as SIG_DFL / SIG_IGN       -> Darwin DISCARDS a thread-directed send: no handler, nothing pending. This is
+ *                                            the shape an install that was overwritten leaves, and the one the old ledger
+ *                                            could not tell from a handler that simply never ran.
+ *   reads back as ANOTHER IMAGE'S address -> something (a second copy of the layer, or host code that bypassed this layer)
+ *                                            overwrote the install; THIS image's ledger can never count the runs.
+ *   reads back as OUR host_signal_entry   -> the disposition is ours and correct, so the fault is the DELIVERY path (a
+ *                                            tracer/exception port swallowing it), NOT the disposition.
+ * Fills `out` with the address, its nearest symbol and its image (base), classified against this image's
+ * host_signal_entry. Does the work only when called; callers gate it to once per signal. */
+void tl_signal_describe_disposition(int d, char *out, size_t cap)
+{
+    struct sigaction cur;
+    memset(&cur, 0, sizeof(cur));
+    if (d <= 0) { snprintf(out, cap, "no Darwin number (this bionic signal has no host equivalent)"); return; }
+    errno = 0;
+    if (sigaction(d, NULL, &cur) != 0) {
+        snprintf(out, cap, "UNREADABLE -- sigaction(Darwin %d, NULL, &cur) failed: %s (%d); the disposition cannot be read back here",
+                 d, strerror(errno ? errno : EINVAL), errno ? errno : EINVAL);
+        return;
+    }
+    void *addr = (cur.sa_flags & SA_SIGINFO) ? (void *)cur.sa_sigaction : (void *)cur.sa_handler;
+    if (addr == (void *)SIG_DFL) {
+        snprintf(out, cap, "SIG_DFL -- Darwin DISCARDS a thread-directed send of it: no handler runs and nothing is left pending");
+        return;
+    }
+    if (addr == (void *)SIG_IGN) {
+        snprintf(out, cap, "SIG_IGN -- Darwin DISCARDS a thread-directed send of it: no handler runs and nothing is left pending");
+        return;
+    }
+    Dl_info di, me; memset(&di, 0, sizeof(di)); memset(&me, 0, sizeof(me));
+    const char *sym = "?", *img = "?", *own_img = "?", *who;
+    void *ibase = NULL;
+    if (dladdr(addr, &di) && di.dli_fname) { img = di.dli_fname; ibase = di.dli_fbase; if (di.dli_sname) sym = di.dli_sname; }
+    if (dladdr((void *)(uintptr_t)host_signal_entry, &me) && me.dli_fname) own_img = me.dli_fname;
+    if (addr == (void *)(uintptr_t)host_signal_entry)
+        who = "OURS (this image's host_signal_entry)";
+    else if (me.dli_fbase && me.dli_fbase == ibase)
+        who = "ANOTHER HANDLER in THIS image (not host_signal_entry)";
+    else
+        who = "ANOTHER IMAGE'S handler -- a different Mach-O installed it, so THIS image's ledger can never count its runs";
+    snprintf(out, cap, "address %p (nearest symbol %s, image '%s' base %p) -- %s; this image's host_signal_entry at %p in '%s'",
+             addr, sym, img, ibase, who, (void *)(uintptr_t)host_signal_entry, own_img);
+}
+
+/* ---------------------------------------------------------------- is a tracer attached? (the debugger hypothesis)
+ * Reads P_TRACED from the kernel's own view of this process (sysctl CTL_KERN/KERN_PROC/KERN_PROC_PID). The layer's
+ * signals are accepted (pthread_kill 0) and left neither pending nor delivered; the one mechanism OUTSIDE the process
+ * that does exactly that is a debugger/tracer holding the task's exception ports. SET means a tracer is attached and can
+ * intercept delivery; clear exonerates the tracer. One line, once. */
+static void probe_ptraced(void)
+{
+    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid() };
+    struct kinfo_proc kp; memset(&kp, 0, sizeof(kp));
+    size_t len = sizeof(kp);
+    errno = 0;
+    if (sysctl(mib, 4, &kp, &len, NULL, 0) != 0) {
+        tl_log_line("signal-debugger: P_TRACED could not be read -- sysctl(KERN_PROC_PID, %d) failed: %s (%d)",
+                    getpid(), strerror(errno ? errno : EINVAL), errno ? errno : EINVAL);
+        return;
+    }
+    int traced = (kp.kp_proc.p_flag & P_TRACED) != 0;
+    tl_log_line("signal-debugger: P_TRACED from sysctl(KERN_PROC_PID, %d): %s -- p_flag 0x%08x (a tracer attached here can hold the task's exception ports and swallow a thread-directed signal; P_TRACED clear exonerates the tracer)",
+                getpid(), traced ? "SET (a debugger/tracer IS attached to this process)" : "clear (NO tracer attached)",
+                kp.kp_proc.p_flag);
+}
+
+/* ---------------------------------------------------------------- RAW native delivery, every layer wrapper bypassed
+ * The review's direct test of the debugger hypothesis: install a handler with DARWIN'S OWN sigaction (no layer shim), on
+ * an ordinary Darwin signal, and raise() it and pthread_kill(pthread_self()) it with nothing of the layer in the path --
+ * the send, the handler and the wait are all plain Darwin. If a raw raise of a raw handler does not run while the install
+ * reads back as that handler (printed below), the delivery is intercepted outside the process (a tracer); if it DOES run,
+ * the fault is the layer's own install/dispatch and the tracer is exonerated. Async-signal-safe: the handler is one
+ * __thread store. The disposition is restored. */
+static __thread volatile sig_atomic_t t_raw_seen;
+static void raw_handler(int sig, siginfo_t *info, void *uc) { (void)info; (void)uc; t_raw_seen = sig; }
+
+static void probe_raw_native_delivery(int dsig)
+{
+    struct sigaction old, sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = raw_handler;
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    errno = 0;
+    if (sigaction(dsig, &sa, &old) != 0) {
+        tl_log_line("signal-raw: Darwin %d: RAW sigaction install FAILED: %s (%d)", dsig, strerror(errno ? errno : EINVAL), errno ? errno : EINVAL);
+        return;
+    }
+    { char desc[320]; tl_signal_describe_disposition(dsig, desc, sizeof(desc));   /* READ THE INSTALL BACK first */
+      tl_log_line("signal-raw: Darwin %d: installed a RAW native handler (raw_handler at %p) with Darwin's own sigaction; the install reads back as: %s",
+                  dsig, (void *)(uintptr_t)raw_handler, desc); }
+
+    t_raw_seen = 0; errno = 0;                                    /* RAISE() -- a process-directed send */
+    int rr = raise(dsig);
+    for (int i = 0; i < 8 && !t_raw_seen; i++) sched_yield();
+    tl_log_line("signal-raw: Darwin %d: RAW raise() returned %d (errno %s (%d)); the RAW native handler %s on this thread",
+                dsig, rr, errno ? strerror(errno) : "0", errno, t_raw_seen ? "RAN" : "DID NOT RUN");
+
+    t_raw_seen = 0; errno = 0;                                    /* PTHREAD_KILL(self) -- thread-directed, as the guest sends */
+    int kr = pthread_kill(pthread_self(), dsig);
+    for (int i = 0; i < 8 && !t_raw_seen; i++) sched_yield();
+    tl_log_line("signal-raw: Darwin %d: RAW pthread_kill(pthread_self()) returned %d (errno %s (%d)); the RAW native handler %s on this thread",
+                dsig, kr, errno ? strerror(errno) : "0", errno, t_raw_seen ? "RAN" : "DID NOT RUN");
+
+    sigaction(dsig, &old, NULL);                                  /* restore */
 }
 
 /*
@@ -2609,22 +2725,46 @@ static void probe_image_identity(void)
     const char *exe = _dyld_get_image_name(0);
     const char *slash = exe ? strrchr(exe, '/') : NULL;
     const char *exe_base = slash ? slash + 1 : (exe ? exe : "");
-    int dup_exe = 0, staged = 0;
+    /* The matching rule is the fix. The previous loop started at i == 0 and compared the main executable's OWN entry
+     * against itself: `!strcmp(nm, exe)` was trivially true for image 0, so "a second copy of the app executable" read
+     * YES on EVERY run -- a false positive of the rule, not a measured duplicate. This scan SKIPS i == 0 and PRINTS every
+     * entry it counts, verbatim (path + base + index + which rule matched), so the next run either names the real second
+     * Mach-O or proves there is none. */
+    int dup_exe_path = 0, dup_exe_name = 0, dup_path = 0, staged = 0;
     for (uint32_t i = 0; i < n; i++) {
         const char *nm = _dyld_get_image_name(i);
         if (!nm) continue;
+        const void *hdr = _dyld_get_image_header(i);
         const char *s2 = strrchr(nm, '/');
         const char *base = s2 ? s2 + 1 : nm;
-        if (*exe_base && !strcmp(nm, exe ? exe : base)) dup_exe++;                 /* the same path loaded twice */
-        else if (*exe_base && !strcmp(base, exe_base) && strcmp(nm, exe ? exe : "")) dup_exe++;  /* a second copy of the app binary */
-        if (strstr(nm, "TranslationLayer")) { staged++; tl_log_line("signal-image: a STAGED translation layer image is loaded: '%s' base %p", nm, _dyld_get_image_header(i)); }
+        if (strstr(nm, "TranslationLayer")) { staged++; tl_log_line("signal-image: a STAGED translation layer image is loaded: '%s' base %p", nm, hdr); }
+        if (i == 0) continue;                       /* the main executable is not a "second copy" of itself */
+        if (exe && !strcmp(nm, exe)) {              /* (a) the SAME path loaded a second time */
+            dup_exe_path++;
+            tl_log_line("signal-image: DUPLICATE (rule a: SAME PATH as the main executable, listed twice) #%d: '%s' base %p (index %u)", dup_exe_path, nm, hdr, i);
+            continue;
+        }
+        if (*exe_base && !strcmp(base, exe_base) && exe && strcmp(nm, exe)) {   /* (b) same BASENAME, different path */
+            dup_exe_name++;
+            tl_log_line("signal-image: DUPLICATE (rule b: same BASENAME '%s' as the main executable, DIFFERENT path) #%d: '%s' base %p (index %u)", exe_base, dup_exe_name, nm, hdr, i);
+            continue;
+        }
+        for (uint32_t j = i + 1; j < n; j++) {      /* (c) any path that appears more than once anywhere in the list */
+            const char *nj = _dyld_get_image_name(j);
+            if (nj && !strcmp(nj, nm)) {
+                dup_path++;
+                tl_log_line("signal-image: DUPLICATE (rule c: this path appears more than once in the image list) #%d: '%s' base %p (index %u, again at index %u)", dup_path, nm, hdr, i, j);
+                break;
+            }
+        }
     }
+    int dup_exe = dup_exe_path + dup_exe_name;
     tl_log_line("signal-image: %u image(s) loaded; the layer's signal code lives in '%s' base %p; a second copy of the app "
-                "executable: %s; a staged TranslationLayer image: %s -- %s", n, layer_path,
-                layer_base, dup_exe ? "YES" : "none", staged ? "YES" : "none",
+                "executable: %s (same-path duplicates %d, same-basename duplicates %d, repeated paths %d); a staged TranslationLayer image: %s -- %s",
+                n, layer_path, layer_base, dup_exe ? "YES" : "none", dup_exe_path, dup_exe_name, dup_path, staged ? "YES" : "none",
                 (dup_exe || staged) ? "*** TWO-IMAGE HAZARD: the signal subsystem is not a single owner here -- one copy "
                                       "can own the disposition while another counts the runs ***"
-                                    : "ONE image owns the signal subsystem (candidate 2 is refuted on this run)");
+                                    : "ONE image owns the signal subsystem (candidate 2 is refuted on this run; every count above is printed, not inferred)");
 }
 
 void tl_signal_selftest(void)
@@ -2635,6 +2775,14 @@ void tl_signal_selftest(void)
 
     /* Where every part of the signal subsystem actually lives, printed once, BEFORE any measurement is read. */
     probe_image_identity();
+
+    /* The two DIRECT tests the review asked for, both before any layer shim is involved: is a tracer attached, and does
+     * a RAW native handler (Darwin's own sigaction, raise(), pthread_kill(self)) run at all with EVERY layer wrapper
+     * bypassed? If the raw handler does not run while its install reads back as itself, the delivery is intercepted
+     * outside the process (the tracer); if it does run, the layer's own install/dispatch is the fault. */
+    probe_ptraced();
+    probe_raw_native_delivery(SIGUSR2);
+    probe_raw_native_delivery(SIGUSR1);
 
     char self_name[32] = ""; pthread_getname_np(pthread_self(), self_name, sizeof(self_name));
     if (!self_name[0]) snprintf(self_name, sizeof(self_name), "?");
@@ -2809,8 +2957,9 @@ void tl_signal_selftest(void)
  * the ledger so the run that needed it says so.
  *
  * The guest's handler for `gsig` is remembered by b_sigaction; if the guest armed nothing (or asked for SIG_IGN) there
- * is nothing to arm and 0 is returned. -1 means the host refused the install (recorded with the errno).
+ * there is nothing to arm and 0 is returned. -1 means the host refused the install (recorded with the errno).
  */
+static int g_disp_said[32];       /* one read-back report per Darwin number (see tl_signal_describe_disposition) */
 int tl_signal_arm_guest(int d, int gsig)
 {
     if (d <= 0 || gsig < 1 || gsig > 31) return 0;
@@ -2819,6 +2968,14 @@ int tl_signal_arm_guest(int d, int gsig)
     struct sigaction cur;
     memset(&cur, 0, sizeof(cur));
     if (sigaction(d, NULL, &cur) != 0) return 0;                 /* cannot read it: do not guess */
+    /* SAY WHAT THE DISPOSITION ACTUALLY IS, once per Darwin number, before deciding anything. This is the fact the
+     * ledger could never see: SIG_DFL/SIG_IGN means the send will be DISCARd; another image's address means the install
+     * was overwritten. Gated by a plain int so it pays nothing on the send path after the first time per signal. */
+    if (d < 32 && !g_disp_said[d]) {
+        g_disp_said[d] = 1;
+        char desc[320]; tl_signal_describe_disposition(d, desc, sizeof(desc));
+        tl_log_line("signal-disposition: before a send of bionic %d on Darwin %d, the disposition reads back as: %s", gsig, d, desc);
+    }
     if ((cur.sa_flags & SA_SIGINFO) && cur.sa_sigaction == host_signal_entry) return 0;   /* ours, already armed */
     int found = cur.sa_handler == SIG_DFL ? 0 : cur.sa_handler == SIG_IGN ? 1 : 2;
     int e = host_arm(d, gsig);

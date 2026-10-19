@@ -376,6 +376,12 @@ void tl_signal_report(const char *tag)
                  tag, g, tl_signal_to_darwin(g), i, iby[0] ? iby : "?", fl, s, sf[0] ? sf : "?", st[0] ? st : "?", r, f, ra,
                  ok, es, iv, ot, ote, en, by, pf, cl, rt);
         tl_log_line("%s", buf);
+        /* Read the disposition BACK, here and at the close: the one fact the send/run ledger cannot see, and the line
+         * that separates "our dispatcher is installed and the kernel/console still will not deliver" (the delivery path)
+         * from "something overwrote the install" (named, with its image) from SIG_DFL/SIG_IGN (Darwin discards the send). */
+        { int dd = tl_signal_to_darwin(g); char desc[320];
+          tl_signal_describe_disposition(dd, desc, sizeof(desc));
+          tl_log_line("%s: signal %d: the disposition of its Darwin number %d, read back NOW: %s", tag, g, dd, desc); }
     }
     if (!any) { tl_log_line("%s: no guest signal was installed, sent or delivered this run (the guest never armed one)", tag); return; }
     /* The mask, named while it is being removed: a thread that reached guest code with a guest-armed signal already
