@@ -84,8 +84,12 @@ int tl_signal_to_darwin(int s)
 
 int tl_signal_from_darwin(int d)
 {
-    for (int i = 1; i < 32; i++) if (k_sig_to_darwin[i] == d) return i;
-    return d;
+    if (d <= 0) return 0;
+    for (int i = 1; i < 32; i++) if (k_sig_to_darwin[i] == d && k_sig_to_darwin[i] > 0) return i;
+    /* A Darwin signal no bionic signal maps to (SIGEMT, and the numbers the table leaves -1): it is NOT a guest signal, so
+     * it must not be reported as one. Returning `d` here made Darwin 7 look like bionic 7 (SIGBUS) and Darwin 16 like
+     * bionic 16 -- a delivered signal the layer does not own would then have run the WRONG guest handler. */
+    return 0;
 }
 
 /* ------------------------------------------------------------------ signal delivery ledger
@@ -105,7 +109,7 @@ int tl_signal_from_darwin(int d)
  * of each kind per signal pay for a thread name and a log line. sigaction is a handful of calls per process. Nothing
  * here is on the per-frame path, and nothing takes a lock unless a line is about to be written. */
 static struct {
-    atomic_ulong installed, sent, ran, refused;
+    atomic_ulong installed, sent, ran, refused, rearmed, failed;
     int n_install, n_send, n_run;
     char inst_by[32], sent_from[32], sent_to[32];
 } g_sig[65];
@@ -160,32 +164,61 @@ void tl_signal_note_run(int gsig)
     tl_log_line("signal[N]: the guest's handler for signal %d (Darwin %d) RAN on '%s'", gsig, gsig < 32 && k_sig_to_darwin[gsig] > 0 ? k_sig_to_darwin[gsig] : -1, me);
 }
 
+/* A send whose handler was NOT armed on the host when the signal was about to go out.
+ *
+ * This is the one state a signal ledger can otherwise never see: Darwin DISCARDS a signal whose disposition is SIG_DFL
+ * (or SIG_IGN) -- it does not run a handler and it does not leave the signal pending, so the ledger reads a send with no
+ * run and no refusal, which is exactly the shape that says a thread was signalled and never answered. The layer now
+ * re-installs the guest's own dispatcher before sending (see tl_signal_arm_guest) and records here that it had to, so a
+ * run where a handler was found cleared says so in the layer's own words instead of leaving the send unexplained. */
+void tl_signal_note_rearm(int gsig, int dsig, int kind, int host_errno, int found)
+{
+    if (gsig < 1 || gsig > 64) return;
+    unsigned long n = atomic_fetch_add(kind ? &g_sig[gsig].failed : &g_sig[gsig].rearmed, 1);
+    if (n >= 2) return;                       /* first two only: the counter is the ledger */
+    if (kind)
+        tl_log_line("signal[N]: the layer could NOT install the guest's handler for signal %d on Darwin %d -- %s (%d); "
+                    "a send of it cannot run a handler here", gsig, dsig, strerror(host_errno), host_errno);
+    else
+        tl_log_line("signal[N]: the guest's handler for signal %d (Darwin %d) was NOT in place on the host before this send "
+                    "(found %s) -- the layer re-installed its dispatcher and sent anyway. A disposition of SIG_DFL makes "
+                    "Darwin DISCARD the signal: no handler runs and nothing is left pending, so the send would otherwise "
+                    "read as a signal whose handler never ran. Host code changes dispositions through Darwin's sigaction "
+                    "WITHOUT passing this layer, so the ledger cannot see it happen -- which is why the send path verifies "
+                    "instead of assuming", gsig, dsig,
+                    found == 0 ? "SIG_DFL" : found == 1 ? "SIG_IGN" : "another handler");
+}
+
 void tl_signal_report(const char *tag)
 {
-    char buf[300];
-    unsigned long total_sent = 0, total_ran = 0, total_ref = 0;
+    char buf[340];
+    unsigned long total_sent = 0, total_ran = 0, total_ref = 0, total_rearm = 0, total_failed = 0;
     int any = 0;
     for (int g = 1; g <= 64; g++) {
         unsigned long i = atomic_load(&g_sig[g].installed), s = atomic_load(&g_sig[g].sent);
         unsigned long r = atomic_load(&g_sig[g].ran), f = atomic_load(&g_sig[g].refused);
-        if (!i && !s && !r && !f) continue;
+        unsigned long ra = atomic_load(&g_sig[g].rearmed), fl = atomic_load(&g_sig[g].failed);
+        if (!i && !s && !r && !f && !ra && !fl) continue;
         pthread_mutex_lock(&g_sig_mu);
         char iby[32], sf[32], st[32];
         snprintf(iby, sizeof(iby), "%s", g_sig[g].inst_by);
         snprintf(sf, sizeof(sf), "%s", g_sig[g].sent_from);
         snprintf(st, sizeof(st), "%s", g_sig[g].sent_to);
         pthread_mutex_unlock(&g_sig_mu);
-        any = 1; total_sent += s; total_ran += r; total_ref += f;
-        snprintf(buf, sizeof(buf), "%s: signal %d (Darwin %d): handler installed %lu time(s) by '%s', sent %lu time(s) (first from '%s' to '%s'), guest handler RAN %lu time(s), refused by the layer %lu time(s)",
-                 tag, g, g < 32 && k_sig_to_darwin[g] > 0 ? k_sig_to_darwin[g] : -1, i, iby[0] ? iby : "?", s, sf[0] ? sf : "?", st[0] ? st : "?", r, f);
+        any = 1; total_sent += s; total_ran += r; total_ref += f; total_rearm += ra; total_failed += fl;
+        snprintf(buf, sizeof(buf), "%s: signal %d (Darwin %d): handler installed %lu time(s) by '%s' (install(s) the host refused: %lu), sent %lu time(s) (first from '%s' to '%s'), guest handler RAN %lu time(s), refused by the layer %lu time(s), host handler re-armed before a send %lu time(s)",
+                 tag, g, g < 32 && k_sig_to_darwin[g] > 0 ? k_sig_to_darwin[g] : -1, i, iby[0] ? iby : "?", fl, s, sf[0] ? sf : "?", st[0] ? st : "?", r, f, ra);
         tl_log_line("%s", buf);
     }
     if (!any) { tl_log_line("%s: no guest signal was installed, sent or delivered this run (the guest never armed one)", tag); return; }
     /* The verdict the ledger exists for: a send whose handler did not run is a thread that never answered. */
-    tl_log_line("%s: %lu guest signal send(s), %lu handler run(s), %lu refused -- %s", tag, total_sent, total_ran, total_ref,
+    tl_log_line("%s: %lu guest signal send(s), %lu handler run(s), %lu refused, %lu host handler re-armed, %lu install(s) the host refused -- %s",
+                tag, total_sent, total_ran, total_ref, total_rearm, total_failed,
                 total_ref ? "a refused send is a bionic signal number the layer has no Darwin equivalent for (>=32: Android's real-time signals); the thread it was meant for never sees it"
+                          : (total_failed ? "the HOST refused to install a guest handler (see the install lines): a send of that signal can never run a handler here, and the refusal is the reason, not the delivery"
+                          : (total_rearm ? "sends had to re-install the guest's handler because it had been CLEARED on the host: Darwin DISCARDS a signal whose disposition is SIG_DFL, which reads exactly like a handler that never ran -- the re-arm is what makes those sends land"
                           : (total_sent == total_ran ? "every send ran a handler: no thread was left un-signalled (if a stop-the-world handshake still hangs, the missing ack is not a missing signal)"
-                                                     : "SENDS > RUNS: at least one thread was sent a signal whose handler never ran on it -- the 'sent ... to ...' and 'RAN on ...' lines above name the threads, and the one with a send and no matching run is what the sender is waiting for"));
+                                                     : "SENDS > RUNS with every handler armed and the host accepting the deliver: at least one thread has the Darwin signal BLOCKED (Darwin leaves a blocked thread-directed signal pending and discards it only on SIG_DFL, so an armed handler that never ran means the thread's mask swallowed it) -- the 'sent ... to ...' and 'RAN on ...' lines above name the threads"))));
 }
 
 

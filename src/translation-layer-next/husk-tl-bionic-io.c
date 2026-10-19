@@ -2241,6 +2241,53 @@ static void host_signal_entry(int dsig, siginfo_t *info, void *uctx)
 
 static int is_fault_signal(int g) { return g == 4 || g == 5 || g == 6 || g == 7 || g == 8 || g == 11; }
 
+/* Put THIS LAYER's dispatcher on a Darwin signal number, for the guest signal `sig` the guest armed. One place, because
+ * the install has to be repeatable: the point of tl_signal_arm_guest is to install it again when something cleared it.
+ * Returns 0 on success, else the host errno. */
+static int host_arm(int d, int sig)
+{
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = host_signal_entry;
+    sa.sa_flags = SA_SIGINFO;
+    if (sig > 0 && sig < 32 && (g_guest_sig[sig].flags & 0x10000000)) sa.sa_flags |= SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    errno = 0;
+    if (sigaction(d, &sa, NULL) == 0) return 0;
+    return errno ? errno : EINVAL;
+}
+
+/*
+ * Before a guest-to-guest signal is SENT, make sure the guest's own dispatcher is really installed on the Darwin
+ * signal the send is about to use, and install it again if it is not.
+ *
+ * Why this is load-bearing, not belt-and-braces: Darwin DISCARDS a signal whose disposition is SIG_DFL or SIG_IGN. It
+ * runs no handler and it leaves nothing pending, so a send of a signal whose disposition was cleared and a send of a
+ * signal whose handler never ran are INDISTINGUISHABLE in the ledger (both read as "sent N, RAN 0, refused 0"). Anything
+ * that puts SIG_DFL back -- a runtime restoring an old action, a crash reporter chain, a teardown -- turns every
+ * subsequent send into a silent drop, which is exactly how a collector that stops the world by signalling its threads
+ * hangs for ever with 211 sends and not one handler run. Re-arming costs one sigaction() query on the send path only
+ * (a signal is sent once per suspended thread per collection; never per frame, never per call), and it is recorded in
+ * the ledger so the run that needed it says so.
+ *
+ * The guest's handler for `gsig` is remembered by b_sigaction; if the guest armed nothing (or asked for SIG_IGN) there
+ * is nothing to arm and 0 is returned. -1 means the host refused the install (recorded with the errno).
+ */
+int tl_signal_arm_guest(int d, int gsig)
+{
+    if (d <= 0 || gsig < 1 || gsig > 31) return 0;
+    void *h = g_guest_sig[gsig].handler;
+    if (!h || h == (void *)1) return 0;
+    struct sigaction cur;
+    memset(&cur, 0, sizeof(cur));
+    if (sigaction(d, NULL, &cur) != 0) return 0;                 /* cannot read it: do not guess */
+    if ((cur.sa_flags & SA_SIGINFO) && cur.sa_sigaction == host_signal_entry) return 0;   /* ours, already armed */
+    int found = cur.sa_handler == SIG_DFL ? 0 : cur.sa_handler == SIG_IGN ? 1 : 2;
+    int e = host_arm(d, gsig);
+    tl_signal_note_rearm(gsig, d, e ? 1 : 0, e, found);
+    return e ? -1 : 1;
+}
+
 static int b_sigaction(int sig, const guest_sigaction *act, guest_sigaction *old)
 {
     if (sig <= 0 || sig >= 32) {
@@ -2279,7 +2326,10 @@ static int b_sigaction(int sig, const guest_sigaction *act, guest_sigaction *old
     else { sa.sa_sigaction = host_signal_entry; sa.sa_flags = SA_SIGINFO; }
     if (act->sa_flags & 0x10000000) sa.sa_flags |= SA_RESTART;
     sigemptyset(&sa.sa_mask);
-    TL_ERRNO_BEGIN(); int r = sigaction(d, &sa, NULL); TL_ERRNO_END();
+    TL_ERRNO_BEGIN(); int r = sigaction(d, &sa, NULL); int hn = errno; TL_ERRNO_END();
+    /* A host that REFUSED the install must not be recorded as "the handler is installed": the ledger would then claim a
+     * delivery that can never run. Said once per signal, with the host's own errno. */
+    if (r != 0) tl_signal_note_rearm(sig, d, 1, hn ? hn : EINVAL, 2);
     return r;
 }
 static void *b_signal(int sig, void *handler)
@@ -2323,7 +2373,7 @@ static void note_signal(const char *how, int sig)
 {
     if (sig == 6 || sig == 9 || sig == 11 || sig == 15 || sig == 3) tl_log_line("bionic: guest asked for signal %d (%s)", sig, how);
 }
-static int b_raise(int sig) { note_signal("raise", sig); int d = tl_signal_to_darwin(sig); if (d < 0) { tl_signal_note_send(sig, pthread_self(), 1); tl_set_guest_errno(22); return -1; } tl_signal_note_send(sig, pthread_self(), 0); return raise(d); }
+static int b_raise(int sig) { note_signal("raise", sig); int d = tl_signal_to_darwin(sig); if (d < 0) { tl_signal_note_send(sig, pthread_self(), 1); tl_set_guest_errno(22); return -1; } tl_signal_arm_guest(d, sig); tl_signal_note_send(sig, pthread_self(), 0); return raise(d); }
 
 
 /* ------------------------------------------------- raw Linux system calls */
@@ -2441,6 +2491,22 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
         note_signal("kill/tgkill system call", sig);
         int d = tl_signal_to_darwin(sig);
         if (d < 0) return -22;
+        tl_signal_arm_guest(d, sig);
+        /* tkill/tgkill name a THREAD. A bare raise() would run the guest's handler on the SENDER, so every guest that
+         * signals another one through the raw syscall (Go's runtime, some protectors) would run it on the wrong thread.
+         * The named tid is resolved in the layer's own live-thread census and the signal is sent to THAT thread; a tid
+         * the layer cannot place is ESRCH, as the kernel answers, and never a raise() on the sender. */
+        if (nr != 129) {
+            uint64_t me = 0; pthread_threadid_np(NULL, &me);
+            unsigned long tid = (unsigned long)(uint32_t)(nr == 131 ? a1 : a0);
+            if (tid != (unsigned long)(uint32_t)me) {
+                pthread_t target = tl_guest_pthread_for_tid(tid);
+                if (!target) return -3;                                                 /* ESRCH: no such thread here */
+                tl_signal_note_send(sig, target, 0);
+                return pthread_kill(target, d) == 0 ? 0 : -3;
+            }
+        }
+        tl_signal_note_send(sig, pthread_self(), 0);
         return raise(d) == 0 ? 0 : -3;
     }
     case 56: {                                                                          /* openat: only AT_FDCWD */
@@ -2456,7 +2522,14 @@ static long linux_syscall_impl(long a0, long a1, long a2, long a3, long a4, long
     case 93: case 94: tl_log_line("bionic: exit(%ld) by raw system call", a0); exit((int)a0);
     case 278: arc4random_buf((void *)a0, (size_t)a1); return a1;                        /* getrandom */
     case 283: return 0;                                                                 /* membarrier */
-    case 134: case 135: return 0;                                                       /* rt_sigaction, rt_sigprocmask: accepted */
+    case 134: {                                                                         /* rt_sigaction(sig, act, old, sigsetsize) */
+        /* WAS a silent no-op ("accepted"). A guest that arms a handler through the raw syscall -- a runtime that avoids
+         * libc, a packer, or a libc whose sigaction inlines the call -- got success and NO handler, and the layer never
+         * saw an install at all, which reads exactly like a signal nobody ever armed. It is the same call the libc shim
+         * makes, so it is made here too. */
+        return b_sigaction((int)a0, (const guest_sigaction *)a1, (guest_sigaction *)a2) == 0 ? 0 : -22;
+    }
+    case 135: return tl_bionic_sigmask((int)a0, (const uint64_t *)a1, (uint64_t *)a2) == 0 ? 0 : -22;  /* rt_sigprocmask */
     case 233: return 0;                                                                 /* madvise */
     case 122: case 123: return 0;                                                       /* sched_setaffinity / getaffinity */
     case 167: return 0;                                                                 /* prctl */

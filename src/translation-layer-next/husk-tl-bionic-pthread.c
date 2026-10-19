@@ -465,6 +465,7 @@ void tl_thread_altstack(void)
 static atomic_int g_guest_threads;
 int tl_guest_thread_live_count(void) { return atomic_load(&g_guest_threads); }
 
+
 /*
  * WHO the live guest threads are, not only how many. The counter can say a close left two threads running and cannot
  * say which; a swapped-in app that then hangs on its first frame has nothing else to point at. This table records, per
@@ -569,6 +570,20 @@ int tl_guest_thread_census(tl_guest_thread_info *out, int max)
     return n;
 }
 
+/* The layer's own handle for a guest thread, by the Darwin thread id a raw tkill/tgkill names. Reads the live-thread
+ * census the layer already keeps -- nothing is invented, and no thread is suspended or joined. NULL when the id is not a
+ * live guest thread (which the kernel answers with ESRCH). */
+pthread_t tl_guest_pthread_for_tid(unsigned long tid)
+{
+    for (int i = 0; i < TL_GT_SLOTS; i++) {
+        if (atomic_load_explicit(&g_gt[i].live, memory_order_acquire) != GT_PRESENT) continue;
+        pthread_t t = (pthread_t)(uintptr_t)atomic_load(&g_gt[i].tid);
+        uint64_t id = 0;
+        if (pthread_threadid_np(t, &id) == 0 && (unsigned long)id == tid) return t;
+    }
+    return NULL;
+}
+
 /*
  * Every guest mutex currently HELD that has a live waiter, with both sites -- read from the live-thread census at a
  * detected stall, so a stall names the app's own guest-lock deadlock from the recorded owner alone (there is no per-wait
@@ -657,6 +672,10 @@ static int b_kill(pthread_t t, int sig)
     if (getenv("TL_SIGNAL_TRACE")) { char nm[32] = "", tn[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); pthread_getname_np(t, tn, sizeof(tn)); tl_log_line("signal[%s]: pthread_kill(%s, %d)", nm, tn, sig); }
     int d = tl_signal_to_darwin(sig);
     if (d < 0) { tl_signal_note_send(sig, t, 1); return 22; }
+    /* Before it is used: make sure the guest's dispatcher is really installed on `d`. Darwin DISCARDS a signal whose
+     * disposition is SIG_DFL -- no handler runs and nothing is left pending -- so a disposition something cleared turns
+     * every send into a silent drop that reads exactly like a handler which never ran. See tl_signal_arm_guest. */
+    tl_signal_arm_guest(d, sig);
     int r = rc(pthread_kill(t, d));
     /* The ledger names the thread the signal was aimed at only for its first two sends; ESRCH (the thread is gone) is not a refusal. */
     tl_signal_note_send(sig, t, r != 0 && r != 3);
@@ -698,7 +717,10 @@ static uint64_t sigset_from_darwin(uint32_t d)
     for (int s = 1; s < 32; s++) if (d & (1u << (s - 1))) { int gs = tl_signal_from_darwin(s); if (gs > 0 && gs < 64) g |= 1ull << (gs - 1); }
     return g;
 }
-static int b_sigmask(int how, const uint64_t *set, uint64_t *old)
+/* The guest's mask, applied to the calling thread. Shared by pthread_sigmask, sigprocmask and the raw rt_sigprocmask
+ * syscall, because they are the same operation on bionic and a guest may reach it by any of the three. `how` is bionic's
+ * (SIG_BLOCK 0 / SIG_UNBLOCK 1 / SIG_SETMASK 2, per <asm-generic/signal-defs.h>), which is NOT Darwin's (1/2/3). */
+int tl_bionic_sigmask(int how, const uint64_t *set, uint64_t *old)
 {
     sigset_t ds, od;
     int dh = how == 0 ? SIG_BLOCK : how == 1 ? SIG_UNBLOCK : SIG_SETMASK;
@@ -707,6 +729,7 @@ static int b_sigmask(int how, const uint64_t *set, uint64_t *old)
     if (old) { uint32_t m; memcpy(&m, &od, sizeof(m)); *old = sigset_from_darwin(m); }
     return rc(r);
 }
+static int b_sigmask(int how, const uint64_t *set, uint64_t *old) { return tl_bionic_sigmask(how, set, old); }
 
 const tl_bionic_entry tl_tab_pthread[] = {
     TL_WRAP("pthread_mutex_init", b_mutex_init), TL_WRAP("pthread_mutex_destroy", b_mutex_destroy),

@@ -111,7 +111,24 @@ int tl_signal_from_darwin(int darwin_sig);
 void tl_signal_note_install(int guest_sig, int darwin_sig);
 void tl_signal_note_send(int guest_sig, pthread_t target, int refused);
 void tl_signal_note_run(int guest_sig);
+void tl_signal_note_rearm(int guest_sig, int darwin_sig, int refused_install, int host_errno, int found_disposition);
 void tl_signal_report(const char *tag);
+
+/* Make sure the guest's own dispatcher is really installed on the Darwin signal a send is about to use, and install it
+ * again if something cleared it. Darwin DISCARDS a signal whose disposition is SIG_DFL -- no handler, nothing pending --
+ * so a cleared disposition is indistinguishable in a ledger from a handler that never ran. Returns 1 if it had to
+ * re-install, 0 if the dispatcher was already armed (or the guest has no handler for that signal), -1 if the host
+ * refused the install. Cheap: one sigaction() query, and only on the send path (one per suspended thread per collection,
+ * never per frame, never per call). */
+int tl_signal_arm_guest(int darwin_sig, int guest_sig);
+
+/* The guest's signal mask applied to the calling thread (bionic's `how`: SIG_BLOCK 0 / SIG_UNBLOCK 1 / SIG_SETMASK 2).
+ * Shared by pthread_sigmask, sigprocmask and the raw rt_sigprocmask syscall. */
+int tl_bionic_sigmask(int how, const uint64_t *set, uint64_t *old);
+
+/* The layer's pthread handle for a live guest thread named by its Darwin thread id (what a raw tkill/tgkill carries), or
+ * NULL. Reads the layer's own live-thread census; never invents a handle, never suspends or joins anyone. */
+pthread_t tl_guest_pthread_for_tid(unsigned long tid);
 
 /* The ALooper delivery ledger (husk-tl-bionic-ndk.c): one line per guest ALooper with how often it was polled, by which
  * thread, and whether the callbacks registered on it were ever delivered -- the question "a guest registered an fd with a

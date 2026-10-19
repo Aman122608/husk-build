@@ -175,6 +175,7 @@ static int b_tgkill(int tgid, int tid, int sig)
     if ((uint64_t)(uint32_t)tid != (uint32_t)self) { tl_set_guest_errno(3 /* ESRCH */); return -1; }
     int d = tl_signal_to_darwin(sig);
     if (d <= 0) { tl_signal_note_send(sig, pthread_self(), 1); tl_set_guest_errno(22); return -1; }
+    tl_signal_arm_guest(d, sig);
     tl_signal_note_send(sig, pthread_self(), 0);
     return pthread_kill(pthread_self(), d) ? -1 : 0;
 }

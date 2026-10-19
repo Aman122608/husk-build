@@ -108,9 +108,12 @@ static int b_kill(int pid, int sig)
 /* The process-wide mask means nothing to a guest that cannot receive signals; report an empty mask. */
 static int b_sigprocmask(int how, const uint64_t *set, uint64_t *old)
 {
-    (void)how; (void)set;
-    if (old) *old = 0;
-    return 0;
+    /* WAS a no-op that reported an empty mask. That lie mattered: the guest DOES receive signals (Boehm's collector stops
+     * the world by signalling its threads), so its mask has to reach the host or a signal it unblocks on one call and
+     * blocks on another keeps whatever the host last had -- and a signal left blocked on a thread is a handler that never
+     * runs. On Darwin sigprocmask is the calling thread's mask, exactly what bionic's is, so this is the same call the
+     * guest meant. */
+    return tl_bionic_sigmask(how, set, old);
 }
 
 /* ------------------------------------------------------- limits, scheduling, threads */
