@@ -701,9 +701,21 @@ static int b_kill(pthread_t t, int sig)
     int dr = pthread_kill(t, d);
     int host_errno = dr ? dr : (errno ? errno : 0);
     int r = rc(dr);                            /* the guest errno; 0 on success */
-    tl_signal_note_send_result(sig, t, host_errno);
+    /* Per-send identity (the review's candidates 1 and 3): the guest pthread_t `t` is passed to Darwin UNTRANSLATED, so
+     * the guest handle and the host handle are the SAME value here -- print both and compare, and resolve the target's
+     * Darwin tid in the layer's own live-thread census, so the day the two handles disagree the log says so instead of
+     * hiding it. tl_signal_note_send_result counts the send; this records it with the identity attached. */
+    {
+        uint64_t gid = 0; pthread_threadid_np(t, &gid);
+        pthread_t census = tl_guest_pthread_for_tid((unsigned long)gid);
+        tl_signal_note_send_result_ex(sig, (unsigned long)(uintptr_t)t, (unsigned long)(uintptr_t)t,
+                                      (unsigned long)gid, (unsigned long)(uintptr_t)census, host_errno);
+    }
     return r;
 }
+
+/* The address of the send call site, for the self-test's image-identity proof. */
+void *tl_signal_send_site(void) { return (void *)(uintptr_t)&b_kill; }
 
 static int b_setname_np(pthread_t t, const char *name)
 {

@@ -108,6 +108,8 @@ int tl_signal_from_darwin(int d)
 /* Set only by tl_signal_selftest, once, on the number a thread-directed send was MEASURED to deliver. */
 void tl_signal_set_pwr_darwin(int d) { g_pwr_darwin = d; }
 int  tl_signal_pwr_darwin(void) { return g_pwr_darwin; }
+/* The address of THIS image's SIGPWR-override variable, for the self-test's image-identity proof. */
+void *tl_signal_pwr_addr(void) { return (void *)&g_pwr_darwin; }
 
 /* ------------------------------------------------------------------ signal delivery ledger
  *
@@ -131,6 +133,13 @@ static struct {
      * before the attempt made "sent N, RAN 0" read the same whether N signals landed or all N failed. */
     atomic_ulong delivered, esrch, einval, other;
     atomic_ulong other_errno;                 /* the last non-ESRCH/EINVAL errno seen, for the report */
+    /* The staged delivery chain, so the log CANNOT conflate "a signal reached the host dispatcher" with "the guest's
+     * handler ran": host handler ENTERED / guest handler pointer FOUND / guest handler CALLED / guest handler RETURNED.
+     * A Boehm acknowledgement cannot be counted from the layer, so the chain stops at RETURNED and claims nothing past
+     * it. All four are ONE relaxed atomic add each, written from INSIDE the signal handler, so they are async-signal-safe
+     * by construction (no lock, no name lookup, no log). */
+    atomic_ulong entered, ptr_found, called, returned;
+    atomic_ulong first_entered_by;            /* the pthread_t that first ENTERED the handler, for the report's name */
     int n_install, n_send, n_run;
     char inst_by[32], sent_from[32], sent_to[32];
 } g_sig[65];
@@ -213,17 +222,50 @@ void tl_signal_note_send_result(int gsig, pthread_t target, int host_errno)
                     me, gsig, tn, strerror(host_errno), host_errno);
 }
 
-void tl_signal_note_run(int gsig)
+/* The OUTCOME of a send, WITH the per-send identity the review asked for (its candidates 1 and 3): the sender's name,
+ * the target's name, the guest pthread_t the guest passed, the host pthread_t the layer actually called pthread_kill
+ * with, the target's Darwin tid, and whether the layer's live-thread census maps that tid back to the SAME handle. If
+ * the guest record and the host handle can ever disagree, THAT is the bug -- so both are printed and compared on the
+ * line itself. Used by b_kill (the guest's pthread_kill); counts and logs exactly as tl_signal_note_send_result does,
+ * so a call site uses one or the other, never both. */
+void tl_signal_note_send_result_ex(int gsig, unsigned long guest_pt, unsigned long host_pt,
+                                   unsigned long guest_tid, unsigned long census_pt, int host_errno)
 {
     if (gsig < 1 || gsig > 64) return;
-    unsigned long n = atomic_fetch_add(&g_sig[gsig].ran, 1);
-    if (n >= 2) return;
-    char me[32]; sig_thread_name(me, sizeof(me));
-    pthread_mutex_lock(&g_sig_mu);
-    g_sig[gsig].n_run++;
-    pthread_mutex_unlock(&g_sig_mu);
-    tl_log_line("signal[N]: the guest's handler for signal %d (Darwin %d) RAN on '%s' (ledger image %p)", gsig, tl_signal_to_darwin(gsig), me, (void *)&g_sig[0]);
+    atomic_fetch_add(&g_sig[gsig].sent, 1);
+    atomic_ulong *slot = host_errno == 0 ? &g_sig[gsig].delivered
+                       : host_errno == ESRCH  ? &g_sig[gsig].esrch
+                       : host_errno == EINVAL ? &g_sig[gsig].einval
+                       : &g_sig[gsig].other;
+    unsigned long n = atomic_fetch_add(slot, 1);
+    if (host_errno != 0 && host_errno != ESRCH && host_errno != EINVAL) atomic_store(&g_sig[gsig].other_errno, (unsigned long)host_errno);
+    if (n >= 2) return;                       /* the identity line is for the first two sends only: the counters are the ledger */
+    char me[32], tn[32] = "?";
+    sig_thread_name(me, sizeof(me));
+    pthread_getname_np((pthread_t)(uintptr_t)host_pt, tn, sizeof(tn));
+    if (!tn[0]) snprintf(tn, sizeof(tn), "?");
+    tl_log_line("signal[N]: '%s' sent signal %d to '%s': the guest passed pthread_t %#lx; the layer called pthread_kill "
+                "on pthread_t %#lx (%s); the target's guest tid is %lu; the live-thread census %s; pthread_kill returned %s (%d)",
+                me, gsig, tn, guest_pt, host_pt,
+                guest_pt == host_pt ? "guest and host handle are the SAME value -- the layer does not translate it"
+                                    : "guest and host handle DIFFER, which would be the bug",
+                guest_tid,
+                census_pt && census_pt == host_pt ? "maps that tid back to the SAME handle"
+               : census_pt ? "maps that tid to a DIFFERENT handle" : "cannot place that tid",
+                host_errno ? strerror(host_errno) : "0 = accepted", host_errno);
 }
+
+void tl_signal_note_enter(int gsig)
+{
+    if (gsig < 1 || gsig > 64) return;
+    atomic_fetch_add(&g_sig[gsig].entered, 1);
+    atomic_fetch_add(&g_sig[gsig].ran, 1);    /* the legacy headline: "the guest's dispatcher was reached" */
+    unsigned long z = 0;                      /* record the FIRST entering thread, lock-free, for the report's name */
+    atomic_compare_exchange_strong(&g_sig[gsig].first_entered_by, &z, (unsigned long)(uintptr_t)pthread_self());
+}
+void tl_signal_note_ptr_found(int gsig) { if (gsig >= 1 && gsig <= 64) atomic_fetch_add(&g_sig[gsig].ptr_found, 1); }
+void tl_signal_note_called(int gsig)    { if (gsig >= 1 && gsig <= 64) atomic_fetch_add(&g_sig[gsig].called, 1); }
+void tl_signal_note_returned(int gsig)  { if (gsig >= 1 && gsig <= 64) atomic_fetch_add(&g_sig[gsig].returned, 1); }
 
 /* A send whose handler was NOT armed on the host when the signal was about to go out.
  *
@@ -275,6 +317,7 @@ void tl_signal_report(const char *tag)
     char buf[420];
     unsigned long total_sent = 0, total_ran = 0, total_ref = 0, total_rearm = 0, total_failed = 0, total_blocked = 0;
     unsigned long total_ok = 0, total_esrch = 0, total_einval = 0, total_other = 0;
+    unsigned long total_entered = 0, total_ptr = 0, total_called = 0, total_returned = 0;
     int any = 0;
     for (int g = 1; g <= 64; g++) {
         unsigned long i = atomic_load(&g_sig[g].installed), s = atomic_load(&g_sig[g].sent);
@@ -284,18 +327,23 @@ void tl_signal_report(const char *tag)
         unsigned long ok = atomic_load(&g_sig[g].delivered), es = atomic_load(&g_sig[g].esrch);
         unsigned long iv = atomic_load(&g_sig[g].einval), ot = atomic_load(&g_sig[g].other);
         unsigned long ote = atomic_load(&g_sig[g].other_errno);
-        if (!i && !s && !r && !f && !ra && !fl && !ab && !ok && !es && !iv && !ot) continue;
+        unsigned long en = atomic_load(&g_sig[g].entered), pf = atomic_load(&g_sig[g].ptr_found);
+        unsigned long cl = atomic_load(&g_sig[g].called),  rt = atomic_load(&g_sig[g].returned);
+        if (!i && !s && !r && !f && !ra && !fl && !ab && !ok && !es && !iv && !ot && !en) continue;
         pthread_mutex_lock(&g_sig_mu);
         char iby[32], sf[32], st[32];
         snprintf(iby, sizeof(iby), "%s", g_sig[g].inst_by);
         snprintf(sf, sizeof(sf), "%s", g_sig[g].sent_from);
         snprintf(st, sizeof(st), "%s", g_sig[g].sent_to);
         pthread_mutex_unlock(&g_sig_mu);
+        char by[32] = "?";
+        if (en) pthread_getname_np((pthread_t)(uintptr_t)atomic_load(&g_sig[g].first_entered_by), by, sizeof(by));
         any = 1; total_sent += s; total_ran += r; total_ref += f; total_rearm += ra; total_failed += fl; total_blocked += ab;
         total_ok += ok; total_esrch += es; total_einval += iv; total_other += ot;
-        snprintf(buf, sizeof(buf), "%s: signal %d (Darwin %d): handler installed %lu time(s) by '%s' (install(s) the host refused: %lu), sent %lu time(s) (first from '%s' to '%s'), guest handler RAN %lu time(s), refused by the layer %lu time(s), host handler re-armed before a send %lu time(s); send OUTCOME: accepted %lu, ESRCH %lu, EINVAL %lu, other %lu (errno %lu)",
+        total_entered += en; total_ptr += pf; total_called += cl; total_returned += rt;
+        snprintf(buf, sizeof(buf), "%s: signal %d (Darwin %d): handler installed %lu time(s) by '%s' (install(s) the host refused: %lu), sent %lu time(s) (first from '%s' to '%s'), guest handler RAN %lu time(s), refused by the layer %lu time(s), host handler re-armed before a send %lu time(s); send OUTCOME: accepted %lu, ESRCH %lu, EINVAL %lu, other %lu (errno %lu); staged chain: host handler ENTERED %lu (first by '%s'), guest pointer FOUND %lu, guest CALLED %lu, guest RETURNED %lu",
                  tag, g, tl_signal_to_darwin(g), i, iby[0] ? iby : "?", fl, s, sf[0] ? sf : "?", st[0] ? st : "?", r, f, ra,
-                 ok, es, iv, ot, ote);
+                 ok, es, iv, ot, ote, en, by, pf, cl, rt);
         tl_log_line("%s", buf);
     }
     if (!any) { tl_log_line("%s: no guest signal was installed, sent or delivered this run (the guest never armed one)", tag); return; }
@@ -328,6 +376,24 @@ void tl_signal_report(const char *tag)
                 "send outcomes: %lu ACCEPTED by pthread_kill, %lu ESRCH (the thread was gone), %lu EINVAL, %lu other -- %s",
                 tag, total_sent, total_ran, total_ref, total_rearm, total_failed,
                 total_ok, total_esrch, total_einval, total_other, verdict);
+    /* The staged chain, kept apart on purpose: the log cannot conflate "a signal reached the host dispatcher" with "the
+     * guest's handler ran". A break in the chain names WHERE it broke -- and the layer stops at RETURNED, because a
+     * Boehm acknowledgement is the guest's own step and the layer cannot see it. */
+    if (total_entered || total_ran) {
+        const char *chainverdict;
+        if (total_entered == 0)
+            chainverdict = "NEVER ENTERED: no guest-armed signal reached the host dispatcher at all -- the send never got there, or the disposition was not ours";
+        else if (total_ptr == 0)
+            chainverdict = "ENTERED but NO GUEST POINTER: the dispatcher ran for a signal with no recorded handler (SIG_IGN/SIG_DFL recorded, or a Darwin number that is not a guest signal) -- nothing to call";
+        else if (total_called == 0)
+            chainverdict = "pointer FOUND but never CALLED: the conversion path returned before the guest handler (should not happen; look at the handler)";
+        else if (total_returned < total_called)
+            chainverdict = "CALLED but did NOT all RETURN: a guest handler did not come back (longjmp, or it faulted) -- the interrupted thread never resumes";
+        else
+            chainverdict = "the WHOLE chain completed: host ENTERED -> guest pointer FOUND -> guest CALLED -> guest RETURNED. What the layer cannot see (and does not claim) is the guest's own acknowledgement past RETURNED";
+        tl_log_line("%s: staged delivery chain: host handler ENTERED %lu, guest pointer FOUND %lu, guest CALLED %lu, guest RETURNED %lu -- %s",
+                    tag, total_entered, total_ptr, total_called, total_returned, chainverdict);
+    }
     /* The probe handler's own run count, read from the ledger THIS report draws from, beside the image's identity. Both
      * are printed by the self-test too; if the two disagree the layer is loaded twice and a handler one copy runs is
      * invisible to the other -- answered in one log rather than assumed away. */

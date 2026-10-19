@@ -115,7 +115,20 @@ void tl_signal_note_send(int guest_sig, pthread_t target, int refused);
  * errno. Without it, "sent N, RAN 0" reads the same whether N signals landed or all N failed. Counted once per send;
  * only the first two of each outcome pay for a thread name and a log line. */
 void tl_signal_note_send_result(int guest_sig, pthread_t target, int host_errno);
-void tl_signal_note_run(int guest_sig);
+/* The same OUTCOME, WITH the per-send identity: the guest pthread_t the guest passed, the host pthread_t the layer
+ * actually called pthread_kill with, the target's Darwin tid, and whether the live-thread census maps it back to the
+ * same handle. If the guest record and the host handle can ever disagree, that is the bug -- so both are printed and
+ * compared on one line. A call site uses THIS or tl_signal_note_send_result, never both (each counts the send once). */
+void tl_signal_note_send_result_ex(int guest_sig, unsigned long guest_pthread, unsigned long host_pthread,
+                                   unsigned long guest_tid, unsigned long census_pthread, int host_errno);
+/* The STAGED delivery chain, written from INSIDE the signal handler and therefore async-signal-safe by construction --
+ * one relaxed atomic add each, NO lock, NO name lookup, NO log. host handler ENTERED / guest handler pointer FOUND /
+ * guest handler CALLED / guest handler RETURNED. The chain stops at RETURNED: a Boehm acknowledgement is the guest's own
+ * step and the layer cannot see it. `enter` also moves the legacy `ran` headline; tl_signal_report prints the stages. */
+void tl_signal_note_enter(int guest_sig);
+void tl_signal_note_ptr_found(int guest_sig);
+void tl_signal_note_called(int guest_sig);
+void tl_signal_note_returned(int guest_sig);
 void tl_signal_note_rearm(int guest_sig, int darwin_sig, int refused_install, int host_errno, int found_disposition);
 /* A thread about to run guest code arrived with a guest-armed signal BLOCKED in its mask (a mask from HOST code,
  * inherited at thread creation -- the only way a blocked bit reaches a guest thread, and the case a send/run ledger
@@ -136,6 +149,13 @@ void tl_signal_selftest(void);
 void tl_signal_probe_ran(void);
 unsigned long tl_signal_probe_count(void);
 void *tl_signal_ledger_image(void);
+/* The RUNNING process's image identity for the signal subsystem (the self-test prints all of these): the address of THIS
+ * image's ledger, guest-handler table, SIGPWR override, and the send call site. If the layer is loaded twice these are
+ * at different addresses, and a handler installed by one copy is invisible to the other -- signal dispositions are
+ * process-wide while g_sig/g_guest_sig/g_pwr_darwin are image-local. */
+void *tl_signal_guest_table_image(void);
+void *tl_signal_pwr_addr(void);
+void *tl_signal_send_site(void);
 /* bionic SIGPWR's Darwin number for this run: 0 = the table's default (29/SIGINFO), else what the self-test measured. */
 void tl_signal_set_pwr_darwin(int darwin_sig);
 int  tl_signal_pwr_darwin(void);

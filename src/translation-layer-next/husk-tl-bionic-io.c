@@ -20,6 +20,7 @@ const char *tl_ld_main_apk(void);
 #include <execinfo.h>
 #include <TargetConditionals.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <arpa/inet.h>
@@ -44,6 +45,7 @@ const char *tl_ld_main_apk(void);
 #include <time.h>
 #include <search.h>
 #include <dlfcn.h>
+#include <mach-o/dyld.h>
 #include <libkern/OSCacheControl.h>
 #include <unistd.h>
 #include <time.h>
@@ -2184,6 +2186,10 @@ typedef void (*guest_handler)(int, void *, void *);
 
 static struct { void *handler; int flags; } g_guest_sig[32];
 
+/* The address of THIS image's guest-handler table, for the self-test's image-identity proof: if the layer is loaded
+ * twice, each copy's table is at a different address, and a handler installed by one is invisible to the other. */
+void *tl_signal_guest_table_image(void) { return (void *)&g_guest_sig[0]; }
+
 static int g_sig_trace = -1;
 static void sig_trace(const char *what, int g)
 {
@@ -2247,18 +2253,63 @@ typedef struct {
 _Static_assert(__builtin_offsetof(guest_ucontext, uc_mcontext) == 176, "bionic's ucontext_t puts uc_mcontext at 176");
 _Static_assert(__builtin_offsetof(guest_sigcontext, reserved) == 288, "the kernel's sigcontext puts __reserved at 288");
 
+/*
+ * The per-thread buffer a delivery builds bionic's ucontext_t in. It is PREALLOCATED, part of the thread's own fixed
+ * storage, allocated when the thread is created and NEVER by the handler: the old handler did
+ * `if (!g) g = calloc(1, sizeof(*g))` -- a 4.5 KiB allocation INSIDE a signal handler. calloc is not async-signal-safe
+ * (it takes the allocator's lock and walks free lists), so if the interrupted thread already held that lock -- and a
+ * stop-the-world path is exactly where that happens -- the handler deadlocks and the thread the signal was meant to
+ * park never answers. A fixed record per thread removes the allocation entirely; the nesting depth gives a signal that
+ * arrives inside the handler a buffer of its own, still with no allocation.
+ */
+#define GUEST_UC_DEPTH 2
+static __thread guest_ucontext t_guest_uc[GUEST_UC_DEPTH];
+static __thread int t_guest_uc_depth;
+
+/*
+ * ---------------------------------------------------------------- the delivery handler
+ *
+ * Runs on the guest's own thread in signal context and must be async-signal-safe END TO END. Every call it makes is
+ * audited here; each one that would NOT have been safe is named as fixed or removed:
+ *
+ *   tl_signal_from_darwin      a table walk and one plain int read (g_pwr_darwin)              safe
+ *   tl_signal_note_enter/…     ONE relaxed atomic add each; no lock, no name lookup, no log     safe
+ *   memset                     the compiler's own; no lock                                       safe
+ *   arm_thread_state64_get/set inline reads/writes of _STRUCT_ARM_THREAD_STATE64                safe
+ *   the guest handler          the guest's own code, in signal context by definition            the guest's contract
+ *
+ * REMOVED because they are NOT async-signal-safe -- each could deadlock the very stop-the-world path this handler
+ * serves:
+ *   calloc / free              the allocator's lock                                        FIXED: a fixed per-thread record
+ *   sig_trace()                pthread_getname_np + tl_log_line (vsnprintf, stdio lock)    FIXED: no logging here
+ *   tl_signal_note_run()       pthread_mutex_lock + tl_log_line on the first two runs      FIXED: lock-free counters
+ * The first events are no longer logged FROM the handler; the ledger records them as counters and tl_signal_report
+ * prints them (with the thread name) from a normal thread, where logging is safe. See step24-the-discriminator.md.
+ */
 static void host_signal_entry(int dsig, siginfo_t *info, void *uctx)
 {
     int gsig = tl_signal_from_darwin(dsig);
-    sig_trace("delivered", gsig);
-    tl_signal_note_run(gsig);
-    void *h = g_guest_sig[gsig < 32 ? gsig : 0].handler;
-    if (!h || h == (void *)1) return;
+    tl_signal_note_enter(gsig);              /* stage 1: the host dispatcher was ENTERED (gsig 0 = not a guest signal) */
+    if (gsig < 1 || gsig > 31) return;       /* a Darwin number no bionic signal claims: not ours to run */
+    void *h = g_guest_sig[gsig].handler;
+    if (!h || h == (void *)1) return;        /* SIG_DFL / SIG_IGN: nothing recorded to run */
+    tl_signal_note_ptr_found(gsig);          /* stage 2: a guest handler pointer is recorded for it */
     ucontext_t *uc = uctx;
-    if (!uc || !uc->uc_mcontext) { ((guest_handler)h)(gsig, info, uctx); return; }
-    static __thread guest_ucontext *g;     /* 4.5 KiB: too much for a small signal stack */
-    if (!g) g = calloc(1, sizeof(*g));
-    if (!g) { ((guest_handler)h)(gsig, info, uctx); return; }
+    if (!uc || !uc->uc_mcontext) {           /* nothing to convert: hand the guest what Darwin gave us */
+        tl_signal_note_called(gsig);
+        ((guest_handler)h)(gsig, info, uctx);
+        tl_signal_note_returned(gsig);
+        return;
+    }
+    int depth = t_guest_uc_depth;
+    if (depth < 0 || depth >= GUEST_UC_DEPTH) {   /* nested past the pool: NEVER allocate; convert nothing */
+        tl_signal_note_called(gsig);
+        ((guest_handler)h)(gsig, info, uctx);
+        tl_signal_note_returned(gsig);
+        return;
+    }
+    guest_ucontext *g = &t_guest_uc[depth];
+    t_guest_uc_depth = depth + 1;
     _STRUCT_ARM_THREAD_STATE64 *ss = &uc->uc_mcontext->__ss;
     memset(g, 0, offsetof(guest_ucontext, uc_mcontext) + offsetof(guest_sigcontext, reserved));
     g->uc_stack.ss_sp = uc->uc_stack.ss_sp; g->uc_stack.ss_size = uc->uc_stack.ss_size; g->uc_stack.ss_flags = uc->uc_stack.ss_flags;
@@ -2269,16 +2320,15 @@ static void host_signal_entry(int dsig, siginfo_t *info, void *uctx)
     g->uc_mcontext.pc = arm_thread_state64_get_pc(*ss);
     g->uc_mcontext.pstate = ss->__cpsr;
     g->uc_mcontext.fault_address = info ? (uint64_t)(uintptr_t)info->si_addr : 0;
-    guest_ucontext *mine = g;
-    g = NULL;                              /* a signal arriving inside the handler gets a buffer of its own */
-    ((guest_handler)h)(gsig, info, mine);
-    for (int r = 0; r < 29; r++) ss->__x[r] = mine->uc_mcontext.regs[r];
-    arm_thread_state64_set_fp(*ss, mine->uc_mcontext.regs[29]);
-    arm_thread_state64_set_lr_fptr(*ss, (void *)(uintptr_t)mine->uc_mcontext.regs[30]);
-    arm_thread_state64_set_sp(*ss, mine->uc_mcontext.sp);
-    arm_thread_state64_set_pc_fptr(*ss, (void *)(uintptr_t)mine->uc_mcontext.pc);
-    if (g) free(g);
-    g = mine;
+    tl_signal_note_called(gsig);             /* stage 3: the guest handler is being CALLED */
+    ((guest_handler)h)(gsig, info, g);
+    tl_signal_note_returned(gsig);           /* stage 4: the guest handler RETURNED */
+    for (int r = 0; r < 29; r++) ss->__x[r] = g->uc_mcontext.regs[r];
+    arm_thread_state64_set_fp(*ss, g->uc_mcontext.regs[29]);
+    arm_thread_state64_set_lr_fptr(*ss, (void *)(uintptr_t)g->uc_mcontext.regs[30]);
+    arm_thread_state64_set_sp(*ss, g->uc_mcontext.sp);
+    arm_thread_state64_set_pc_fptr(*ss, (void *)(uintptr_t)g->uc_mcontext.pc);
+    t_guest_uc_depth = depth;
 }
 
 static int is_fault_signal(int g) { return g == 4 || g == 5 || g == 6 || g == 7 || g == 8 || g == 11; }
@@ -2300,37 +2350,99 @@ static int host_arm(int d, int sig)
 }
 
 /*
- * ---------------------------------------------------------------- one-shot signal self-test
+ * ---------------------------------------------------------------- one-shot signal self-test (the discriminator)
  *
  * A stalled stop-the-world handshake (Boehm GC's, for il2cpp) leaves one question a log of counts cannot answer: can
- * THIS PROCESS deliver a thread-directed signal at all? Three readings fit "sent N, RAN 0" and the ledger alone cannot
- * choose between them: the mechanism is broken process-wide; the Darwin number chosen for bionic SIGPWR is one a
- * thread-directed send will not run a handler for (SIGINFO, 29, is Darwin's ^T status signal and is treated specially);
- * or the target thread's mask blocks it. The first two are settled here, at start-up, by MEASUREMENT instead of a guess.
+ * THIS PROCESS deliver a THREAD-DIRECTED signal to one of its own threads at all, and if not, WHICH of the three
+ * possible reasons is it -- (1) the mechanism is broken process-wide, (2) the Darwin number chosen for bionic SIGPWR is
+ * one a thread-directed send will not run a handler for, or (3) the TARGET THREAD'S MASK blocks it? A send/run ledger
+ * cannot separate them, and neither can a probe that only ever signals pthread_self(): a self-directed send runs on the
+ * SENDER's mask, not on a target's, so it cannot speak to (3) at all.
  *
- * The probe installs ITS OWN handler on a Darwin signal the layer owns, sends it to the CALLING thread with
- * pthread_kill, and checks the handler ran. Its first action is tl_signal_probe_ran(), one relaxed atomic add on the
- * SAME state tl_signal_report reads. SIGEMT (7) is the control: the one Darwin number in 1..31 that no bionic signal
- * claims, so a clean delivery of it proves the mechanism process-wide, and a failure of it means the process cannot
- * deliver a thread-directed signal at all (nothing about SIGPWR or the target's mask can be blamed). SIGINFO (29) --
- * what bionic SIGPWR (30), Boehm's stop-the-world signal, is mapped to -- is then tested the same way, and Darwin 24
- * (SIGXCPU, bionic 24) beside it. If SIGINFO will not deliver while the control does, the MAPPING is the bug and bionic
- * SIGPWR is moved to the control's number for the rest of the run (tl_signal_set_pwr_darwin): Darwin 7 is claimed by no
- * bionic signal, so the move frees 29 and steals nothing. Every probe restores the disposition it found.
+ * So the probe answers all three, by MEASUREMENT, at start-up, over FOUR Darwin signals and TWO directions:
  *
- * One shot, once, at start-up, on the layer's own entry thread before the guest arms anything; no lock, no allocation,
- * nothing per-frame or per-call. Modeled on the JIT self-test's line so it reads the same way in a log.
+ *   Darwin 7  SIGEMT   the CONTROL -- the one Darwin number in 1..31 no bionic signal claims, so a clean delivery proves
+ *                      the mechanism process-wide and a failure of it exonerates every other candidate
+ *   Darwin 29 SIGINFO  what bionic SIGPWR (30), Boehm's stop-the-world signal, maps to. Darwin treats SIGINFO specially
+ *                      (it is the ^T status request) but it IS catchable and a thread-directed send SHOULD run a handler;
+ *                      this probe is the discriminator that measures it on the device instead of assuming it broken
+ *   Darwin 24 SIGXCPU  bionic 24, the second signal il2cpp's collector arms
+ *   Darwin 30 SIGUSR1  a known-ordinary, catchable signal -- a second control
+ *
+ * Each signal is tested SELF-DIRECTED (pthread_kill(pthread_self()) -- the sender's own mask applies) and CROSS-THREAD
+ * (a real helper thread that EXPLICITLY sigemptyset/sigaddset/pthread_sigmask(SIG_UNBLOCK)s the signal, reads back and
+ * REPORTS ITS OWN MASK, then observes whether the handler ran ON IT). Cross-thread with the target's mask cleared is
+ * the shape that matters: it is what Boehm does, and a failure there while the control delivers cannot be blamed on the
+ * mechanism or on the mask.
+ *
+ * Every send uses a BOUNDED wait -- a few sched_yield() boundaries, then 1 ms sleeps, capped -- never an unbounded one,
+ * so a signal that never arrives cannot hang the start-up. One plain verdict line is printed per signal per direction.
+ * Every disposition and mask the probe touches is restored. It also prints image identity (probe_image_identity) from
+ * the RUNNING process, so a second copy of the layer -- the review's candidate 2 -- is visible in the same log.
+ *
+ * One shot, once, at start-up, on the layer's own entry thread before the guest arms anything; no lock, no allocation on
+ * the handler path, nothing per-frame or per-call. Modeled on the JIT self-test's line so it reads the same way.
  */
+/* The probe handler's OWN observation, per thread, plus the image counter. Both writes are async-signal-safe: a plain
+ * __thread store and one relaxed atomic add. t_probe_seen is how a CROSS-THREAD probe's target answers "did MY handler
+ * run" for itself, without any lock or log in the handler. */
+static __thread volatile sig_atomic_t t_probe_seen;
 static void probe_handler(int sig, siginfo_t *info, void *uc)
 {
-    (void)sig; (void)info; (void)uc;
+    (void)info; (void)uc;
+    t_probe_seen = sig;
     tl_signal_probe_ran();
 }
 
-/* Send `dsig` thread-directed to the calling thread with the probe handler installed. *errno_out is what pthread_kill
- * returned (0 = the send was accepted); *ran_out is whether the probe handler actually ran. Restores the disposition.
+/* One cross-thread probe: the helper thread's OWN mask and its OWN observation, filled in BY the helper thread. */
+typedef struct {
+    int        dsig;
+    sigset_t   mask_seen;     /* the target's OWN mask AFTER it unblocked the signal, read by the target */
+    int        unblock_rc;    /* pthread_sigmask(SIG_UNBLOCK) return, by the target */
+    int        mask_rc;       /* pthread_sigmask(SIG_SETMASK,NULL,&mask) return, by the target */
+    atomic_int go;            /* target -> the tester: I am running with the mask I just set */
+    atomic_int done;          /* target -> the tester: I have made my observation */
+    int        ran;           /* the target's OWN answer */
+    char       name[32];
+} probe_target;
+
+/* Wait, BOUNDED (~`ms` at the outside), for a flag a helper thread sets: a few sched_yield boundaries, then 1 ms
+ * sleeps. Never an unbounded wait -- a signal that never arrives must not hang the start-up. */
+static void probe_wait(atomic_int *flag, int ms)
+{
+    for (int i = 0; i < ms; i++) {
+        for (int y = 0; y < 16 && !atomic_load(flag); y++) sched_yield();
+        if (atomic_load(flag)) return;
+        struct timespec ts = { 0, 1000000 };
+        nanosleep(&ts, NULL);
+    }
+}
+
+static void *probe_target_main(void *p)
+{
+    probe_target *t = p;
+    pthread_getname_np(pthread_self(), t->name, sizeof(t->name));
+    if (!t->name[0]) snprintf(t->name, sizeof(t->name), "signal-probe");
+    t_probe_seen = 0;
+    sigset_t set;
+    sigemptyset(&set); sigaddset(&set, t->dsig);
+    t->unblock_rc = pthread_sigmask(SIG_UNBLOCK, &set, NULL);            /* the EXPLICIT target-side unblock */
+    t->mask_rc    = pthread_sigmask(SIG_SETMASK, NULL, &t->mask_seen);   /* the target reads and reports its OWN mask */
+    atomic_store(&t->go, 1);
+    int seen = 0;                                                        /* its OWN bounded wait, ~200 ms */
+    for (int i = 0; i < 200 && !seen; i++) {
+        for (int y = 0; y < 16 && !seen; y++) { sched_yield(); seen = (t_probe_seen == t->dsig); }
+        if (!seen) { struct timespec ts = { 0, 1000000 }; nanosleep(&ts, NULL); }
+    }
+    t->ran = seen;
+    atomic_store(&t->done, 1);
+    return NULL;      /* after this store the helper touches nothing of the caller's: it is detached, never joined */
+}
+
+/* Send `dsig` thread-directed to the CALLING thread with the probe handler installed. *errno_out is what pthread_kill
+ * returned (0 = accepted for the target); *ran_out is whether the probe handler actually ran. Restores the disposition.
  * Returns 0 if the probe could be installed and sent, -1 if the host refused the install (then nothing was sent). */
-static int probe_deliver(int dsig, int *errno_out, int *ran_out)
+static int probe_deliver_self(int dsig, int *errno_out, int *ran_out)
 {
     struct sigaction old, sa;
     memset(&sa, 0, sizeof(sa));
@@ -2343,12 +2455,105 @@ static int probe_deliver(int dsig, int *errno_out, int *ran_out)
     errno = 0;
     int dr = pthread_kill(pthread_self(), dsig);
     *errno_out = dr ? dr : (errno ? errno : 0);
-    /* A thread-directed signal to the CURRENT thread is delivered on the way back to user mode -- it has usually already
-     * run when pthread_kill returns. Give a deferred one a few syscall boundaries to arrive before calling it absent. */
+    /* A self-directed signal is delivered on the way back to user mode -- usually already run. Give a deferred one a few
+     * syscall boundaries before calling it absent. Bounded. */
     for (int i = 0; i < 8 && tl_signal_probe_count() == before; i++) sched_yield();
     *ran_out = tl_signal_probe_count() != before;
     sigaction(dsig, &old, NULL);
     return 0;
+}
+
+/* One cross-thread probe: install the handler on `dsig`, start a DETACHED helper that explicitly unblocks `dsig` and
+ * reports its own mask, send from HERE to that thread with pthread_kill, and let the helper say whether ITS handler ran.
+ * *errno_out = what pthread_kill returned. Fills *t. Restores the disposition. Returns -1 if the host refused the
+ * install or the helper could not start (then nothing was sent). */
+static int probe_deliver_thread(int dsig, probe_target *t, int *errno_out)
+{
+    struct sigaction old, sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = probe_handler;
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    memset(t, 0, sizeof(*t));
+    t->dsig = dsig;
+    *errno_out = 0;
+    errno = 0;
+    if (sigaction(dsig, &sa, &old) != 0) { *errno_out = errno ? errno : EINVAL; return -1; }
+    pthread_attr_t at;
+    pthread_attr_init(&at);
+    pthread_attr_setstacksize(&at, 512u << 10);
+    pthread_attr_setdetachstate(&at, PTHREAD_CREATE_DETACHED);   /* never joined: the app's threads are left alone */
+    pthread_t th;
+    int cr = pthread_create(&th, &at, probe_target_main, t);
+    pthread_attr_destroy(&at);
+    if (cr) { sigaction(dsig, &old, NULL); *errno_out = cr; return -1; }
+    probe_wait(&t->go, 100);            /* bounded: the helper sets go before its own bounded wait */
+    unsigned long before = tl_signal_probe_count();
+    errno = 0;
+    int dr = pthread_kill(th, dsig);
+    *errno_out = dr ? dr : (errno ? errno : 0);
+    probe_wait(&t->done, 300);          /* bounded, and LONGER than the helper's own 200 ms bound: it always reports */
+    if (!atomic_load(&t->done) && tl_signal_probe_count() != before) t->ran = 1;   /* it ran but has not reported yet */
+    sigaction(dsig, &old, NULL);
+    return 0;
+}
+
+/*
+ * Image identity, from the RUNNING process (the review's candidate 2). The layer's own .c is compiled into the app
+ * target's single PBXNativeTarget, so the build file says one image -- but a build file is not the process. If the layer
+ * exists twice, signal dispositions are PROCESS-WIDE while g_sig / g_guest_sig / g_pwr_darwin are IMAGE-LOCAL: image B
+ * can send a signal for which image A owns the installed handler, run the guest's handler, and still record zero runs in
+ * its own ledger -- the send/run mismatch this whole investigation turns on, and no probe can see it from one image
+ * alone. So this prints, once, where every part of the signal subsystem ACTUALLY lives: the dladdr() image (path and
+ * base) of each signal-subsystem function and global, and a scan of every loaded image for a second copy of the layer.
+ */
+static void probe_image_identity(void)
+{
+    struct { const char *what; void *addr; } sym[] = {
+        { "host_signal_entry",          (void *)(uintptr_t)host_signal_entry },
+        { "host_arm",                   (void *)(uintptr_t)host_arm },
+        { "tl_signal_arm_guest",        (void *)(uintptr_t)tl_signal_arm_guest },
+        { "&b_kill (the send site)",    (void *)(uintptr_t)tl_signal_send_site() },
+        { "&g_sig (the ledger)",        tl_signal_ledger_image() },
+        { "&g_guest_sig (handler tab)", tl_signal_guest_table_image() },
+        { "&g_pwr_darwin",              tl_signal_pwr_addr() },
+    };
+    const void *layer_base = NULL; char layer_path[512] = "?";
+    for (size_t i = 0; i < sizeof(sym) / sizeof(sym[0]); i++) {
+        Dl_info di; memset(&di, 0, sizeof(di));
+        if (sym[i].addr && dladdr(sym[i].addr, &di) && di.dli_fname) {
+            tl_log_line("signal-image: %-27s at %p: image '%s' base %p%s%s", sym[i].what, sym[i].addr,
+                        di.dli_fname, di.dli_fbase,
+                        di.dli_sname ? ", nearest symbol " : "", di.dli_sname ? di.dli_sname : "");
+            if (!layer_base) { layer_base = di.dli_fbase; snprintf(layer_path, sizeof(layer_path), "%s", di.dli_fname); }
+            else if (di.dli_fbase != layer_base)
+                tl_log_line("signal-image: *** %s is in a DIFFERENT IMAGE (%p '%s') from %s (%p '%s') -- the signal "
+                            "subsystem is SPLIT ACROSS TWO IMAGES, and dispositions are process-wide while its state is "
+                            "not ***", sym[i].what, di.dli_fbase, di.dli_fname, sym[0].what, layer_base, layer_path);
+        } else {
+            tl_log_line("signal-image: %-27s at %p: dladdr() could not name the image", sym[i].what, sym[i].addr);
+        }
+    }
+    uint32_t n = _dyld_image_count();
+    const char *exe = _dyld_get_image_name(0);
+    const char *slash = exe ? strrchr(exe, '/') : NULL;
+    const char *exe_base = slash ? slash + 1 : (exe ? exe : "");
+    int dup_exe = 0, staged = 0;
+    for (uint32_t i = 0; i < n; i++) {
+        const char *nm = _dyld_get_image_name(i);
+        if (!nm) continue;
+        const char *s2 = strrchr(nm, '/');
+        const char *base = s2 ? s2 + 1 : nm;
+        if (*exe_base && !strcmp(nm, exe ? exe : base)) dup_exe++;                 /* the same path loaded twice */
+        else if (*exe_base && !strcmp(base, exe_base) && strcmp(nm, exe ? exe : "")) dup_exe++;  /* a second copy of the app binary */
+        if (strstr(nm, "TranslationLayer")) { staged++; tl_log_line("signal-image: a STAGED translation layer image is loaded: '%s' base %p", nm, _dyld_get_image_header(i)); }
+    }
+    tl_log_line("signal-image: %u image(s) loaded; the layer's signal code lives in '%s' base %p; a second copy of the app "
+                "executable: %s; a staged TranslationLayer image: %s -- %s", n, layer_path,
+                layer_base, dup_exe ? "YES" : "none", staged ? "YES" : "none",
+                (dup_exe || staged) ? "*** TWO-IMAGE HAZARD: the signal subsystem is not a single owner here -- one copy "
+                                      "can own the disposition while another counts the runs ***"
+                                    : "ONE image owns the signal subsystem (candidate 2 is refuted on this run)");
 }
 
 void tl_signal_selftest(void)
@@ -2357,48 +2562,84 @@ void tl_signal_selftest(void)
     if (__atomic_exchange_n(&done, 1, __ATOMIC_SEQ_CST)) return;   /* once, whatever thread reaches here first */
     void *img = tl_signal_ledger_image();
 
-    int emt_e = 0, emt_ran = 0, info_e = 0, info_ran = 0, xcpu_e = 0, xcpu_ran = 0;
-    int emt_ok  = probe_deliver(SIGEMT,  &emt_e,  &emt_ran)  == 0;   /* Darwin 7: the control, a number no bionic signal claims */
-    int info_ok = probe_deliver(SIGINFO, &info_e, &info_ran) == 0;   /* Darwin 29: what bionic SIGPWR (30) is mapped to */
-    int xcpu_ok = probe_deliver(SIGXCPU, &xcpu_e, &xcpu_ran) == 0;   /* Darwin 24: bionic SIGXCPU (24) */
+    /* Where every part of the signal subsystem actually lives, printed once, BEFORE any measurement is read. */
+    probe_image_identity();
 
-    /* (a) Can this process deliver a thread-directed signal at all? The control signal answers it. */
-    if (!emt_ok)
-        tl_log_line("signal-selftest: FAIL -- the host refused to install the probe handler on Darwin %d (SIGEMT): %s (%d). "
-                    "Nothing could be sent, so this process's ability to deliver a thread-directed signal is UNTESTED, not absent",
-                    SIGEMT, strerror(emt_e), emt_e);
-    else if (emt_ran)
-        tl_log_line("signal-selftest: PASS -- installed a probe handler on Darwin %d (SIGEMT, a number no bionic signal claims) and "
-                    "pthread_kill(pthread_self(), %d) ran it: this process CAN deliver a thread-directed signal to a thread it owns",
-                    SIGEMT, SIGEMT);
+    char self_name[32] = ""; pthread_getname_np(pthread_self(), self_name, sizeof(self_name));
+    if (!self_name[0]) snprintf(self_name, sizeof(self_name), "?");
+
+    /* FOUR Darwin signals, TWO directions. SIGEMT is the control (a number no bionic signal claims); SIGINFO is what
+     * bionic SIGPWR (30) maps to -- the discriminator; SIGXCPU is bionic 24; SIGUSR1 is a known-ordinary catchable signal. */
+    static const int   cand[4]      = { SIGEMT,  SIGINFO, SIGXCPU, SIGUSR1 };
+    static const char *cand_name[4] = { "SIGEMT (control)", "SIGINFO", "SIGXCPU", "SIGUSR1 (control)" };
+    int          self_ok[4],  self_e[4],  self_ran[4];
+    int          cross_ok[4], cross_e[4];
+    probe_target ct[4];
+    for (int i = 0; i < 4; i++) {
+        self_ok[i]  = probe_deliver_self(cand[i], &self_e[i], &self_ran[i]) == 0;
+        cross_ok[i] = probe_deliver_thread(cand[i], &ct[i], &cross_e[i]) == 0;
+    }
+
+    /* One plain verdict line per signal per direction: the number, pthread_kill's return, RAN or DID NOT RUN, and whether
+     * the destination was self or another thread. The cross-thread line also carries the TARGET'S OWN mask report, so a
+     * mask failure is separated from a number/target/dispatcher failure. */
+    for (int i = 0; i < 4; i++) {
+        if (!self_ok[i])
+            tl_log_line("signal-selftest: Darwin %-2d %-17s SELF-DIRECTED (%s): the host refused the probe handler: %s (%d)",
+                        cand[i], cand_name[i], self_name, strerror(self_e[i]), self_e[i]);
+        else
+            tl_log_line("signal-selftest: Darwin %-2d %-17s SELF-DIRECTED (%s): pthread_kill returned %s (%d); the probe handler %s",
+                        cand[i], cand_name[i], self_name, self_e[i] ? strerror(self_e[i]) : "0 = accepted", self_e[i],
+                        self_ran[i] ? "RAN" : "DID NOT RUN");
+        if (!cross_ok[i])
+            tl_log_line("signal-selftest: Darwin %-2d %-17s CROSS-THREAD: could not probe -- the host refused the install or "
+                        "the helper thread would not start: %s (%d)",
+                        cand[i], cand_name[i], cross_e[i] ? strerror(cross_e[i]) : "-", cross_e[i]);
+        else {
+            uint32_t m = 0; memcpy(&m, &ct[i].mask_seen, sizeof(m));
+            tl_log_line("signal-selftest: Darwin %-2d %-17s CROSS-THREAD to '%s': the target unblocked it (SIG_UNBLOCK "
+                        "returned %d) and read back its OWN mask 0x%08x (Darwin %d %s); pthread_kill returned %s (%d); the probe "
+                        "handler %s on THAT thread",
+                        cand[i], cand_name[i], ct[i].name[0] ? ct[i].name : "?", ct[i].unblock_rc, m, cand[i],
+                        (m & (1u << (cand[i] - 1))) ? "STILL BLOCKED in it" : "clear in it",
+                        cross_e[i] ? strerror(cross_e[i]) : "0 = accepted", cross_e[i],
+                        ct[i].ran ? "RAN" : "DID NOT RUN");
+        }
+    }
+
+    /* The verdicts the probe exists for. The CONTROL answers "can this process run a handler on another thread at all";
+     * SIGINFO's line answers whether the number bionic SIGPWR is mapped to is deliverable cross-thread. */
+    int ctrl_cross = cross_ok[0] && ct[0].ran;   /* SIGEMT: no bionic signal claims it */
+    int info_cross = cross_ok[1] && ct[1].ran;   /* SIGINFO: what bionic SIGPWR (30) maps to */
+    if (!cross_ok[0])
+        tl_log_line("signal-selftest: VERDICT -- the control (Darwin %d/SIGEMT) could not even be installed or sent: this "
+                    "process's ability to deliver a thread-directed signal is UNTESTED, not absent", SIGEMT);
+    else if (ctrl_cross)
+        tl_log_line("signal-selftest: VERDICT -- the control (Darwin %d/SIGEMT) ran the probe handler on ANOTHER thread: this "
+                    "process CAN deliver a thread-directed signal cross-thread, so a guest stop-the-world handshake is "
+                    "POSSIBLE here and a missing handler run is about the NUMBER or the TARGET, never the mechanism", SIGEMT);
     else
-        tl_log_line("signal-selftest: FAIL -- pthread_kill(pthread_self(), Darwin %d/SIGEMT) returned %s (%d) and the probe handler did "
-                    "NOT run: this process can not deliver a thread-directed signal to a thread it owns AT ALL, so no guest stop-the-world "
-                    "handshake can complete here and the signal's disposition and the target's mask are both beside the point",
-                    SIGEMT, emt_e ? strerror(emt_e) : "0", emt_e);
+        tl_log_line("signal-selftest: VERDICT -- the control (Darwin %d/SIGEMT) did NOT run a handler on another thread while "
+                    "its disposition was installed and the target unblocked it: this process can NOT complete a cross-thread "
+                    "signal handshake AT ALL -- that is the fault to fix, and it makes the Darwin number and the target's mask "
+                    "both beside the point", SIGEMT);
+    if (cross_ok[1])
+        tl_log_line("signal-selftest: VERDICT -- Darwin %d/SIGINFO (what bionic SIGPWR 30 maps to) %s the probe handler on the "
+                    "target: Darwin SIGINFO IS %s by a thread-directed pthread_kill here",
+                    SIGINFO, ct[1].ran ? "RAN" : "DID NOT RUN",
+                    ct[1].ran ? "deliverable, so the SIGPWR->SIGINFO mapping is NOT the defect on this run (the review's reading "
+                                "is confirmed on the device)" : "NOT delivered, so the NUMBER is the discriminator in this build");
 
-    /* (b) Is the Darwin number bionic SIGPWR (30) is mapped to -- SIGINFO, 29 -- actually deliverable by a thread-directed send? */
-    if (!info_ok)
-        tl_log_line("signal-selftest: Darwin %d (SIGINFO, what bionic SIGPWR 30 is mapped to) could not be probed: the host refused the "
-                    "install: %s (%d)", SIGINFO, strerror(info_e), info_e);
-    else
-        tl_log_line("signal-selftest: Darwin %d (SIGINFO, what bionic SIGPWR 30 is mapped to): pthread_kill returned %s (%d) and the probe "
-                    "handler %s -- Darwin SIGINFO %s a thread-directed handler",
-                    SIGINFO, info_e ? strerror(info_e) : "0", info_e, info_ran ? "RAN" : "DID NOT RUN",
-                    info_ran ? "DOES deliver" : "does NOT deliver");
-    if (xcpu_ok)
-        tl_log_line("signal-selftest: Darwin %d (SIGXCPU, bionic 24): pthread_kill returned %s (%d) and the probe handler %s",
-                    SIGXCPU, xcpu_e ? strerror(xcpu_e) : "0", xcpu_e, xcpu_ran ? "RAN" : "DID NOT RUN");
-
-    /* Decide, from the measurement: if SIGINFO will not run a handler -- either it was installed and did not run, or the
-     * host would not even install a probe on it -- while the control delivers, move bionic SIGPWR off it. */
-    int remap = (emt_ok && emt_ran) && !info_ran;
+    /* Decide from the MEASUREMENT only: move bionic SIGPWR off Darwin 29 when the control delivers cross-thread and SIGINFO
+     * does not. Never on a guess -- the review established SIGINFO is catchable, so a run where SIGINFO delivers never
+     * takes this branch. */
+    int remap = cross_ok[0] && ctrl_cross && !info_cross;
     if (remap) {
         tl_signal_set_pwr_darwin(SIGEMT);
-        tl_log_line("signal-selftest: bionic SIGPWR (30) was mapped to Darwin %d (SIGINFO), which a thread-directed send did NOT deliver (%s), "
-                    "while Darwin %d (SIGEMT) did: for this run bionic SIGPWR uses Darwin %d, a number no bionic signal claims, so no two bionic "
-                    "signals share one Darwin number and Darwin 29 is freed. See tl_signal_to_darwin",
-                    SIGINFO, info_ok ? "the probe handler did not run" : "the host would not install a probe handler", SIGEMT, SIGEMT);
+        tl_log_line("signal-selftest: bionic SIGPWR (30) was mapped to Darwin %d (SIGINFO), which a thread-directed send to "
+                    "another thread did NOT run a handler for (%s), while Darwin %d (SIGEMT) did: for this run bionic SIGPWR "
+                    "uses Darwin %d -- a number no bionic signal claims, so no two share a number and Darwin 29 is freed",
+                    SIGINFO, cross_ok[1] ? "the probe handler did not run" : "the host would not install a probe", SIGEMT, SIGEMT);
     }
     /* The mapping's own contract, checked rather than assumed: no two bionic signals on one Darwin number after the choice. */
     int collision = 0, ca = 0, cb = 0, cd = 0;
@@ -2413,10 +2654,10 @@ void tl_signal_selftest(void)
     if (collision)
         tl_log_line("signal-selftest: COLLISION -- bionic %d and bionic %d both map to Darwin %d, which would run the wrong guest handler", ca, cb, cd);
 
-    /* The two-image hazard, in one line: the probe's OWN run count and the ledger address of the image that installed it. The
-     * stall/close report prints the same two; if the layer is loaded twice the report's copy reads 0 and a different address. */
-    tl_log_line("signal-selftest: the probe handler ran %lu time(s) as recorded in THIS image's ledger (ledger image %p); the report prints "
-                "the same count and address, so a layer loaded twice -- a handler in one image, the report in another -- shows them disagreeing",
+    /* The two-image hazard, in one line: the probe's OWN run count and the ledger address of the image that installed it. */
+    tl_log_line("signal-selftest: the probe handler ran %lu time(s) as recorded in THIS image's ledger (ledger image %p); the "
+                "stall/close report prints the same count and address, so a layer loaded twice -- a handler in one image, the "
+                "report in another -- shows them disagreeing",
                 tl_signal_probe_count(), img);
 }
 
