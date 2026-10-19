@@ -188,6 +188,14 @@ int  tl_signal_pwr_darwin(void);
  * never per frame, never per call). */
 int tl_signal_arm_guest(int darwin_sig, int guest_sig);
 
+/* Deliver a guest cross-thread signal to `target` WITHOUT an OS signal -- by Mach thread control (thread_suspend, capture
+ * the target's registers, redirect it to run the guest handler on its own stack, setcontext back). Used because an attached
+ * JIT debugger intercepts and discards Unix signals before the process's own handler runs, which hangs any signal-based
+ * stop-the-world (il2cpp's Boehm GC). Returns 0 when the handler was delivered to the target this way; -1 means the caller
+ * must fall back to a real pthread_kill (Mach unavailable, or a one-shot self-test proved the round-trip does not work on
+ * this device). One send costs a handful of Mach calls -- once per suspended thread per collection, never per frame. */
+int tl_signal_deliver(pthread_t target, int guest_sig);
+
 /* The guest's signal mask applied to the calling thread (bionic's `how`: SIG_BLOCK 0 / SIG_UNBLOCK 1 / SIG_SETMASK 2).
  * Shared by pthread_sigmask, sigprocmask and the raw rt_sigprocmask syscall. */
 int tl_bionic_sigmask(int how, const uint64_t *set, uint64_t *old);

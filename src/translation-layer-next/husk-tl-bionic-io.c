@@ -2767,6 +2767,159 @@ static void probe_image_identity(void)
                                     : "ONE image owns the signal subsystem (candidate 2 is refuted on this run; every count above is printed, not inferred)");
 }
 
+/* ================================================================== Mach signal delivery
+ *
+ * WHY THIS EXISTS (measured, build 3803577): an attached JIT debugger (StikDebug) intercepts and DISCARDS Unix signals
+ * before they reach this process's own sigaction handlers. A raw native handler installed with Darwin's own sigaction,
+ * read back as installed, still does not RUN on a raw raise()/pthread_kill(self) -- while P_TRACED is set. So the guest's
+ * cross-thread signals (il2cpp's Boehm GC stop-the-world sends bionic SIGPWR 30 -> Darwin SIGINFO 29 to every managed
+ * thread) are ACCEPTED by pthread_kill and then vanish: the suspend handler never runs, the collector's wait-to-stop loop
+ * (UnityMain in usleep) retries for ever, and the engine never reaches its frame loop. The send side, the install side and
+ * the mask are all correct and exonerated by measurement; the delivery is intercepted outside the process.
+ *
+ * THE FIX: deliver the guest's handler to the target thread by Mach thread control instead of an OS signal -- the debugger
+ * swallows signals, not thread_set_state. On a guest send we thread_suspend the target, capture its registers, redirect it
+ * to mach_sig_dispatch on its OWN stack (so the guest handler sees the target's real stack pointer, which is what Boehm
+ * scans), and thread_resume. mach_sig_dispatch runs the guest handler through the SAME host_signal_entry a real signal
+ * would use (so the ledger and the synthesized bionic ucontext are identical), then setcontext()s back to where the target
+ * was -- setcontext is Darwin's own restore and matches the arm_thread_state64_* accessor's PAC signing.
+ *
+ * SAFETY: every Mach call is checked; any failure returns -1 and the caller falls back to a real pthread_kill (the current
+ * behaviour) rather than guessing. A one-shot SELF-TEST at start-up proves the whole round-trip (redirect -> handler ->
+ * setcontext -> the target continues) on THIS device before the mechanism is trusted with a GC; if it does not round-trip,
+ * g_mach_ok is 0 and every send falls back. This is the narrow, guest-requested suspend the owner approved: it is the app
+ * asking to stop ITS OWN threads for a GC, not the layer killing or joining anyone.
+ */
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/thread_act.h>
+
+static volatile int g_mach_ok = -1;                 /* -1 untested, 0 FAILED (fall back), 1 round-trips here */
+static volatile sig_atomic_t g_mach_test_ran;
+static volatile int g_mach_test_done;
+
+static void mach_test_handler(int gsig, siginfo_t *info, void *uc)
+{ (void)gsig; (void)info; (void)uc; g_mach_test_ran++; }
+
+/* Resume a thread at a captured __darwin_arm_thread_state64. Naked: restore x0-x30, sp, then branch to the pc (already
+ * PAC-stripped by arm_thread_state64_get_pc). x16/x17 are AAPCS64 scratch (IP0/IP1) and are deliberately not restored --
+ * the ABI does not preserve them across a call, so a handler may clobber them exactly as a real signal's return may. */
+__attribute__((naked, used)) static void mach_sig_restore(struct __darwin_arm_thread_state64 *ss, uintptr_t pc)
+{
+    __asm__ volatile(
+        "mov x16, x0\n"
+        "mov x17, x1\n"
+        "ldp x0,  x1,  [x16, #0]\n"
+        "ldp x2,  x3,  [x16, #16]\n"
+        "ldp x4,  x5,  [x16, #32]\n"
+        "ldp x6,  x7,  [x16, #48]\n"
+        "ldp x8,  x9,  [x16, #64]\n"
+        "ldp x10, x11, [x16, #80]\n"
+        "ldp x12, x13, [x16, #96]\n"
+        "ldp x14, x15, [x16, #112]\n"
+        "ldp x18, x19, [x16, #144]\n"
+        "ldp x20, x21, [x16, #160]\n"
+        "ldp x22, x23, [x16, #176]\n"
+        "ldp x24, x25, [x16, #192]\n"
+        "ldp x26, x27, [x16, #208]\n"
+        "ldr x28,      [x16, #224]\n"
+        "ldp x29, x30, [x16, #232]\n"
+        "ldr x16,      [x16, #248]\n"
+        "mov sp, x16\n"
+        "br x17\n");
+}
+
+/* Runs ON the redirected target thread. Same dispatcher a real signal reaches, then resume exactly where the target was. */
+static void mach_sig_dispatch(int gsig, siginfo_t *info, ucontext_t *uc)
+{
+    mcontext_t mc = uc->uc_mcontext;
+    host_signal_entry(tl_signal_to_darwin(gsig), info, uc);
+    uintptr_t pc = (uintptr_t)arm_thread_state64_get_pc(mc->__ss);
+    mach_sig_restore(&mc->__ss, pc);
+    __builtin_unreachable();
+}
+
+/* Deliver guest signal `gsig` to `target` by Mach thread control. 0 = delivered; -1 = caller should pthread_kill. */
+static int mach_sig_deliver(pthread_t target, int gsig)
+{
+    mach_port_t tp = pthread_mach_thread_np(target);
+    if (!tp) return -1;
+    if (thread_suspend(tp) != KERN_SUCCESS) return -1;
+    struct __darwin_arm_thread_state64 st;
+    mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
+    if (thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt) != KERN_SUCCESS) {
+        thread_resume(tp); return -1;
+    }
+    /* Carve ucontext + siginfo + mcontext on the target's OWN stack, below its SP (16-byte aligned), so the guest handler
+     * sees the target's real stack pointer and mach_sig_restore returns it there. The dispatch runs from base up into this. */
+    uintptr_t sp = ((uintptr_t)st.__sp) & ~15ull;
+    size_t need = sizeof(ucontext_t) + sizeof(siginfo_t) + 4096 + 512;
+    uintptr_t base = (sp - need) & ~15ull;
+    ucontext_t *uc = (ucontext_t *)base;
+    siginfo_t *info = (siginfo_t *)(base + sizeof(ucontext_t));
+    mcontext_t mc = (mcontext_t)(base + sizeof(ucontext_t) + sizeof(siginfo_t));
+    memset(uc, 0, sizeof(*uc)); memset(info, 0, sizeof(*info)); memset(mc, 0, 4096);
+    uc->uc_mcontext = mc;
+    mc->__ss = st;                                 /* the target's registers: what the handler reads and we restore */
+    struct __darwin_arm_thread_state64 nst = st;
+    arm_thread_state64_set_pc_fptr(nst, (void *)(uintptr_t)mach_sig_dispatch);
+    arm_thread_state64_set_sp(nst, base);
+    nst.__x[0] = (uint64_t)gsig;
+    nst.__x[1] = (uint64_t)(uintptr_t)info;
+    nst.__x[2] = (uint64_t)(uintptr_t)uc;
+    if (thread_set_state(tp, ARM_THREAD_STATE64, (thread_state_t)&nst, ARM_THREAD_STATE64_COUNT) != KERN_SUCCESS) {
+        thread_resume(tp); return -1;
+    }
+    thread_resume(tp);
+    return 0;
+}
+
+static void *mach_test_thread(void *arg)
+{
+    (void)arg;
+    while (!g_mach_test_done) { struct timespec ts = { 0, 2000000 }; nanosleep(&ts, NULL); }
+    return NULL;
+}
+
+/* One-shot: prove the redirect -> handler -> setcontext -> continue round-trip on THIS device before trusting it with a GC. */
+static void tl_signal_mach_selftest(void)
+{
+    g_mach_test_ran = 0; g_mach_test_done = 0;
+    int T = 21;                                    /* an unused bionic signal (the collector uses 30/24) */
+    void *sh = g_guest_sig[T].handler; int sf = g_guest_sig[T].flags;
+    g_guest_sig[T].handler = (void *)(uintptr_t)mach_test_handler; g_guest_sig[T].flags = 0;
+    pthread_t th;
+    if (pthread_create(&th, NULL, mach_test_thread, NULL) != 0) {
+        g_guest_sig[T].handler = sh; g_guest_sig[T].flags = sf;
+        g_mach_ok = 0;
+        tl_log_line("signal-mach: selftest FAIL -- could not start the test thread; falling back to pthread_kill");
+        return;
+    }
+    struct timespec w = { 0, 20000000 }; nanosleep(&w, NULL);
+    int delivered = mach_sig_deliver(th, T);
+    for (int i = 0; i < 250 && !g_mach_test_ran; i++) { struct timespec s = { 0, 2000000 }; nanosleep(&s, NULL); }
+    g_mach_test_done = 1; pthread_join(th, NULL);
+    g_guest_sig[T].handler = sh; g_guest_sig[T].flags = sf;
+    g_mach_ok = (delivered == 0 && g_mach_test_ran > 0) ? 1 : 0;
+    tl_log_line("signal-mach: selftest %s (deliver=%d, handler ran %d time(s)) -- Mach thread-control delivery of a guest "
+                "signal %s on this device, so a guest stop-the-world signal will %s be delivered despite the tracer",
+                g_mach_ok ? "PASS" : "FAIL", delivered, (int)g_mach_test_ran,
+                g_mach_ok ? "round-trips (redirect -> handler -> setcontext -> the target continued)" : "does NOT round-trip",
+                g_mach_ok ? "now" : "NOT (every send falls back to pthread_kill)");
+}
+
+/* The send path calls this first. 0 = delivered by Mach; -1 = the caller must fall back to a real pthread_kill. */
+int tl_signal_deliver(pthread_t target, int gsig)
+{
+    if (getenv("TL_NO_MACH_SIGNAL")) return -1;    /* kill-switch: force the real-signal path */
+    if (g_mach_ok == 0) return -1;                 /* measured broken here: never risk the redirect */
+    if (g_mach_ok == 1) return mach_sig_deliver(target, gsig);
+    return -1;                                     /* untested: fall back (the self-test has not run yet) */
+}
+#else
+int tl_signal_deliver(pthread_t target, int gsig) { (void)target; (void)gsig; return -1; }
+#endif /* __APPLE__ */
+
 void tl_signal_selftest(void)
 {
     static int done;
@@ -2941,6 +3094,10 @@ void tl_signal_selftest(void)
                 "stall/close report prints the same count and address, so a layer loaded twice -- a handler in one image, the "
                 "report in another -- shows them disagreeing",
                 tl_signal_probe_count(), img);
+
+    /* Now prove the Mach delivery round-trip (redirect -> handler -> setcontext -> the target continues) on this device,
+     * so the send path knows whether to deliver a guest signal by thread control or to fall back to pthread_kill. */
+    tl_signal_mach_selftest();
 }
 
 /*

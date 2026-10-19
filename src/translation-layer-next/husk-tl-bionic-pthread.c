@@ -703,10 +703,20 @@ static int b_kill(pthread_t t, int sig)
      * result away except for ESRCH, so "sent N, RAN 0" was equally "N signals delivered and swallowed" and "N sends that
      * all failed" -- two very different problems. pthread_kill returns its errno directly (not via errno); it is recorded
      * as-is so the ledger can say whether the sends landed. */
-    errno = 0;
-    int dr = pthread_kill(t, d);
-    int host_errno = dr ? dr : (errno ? errno : 0);
-    int r = rc(dr);                            /* the guest errno; 0 on success */
+    /* DELIVER FIRST by Mach thread control when it is available and proven on this device (see tl_signal_deliver): an
+     * attached JIT debugger intercepts and discards Unix signals before the guest's handler runs, so a real pthread_kill
+     * hangs a signal-based stop-the-world (Boehm's). Fall back to a real send when Mach is unavailable or the self-test
+     * did not pass. SEND FIRST, then record what the send DID (the ledger needs the outcome either way). */
+    int host_errno = 0, r = 0;
+    if (tl_signal_deliver(t, sig) == 0) {
+        host_errno = 0;                          /* delivered by Mach thread control; the target runs the handler there */
+        r = 0;
+    } else {
+        errno = 0;
+        int dr = pthread_kill(t, d);
+        host_errno = dr ? dr : (errno ? errno : 0);
+        r = rc(dr);                              /* the guest errno; 0 on success */
+    }
     /* Per-send identity (the review's candidates 1 and 3): the guest pthread_t `t` is passed to Darwin UNTRANSLATED, so
      * the guest handle and the host handle are the SAME value here -- print both and compare, and resolve the target's
      * Darwin tid in the layer's own live-thread census, so the day the two handles disagree the log says so instead of
