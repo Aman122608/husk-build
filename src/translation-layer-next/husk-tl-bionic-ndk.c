@@ -45,7 +45,10 @@ typedef struct looper_fd {
 typedef struct tl_looper {
     int wake[2]; atomic_int refs; pthread_t thread; struct tl_looper *next; pthread_mutex_t mu; looper_fd *fds;
     atomic_int polls, wakes, callbacks;   /* the ALooper delivery ledger: see tl_looper_report */
-    struct { int fd; atomic_int hits; } deliv[LOOPER_DELIV];
+    /* ready: how often poll(2) reported this fd readable/writable; hits: how often its callback then ran. The two are
+     * different facts and the pair is what tells "the fd never became readable" (the producer never wrote) apart from
+     * "the fd was readable and the poll path did not service it" (the layer dropped a delivery). */
+    struct { int fd; atomic_int ready, hits; } deliv[LOOPER_DELIV];
     char owner[32], poller[32];           /* the thread that prepared it, and the last thread seen polling it */
     struct tl_looper *all_next;           /* every looper ever made, so the stall probe can find them */
 } tl_looper;
@@ -63,7 +66,7 @@ static pthread_mutex_t g_all_loopers_mu = PTHREAD_MUTEX_INITIALIZER;
  * nothing here is on the per-frame path (no poll is logged: a poll every 8 ms would be the one thing that could).
  * The pre-existing TL_LOOPER_TRACE=1 / TL_CHOREO_TRACE=1 environment variables still give the unbounded form. */
 #define LOOPER_NOTES 24
-static int g_notes_prepare, g_notes_forthread_none, g_notes_addfd, g_notes_wake, g_notes_callback, g_notes_choreo, g_notes_choreo_post, g_notes_choreo_run;
+static int g_notes_prepare, g_notes_forthread_none, g_notes_addfd, g_notes_wake, g_notes_callback, g_notes_choreo, g_notes_choreo_post, g_notes_choreo_run, g_notes_watch_overflow;
 #define LOOPER_NOTE(slot, ...) do { if (g_notes_##slot < LOOPER_NOTES) { g_notes_##slot++; tl_log_line(__VA_ARGS__); } } while (0)
 
 enum { ALOOPER_POLL_WAKE = -1, ALOOPER_POLL_CALLBACK = -2, ALOOPER_POLL_TIMEOUT = -3, ALOOPER_POLL_ERROR = -4 };
@@ -145,6 +148,7 @@ static int b_ALooper_addFd(tl_looper *l, int fd, int ident, int events, void *ca
     }
     if (slot < 0) slot = free_slot >= 0 ? free_slot : (int)((unsigned)fd % LOOPER_DELIV);
     l->deliv[slot].fd = fd;
+    atomic_store(&l->deliv[slot].ready, 0);
     atomic_store(&l->deliv[slot].hits, 0);
     pthread_mutex_unlock(&l->mu);
     LOOPER_NOTE(addfd, "looper: ALooper_addFd fd %d ident %d events %#x callback %s registered from '%s' (a message/fd the guest wants delivered on the poll thread)", fd, ident, events, callback ? "SET" : "none (the poll returns the ident to the caller)", nm);
@@ -178,28 +182,43 @@ static int b_ALooper_pollOnce(int timeout_ms, int *out_fd, int *out_events, void
         char nm[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); if (!nm[0]) snprintf(nm, sizeof(nm), "(unnamed)");
         snprintf(l->poller, sizeof(l->poller), "%s", nm);
     }
-    struct pollfd pfds[32];
-    looper_fd snap[31];
-    int n = 0;
+    /* The watched set: this looper's own wake pipe, then EVERY fd the guest registered on it (ALooper_addFd), in
+     * registration order. A registered fd must never be left out of this set: an fd that is registered and not polled
+     * can never be serviced, which is indistinguishable in the log from an fd that never became readable. The cap is
+     * generous and, if it is ever reached, the excess is NAMED (see below) instead of dropped in silence. */
+#define LOOPER_WATCH_MAX 64
+    struct pollfd pfds[LOOPER_WATCH_MAX + 1];
+    looper_fd snap[LOOPER_WATCH_MAX];
+    int n = 0, unwatched = 0;
     pfds[n++] = (struct pollfd){ l->wake[0], POLLIN, 0 };
     pthread_mutex_lock(&l->mu);
-    for (looper_fd *f = l->fds; f && n < 32; f = f->next) {
+    for (looper_fd *f = l->fds; f; f = f->next) {
+        if (n > LOOPER_WATCH_MAX) { unwatched++; continue; }
         short ev = (short)(((f->events & ALOOPER_EVENT_INPUT) ? POLLIN : 0) | ((f->events & ALOOPER_EVENT_OUTPUT) ? POLLOUT : 0));
         snap[n - 1] = *f;
         pfds[n++] = (struct pollfd){ f->fd, ev, 0 };
     }
     pthread_mutex_unlock(&l->mu);
+    if (unwatched) LOOPER_NOTE(watch_overflow, "looper: %d fd(s) registered on this looper are beyond the %d this poll watches and were NOT polled this time (a registered fd must be watched or its callback can never be serviced)", unwatched, LOOPER_WATCH_MAX);
     { static int tr = -1; if (tr < 0) tr = getenv("TL_LOOPER_TRACE") ? 2 : 0; if (tr) { char b[200]; int k = 0; for (int i = 0; i < n && k < 180; i++) k += snprintf(b + k, sizeof(b) - (size_t)k, " %d", pfds[i].fd); tl_log_line("looper: poll(%d ms) on%s", timeout_ms, b); } }
     int r = poll(pfds, (nfds_t)n, timeout_ms);
     { static int tr = -1; if (tr < 0) tr = getenv("TL_LOOPER_TRACE") ? 2 : 0; if (tr) { char b[200]; int k = 0; for (int i = 0; i < n && k < 180; i++) if (pfds[i].revents) k += snprintf(b + k, sizeof(b) - (size_t)k, " %d:%x", pfds[i].fd, pfds[i].revents); tl_log_line("looper: poll -> %d:%s", r, b); } }
     if (r < 0) return ALOOPER_POLL_ERROR;
     if (r == 0) return ALOOPER_POLL_TIMEOUT;
     if (pfds[0].revents & POLLIN) { char buf[64]; while (read(l->wake[0], buf, sizeof(buf)) > 0) {} }
+    /* EVERY ready fd is serviced in this one poll (an fd without a callback does not short-circuit a later fd that has
+     * one, which used to leave the later fd's callback undelivered until the next poll -- and, for a looper that is
+     * polled once, forever). A callback and a returned ident can both be the outcome; a callback wins, as AOSP's
+     * pollOnce does when it has run one. */
+    int ran_cb = 0, have_ident = 0, ident = 0, ifd = -1, iev = 0; void *idata = NULL;
     for (int i = 1; i < n; i++) {
         if (!pfds[i].revents) continue;
         looper_fd *f = &snap[i - 1];
         int ev = ((pfds[i].revents & POLLIN) ? ALOOPER_EVENT_INPUT : 0) | ((pfds[i].revents & POLLOUT) ? ALOOPER_EVENT_OUTPUT : 0)
                | ((pfds[i].revents & POLLERR) ? ALOOPER_EVENT_ERROR : 0) | ((pfds[i].revents & POLLHUP) ? ALOOPER_EVENT_HANGUP : 0);
+        /* The poll DID see this fd ready: recorded BEFORE the callback decision, so the report can state whether an
+         * fd ever became readable at all. Lock-free (the fixed table of plain ints), and only when the fd fires. */
+        for (int d = 0; d < LOOPER_DELIV; d++) if (l->deliv[d].fd == f->fd) { atomic_fetch_add(&l->deliv[d].ready, 1); break; }
         if (f->callback) {
             /* The DELIVERY end of an addFd/wake: the callback ran on the polling thread, and this fd's own count is bumped
              * so the report can say which registered fd has NEVER been serviced. Both are lock-free: one atomic add for the
@@ -214,13 +233,14 @@ static int b_ALooper_pollOnce(int timeout_ms, int *out_fd, int *out_events, void
               LOOPER_NOTE(callback, "looper: delivering the callback for fd %d (events %#x) on '%s' -- the fd watched on this looper is being serviced", f->fd, ev, nm); }
             int keep = ((int (*)(int, int, void *))f->callback)(f->fd, ev, f->data);
             if (!keep) b_ALooper_removeFd(l, f->fd);
-            return ALOOPER_POLL_CALLBACK;
+            ran_cb = 1;
+            continue;
         }
-        if (out_fd) *out_fd = f->fd;
-        if (out_events) *out_events = ev;
-        if (out_data) *out_data = f->data;
-        return f->ident;
+        /* No callback: the caller is handed the fd, its events and its data with the caller's own ident unchanged. */
+        if (!have_ident) { have_ident = 1; ident = f->ident; ifd = f->fd; iev = ev; idata = f->data; }
     }
+    if (ran_cb) return ALOOPER_POLL_CALLBACK;
+    if (have_ident) { if (out_fd) *out_fd = ifd; if (out_events) *out_events = iev; if (out_data) *out_data = idata; return ident; }
     return ALOOPER_POLL_WAKE;
 }
 static int b_ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void **out_data)
@@ -237,12 +257,13 @@ static int b_ALooper_pollAll(int timeout_ms, int *out_fd, int *out_events, void 
  *
  * The delivery trace above writes the first LOOPER_NOTES events of each kind, which is enough to see a single addFd
  * and a single wake; it cannot answer the question a hang actually asks: was this looper EVER polled, by which thread,
- * and did the callback registered on it ever run. Both are counters now, so the answer is a number and not an inference:
- * a looper with zero polls is one where nothing registered on it can ever be delivered (the owner thread never entered
- * pollOnce at all -- the bridge that polls it is android.os.MessageQueue.next -> nativeLooperPoll on the SAME thread, so
- * a thread that stopped running its Java loop has stopped polling), and an fd whose own hit count is 0 while its looper
- * has polls of its own is an fd that never became readable (the guest's own write never happened). Those are different
- * bugs, and this line is what tells them apart.
+ * and did the callback registered on it ever run. All three are counters now, so the answer is a number and not an
+ * inference: a looper with zero polls is one where nothing registered on it can ever be delivered (the owner thread
+ * never entered pollOnce at all -- the bridge that polls it is android.os.MessageQueue.next -> nativeLooperPoll on the
+ * SAME thread, so a thread that stopped running its Java loop has stopped polling); an fd that was never REPORTED READY
+ * by poll(2) is one nothing was ever written to (the guest's own write never happened); and an fd that WAS reported ready
+ * while its callback never ran is the only one of the three that is the layer's own dropped delivery. Those are
+ * different bugs, and the readiness/hit pair is what tells them apart.
  */
 void tl_looper_report(const char *tag)
 {
@@ -252,7 +273,7 @@ void tl_looper_report(const char *tag)
     for (tl_looper *l = g_all_loopers; l && nall < 64; l = l->all_next) all[nall++] = l;
     pthread_mutex_unlock(&g_all_loopers_mu);
     if (!nall) { tl_log_line("%s: no guest thread ever prepared an ALooper this run, so no fd can have been watched on one", tag); return; }
-    int starving = 0, undelivered = 0, watched = 0;
+    int starving = 0, undelivered = 0, watched = 0, never_ready = 0, dropped = 0;
     for (int i = 0; i < nall; i++) {
         tl_looper *l = all[i];
         int polls = atomic_load(&l->polls), wakes = atomic_load(&l->wakes), cbs = atomic_load(&l->callbacks);
@@ -260,13 +281,13 @@ void tl_looper_report(const char *tag)
         snprintf(owner, sizeof(owner), "%s", l->owner);
         snprintf(poller, sizeof(poller), "%s", l->poller);
         pthread_mutex_lock(&l->mu);
-        int fd[16], ident[16], events[16], iscb[16], hits[16];
+        int fd[16], ident[16], events[16], iscb[16], hits[16], ready[16];
         char from[16][32];
         int nf = 0;
         for (looper_fd *f = l->fds; f && nf < 16; f = f->next) {
             fd[nf] = f->fd; ident[nf] = f->ident; events[nf] = f->events; iscb[nf] = f->callback != NULL;
-            hits[nf] = 0;
-            for (int d = 0; d < LOOPER_DELIV; d++) if (l->deliv[d].fd == f->fd) { hits[nf] = atomic_load(&l->deliv[d].hits); break; }
+            hits[nf] = 0; ready[nf] = 0;
+            for (int d = 0; d < LOOPER_DELIV; d++) if (l->deliv[d].fd == f->fd) { ready[nf] = atomic_load(&l->deliv[d].ready); hits[nf] = atomic_load(&l->deliv[d].hits); break; }
             snprintf(from[nf], sizeof(from[nf]), "%s", f->from[0] ? f->from : "?");
             nf++;
         }
@@ -276,17 +297,23 @@ void tl_looper_report(const char *tag)
         if (!polls && nf) starving++;
         for (int k = 0; k < nf; k++) {
             watched++;
+            /* Three distinct facts, three distinct verdicts: the fd was never reported ready (the producer never wrote),
+             * the fd was ready and the poll path ran the callback, or the fd was ready and the callback was NOT run. */
             if (iscb[k] && !hits[k]) undelivered++;
-            tl_log_line("%s:   fd %d ident %d events %#x callback %s registered by '%s' -- its callback has been delivered %d time(s)%s",
+            if (iscb[k] && !ready[k]) never_ready++;
+            if (iscb[k] && ready[k] && !hits[k]) dropped++;
+            tl_log_line("%s:   fd %d ident %d events %#x callback %s registered by '%s' -- became ready %d time(s), its callback has been delivered %d time(s)%s",
                         tag, fd[k], ident[k], events[k], iscb[k] ? "SET" : "none (the poll returns the ident)",
-                        from[k], hits[k], hits[k] ? "" : " -- NEVER");
+                        from[k], ready[k], hits[k], hits[k] ? "" : " -- NEVER");
         }
     }
     /* The one sentence the stall needed and could not have: which kind of missing delivery this is. */
-    tl_log_line("%s: ALooper verdict: %d looper(s), %d fd(s) watched, %d fd(s) with a callback that has NEVER been delivered, %d looper(s) never polled -- %s",
-                tag, nall, watched, undelivered, starving,
-                undelivered ? "an fd that was registered with a callback and never serviced is delivered by the thread that owns its looper, and only there: the looper line above says whether that thread ever polled (a poll of 0 says it did not -- the thread stopped running the loop that polls its own ALooper) and whether the fd ever became readable"
-                            : "every registered fd has been serviced at least once (a hang whose fd was registered and never serviced is not this one)");
+    tl_log_line("%s: ALooper verdict: %d looper(s), %d fd(s) watched, %d fd(s) with a callback that has NEVER been delivered (%d never became readable, %d were ready but not serviced), %d looper(s) never polled -- %s",
+                tag, nall, watched, undelivered, never_ready, dropped, starving,
+                !undelivered ? "every registered fd has been serviced at least once (a hang whose fd was registered and never serviced is not this one)"
+              : dropped ? "an fd BECAME READABLE on a polled looper and its callback still did not run: the poll path dropped a delivery it saw, which is the looper's fault"
+              : never_ready ? "a registered fd NEVER BECAME READABLE while its looper was polled: nothing was written to it, so there is no callback to run -- the producer's write is the missing step, not the poll"
+                            : "a registered fd has a callback that was never delivered while its looper was never polled (poll count 0): the thread that owns that looper stopped running the loop that polls it");
 }
 
 
