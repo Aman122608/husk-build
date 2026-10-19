@@ -68,6 +68,7 @@ public class Activity extends ContextThemeWrapper implements Window.Callback, Ke
     public final void huskCreate(Bundle state) {
         // as Activity.attach: the activity is its inflater's private factory, after any the app sets (FragmentActivity makes
         // <fragment> and FragmentContainerView there)
+        husk.Native.delivered("lifecycle " + getClass().getName() + " onCreate");
         getLayoutInflater().setPrivateFactory(this);
         each(c -> c.onActivityPreCreated(this, state));
         mCalled = false;
@@ -88,6 +89,7 @@ public class Activity extends ContextThemeWrapper implements Window.Callback, Ke
     public final void huskStart() {
         each(c -> c.onActivityPreStarted(this));
         mCalled = false; onStart(); mStarted = true;
+        husk.Native.delivered("lifecycle " + getClass().getName() + " onStart");
         fragmentHost(FragmentManager.HOST_STARTED);
         if (mLoaders != null) mLoaders.doStart();
         each(c -> c.onActivityPostStarted(this));
@@ -102,11 +104,16 @@ public class Activity extends ContextThemeWrapper implements Window.Callback, Ke
         onPostResume();
         each(c -> c.onActivityPostResumed(this));
         if (mVisibleFromClient) makeVisible();
+        /* After makeVisible, because that is where the window goes on screen: whether the activity is RESUMED with its
+         * window already present is exactly the asymmetry a fresh process and an after-swap launch were suspected to
+         * differ in, so it is written down at the moment it is true or false. */
+        husk.Native.delivered("lifecycle " + getClass().getName() + " onResume (window on screen: " + huskVisible() + ")");
     }
     public final void huskPause() {
         each(c -> c.onActivityPrePaused(this));
         fragmentHost(FragmentManager.HOST_STARTED);            /* fragments pause before the activity, as performPause */
         mResumed = false; onPause();
+        husk.Native.delivered("lifecycle " + getClass().getName() + " onPause (window on screen: " + huskVisible() + ")");
         each(c -> c.onActivityPostPaused(this));
         android.content.HuskSharedPreferences.flushAll();      /* as QueuedWork after onPause */
     }
@@ -115,6 +122,7 @@ public class Activity extends ContextThemeWrapper implements Window.Callback, Ke
             each(c -> c.onActivityPreStopped(this));
             fragmentHost(FragmentManager.HOST_ACTIVITY_CREATED);
             mStarted = false; onStop();
+            husk.Native.delivered("lifecycle " + getClass().getName() + " onStop");
             if (mLoaders != null) mLoaders.doStop();
             each(c -> c.onActivityPostStopped(this));
         }
@@ -124,6 +132,7 @@ public class Activity extends ContextThemeWrapper implements Window.Callback, Ke
         each(c -> c.onActivityPreDestroyed(this));
         fragmentHost(FragmentManager.HOST_NONE);
         mDestroyed = true; onDestroy();
+        husk.Native.delivered("lifecycle " + getClass().getName() + " onDestroy");
         if (mLoaders != null) mLoaders.doDestroy();
         each(c -> c.onActivityPostDestroyed(this));
         if (mWindow != null) mWindow.huskDestroy();

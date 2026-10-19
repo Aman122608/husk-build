@@ -4,16 +4,31 @@ package android.os;
 public final class MessageQueue {
     private Message head;
     private boolean quitting;
+    /* Whether a thread is inside the wait() in next(), and which one: enqueue() reads it (under the same monitor) so a
+     * post can say whether it WOKE a waiting looper or whether nothing was waiting and the 8 ms poll would have to pick
+     * the message up. Two different failures, one symptom ("the looper sits idle") -- the delivery log tells them apart. */
+    private boolean mWaiting;
     public interface IdleHandler { boolean queueIdle(); }
     public void addIdleHandler(IdleHandler h) {}
     public void removeIdleHandler(IdleHandler h) {}
 
-    synchronized boolean enqueue(Message m, long when) {
-        if (quitting) return false;
-        m.when = when;
-        if (head == null || when < head.when) { m.next = head; head = m; }
-        else { Message p = head; while (p.next != null && p.next.when <= when) p = p.next; m.next = p.next; p.next = m; }
-        notifyAll();
+    boolean enqueue(Message m, long when) {
+        boolean foundWaiter;
+        synchronized (this) {
+            if (quitting) return false;
+            foundWaiter = mWaiting;
+            m.when = when;
+            if (head == null || when < head.when) { m.next = head; head = m; }
+            else { Message p = head; while (p.next != null && p.next.when <= when) p = p.next; m.next = p.next; p.next = m; }
+            notifyAll();
+        }
+        /* The posting end of the delivery chain: who posted what to which looper, and whether it woke a waiter. The
+         * other end is android.os.Looper.loop's "dispatch #n": a post with no matching dispatch is a callback that was
+         * never delivered, and a post whose line says no thread was waiting is one the queue's 8 ms poll picks up.
+         * Written OUTSIDE the monitor: the note is the plain data captured above, so no lock is held across the log. */
+        husk.Native.post(m.target != null ? m.target.getClass().getName() : "(no handler)",
+                         m.callback != null ? m.callback.getClass().getName() : ("what=" + m.what),
+                         when, Thread.currentThread().getName(), foundWaiter);
         return true;
     }
     synchronized void remove(Handler h, Runnable r, int what, boolean byWhat, Object token) {
@@ -46,7 +61,10 @@ public final class MessageQueue {
                 if (head != null && head.when <= now) { Message m = head; head = m.next; m.next = null; return m; }
                 long wait = head == null ? 8 : Math.min(8, head.when - now);
                 if (!main) wait = head == null ? (mNativeLooper ? 8 : 0) : Math.max(1, mNativeLooper ? Math.min(8, head.when - now) : head.when - now);
-                try { if (wait <= 0) wait(); else wait(wait); } catch (InterruptedException e) { return null; }
+                /* A thread is about to be inside wait(): enqueue() reads this flag (same monitor) so a post says whether
+                 * it woke a waiter or whether nothing was waiting. Cleared on every exit, including an interrupt. */
+                mWaiting = true;
+                try { if (wait <= 0) wait(); else wait(wait); } catch (InterruptedException e) { return null; } finally { mWaiting = false; }
             }
         }
     }

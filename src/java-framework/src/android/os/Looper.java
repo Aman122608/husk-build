@@ -33,6 +33,12 @@ public final class Looper {
         for (;;) {
             Message m = me.mQueue.next(main);
             if (m == null) return;
+            /* The dispatching end of the delivery chain (the posting end is MessageQueue.enqueue): what the app's thread
+             * took off the queue and how long the message waited there. A "post #n" with no matching "dispatch #n" is a
+             * callback that was never delivered -- the distinction the stall log could not make before. */
+            husk.Native.dispatch(m.target != null ? m.target.getClass().getName() : "(no handler)",
+                                 m.callback != null ? m.callback.getClass().getName() : ("what=" + m.what),
+                                 m.when, Thread.currentThread().getName());
             try {
                 m.target.dispatchMessage(m);
             } catch (Throwable t) {

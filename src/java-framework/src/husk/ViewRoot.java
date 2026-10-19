@@ -37,6 +37,7 @@ public final class ViewRoot implements ViewParent {
         sImeBottom = 0;
         sTouchTarget = null;
         sTouchNotes = 0;
+        sFrameNotes = 0;
         sDump = null;
     }
 
@@ -74,6 +75,10 @@ public final class ViewRoot implements ViewParent {
         if (under) for (int i = at + 1; i < sRoots.size(); i++) if (sRoots.get(i).focusable()) { r.mHasFocus = false; break; }
         if (v.getLayoutParams() == null) v.setLayoutParams(r.mLp);
         r.attach();
+        /* A window went on screen: the layer's delivery of the window itself. Together with the lifecycle lines this is
+         * what a fresh launch and an after-swap launch are compared on. */
+        husk.Native.delivered("window add " + v.getClass().getName() + " type=" + (lp != null ? lp.type : -1) + " " + screenW() + "x" + screenH()
+                              + " roots=" + sRoots.size() + " focus=" + r.mHasFocus + " thread=" + Thread.currentThread().getName());
         android.webkit.WebView.huskWindowsChanged();
         if (r.mHasFocus) for (ViewRoot o : sRoots) if (o != r && o.mHasFocus && r.focusable()) { o.mHasFocus = false; o.mView.dispatchWindowFocusChanged(false); o.mObserver.huskWindowFocus(false); }
         scheduleFrame();
@@ -94,6 +99,7 @@ public final class ViewRoot implements ViewParent {
         mRemoved = true;
         boolean hadFocus = mHasFocus;
         sRoots.remove(this);
+        husk.Native.delivered("window remove " + mView.getClass().getName() + " roots=" + sRoots.size() + " thread=" + Thread.currentThread().getName());
         if (sTouchTarget == this) sTouchTarget = null;
         mView.huskDetach();
         android.webkit.WebView.huskWindowsChanged();
@@ -271,7 +277,11 @@ public final class ViewRoot implements ViewParent {
         }
         if (mFirst) {
             mFirst = false;
-            if (mHasFocus) { mView.dispatchWindowFocusChanged(true); mObserver.huskWindowFocus(true); }
+            /* The first traversal is where the window's focus is delivered: onWindowFocusChanged is one of the signals a
+             * surface-backed engine (Unity's player among them) waits for, and until now nothing in the log said whether
+             * the app's activity ever heard it. */
+            if (mHasFocus) { husk.Native.delivered("window first layout: focus -> true dispatched to " + mView.getClass().getName() + " (" + mW + "x" + mH + ")"); mView.dispatchWindowFocusChanged(true); mObserver.huskWindowFocus(true); }
+            else husk.Native.delivered("window first layout: NO focus dispatched (" + mView.getClass().getName() + " hasFocus=" + mHasFocus + ")");
             if (mView.findFocus() == null && mView instanceof ViewGroup) { /* the first focusable view takes focus when it asks; nothing forced */ }
         }
     }
@@ -308,8 +318,16 @@ public final class ViewRoot implements ViewParent {
         // a window drawn counts even when its drawing left the generation alone (the screen must lose a closed dialog)
         boolean any = drew || sScreen.getGenerationId() != gen;
         if (any || sPresentedAny) Gfx.present(any ? sScreen.huskNative() : 0);
+        /* The view system's first frame of this app reached the render thread: from here the Java driver's GL thread has
+         * something to composite, so a stall that happens before this line is a Java side that never drew, and one after
+         * it is a render thread that did not pick it up. Once per app (sFrameNotes). */
+        if (any && sFrameNotes < 2) {
+            sFrameNotes++;
+            husk.Native.delivered("window frame presented to the render thread (#" + sFrameNotes + " this app, " + sw + "x" + sh + ", " + roots.size() + " root(s))");
+        }
         sPresentedAny = any;
     }
+    private static int sFrameNotes;
 
     // ---- input
     /** A touch in screen coordinates, to the window it is for. */

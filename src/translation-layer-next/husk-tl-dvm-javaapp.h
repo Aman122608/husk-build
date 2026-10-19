@@ -56,6 +56,10 @@ void tl_javaapp_documents_picked(const char *const *paths, int n);
 void tl_javaapp_set_insets(int left, int top, int right, int bottom, int ime_bottom);
 unsigned long tl_javaapp_frames(void);
 bool tl_javaapp_ended(void);
+/* Which source fed this app's compositor frames (the app's own GLSurfaceView renderer, the view system, or the app's own
+ * EGL window surface), and whether the app's own eglSwapBuffers ever reached the compositor. For the cold stall probe's
+ * delivery line and the close summary; never called per frame. */
+void tl_javaapp_frame_reasons(char *out, size_t cap);
 /* The render/GL thread's Darwin identity (as the guest-thread census carries it: (unsigned long)pthread_self()), so a
  * stall can name the frame/render thread explicitly; 0 before it starts. */
 unsigned long tl_javaapp_render_thread(void);

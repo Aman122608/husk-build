@@ -835,6 +835,16 @@ NAT(EN_swap)
 }
 /* the GL thread Husk drives GLSurfaceView from: there EGL10 answers for the context it made */
 static pthread_t g_render_thread;
+/* WHY this app's compositor frames happened, and whether the app's own eglSwapBuffers ever reached the compositor.
+ * A compositor frame is the only thing that gets to the screen, and the loop below draws it for exactly three reasons:
+ * the app's own GLSurfaceView renderer drew, the view system produced a new window frame, or the app's own EGL window
+ * surface produced a new frame (its own eglSwapBuffers). A run whose frame counter stops freezing needs to say which
+ * source stopped feeding it; three counters, incremented only when a frame is actually drawn (never per loop turn),
+ * and read by the cold stall probe and the close summary. Reset per app in tl_javaapp_start. */
+static atomic_ulong g_frame_why_renderer, g_frame_why_views, g_frame_why_appegl;
+/* Set once per app when the app's own eglSwapBuffers first reaches the compositor: on a fresh process that is the line
+ * that says the app started rendering, and an app that never reaches it never drew its own frame at all. */
+static atomic_bool g_noted_app_egl_frame;
 /* Its Darwin identity as the guest-thread census carries it, so a stall can name the frame/render thread explicitly -- it
  * presents this app's frames, so its missing next frame IS the stall. It is the LAYER's thread, not a guest pthread_create,
  * so it is not in the census; this is the only handle on it. 0 before it starts. */
@@ -1015,13 +1025,28 @@ static void *gl_main(void *arg)
         uint64_t q = app_frame_seq();
         bool app_fresh = q != app_seq;
         app_seq = q;
+        if (app_fresh && !atomic_load(&g_noted_app_egl_frame)) {
+            atomic_store(&g_noted_app_egl_frame, true);
+            /* The app's OWN rendering reached the compositor. On a fresh process this is the first line that says so:
+             * before it, the screen has only ever shown the render thread's own frame, and a run that never gets here
+             * never drew a frame of its own at all (the "8 frames and then nothing" shape). */
+            tl_log_line("javaapp: the app's own first eglSwapBuffers reached the compositor (its window surface is a composited one): the app's own rendering is now what the screen shows");
+        }
         if (drew || fresh || app_fresh) {
+            /* WHICH of the three sources produced this frame: incremented only when a frame is really drawn. */
+            if (drew) atomic_fetch_add(&g_frame_why_renderer, 1);
+            else if (fresh) atomic_fetch_add(&g_frame_why_views, 1);
+            else atomic_fetch_add(&g_frame_why_appegl, 1);
             makeCurrent(dpy, surf, surf, ui);
             if (!app) { clearColor(0, 0, 0, tl_web_any_visible() && !app_frame_on() ? 0 : 1); clear(0x4000); }     /* web views show through from under the screen */
             if (!app) app_frame_draw(&appov, &appup, A.cfg.width, A.cfg.height);
             if (tl_ui_has_frame()) ov_draw(&ov, A.cfg.width, A.cfg.height);
             swapBuffers(dpy, surf);
-            if (atomic_fetch_add(&A.frames, 1) == 0) tl_log_line("javaapp: first frame presented for this app (the render thread's own compositor frame)");
+            if (atomic_fetch_add(&A.frames, 1) == 0)
+                tl_log_line("javaapp: first frame presented for this app (the render thread's own compositor frame): it came from %s",
+                            drew ? "the app's own GLSurfaceView renderer"
+                                 : fresh ? "the view system (a new window frame)"
+                                         : "the app's own EGL window surface (its eglSwapBuffers reached the compositor)");
         }
         next += 1000000000ll / 60;
         int64_t late = now_ns() - next;
@@ -1209,11 +1234,29 @@ bool tl_javaapp_start(const tl_javaapp_config *cfg)
     /* a class a previous app detached (its dex was dropped on close) comes back against this app's dexes */
     tl_dvm_reattach_declared();
     { char lib[1100]; snprintf(lib, sizeof(lib), "%s/lib", A.data); mkdir(lib, 0755); tl_ld_apk_libs(stub_lib, lib); }
+    /* This app's frame-reason ledger (reset per app): which source fed the compositor, and whether the app's own
+     * eglSwapBuffers has reached it. Read only by the cold stall probe and the close summary. */
+    atomic_store(&g_frame_why_renderer, 0); atomic_store(&g_frame_why_views, 0); atomic_store(&g_frame_why_appegl, 0);
+    atomic_store(&g_noted_app_egl_frame, false);
     { pthread_attr_t rt; pthread_attr_init(&rt); pthread_attr_setstacksize(&rt, 64u << 20);
       A.gl_thread_live = pthread_create(&A.gl_thread, &rt, gl_main, NULL) == 0; }
     pthread_attr_t at; pthread_attr_init(&at); pthread_attr_setstacksize(&at, 256u << 20);
     if (pthread_create(&A.app_thread, &at, app_main, NULL) != 0) return false;   /* the handle a close waits on, not a local */
     A.app_thread_live = true;
+    {   /* FRESH PROCESS OR AFTER A SWAP, named instead of inferred. The compositor's frame sequence is a PROCESS-GLOBAL
+         * that is not cleared between sessions, so it is non-zero here only when an earlier app in this same process
+         * already pushed a frame -- and then the render thread has something to present before the Activity is even
+         * launched. A fresh process starts at 0 and has nothing to composite until the app's own first eglSwapBuffers.
+         * That is the whole of the difference the two logs showed as "first frame presented BEFORE the launch" versus
+         * after it: it is recorded here, not changed. */
+        pthread_mutex_lock(&E2.lk);
+        bool comp = E2.ready; unsigned long long seq = (unsigned long long)E2.seq;
+        pthread_mutex_unlock(&E2.lk);
+        tl_log_line("javaapp: session start: session epoch %d, compositor ready=%d, compositor frame seq=%llu -- %s",
+                    tl_guest_thread_epoch(), (int)comp, seq,
+                    seq ? "an EARLIER session in this process has already pushed a frame (this is an after-swap launch)"
+                        : "FRESH process: nothing has been composited yet, so the render thread has nothing to draw until the app's own first eglSwapBuffers");
+    }
     return true;
 }
 
@@ -1238,6 +1281,15 @@ void tl_javaapp_set_paused(bool p)
     if (atomic_exchange(&A.paused, p) != p) tl_javaapp_touch(6, p ? 1 : 0, 0, 0);     /* the activity pauses and resumes with the host */
 }
 unsigned long tl_javaapp_frames(void) { return atomic_load(&A.frames); }
+/* For the cold stall probe and the close summary: which source fed this app's compositor frames, and whether the app's
+ * own eglSwapBuffers ever reached the compositor. Read-only; never called per frame. */
+void tl_javaapp_frame_reasons(char *out, size_t cap)
+{
+    snprintf(out, cap, "compositor frames fed by: the app's GLSurfaceView renderer=%lu, the view system=%lu, the app's own EGL window surface=%lu; the app's own eglSwapBuffers has %s reached the compositor",
+             (unsigned long)atomic_load(&g_frame_why_renderer), (unsigned long)atomic_load(&g_frame_why_views),
+             (unsigned long)atomic_load(&g_frame_why_appegl),
+             atomic_load(&g_noted_app_egl_frame) ? "ALREADY" : "NEVER");
+}
 bool tl_javaapp_ended(void) { return atomic_load(&A.ended); }
 
 /* The app's own quit call reached the layer: mark it ended. Its GL loop leaves at its own check, its main thread unwinds

@@ -29,11 +29,24 @@
 /*
  * Android's ALooper is a per-thread event loop that other threads wake with a write
  * to a pipe. Unity's main thread polls it between frames. This one has the wake pipe
- * and nothing else registered on it: no file descriptors, no callbacks.
+ * and whatever the guest registered on it (the Choreographer's pipe, an AInputQueue);
+ * a delivery trace of prepare/addFd/wake/callback is written here, bounded (LOOPER_NOTES).
  */
 typedef struct looper_fd { int fd, ident, events; void *callback, *data; struct looper_fd *next; } looper_fd;
 typedef struct tl_looper { int wake[2]; atomic_int refs; pthread_t thread; struct tl_looper *next; pthread_mutex_t mu; looper_fd *fds; } tl_looper;
 static __thread tl_looper *t_looper;
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * A BOUNDED DELIVERY TRACE of the NDK side of the same question the Java side answers: who posted to a thread's
+ * ALooper, who woke it, and was a callback ever run for it. A thread that watches a file descriptor on its looper (Unity
+ * 6 does this on its UI thread) is woken by a write to that looper's pipe -- ALooper_wake -- so the shape to catch is a
+ * wake with no poll ever returning, or an addFd whose callback is never called. The trace writes the first
+ * LOOPER_NOTES events of each kind and then stops: after that the only cost is one increment and one comparison, and
+ * nothing here is on the per-frame path (no poll is logged: a poll every 8 ms would be the one thing that could).
+ * The pre-existing TL_LOOPER_TRACE=1 / TL_CHOREO_TRACE=1 environment variables still give the unbounded form. */
+#define LOOPER_NOTES 24
+static int g_notes_prepare, g_notes_forthread_none, g_notes_addfd, g_notes_wake, g_notes_callback, g_notes_choreo, g_notes_choreo_post, g_notes_choreo_run;
+#define LOOPER_NOTE(slot, ...) do { if (g_notes_##slot < LOOPER_NOTES) { g_notes_##slot++; tl_log_line(__VA_ARGS__); } } while (0)
 
 enum { ALOOPER_POLL_WAKE = -1, ALOOPER_POLL_CALLBACK = -2, ALOOPER_POLL_TIMEOUT = -3, ALOOPER_POLL_ERROR = -4 };
 enum { ALOOPER_EVENT_INPUT = 1, ALOOPER_EVENT_OUTPUT = 2, ALOOPER_EVENT_ERROR = 4, ALOOPER_EVENT_HANGUP = 8 };
@@ -50,8 +63,26 @@ static tl_looper *looper_make(void)
     l->thread = pthread_self();
     return l;
 }
-static void *b_ALooper_prepare(int opts) { (void)opts; if (!t_looper) t_looper = looper_make(); return t_looper; }
-static void *b_ALooper_forThread(void) { if (!t_looper && getenv("TL_LOOPER_TRACE")) { char nm[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); tl_log_line("looper: ALooper_forThread on '%s', which has none", nm); } return t_looper; }
+static void *b_ALooper_prepare(int opts)
+{
+    (void)opts;
+    if (!t_looper) {
+        t_looper = looper_make();
+        char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
+        LOOPER_NOTE(prepare, "looper: ALooper prepared on thread '%s' (its NDK event loop now exists: callbacks posted to it run between this thread's Java messages)", nm);
+    }
+    return t_looper;
+}
+static void *b_ALooper_forThread(void)
+{
+    if (!t_looper) {
+        char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
+        /* A guest that asks for its thread's looper and gets NOTHING is a delivery that cannot happen: AppGlue-style code
+         * (Unity 6 among it) watches file descriptors on that looper and would never be called back. Named, bounded. */
+        LOOPER_NOTE(forthread_none, "looper: ALooper_forThread on '%s' returned NONE -- this thread has no NDK looper, so nothing can be delivered to it through one (Android returns NULL here too, so a guest that needs one must have prepared it)", nm);
+    }
+    return t_looper;
+}
 static void b_ALooper_acquire(tl_looper *l) { if (l) atomic_fetch_add(&l->refs, 1); }
 static void b_ALooper_release(tl_looper *l) { (void)l; }
 static void b_ALooper_wake(tl_looper *l)
@@ -59,6 +90,11 @@ static void b_ALooper_wake(tl_looper *l)
     if (!l) return;
     char c = 1;
     (void)!write(l->wake[1], &c, 1);
+    /* A wake is the NDK half of "the queue was woken": the only way another thread rouses a looper's poll. A wake whose
+     * poll never returns (no "looper: callback for fd" or POLL_WAKE afterwards) is the missing signal, and this line is
+     * what makes that readable from the log. */
+    { char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
+      LOOPER_NOTE(wake, "looper: ALooper_wake from '%s' -> wrote its wake pipe (the poll-owner is %s)", nm, pthread_equal(l->thread, pthread_self()) ? "this thread (a self-wake)" : "ANOTHER thread"); }
 }
 
 /* A file descriptor the looper watches: with a callback it is called from the polling thread; without one, its ident is returned. */
@@ -71,6 +107,8 @@ static int b_ALooper_addFd(tl_looper *l, int fd, int ident, int events, void *ca
     if (!f) { f = calloc(1, sizeof(*f)); f->next = l->fds; l->fds = f; }
     f->fd = fd; f->ident = ident; f->events = events; f->callback = callback; f->data = data;
     pthread_mutex_unlock(&l->mu);
+    { char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
+      LOOPER_NOTE(addfd, "looper: ALooper_addFd fd %d ident %d events %#x callback %s registered from '%s' (a message/fd the guest wants delivered on the poll thread)", fd, ident, events, callback ? "SET" : "none (the poll returns the ident to the caller)", nm); }
     b_ALooper_wake(l);
     return 1;
 }
@@ -116,6 +154,10 @@ static int b_ALooper_pollOnce(int timeout_ms, int *out_fd, int *out_events, void
                | ((pfds[i].revents & POLLERR) ? ALOOPER_EVENT_ERROR : 0) | ((pfds[i].revents & POLLHUP) ? ALOOPER_EVENT_HANGUP : 0);
         if (f->callback) {
             { static int tr = -1; if (tr < 0) tr = getenv("TL_LOOPER_TRACE") ? 1 : 0; if (tr) tl_log_line("looper: callback for fd %d (%d fds watched)", f->fd, n - 1); }
+            /* The DELIVERY end of an addFd/wake: the callback ran on the polling thread. A registered fd whose callback
+             * never appears here is the other half of "the signal the app never receives". */
+            { char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
+              LOOPER_NOTE(callback, "looper: delivering the callback for fd %d (events %#x) on '%s' -- the fd watched on this looper is being serviced", f->fd, ev, nm); }
             int keep = ((int (*)(int, int, void *))f->callback)(f->fd, ev, f->data);
             if (!keep) b_ALooper_removeFd(l, f->fd);
             return ALOOPER_POLL_CALLBACK;
@@ -182,6 +224,10 @@ static int choreo_run(int fd, int events, void *data)
     tl_choreo_frame fd_ = { now, now + VSYNC_NS - 2000000, now + 2 * VSYNC_NS };
     for (chcb *cb = rev; cb;) {
         chcb *n = cb->next;
+        /* The DELIVERY end of the NDK frame callback: the owner thread's looper serviced it. A post with no run line is
+         * a frame callback that never reached the engine (the NDK twin of the Java post/dispatch pair). */
+        LOOPER_NOTE(choreo_run, "choreographer: running a posted %s callback (kind %d) -- the vsync callback reached the thread that asked for it",
+                    cb->kind == 0 ? "frame" : cb->kind == 1 ? "frame64" : "vsync", cb->kind);
         if (cb->kind == 0) ((void (*)(long, void *))cb->fn)((long)now, cb->data);
         else if (cb->kind == 1) ((void (*)(int64_t, void *))cb->fn)(now, cb->data);
         else ((void (*)(const tl_choreo_frame *, void *))cb->fn)(&fd_, cb->data);
@@ -223,6 +269,8 @@ static tl_choreo *b_AChoreographer_getInstance(void)
     if (pipe(c->pipe)) { free(c); return NULL; }
     fcntl(c->pipe[0], F_SETFL, O_NONBLOCK); fcntl(c->pipe[1], F_SETFL, O_NONBLOCK);
     b_ALooper_addFd(t_looper, c->pipe[0], ALOOPER_POLL_CALLBACK, ALOOPER_EVENT_INPUT, (void *)choreo_run, c);
+    { char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
+      LOOPER_NOTE(choreo, "choreographer: AChoreographer_getInstance on '%s' -- its pipe is now watched on that thread's ALooper, so frame callbacks posted here are delivered through it", nm); }
     static pthread_t clock_thread;
     pthread_mutex_lock(&g_choreo_mu);
     c->next = g_choreos; g_choreos = c;
@@ -238,6 +286,10 @@ static void choreo_post(tl_choreo *c, int kind, void *fn, void *data, int64_t de
 {
     static int tr = -1; if (tr < 0) tr = getenv("TL_CHOREO_TRACE") ? 1 : 0;
     if (tr) tl_log_line("choreographer: post kind %d on %p", kind, (void *)c);
+    /* The post end of the NDK frame callback: what the guest asked for and whether a looper even exists to deliver it
+     * through (c is NULL when the thread had no ALooper -- then the post is dropped, and this line is the only trace). */
+    { char nm[32] = "?"; pthread_getname_np(pthread_self(), nm, sizeof(nm));
+      LOOPER_NOTE(choreo_post, "choreographer: post kind %d%s from '%s'", kind, c ? "" : " DROPPED (this thread has no looper/choreographer: nothing will ever run it)", nm); }
     if (!c || !fn) return;
     chcb *cb = calloc(1, sizeof(*cb));
     cb->kind = kind; cb->fn = fn; cb->data = data;

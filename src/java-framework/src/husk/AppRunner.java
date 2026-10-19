@@ -101,6 +101,10 @@ public final class AppRunner {
         android.webkit.MimeTypeMap.huskInstallDefault();
         KeyStoreProvider.install();
         Looper.prepareMainLooper();
+        /* The delivery window opens here: every lifecycle, window, surface and looper delivery for THIS app is written to
+         * the log in full for the first seconds (and bounded after that), so a fresh launch and an after-swap launch can
+         * be compared line by line. */
+        husk.Native.deliverySessionStart();
         sHandler = new Handler(Looper.getMainLooper());
         /* as RuntimeInit: there is always a default handler (apps wrap it and call through). Android's kills the app; this one
            reports the exception and lets the thread end, as Husk did before. */
@@ -135,7 +139,9 @@ public final class AppRunner {
         main.setComponent(new ComponentName(Native.packageName(), startedAs));
         main.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         launch(activityClass, main, null, -1, launcher);
+        husk.Native.delivered("AppRunner.run: setup done, entering Looper.loop()");
         Looper.loop();
+        husk.Native.delivered("AppRunner.run: Looper.loop() returned (the main looper has quit)");
     }
     public static Application application() { Application a = android.app.ActivityThread.currentActivityThread().huskInitialApplication(); return a != null ? a : sApp; }
     /** LoadedApk.makeApplication: the app's Application class (or the plain one) made through the loader and attached, not created
@@ -176,6 +182,9 @@ public final class AppRunner {
         sShuttingDown = true;
         Handler h = sHandler;
         boolean posted = h != null && h.post(AppRunner::shutdownOnMain);
+        /* The layer's OWN post into the guest looper during a close: whether it was accepted (a queue that has already
+         * quit refuses it), which is what the close's "did not run the close within 5000 ms" line is about. */
+        husk.Native.delivered("AppRunner.shutdown: posted shutdownOnMain to the main handler (accepted=" + posted + ", handler=" + (h != null) + ")");
         if (!posted) { Looper l = Looper.getMainLooper(); if (l != null) l.quit(); }   /* no main thread to drive: fall back to the bare quit */
     }
 

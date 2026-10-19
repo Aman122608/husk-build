@@ -85,12 +85,19 @@ public class SurfaceView extends View {
         if (!mCreated) { mCreated = true; created = true; android.util.Log.d("SurfaceView", getClass().getName() + ": surface created " + w + "x" + h + ", " + callbacks().size() + " callbacks"); for (SurfaceHolder.Callback c : callbacks()) c.surfaceCreated(mHolder); }
         if (created || w != mSurfaceW || h != mSurfaceH) {
             mSurfaceW = w; mSurfaceH = h;
+            /* The surface delivery, written down where it happens: the view's class, the size and format the app is told,
+             * how many callbacks heard it, and whether this is the CREATE (which is what a SurfaceView-backed renderer --
+             * a Unity player, an SDL surface -- waits for before it will draw its first frame). */
+            husk.Native.delivered("surface " + (created ? "created" : "changed") + " " + getClass().getName() + " " + w + "x" + h
+                                  + " format=" + mFormat + " callbacks=" + callbacks().size() + " view=" + getWidth() + "x" + getHeight()
+                                  + " fixed=" + mFixed + " gl=" + mGL);
             for (SurfaceHolder.Callback c : callbacks()) c.surfaceChanged(mHolder, mFormat, w, h);
             for (SurfaceHolder.Callback c : callbacks()) if (c instanceof SurfaceHolder.Callback2) ((SurfaceHolder.Callback2) c).surfaceRedrawNeeded(mHolder);
         }
     }
     private void destroy() {
         if (!mCreated) return;
+        husk.Native.delivered("surface destroyed " + getClass().getName() + " " + mSurfaceW + "x" + mSurfaceH + " format=" + mFormat + " callbacks=" + callbacks().size());
         for (SurfaceHolder.Callback c : callbacks()) c.surfaceDestroyed(mHolder);
         if (mGL) { mGL = false; husk.EGLNative.hide(); }
         synchronized (mLock) { mCreated = false; mHasFrame = false; mLock.notifyAll(); }

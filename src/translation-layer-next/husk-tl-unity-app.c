@@ -61,6 +61,7 @@ extern int tl_log_sink_fd;
  * so this file is correct by construction until those land -- a later identical declaration is a harmless redeclaration
  * in C. Do NOT implement these here. */
 extern int  tl_javaapp_reset(void);     /* husk-tl-dvm-javaapp.h: stop the Java app's threads and drain its per-app state */
+extern void tl_javaapp_frame_reasons(char *out, size_t cap);  /* husk-tl-dvm-javaapp.h: which source fed the compositor's frames */
 extern bool tl_dvm_end_app(void);       /* husk-tl-dvm.h: drop the app's dexes and detach the classes they defined */
 extern void tl_ld_end_session(void);    /* husk-tl-ld.h: new linker session generation; stale mappings unreachable by name */
 extern int  tl_ld_stale_count(void);    /* husk-tl-ld.h: libraries from an earlier session still reachable by name */
@@ -1565,6 +1566,25 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
                     wname, (void *)(uintptr_t)gw[i].waiter_tid, wsite);
     }
 
+    /* THE DELIVERY LEDGER: what the layer fed this app, and what it never reached. Two halves, both in the same log:
+     * the LAYER's half here (which source fed the compositor, and whether the app's own eglSwapBuffers ever arrived),
+     * and the APP's half in the "HuskDelivery" lines this build writes from inside the framework -- one per lifecycle
+     * step, one per window add/remove and per window-focus delivery, one per SurfaceView created/changed/destroyed, and
+     * a post/dispatch pair for every message put on the guest looper. The two failures this stall used to be unable to
+     * tell apart are read off those pairs, and the sentence below says which line means which. */
+    {
+        char why[400];
+        tl_javaapp_frame_reasons(why, sizeof(why));
+        tl_log_line("stall-delivery: %s", why);
+        tl_log_line("stall-delivery: the app's own delivery is in the 'D/HuskDelivery' lines of this log, chronological: "
+                    "'lifecycle ... onCreate/onStart/onResume (window on screen: ...)', 'window add/remove', 'window first layout: focus -> ... / NO focus dispatched', "
+                    "'surface created/changed/destroyed <class> <w>x<h> format=... callbacks=...', and a 'post #n ... -> WOKE a thread inside wait()' / "
+                    "'-> no thread was in wait()' line paired with a 'dispatch #n' line. A post with NO dispatch is a message the app's looper never took "
+                    "(a callback never delivered); a post that says no thread was waiting was never a wake at all -- the queue's own 8 ms poll is what picks it up. "
+                    "Whichever of the two the freeze turns out to be, the missing line is named by its absence: a lifecycle step or surface callback with no "
+                    "line was never delivered, and a 'window first layout: NO focus dispatched' says the app was never told its window has focus.");
+    }
+
     /* The app's OWN reads leading up to this freeze, oldest first -- recorded whatever the run, so it exists for a stall in a
      * lone (never-swapped) app too, which the old swap-gated trace could never show. */
     tl_asset_ring_dump("stall");
@@ -1667,6 +1687,16 @@ int husk_tl_session_close(void)
     const char *reason = from == HUSK_UNITY_FAILED ? "failed" : from == HUSK_UNITY_ENDED ? "ended"
                        : from == HUSK_UNITY_RUNNING ? "forced" : "starting";
     tl_log_line("husk: session close (%s, %s)", engine_name(engine), reason);
+
+    /* What this session was fed, before anything is torn down: the app's own delivery ("D/HuskDelivery" lines) read back
+     * at the close, and -- for the Java driver -- which source fed the compositor and whether the app's own
+     * eglSwapBuffers ever reached it. A run that never stalled still carries this. */
+    if (engine == ENGINE_JAVA) {
+        char why[400];
+        tl_javaapp_frame_reasons(why, sizeof(why));
+        tl_log_line("delivery[close]: %s", why);
+    }
+    tl_log_line("delivery[close]: the app's own lifecycle/window/surface/looper deliveries of this session are the 'D/HuskDelivery' lines above; a step with no line was never delivered to the app, and a 'post #n' with no 'dispatch #n' is a message the looper never took");
 
     /* THE FATAL-TIME MEASUREMENT, taken HERE on this normal thread -- NOT in the crash reporter's signal handler (see
      * tl_xmem_report_fault_time). A no-op when no guest fault was recorded and on a host with no arena. */

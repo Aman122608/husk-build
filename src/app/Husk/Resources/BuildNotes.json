@@ -3,6 +3,22 @@
     {
       "sha": "next",
       "date": "2026-10-18",
+      "title": "Following the signal that never arrives",
+      "goal": "This build writes down everything Husk hands the app -- lifecycle, window, surface and looper -- so the next log of the freeze says which of those never arrived, instead of only that the app is waiting.",
+      "details": [
+        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
+        "Settled this round by comparing the two logs line by line: in the working after-swap run the app's own first frame reaches the screen; in the freezing fresh run the app creates its drawing surface and then never once draws into it. Everything before that is identical, so what is missing is the step that makes the app draw.",
+        "Settled: a message is NOT sitting in the looper un-woken. The queue wakes the waiting thread and also re-checks itself every 8 ms; the freezing run's own close proves delivery (the app did run its onPause/onStop/onDestroy, just late).",
+        "New: every lifecycle step (onCreate/onStart/onResume/onPause/onStop/onDestroy), every window added or removed, every window-focus delivery, every surface created/changed/destroyed (with size and format) is written to the log as a D/HuskDelivery line.",
+        "New: every message posted to the app's looper and every one it takes off is written down too, with the one thing a bare line cannot say -- whether the post woke a thread that was waiting, or whether nothing was waiting and the queue's own 8 ms poll had to pick it up. A post with no matching 'dispatch' is a message the app never took.",
+        "New: the freeze report and the close summary now name what was feeding the screen (the app's own renderer, the view system, or the app's own drawing surface) and say plainly whether the app ever drew a frame of its own.",
+        "New: the same, for the NDK side -- who prepared a thread's event loop, who woke it, and whether the callback was ever run.",
+        "Working in this build: the note you are reading now, everything from the previous build, and the new delivery log. Nothing here changes how the app runs: it records."
+      ]
+    },
+    {
+      "sha": "4df35cb",
+      "date": "2026-10-18",
       "title": "Naming the Java loop",
       "goal": "The freeze report can now name the app's own Java method it is sitting in, and say whether that thread is spinning or waiting.",
       "details": [

@@ -170,7 +170,7 @@ public final class DecorView extends FrameLayout {
         return false;
     }
     public boolean superDispatchGenericMotionEvent(MotionEvent e) { return super.dispatchGenericMotionEvent(e); }
-    @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); Window.Callback cb = mWindow.getCallback(); if (cb != null && !mWindow.isDestroyed()) cb.onWindowFocusChanged(f); }
+    @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); Window.Callback cb = mWindow.getCallback(); if (cb != null && !mWindow.isDestroyed()) cb.onWindowFocusChanged(f); husk.Native.delivered("window focus " + (f ? "gained" : "lost") + " -> Window.Callback " + (cb != null && !mWindow.isDestroyed() ? cb.getClass().getName() + " onWindowFocusChanged(" + f + ")" : "NONE (no callback to deliver to)")); }
     @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); Window.Callback cb = mWindow.getCallback(); if (cb != null && !mWindow.isDestroyed()) cb.onAttachedToWindow(); }
     @Override protected void onDetachedFromWindow() { super.onDetachedFromWindow(); Window.Callback cb = mWindow.getCallback(); if (cb != null) cb.onDetachedFromWindow(); }
     public Window getWindowHusk() { return mWindow; }
