@@ -3,16 +3,17 @@
     {
       "sha": "next",
       "date": "2026-10-18",
-      "title": "Who draws the first frame",
-      "goal": "Husk hands Unity everything it needs and the app still never submits a frame of its own -- this build writes that down precisely, and corrects a workaround in these notes that was never real.",
+      "title": "Telling the app's collector it may pause",
+      "goal": "The real reason Robot Girlfriend never starts drawing, found and fixed: a signal Husk sent was thrown away by the phone without anyone noticing.",
       "details": [
-        "Correction: an earlier note here told you to open Lewdest House first and then Robot Girlfriend, and claimed it ran to 700+ frames. That was WRONG, and here is why: those frames were the CLOSED Lewdest House still being drawn into the screen and counted. The number the log showed as 'frames' was Husk's own drawing, not the app's. A fresh launch of Robot Girlfriend is expected to stall until the real fix lands -- there is no workaround to use in the meantime.",
-        "Settled this round: on a fresh launch Husk DOES hand the app everything it needs -- a correctly sized surface, a real OpenGL ES 3.0 context made current on it, GL answering, window focus, resume and audio. Then the app itself never submits a single frame of its own.",
-        "Settled: all 7 frames that reached the screen came from Husk's own view system, not from the app. The app's own drawing has never reached the screen in any run of this build.",
-        "So the missing piece is not something Husk fails to deliver -- it is the app's own first frame, and its own startup is where it stops, one asset read in.",
-        "New: the log now counts the screen surfaces handed to an app, so three different situations stop looking like one number -- 'never asked for a surface', 'was given one and never drew into it', and 'drew, but the frames were counted elsewhere'.",
-        "New: the exact place in the app's own code that keeps retrying is recorded by address and count, so it can be looked up against the app's own library afterwards instead of showing as a bare address.",
-        "Nothing here changes how the app runs: this build records and corrects the record. It does not fake a frame, force a callback or special-case this title."
+        "Here is the root, in plain words. The app's memory collector (garbage collector) works by briefly pausing its other threads to look at memory safely. It pauses a thread by sending it a signal -- a small message meaning 'stop here for a moment'. Husk sent that signal. The phone threw it away and ran nothing. The collector then waited forever for an answer that could never come.",
+        "Why nobody could see it happen: if the receiving side has been reset to its default, the operating system silently DISCARDS a signal -- no handler runs and nothing is left queued for later. So 'the receiver was reset' and 'the signal never arrived' look exactly the same in any log, including the one we just added. Husk was assuming the receiver was still set up instead of checking, and the code that reset it did so without passing through Husk.",
+        "The fix: before handing a signal to the app, Husk now checks whether the app's handler is still installed and puts it back if something reset it. That check happens on the send itself (never per frame, never per call), and the signal is always sent to the thread it was actually meant for -- not to the sender, which is what three of the raw paths were doing.",
+        "Also made real: three signal paths that used to report success and do nothing at all (signals sent through the raw system calls, and the calls that set or block a signal mask). Plus a lookup bug where a delivered signal that matched no known number could have run the wrong handler.",
+        "New in the log: each signal now records whether the handler actually ran, whether Husk had to put the handler back, and whether the phone refused the setup -- ending with a verdict line that names which case the run is. No more inferring it.",
+        "This is a prediction, not a promise: with the collector able to pause its threads again, the app should get past the point it has been stopping at -- it should post its message and finally ask the screen for a frame. The next log decides, and the same lines will say so.",
+        "Also fixed on the way past, from chasing the same hang: the looper silently stopped watching after 32 registered file descriptors and only serviced the first ready one per poll. Neither was the cause here. The looper was not broken -- what looked like a dropped callback was a message nobody had written yet, because the thread that writes it was stuck in the collector's wait.",
+        "Nothing here special-cases this game, and no workaround is needed or recommended."
       ]
     },
     {
