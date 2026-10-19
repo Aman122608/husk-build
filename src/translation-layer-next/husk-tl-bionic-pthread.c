@@ -693,9 +693,15 @@ static int b_kill(pthread_t t, int sig)
      * disposition is SIG_DFL -- no handler runs and nothing is left pending -- so a disposition something cleared turns
      * every send into a silent drop that reads exactly like a handler which never ran. See tl_signal_arm_guest. */
     tl_signal_arm_guest(d, sig);
-    int r = rc(pthread_kill(t, d));
-    /* The ledger names the thread the signal was aimed at only for its first two sends; ESRCH (the thread is gone) is not a refusal. */
-    tl_signal_note_send(sig, t, r != 0 && r != 3);
+    /* SEND FIRST, then record what the send DID. The old code counted the send before attempting it and threw the
+     * result away except for ESRCH, so "sent N, RAN 0" was equally "N signals delivered and swallowed" and "N sends that
+     * all failed" -- two very different problems. pthread_kill returns its errno directly (not via errno); it is recorded
+     * as-is so the ledger can say whether the sends landed. */
+    errno = 0;
+    int dr = pthread_kill(t, d);
+    int host_errno = dr ? dr : (errno ? errno : 0);
+    int r = rc(dr);                            /* the guest errno; 0 on success */
+    tl_signal_note_send_result(sig, t, host_errno);
     return r;
 }
 

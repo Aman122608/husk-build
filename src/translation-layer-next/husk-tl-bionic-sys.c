@@ -176,8 +176,10 @@ static int b_tgkill(int tgid, int tid, int sig)
     int d = tl_signal_to_darwin(sig);
     if (d <= 0) { tl_signal_note_send(sig, pthread_self(), 1); tl_set_guest_errno(22); return -1; }
     tl_signal_arm_guest(d, sig);
-    tl_signal_note_send(sig, pthread_self(), 0);
-    return pthread_kill(pthread_self(), d) ? -1 : 0;
+    errno = 0;
+    int r = pthread_kill(pthread_self(), d);
+    tl_signal_note_send_result(sig, pthread_self(), r ? r : (errno ? errno : 0));
+    return r ? -1 : 0;
 }
 
 static int b_waitid(int idtype, int id, void *info, int options) { (void)idtype; (void)id; (void)info; (void)options; tl_set_guest_errno(10 /* ECHILD */); return -1; }

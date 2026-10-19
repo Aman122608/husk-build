@@ -74,23 +74,40 @@ static const int k_sig_to_darwin[65] = {
     [30] = SIGINFO /* SIGPWR: Boehm's stop-the-world signal */, [31] = SIGSYS,
 };
 
+/* SIGPWR's Darwin number, resolved to what a thread-directed send ACTUALLY delivers (see tl_signal_selftest). 0 means
+ * "use the table": the mapping below is the default and is only overridden when the one-shot self-test has measured
+ * that Darwin SIGINFO will not run a handler for a thread-directed send while a concrete alternative does. The
+ * alternative is Darwin SIGEMT (7), the one Darwin number in 1..31 no bionic signal claims, so the override steals
+ * nothing: it frees 29 and takes an otherwise-unused number. Read on the send path (one per suspended thread per
+ * collection, never per frame), so it stays a single predictable branch. */
+static int g_pwr_darwin;
+
 int tl_signal_to_darwin(int s)
 {
     if (s < 0 || s > 64) return -1;
     if (s >= 32) return -1;
     if (s == 0) return 0;
+    if (s == 30 && g_pwr_darwin) return g_pwr_darwin;   /* bionic SIGPWR, resolved by measurement; see tl_signal_selftest */
     return k_sig_to_darwin[s] ? k_sig_to_darwin[s] : -1;
 }
 
 int tl_signal_from_darwin(int d)
 {
     if (d <= 0) return 0;
-    for (int i = 1; i < 32; i++) if (k_sig_to_darwin[i] == d && k_sig_to_darwin[i] > 0) return i;
+    if (g_pwr_darwin && d == g_pwr_darwin) return 30;   /* the overridden SIGPWR number, before the table is consulted */
+    for (int i = 1; i < 32; i++) {
+        if (i == 30 && g_pwr_darwin) continue;          /* bionic 30 moved off SIGINFO in this run: Darwin 29 is nobody's */
+        if (k_sig_to_darwin[i] == d && k_sig_to_darwin[i] > 0) return i;
+    }
     /* A Darwin signal no bionic signal maps to (SIGEMT, and the numbers the table leaves -1): it is NOT a guest signal, so
      * it must not be reported as one. Returning `d` here made Darwin 7 look like bionic 7 (SIGBUS) and Darwin 16 like
      * bionic 16 -- a delivered signal the layer does not own would then have run the WRONG guest handler. */
     return 0;
 }
+
+/* Set only by tl_signal_selftest, once, on the number a thread-directed send was MEASURED to deliver. */
+void tl_signal_set_pwr_darwin(int d) { g_pwr_darwin = d; }
+int  tl_signal_pwr_darwin(void) { return g_pwr_darwin; }
 
 /* ------------------------------------------------------------------ signal delivery ledger
  *
@@ -110,10 +127,25 @@ int tl_signal_from_darwin(int d)
  * here is on the per-frame path, and nothing takes a lock unless a line is about to be written. */
 static struct {
     atomic_ulong installed, sent, ran, refused, rearmed, failed, arrived_blocked;
+    /* The OUTCOME of each send that was actually ATTEMPTED, keyed by the errno pthread_kill returned: a send counted
+     * before the attempt made "sent N, RAN 0" read the same whether N signals landed or all N failed. */
+    atomic_ulong delivered, esrch, einval, other;
+    atomic_ulong other_errno;                 /* the last non-ESRCH/EINVAL errno seen, for the report */
     int n_install, n_send, n_run;
     char inst_by[32], sent_from[32], sent_to[32];
 } g_sig[65];
 static pthread_mutex_t g_sig_mu = PTHREAD_MUTEX_INITIALIZER;
+
+/* --- the one-shot signal self-test's shared state (see tl_signal_selftest, husk-tl-bionic-io.c) ---
+ * The probe handler's FIRST action is one relaxed atomic add HERE, on the same state tl_signal_report reads. If the
+ * handler were installed by one copy of the layer and the report drawn from another, the report would read 0 while the
+ * self-test's own line -- printed from the same image that installed the handler -- says it ran, which is exactly how
+ * the two-image hazard would look. Both lines also print the address of this image's ledger, so the two are compared
+ * in one log; nothing here is on a hot path. */
+static atomic_ulong g_sig_probe_runs;
+void  tl_signal_probe_ran(void) { atomic_fetch_add(&g_sig_probe_runs, 1); }
+unsigned long tl_signal_probe_count(void) { return (unsigned long)atomic_load(&g_sig_probe_runs); }
+void *tl_signal_ledger_image(void) { return (void *)&g_sig[0]; }
 
 static void sig_thread_name(char *out, size_t cap)
 {
@@ -132,7 +164,7 @@ void tl_signal_note_install(int gsig, int dsig)
     if (!g_sig[gsig].inst_by[0]) snprintf(g_sig[gsig].inst_by, sizeof(g_sig[gsig].inst_by), "%s", me);
     g_sig[gsig].n_install++;
     pthread_mutex_unlock(&g_sig_mu);
-    tl_log_line("signal[N]: guest installed a handler for signal %d (Darwin %d) on '%s' -- deliveries of it are counted, and the stall/close dump says whether the handler ever RAN", gsig, dsig, me);
+    tl_log_line("signal[N]: guest installed a handler for signal %d (Darwin %d) on '%s' -- deliveries of it are counted, and the stall/close dump says whether the handler ever RAN (ledger image %p)", gsig, dsig, me, (void *)&g_sig[0]);
 }
 
 void tl_signal_note_send(int gsig, pthread_t target, int refused)
@@ -152,6 +184,35 @@ void tl_signal_note_send(int gsig, pthread_t target, int refused)
     tl_log_line("signal[N]: '%s' sent signal %d to '%s'%s", me, gsig, tn, refused ? " -- REFUSED by the layer (no Darwin equivalent for this bionic signal number)" : "");
 }
 
+/* The OUTCOME of a thread-directed send that was actually attempted. `host_errno` is what pthread_kill/raise returned
+ * (0 = it accepted the signal for that thread). This is recorded AFTER the attempt, so a run's ledger can tell apart
+ * "the sends landed and no handler ran" (delivered > 0, RAN 0) from "the sends never landed" (delivered 0, esrch/einval
+ * > 0) -- which the old count-before-the-attempt could not, and which the 'BLOCKED' verdict silently assumed away. */
+void tl_signal_note_send_result(int gsig, pthread_t target, int host_errno)
+{
+    if (gsig < 1 || gsig > 64) return;
+    atomic_fetch_add(&g_sig[gsig].sent, 1);   /* this send was ATTEMPTED: the one place a send is now counted */
+    atomic_ulong *slot = host_errno == 0 ? &g_sig[gsig].delivered
+                       : host_errno == ESRCH  ? &g_sig[gsig].esrch
+                       : host_errno == EINVAL ? &g_sig[gsig].einval
+                       : &g_sig[gsig].other;
+    unsigned long n = atomic_fetch_add(slot, 1);
+    if (host_errno != 0 && host_errno != ESRCH && host_errno != EINVAL) atomic_store(&g_sig[gsig].other_errno, (unsigned long)host_errno);
+    if (n >= 2) return;                       /* the name and the line are for the first two of each outcome */
+    char me[32], tn[32] = "?";
+    sig_thread_name(me, sizeof(me));
+    pthread_getname_np(target, tn, sizeof(tn));
+    if (!tn[0]) snprintf(tn, sizeof(tn), "?");
+    if (host_errno == 0)
+        tl_log_line("signal[N]: '%s' sent signal %d to '%s' -- the send was ACCEPTED (pthread_kill returned 0): the "
+                    "signal is on its way to that thread, so a missing handler run is the thread, not the send",
+                    me, gsig, tn);
+    else
+        tl_log_line("signal[N]: '%s' sent signal %d to '%s' -- the send FAILED, pthread_kill returned %s (%d): the "
+                    "signal never reached the thread, whatever its disposition",
+                    me, gsig, tn, strerror(host_errno), host_errno);
+}
+
 void tl_signal_note_run(int gsig)
 {
     if (gsig < 1 || gsig > 64) return;
@@ -161,7 +222,7 @@ void tl_signal_note_run(int gsig)
     pthread_mutex_lock(&g_sig_mu);
     g_sig[gsig].n_run++;
     pthread_mutex_unlock(&g_sig_mu);
-    tl_log_line("signal[N]: the guest's handler for signal %d (Darwin %d) RAN on '%s'", gsig, gsig < 32 && k_sig_to_darwin[gsig] > 0 ? k_sig_to_darwin[gsig] : -1, me);
+    tl_log_line("signal[N]: the guest's handler for signal %d (Darwin %d) RAN on '%s' (ledger image %p)", gsig, tl_signal_to_darwin(gsig), me, (void *)&g_sig[0]);
 }
 
 /* A send whose handler was NOT armed on the host when the signal was about to go out.
@@ -211,15 +272,19 @@ void tl_signal_note_arrived_blocked(int gsig, int dsig)
 
 void tl_signal_report(const char *tag)
 {
-    char buf[340];
+    char buf[420];
     unsigned long total_sent = 0, total_ran = 0, total_ref = 0, total_rearm = 0, total_failed = 0, total_blocked = 0;
+    unsigned long total_ok = 0, total_esrch = 0, total_einval = 0, total_other = 0;
     int any = 0;
     for (int g = 1; g <= 64; g++) {
         unsigned long i = atomic_load(&g_sig[g].installed), s = atomic_load(&g_sig[g].sent);
         unsigned long r = atomic_load(&g_sig[g].ran), f = atomic_load(&g_sig[g].refused);
         unsigned long ra = atomic_load(&g_sig[g].rearmed), fl = atomic_load(&g_sig[g].failed);
         unsigned long ab = atomic_load(&g_sig[g].arrived_blocked);
-        if (!i && !s && !r && !f && !ra && !fl && !ab) continue;
+        unsigned long ok = atomic_load(&g_sig[g].delivered), es = atomic_load(&g_sig[g].esrch);
+        unsigned long iv = atomic_load(&g_sig[g].einval), ot = atomic_load(&g_sig[g].other);
+        unsigned long ote = atomic_load(&g_sig[g].other_errno);
+        if (!i && !s && !r && !f && !ra && !fl && !ab && !ok && !es && !iv && !ot) continue;
         pthread_mutex_lock(&g_sig_mu);
         char iby[32], sf[32], st[32];
         snprintf(iby, sizeof(iby), "%s", g_sig[g].inst_by);
@@ -227,8 +292,10 @@ void tl_signal_report(const char *tag)
         snprintf(st, sizeof(st), "%s", g_sig[g].sent_to);
         pthread_mutex_unlock(&g_sig_mu);
         any = 1; total_sent += s; total_ran += r; total_ref += f; total_rearm += ra; total_failed += fl; total_blocked += ab;
-        snprintf(buf, sizeof(buf), "%s: signal %d (Darwin %d): handler installed %lu time(s) by '%s' (install(s) the host refused: %lu), sent %lu time(s) (first from '%s' to '%s'), guest handler RAN %lu time(s), refused by the layer %lu time(s), host handler re-armed before a send %lu time(s)",
-                 tag, g, g < 32 && k_sig_to_darwin[g] > 0 ? k_sig_to_darwin[g] : -1, i, iby[0] ? iby : "?", fl, s, sf[0] ? sf : "?", st[0] ? st : "?", r, f, ra);
+        total_ok += ok; total_esrch += es; total_einval += iv; total_other += ot;
+        snprintf(buf, sizeof(buf), "%s: signal %d (Darwin %d): handler installed %lu time(s) by '%s' (install(s) the host refused: %lu), sent %lu time(s) (first from '%s' to '%s'), guest handler RAN %lu time(s), refused by the layer %lu time(s), host handler re-armed before a send %lu time(s); send OUTCOME: accepted %lu, ESRCH %lu, EINVAL %lu, other %lu (errno %lu)",
+                 tag, g, tl_signal_to_darwin(g), i, iby[0] ? iby : "?", fl, s, sf[0] ? sf : "?", st[0] ? st : "?", r, f, ra,
+                 ok, es, iv, ot, ote);
         tl_log_line("%s", buf);
     }
     if (!any) { tl_log_line("%s: no guest signal was installed, sent or delivered this run (the guest never armed one)", tag); return; }
@@ -242,14 +309,31 @@ void tl_signal_report(const char *tag)
                     "thread-directed signal to such a thread stays PENDING and its handler never runs, which is what a stop-the-world "
                     "handshake hangs on; the layer CLEARED the mask before guest code ran (the signal[N] lines above name it)",
                     tag, total_blocked);
-    /* The verdict the ledger exists for: a send whose handler did not run is a thread that never answered. */
-    tl_log_line("%s: %lu guest signal send(s), %lu handler run(s), %lu refused, %lu host handler re-armed, %lu install(s) the host refused -- %s",
+    /* The verdict the ledger exists for: a send whose handler did not run is a thread that never answered -- and, now that
+     * the outcome of each send is recorded, the verdict can say WHICH of the two it is instead of only guessing. */
+    const char *verdict;
+    if (total_ref)
+        verdict = "a refused send is a bionic signal number the layer has no Darwin equivalent for (>=32: Android's real-time signals); the thread it was meant for never sees it";
+    else if (total_failed)
+        verdict = "the HOST refused to install a guest handler (see the install lines): a send of that signal can never run a handler here, and the refusal is the reason, not the delivery";
+    else if (total_ran)
+        verdict = "every counted send either ran a handler or was accounted for by an outcome below -- read the outcome counters against the run count";
+    else if (total_sent == 0)
+        verdict = "no send was attempted, so nothing is claimed about delivery";
+    else if (total_ok == 0)
+        verdict = "NO SEND WAS ACCEPTED: every pthread_kill here FAILED (ESRCH/EINVAL/other above). The signal never reached a thread, so the send, not the target's mask, is why no handler ran -- the reading the old count-before-the-attempt could not produce";
+    else
+        verdict = "SENDS > RUNS with the sends ACCEPTED by pthread_kill (a failed send is counted in the outcomes above, not here). An accepted thread-directed signal whose handler still did not run is consistent with the target's mask BLOCKING it (Darwin leaves such a signal PENDING and runs no handler) -- but that is a HYPOTHESIS, not a measurement: no Darwin call reads another thread's mask. The measured facts are on this line and the outcome counters; the mask claim needs the target to report its own mask, which only it can do. A run that happens only LATER is not in this count yet -- the ledger prints again at the close, so RAN rising there means a pending signal finally ran";
+    tl_log_line("%s: %lu guest signal send(s), %lu handler run(s), %lu refused, %lu host handler re-armed, %lu install(s) the host refused; "
+                "send outcomes: %lu ACCEPTED by pthread_kill, %lu ESRCH (the thread was gone), %lu EINVAL, %lu other -- %s",
                 tag, total_sent, total_ran, total_ref, total_rearm, total_failed,
-                total_ref ? "a refused send is a bionic signal number the layer has no Darwin equivalent for (>=32: Android's real-time signals); the thread it was meant for never sees it"
-                          : (total_failed ? "the HOST refused to install a guest handler (see the install lines): a send of that signal can never run a handler here, and the refusal is the reason, not the delivery"
-                          : (total_rearm ? "sends had to re-install the guest's handler because it had been CLEARED on the host: Darwin DISCARDS a signal whose disposition is SIG_DFL, which reads exactly like a handler that never ran -- the re-arm is what makes those sends land"
-                          : (total_sent == total_ran ? "every send ran a handler: no thread was left un-signalled (if a stop-the-world handshake still hangs, the missing ack is not a missing signal)"
-                                                     : "SENDS > RUNS with every handler armed and the host accepting the deliver: at least one thread has the Darwin signal BLOCKED (Darwin leaves a blocked thread-directed signal pending and discards it only on SIG_DFL, so an armed handler that never ran means the thread's mask swallowed it) -- the 'sent ... to ...' and 'RAN on ...' lines above name the threads. A run that happens only LATER is not in this count yet: the ledger prints again at the close, so RAN rising there means the blocked signal finally ran (something unblocked the mask), and RAN still 0 there is the mask never lifting"))));
+                total_ok, total_esrch, total_einval, total_other, verdict);
+    /* The probe handler's own run count, read from the ledger THIS report draws from, beside the image's identity. Both
+     * are printed by the self-test too; if the two disagree the layer is loaded twice and a handler one copy runs is
+     * invisible to the other -- answered in one log rather than assumed away. */
+    tl_log_line("%s: signal-selftest: probe handler ran %lu time(s) as recorded in the ledger THIS report reads (ledger image %p); "
+                "the self-test line prints the same count and address, so a two-image layer would show it disagreeing",
+                tag, (unsigned long)atomic_load(&g_sig_probe_runs), (void *)&g_sig[0]);
 }
 
 

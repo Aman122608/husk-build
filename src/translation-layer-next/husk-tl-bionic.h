@@ -110,6 +110,11 @@ int tl_signal_from_darwin(int darwin_sig);
  * matters for il2cpp) hangs because one of the three did not happen, and no other line in a run says which. */
 void tl_signal_note_install(int guest_sig, int darwin_sig);
 void tl_signal_note_send(int guest_sig, pthread_t target, int refused);
+/* The OUTCOME of a thread-directed send that was actually ATTEMPTED, recorded AFTER pthread_kill returns:
+ * host_errno 0 = the send was accepted (delivered to that thread), ESRCH = the thread was gone, EINVAL, or another
+ * errno. Without it, "sent N, RAN 0" reads the same whether N signals landed or all N failed. Counted once per send;
+ * only the first two of each outcome pay for a thread name and a log line. */
+void tl_signal_note_send_result(int guest_sig, pthread_t target, int host_errno);
 void tl_signal_note_run(int guest_sig);
 void tl_signal_note_rearm(int guest_sig, int darwin_sig, int refused_install, int host_errno, int found_disposition);
 /* A thread about to run guest code arrived with a guest-armed signal BLOCKED in its mask (a mask from HOST code,
@@ -117,6 +122,23 @@ void tl_signal_note_rearm(int guest_sig, int darwin_sig, int refused_install, in
  * cannot see from the send side). Said once per signal; the caller then clears the mask. */
 void tl_signal_note_arrived_blocked(int guest_sig, int darwin_sig);
 void tl_signal_report(const char *tag);
+
+/* The one-shot signal self-test (husk-tl-bionic-io.c): installs its OWN probe handler on a Darwin signal the layer owns,
+ * sends it to a thread the layer owns, and reports PASS/FAIL with the errno -- answering, by measurement on the device,
+ * whether this process can deliver a thread-directed signal at all, and whether the Darwin number bionic SIGPWR (30) is
+ * mapped to (SIGINFO, 29) actually runs a handler. Runs ONCE, at start-up, before the guest arms anything. If SIGINFO
+ * cannot deliver but the control (SIGEMT, 7) can, it moves bionic SIGPWR onto a number a send really delivers and says
+ * so. It also prints the address of the ledger THIS image reads, beside the probe's own run count, so a layer loaded
+ * twice (a handler in one image, the report in another) is visible in one log. */
+void tl_signal_selftest(void);
+/* The probe handler's first action: records, on the same state tl_signal_report reads, that a delivery RAN. Returns how
+ * many probe deliveries ran in THIS image; tl_signal_ledger_image() is this image's ledger address. */
+void tl_signal_probe_ran(void);
+unsigned long tl_signal_probe_count(void);
+void *tl_signal_ledger_image(void);
+/* bionic SIGPWR's Darwin number for this run: 0 = the table's default (29/SIGINFO), else what the self-test measured. */
+void tl_signal_set_pwr_darwin(int darwin_sig);
+int  tl_signal_pwr_darwin(void);
 
 /* Make sure the guest's own dispatcher is really installed on the Darwin signal a send is about to use, and install it
  * again if something cleared it. Darwin DISCARDS a signal whose disposition is SIG_DFL -- no handler, nothing pending --

@@ -535,6 +535,11 @@ static void *launch_thread(void *arg)
         snprintf(path, sizeof(path), "%s/%s", A.data, A.engine == ENGINE_UNITY ? "unity-run.log" : "native-run.log");
         tl_log_sink_fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0644);
     }
+    /* One shot, on the layer's own entry thread, before the guest arms any signal: prove by measurement whether this
+     * process can deliver a thread-directed signal at all, and whether the Darwin number bionic SIGPWR (30) is mapped to
+     * (SIGINFO) actually runs a handler -- instead of inferring it from a send/run ledger that could not tell a failed
+     * send from a swallowed one. See tl_signal_selftest. */
+    tl_signal_selftest();
     install_crash_reporter();
     tl_hle_set_ca_bundle(A.ca);
 
