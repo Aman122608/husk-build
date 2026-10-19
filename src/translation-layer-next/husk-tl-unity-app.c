@@ -1544,6 +1544,37 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
         if (frame_id && frame_id != main_id) ss_java_sample_twice(frame_id, frame_name, ss_ms);
     }
 
+    /* ---------------------------------------------------------------------------------------------------------------
+     * THE ICU/LOCALE ANGLE: is this stall an ICU loop, or a thread passing THROUGH ICU?
+     *
+     * The lead this answers: the frozen run's main thread was sampled 24 frames deep in android/icu/impl/ICUResourceBundle
+     * (LocaleIDParser <- ULocale <- getParentLocaleID <- the SoftCache loader), which looks like a locale parent-chain
+     * walk that never terminates. Two facts have to be written down side by side to settle it, and neither was in any log:
+     * (1) how much of the chain is ICU/locale code AT THIS INSTANT -- a chain that is mostly ICU *and* MOVED between the
+     * twice-samples is a message being processed, not a loop being stuck in, and (2) the runtime's OWN initialisation
+     * state for the ICU classes (husk-tl-dvm.c's tl_dvm_icu_report: never run / running / ran / threw). Both are
+     * read-only and cold: nothing here loads, initialises or touches an ICU class, and no thread is suspended or awaited.
+     * --------------------------------------------------------------------------------------------------------------- */
+    {
+        unsigned long main_id = tl_javaapp_main_thread();
+        if (main_id) {
+            dvm_java_frame f[TL_SS_JAVA_MAX];
+            int n = dvm_thread_java_frames(main_id, f, TL_SS_JAVA_MAX);
+            if (n > 0) {
+                int icu = 0, first = -1;
+                for (int i = 0; i < n; i++) {
+                    const char *c = f[i].cls ? f[i].cls : "";
+                    if (!strncmp(c, "android/icu/", 12) || !strncmp(c, "libcore/icu/", 12) ||
+                        !strncmp(c, "java/text/", 10) || !strcmp(c, "java/util/Scanner")) { icu++; if (first < 0) first = i; }
+                }
+                if (icu)
+                    tl_log_line("stall-icu: the app's main thread's Java chain is %d of %d frame(s) ICU/locale/text code at this instant (innermost such frame #%d) -- read together with the twice-sample above: a chain that MOVED is a message it is passing THROUGH, one that HELD here is a loop it is stuck in",
+                                icu, n, first);
+            }
+        }
+        tl_dvm_icu_report("stall-icu");
+    }
+
     /* Guest mutexes HELD with a live waiter, with both sites -- the guest-level deadlock the layer lock ledger cannot hold.
      * Read from the census at this stall, so it is named from the owner bytes the lock shim records on every acquisition
      * (there is no per-wait "5 s" line: producing one would mean polling the wait, a permanent cost on every contended

@@ -1204,6 +1204,28 @@ void tl_jni_each_declared(void (*fn)(tl_jclass *jc))
     free(list);
 }
 
+/* The same walk, but NEVER waiting for the class lock (see the header): the cold stall probe runs on the layer's own
+ * heartbeat thread and a guest thread wedged while holding the class lock must not be able to wedge the probe too. */
+int tl_jni_each_declared_try(void (*fn)(tl_jclass *jc))
+{
+    int cap = 8192, n = 0;
+    tl_jclass **list = malloc((size_t)cap * sizeof(*list));
+    if (!list) return 0;
+    if (pthread_mutex_trylock(&g_lock) != 0) { free(list); return 0; }
+    for (int b = 0; b < NBUCKETS; b++) for (tl_jclass *c = g_classes[b]; c; c = c->next) {
+        if (n == cap) {
+            tl_jclass **bigger = realloc(list, (size_t)(cap *= 2) * sizeof(*list));
+            if (!bigger) { pthread_mutex_unlock(&g_lock); free(list); return 0; }
+            list = bigger;
+        }
+        list[n++] = c;
+    }
+    pthread_mutex_unlock(&g_lock);
+    for (int i = 0; i < n; i++) fn(list[i]);
+    free(list);
+    return 1;
+}
+
 tl_jclass *tl_jni_find_declared(const char *name)
 {
     pthread_mutex_lock(&g_lock);

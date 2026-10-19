@@ -79,6 +79,15 @@ typedef struct { const char *cls; const char *name; const char *sig; uint32_t pc
  * registered no Java frame stack (it does not run through the interpreter) -- the honest answer, never a frame invented. */
 int dvm_thread_java_frames(unsigned long tid, dvm_java_frame *out, int max);
 
+/* ---- What state the ICU/locale classes are in (the cold freeze report and the session close) ----
+ *
+ * Writes one line per declared ICU/locale class naming the interpreter's OWN record of its <clinit> (never run /
+ * running / ran / threw), then the four classes that decide whether the app's Java locale work can run at all. It reads
+ * and never initialises: a class nothing has loaded is reported as NOT loaded. It never waits for the class lock, so it
+ * is safe on the freeze report's heartbeat thread; when the lock is held it says so rather than blocking. Cold path
+ * only -- no cost on any running path. */
+void tl_dvm_icu_report(const char *tag);
+
 void tl_dvm_set_trace(int level);       /* 1: classes and natives; 2: every invoke */
 
 #ifdef __cplusplus

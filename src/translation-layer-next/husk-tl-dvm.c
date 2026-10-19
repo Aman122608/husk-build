@@ -2546,6 +2546,99 @@ static void detach_app_class(tl_jclass *jc)
     g_reset_detached++;
 }
 
+/* ---------------------------------------------------------------------------------------------------------------
+ * THE ICU/LOCALE CLASSES, AND WHAT STATE THE RUNTIME ITSELF SAYS EACH IS IN.
+ *
+ * Why this exists: the two runs that bracket the "Robot Girlfriend freezes when it is the FIRST app" bug differ in one
+ * measured way, and nobody ever wrote that difference down as a STATE -- it was inferred from lines that happened to be
+ * in one log and absent from the other. In the run that FREEZES, ICU is running: the app's main thread was sampled 24
+ * Java frames deep inside android/icu/impl/ICUResourceBundle (LocaleIDParser <- ULocale <- getParentLocaleID <- ...),
+ * so ICUBinary and ICUResourceBundle initialised and their code executes. In the one run that got through (the app
+ * opened after another app had been closed), android/icu/impl/ICUBinary.<clinit> and libcore/icu/LocaleData.<clinit>
+ * THREW a NullPointerException raised by a native ("jni: throwing java/lang/NullPointerException:", no message), which
+ * leaves both classes erroneous -- unusable ICU -- and the app ran anyway.
+ *
+ * So this prints, on the two COLD paths (a detected freeze, the session close), the state the interpreter holds for
+ * every declared class of the ICU/locale stack -- its own <clinit> record: never run / running / ran / threw -- and then
+ * the four classes that decide whether the app's Java locale work can run at all. It READS: nothing here loads,
+ * initialises or touches an ICU class (initialising ICUBinary early is exactly the mistake that would change which path
+ * an app takes), and it never waits for the class lock, so a guest thread wedged holding the lock cannot wedge the
+ * probe too. A class nothing has loaded is reported as NOT loaded, which is itself the answer for a run that never
+ * reached ICU.
+ * --------------------------------------------------------------------------------------------------------------- */
+
+static bool icu_class_named(const char *n)
+{
+    if (!n) return false;
+    if (strstr(n, "/icu/")) return true;                        /* android/icu/<x>, libcore/icu/<x> */
+    if (!strncmp(n, "java/text/", 10)) return true;             /* NumberFormat, DecimalFormat, ... */
+    if (!strcmp(n, "java/util/Locale") || !strcmp(n, "java/util/LocaleList") || !strcmp(n, "java/util/Scanner")) return true;
+    if (!strncmp(n, "com/android/i18n", 16) || !strncmp(n, "com/android/tzdata", 18)) return true;   /* the APEX modules' classes */
+    return false;
+}
+
+/* The interpreter's own record of one class's initialisation. Plain field reads, as the rest of this file reads them:
+ * a cold diagnostic takes the snapshot it finds and never blocks to get a cleaner one. */
+static const char *class_init_words(tl_jclass *jc)
+{
+    if (!jc) return "not loaded";
+    if (jc->linking) return "declared, its bytecode still being linked by another thread";
+    dvm_class *c = (dvm_class *)jc->dvm;
+    if (!c) return "declared, but the interpreter has no bytecode for it";
+    switch (c->state) {
+    case CS_INITIALIZED:  return "INITIALISED: its <clinit> ran to completion";
+    case CS_INITIALIZING: return "INITIALISING: a <clinit> is running right now";
+    case CS_FAILED:       return "FAILED: its <clinit> threw, so every later use of it throws NoClassDefFoundError";
+    case CS_LINKED:       return "LINKED: its <clinit> has NOT run yet";
+    default:              return "in an unknown state";
+    }
+}
+
+static const char *const icu_key_classes[4] = {
+    "android/icu/impl/ICUBinary",         /* locates the icudt*.dat package: its failure is why ICU was dead in the run that worked */
+    "android/icu/impl/ICUResourceBundle", /* the locale parent-chain walk the frozen run's main thread was sampled inside */
+    "libcore/icu/LocaleData",             /* java.text's locale data: it failed in the same run ICUBinary did */
+    "java/text/NumberFormat",             /* the frame above the walk: Scanner -> NumberFormat -> DecimalFormatSymbols -> ICU */
+};
+
+/* tl_jni_each_declared_try takes no user pointer, so the scan's accumulator is file-scope and single-flight. */
+typedef struct { const char *tag; int n, shown, seen[4]; } icu_scan_state;
+static icu_scan_state *icu_scan;
+
+static void icu_scan_one(tl_jclass *jc)
+{
+    const char *n = jc && jc->name ? jc->name : NULL;
+    if (!icu_class_named(n)) return;
+    icu_scan->n++;
+    for (int k = 0; k < 4; k++) if (!strcmp(n, icu_key_classes[k])) icu_scan->seen[k] = 1;
+    if (icu_scan->shown++ < 24) tl_log_line("%s: %s -- %s", icu_scan->tag, n, class_init_words(jc));
+}
+
+void tl_dvm_icu_report(const char *tag)
+{
+    if (!g_running) return;
+    static _Atomic bool busy;
+    bool was = false;
+    if (!atomic_compare_exchange_strong(&busy, &was, true)) return;   /* one report at a time */
+    icu_scan_state s;
+    s.tag = tag ? tag : "icu"; s.n = 0; s.shown = 0;
+    for (int k = 0; k < 4; k++) s.seen[k] = 0;
+    icu_scan = &s;
+    int walked = tl_jni_each_declared_try(icu_scan_one);
+    icu_scan = NULL;
+    if (!walked) {
+        tl_log_line("%s: the ICU/locale class states could NOT be read this time -- another thread holds the class lock, and this probe never waits for it", s.tag);
+        atomic_store(&busy, false);
+        return;
+    }
+    tl_log_line("%s: %d ICU/locale class(es) are loaded; their initialisation state, as the interpreter records it:", s.tag, s.n);
+    for (int k = 0; k < 4; k++)
+        if (!s.seen[k])
+            tl_log_line("%s:   %s -- NOT loaded: nothing in this run has touched it, so its <clinit> cannot have run", s.tag, icu_key_classes[k]);
+    if (s.n > s.shown) tl_log_line("%s:   (%d further ICU/locale class(es) are loaded; this list is bounded to 24)", s.tag, s.n - s.shown);
+    atomic_store(&busy, false);
+}
+
 /* The framework's own per-app statics are Java's to clear (husk.AppRunner.resetForNewApp), so it stays type-correct: called
  * here, before any dex is dropped, while the interpreter can still run the method. */
 static void reset_framework_statics(void)
@@ -2568,6 +2661,11 @@ bool tl_dvm_end_app(void)
     if (!g_running || g_nboot_dex < 0) { tl_log_line("husk: java reset dvm skipped (the runtime is not up)"); return false; }
     int dropped = g_ndex - g_nboot_dex;
     if (dropped <= 0) { tl_log_line("husk: java reset dvm: no app dexes to drop"); return false; }
+
+    /* How far the app's Java locale/ICU work got, in the runtime's own terms, BEFORE anything is detached: this is the
+     * other half of the freeze report's ICU block, so a run that got through and a run that froze are compared on the
+     * same facts rather than on two lines one of them happened to print. */
+    tl_dvm_icu_report("icu-at-close");
 
     /* Call only with no guest thread running (tl_javaapp_reset has unwound them): the close is single-threaded, so the class
      * registry and the class index can be walked without a lock of their own. */

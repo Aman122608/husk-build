@@ -3,6 +3,21 @@
     {
       "sha": "next",
       "date": "2026-10-18",
+      "title": "The ICU lead, answered from the runtime",
+      "goal": "The locale/ICU stack was the sharpest difference between the run that freezes and the one that works. This build writes down the runtime's own record of which ICU classes actually initialised, at the freeze and at the close, so that difference is measured rather than guessed.",
+      "details": [
+        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
+        "Answered, from the source: the locale parent-chain walk the freezing run's main thread is 24 frames deep in CANNOT fail to terminate. Every branch either drops a component or returns a language-only id, the one native-free table it consults is generated Java, and the id parser advances its index on every character -- so no answer a native could give it makes the chain loop.",
+        "Answered, from the log: that walk is not where the app is stuck. The main thread MOVED between the two samples (a HashMap.put inside the bundle cache, then Object.wait in the idle looper), so this is a message it is passing through, and after it the looper had nothing left to do.",
+        "Measured, one pair of runs only: the run that freezes has ICU running; the single run that got through had ICUBinary's and LocaleData's class initialisers throw a NullPointerException raised by a native, and ran with ICU dead. That inversion is a correlation, not a proven cause -- the cause is still unnamed.",
+        "New: the freeze report and the session close print the initialisation state of every loaded ICU/locale class (never run / running / ran / threw) plus the four that decide whether the app's Java locale work runs at all.",
+        "New: the freeze report says how much of the app main thread's Java chain is ICU/locale/text code at the instant it is sampled, next to the spin-vs-wait sample.",
+        "Nothing here changes how the app runs: it reads the runtime's bookkeeping and never loads or initialises a class."
+      ]
+    },
+    {
+      "sha": "aa4b05c",
+      "date": "2026-10-18",
       "title": "Following the signal that never arrives",
       "goal": "This build writes down everything Husk hands the app -- lifecycle, window, surface and looper -- so the next log of the freeze says which of those never arrived, instead of only that the app is waiting.",
       "details": [

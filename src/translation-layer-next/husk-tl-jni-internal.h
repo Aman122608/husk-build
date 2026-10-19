@@ -77,5 +77,9 @@ tl_jfield *tl_jni_field(tl_jclass *cls, const char *name, const char *sig, bool 
 jvalue *tl_jni_field_slot(jobj *o, tl_jfield *f);
 tl_jclass *tl_jni_find_declared(const char *name);   /* already declared, or NULL */
 void tl_jni_each_declared(void (*fn)(tl_jclass *jc));
+/* The same walk, but it NEVER waits for the class lock: returns 1 when the declared classes were walked, 0 when another
+ * thread holds the lock right now (nothing is walked, and the caller says so). The cold stall probe runs on the layer's
+ * heartbeat thread and must not block on a lock a wedged guest thread may hold, so it is this one the probe uses. */
+int tl_jni_each_declared_try(void (*fn)(tl_jclass *jc));
 
 #endif
