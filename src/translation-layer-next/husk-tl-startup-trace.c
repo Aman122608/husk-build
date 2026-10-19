@@ -102,6 +102,15 @@ static atomic_int g_armed_libs;
 static atomic_int g_armed_sites;
 static atomic_int g_failed_sites;
 
+/* Which of the two target libraries the loader's hook actually saw, and what it armed in each. Reported at
+ * the close even when a library never arrived, so a trace that produced nothing always names its cause in
+ * the log ("the library was never seen") instead of failing silently. */
+enum { ST_LIB_IL2CPP = 0, ST_LIB_UNITY = 1, ST_LIB_COUNT = 2 };
+static const char *const k_lib_name[ST_LIB_COUNT] = { "libil2cpp.so", "libunity.so" };
+static atomic_int g_lib_seen[ST_LIB_COUNT];
+static atomic_int g_lib_armed[ST_LIB_COUNT];
+static atomic_int g_lib_total[ST_LIB_COUNT];
+
 typedef const char *(*class_name_fn)(void *klass);
 static class_name_fn g_class_name_fn;   /* il2cpp_class_get_name, if the image exports it */
 
@@ -226,6 +235,7 @@ void tl_startup_trace_on_load(tl_lib *lib)
                         (unsigned long long)thunk, thunk == 0x239fa40 ? "it" : "NOT it -- that site was not armed");
     }
 
+    int li = !strcmp(name, k_lib_name[ST_LIB_IL2CPP]) ? ST_LIB_IL2CPP : ST_LIB_UNITY;
     int armed = 0, failed = 0, total = 0;
     char list[768];
     list[0] = 0;
@@ -235,15 +245,16 @@ void tl_startup_trace_on_load(tl_lib *lib)
         total++;
         uint32_t w = 0;
         if (!tl_ld_read(lib, s->vaddr, &w, 4) || w != s->word) {
-            tl_log_line("startup-trace: NOT ARMED %s+%#llx (%s): the image holds %#010x, this build's "
-                        "site is %#010x -- the game's library has changed",
+            tl_log_line("startup-trace: NOT ARMED %s+%#llx (%s): bad instruction word -- the image holds "
+                        "%#010x, this build's site is %#010x (the game's library has changed)",
                         name, (unsigned long long)s->vaddr, s->what, w, s->word);
             failed++;
             continue;
         }
         if (!tl_ld_probe(lib, s->vaddr, s->cb)) {
-            tl_log_line("startup-trace: NOT ARMED %s+%#llx (%s): the loader could not place a probe "
-                        "(out of branch range, or no stub room left)", name, (unsigned long long)s->vaddr, s->what);
+            tl_log_line("startup-trace: NOT ARMED %s+%#llx (%s): out of branch range -- the loader could not "
+                        "place a probe here (no stub room left, or the site is beyond the stub pool's reach)",
+                        name, (unsigned long long)s->vaddr, s->what);
             failed++;
             continue;
         }
@@ -251,11 +262,14 @@ void tl_startup_trace_on_load(tl_lib *lib)
         if (list[0]) strncat(list, ", ", sizeof(list) - strlen(list) - 1);
         strncat(list, s->what, sizeof(list) - strlen(list) - 1);
     }
+    atomic_store(&g_lib_seen[li], 1);
+    atomic_store(&g_lib_armed[li], armed);
+    atomic_store(&g_lib_total[li], total);
     atomic_fetch_add(&g_armed_libs, 1);
     atomic_fetch_add(&g_armed_sites, armed);
     atomic_fetch_add(&g_failed_sites, failed);
-    tl_log_line("startup-trace: %s: %d of %d milestone site(s) armed%s -- %s", name, armed, total,
-                failed ? " (failures logged above)" : "", list[0] ? list : "(none)");
+    tl_log_line("startup-trace: armed %d of %d site(s) in %s (base %p)%s -- %s", armed, total, name,
+                tl_ld_lib_base(lib), failed ? " (failures logged above)" : "", list[0] ? list : "(none)");
 }
 
 /* -------------------------------------------------------------------- arming */
@@ -266,8 +280,8 @@ void tl_startup_trace_arm(void)
     if (atomic_exchange(&armed, 1)) return;
     tl_ld_set_load_hook(tl_startup_trace_on_load);
     tl_log_line("startup-trace: armed: the loader's post-relocation hook is in place, so the "
-                "breadcrumbs land in libil2cpp.so and libunity.so before the engine can run them "
-                "(one line per milestone, once, cap %d)", ST_CAP);
+                "breadcrumbs land in libil2cpp.so and libunity.so before the engine can run them, "
+                "whatever engine driver the app arrived through (one line per milestone, once, cap %d)", ST_CAP);
 }
 
 /* ------------------------------------------------- the engine driver's milestone */
@@ -290,11 +304,38 @@ void tl_startup_trace_render(int phase, unsigned long long ns)
 void tl_startup_trace_report(void)
 {
     if (atomic_exchange(&g_reported, 1)) return;
+
+    /* A target library the hook never saw is reported SITE BY SITE, so "the trace produced nothing" always
+     * has a named cause in the log (bad instruction word, out of branch range, or the library never arrived)
+     * instead of an absence a reader has to infer. */
+    for (int l = 0; l < ST_LIB_COUNT; l++) {
+        if (atomic_load(&g_lib_seen[l])) continue;
+        for (int i = 0; i < N_SITES; i++) {
+            const st_site *s = &k_sites[i];
+            if (strcmp(s->lib, k_lib_name[l])) continue;
+            tl_log_line("startup-trace: NOT ARMED %s+%#llx (%s): library not seen -- the loader never loaded "
+                        "%s this session, so this site was never placed",
+                        s->lib, (unsigned long long)s->vaddr, s->what, k_lib_name[l]);
+        }
+    }
+
     if (!atomic_load(&g_armed_libs)) {
-        tl_log_line("startup-trace: no library was traced, so this run says nothing (the hook was "
-                    "armed, but neither libil2cpp.so nor libunity.so was loaded)");
+        tl_log_line("startup-trace: how far startup got: nothing was traced -- the loader's post-relocation "
+                    "hook saw neither %s nor %s (library not seen), so this run says nothing about the engine's "
+                    "own startup", k_lib_name[ST_LIB_IL2CPP], k_lib_name[ST_LIB_UNITY]);
         return;
     }
+
+    char libs[256];
+    int n = 0;
+    libs[0] = 0;
+    for (int l = 0; l < ST_LIB_COUNT; l++) {
+        if (!atomic_load(&g_lib_seen[l])) continue;
+        n += snprintf(libs + n, sizeof(libs) - (size_t)n, "%s%s %d/%d armed", n ? ", " : "",
+                      k_lib_name[l], atomic_load(&g_lib_armed[l]), atomic_load(&g_lib_total[l]));
+        if (n >= (int)sizeof(libs)) { n = (int)sizeof(libs) - 1; break; }
+    }
+
     char missing[512];
     int reached = 0, unseen = 0;
     missing[0] = 0;
@@ -305,9 +346,9 @@ void tl_startup_trace_report(void)
         strncat(missing, k_group_name[g], sizeof(missing) - strlen(missing) - 1);
     }
     if (unseen)
-        tl_log_line("startup-trace: how far startup got: %d of %d milestones reached, %d line(s) "
-                    "printed; NEVER REACHED: %s", reached, (int)G_COUNT, atomic_load(&g_lines), missing);
+        tl_log_line("startup-trace: how far startup got: %d of %d milestones reached, %d line(s) printed; "
+                    "libraries: %s; NEVER REACHED: %s", reached, (int)G_COUNT, atomic_load(&g_lines), libs, missing);
     else
         tl_log_line("startup-trace: how far startup got: every one of the %d milestones was reached "
-                    "(%d line(s) printed)", (int)G_COUNT, atomic_load(&g_lines));
+                    "(%d line(s) printed; libraries: %s)", (int)G_COUNT, atomic_load(&g_lines), libs);
 }

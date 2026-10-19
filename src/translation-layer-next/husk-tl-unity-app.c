@@ -35,6 +35,7 @@
 #include "husk-tl-codewrite.h"
 #include "husk-tl-godot.h"
 #include "husk-tl-unity.h"
+#include "husk-tl-startup-trace.h"
 #include "husk-tl-egl.h"
 #include "husk-tl-audio.h"
 #include "husk-tl-geode.h"
@@ -1398,6 +1399,12 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
      * wait for this moment, which is what left the newest log with zero asset and zero mutex lines), but the swap-in-progress
      * flag is still set here: other code reads it as "the layer is in the post-stall/swap state". Idempotent, one atomic store. */
     tl_swap_in_progress_set(1);
+
+    /* How far the engine's own startup got, printed HERE because a stall probe fires on an app that never
+     * reached a clean exit -- the one place the closing summary would otherwise never print
+     * (husk-tl-startup-trace.c). Idempotent: the first of the stall probe and the session close prints it. */
+    tl_startup_trace_report();
+
     char line[2000];
     int w = 0;
 
@@ -1786,6 +1793,10 @@ int husk_tl_session_close(void)
     const char *reason = from == HUSK_UNITY_FAILED ? "failed" : from == HUSK_UNITY_ENDED ? "ended"
                        : from == HUSK_UNITY_RUNNING ? "forced" : "starting";
     tl_log_line("husk: session close (%s, %s)", engine_name(engine), reason);
+
+    /* How far the engine's own startup got -- the closing summary, printed from the session close as well as
+     * from the stall probe, so it appears however the session ends (husk-tl-startup-trace.c). Idempotent. */
+    tl_startup_trace_report();
 
     /* What this session was fed, before anything is torn down: the app's own delivery ("D/HuskDelivery" lines) read back
      * at the close, and -- for the Java driver -- which source fed the compositor and whether the app's own

@@ -16,6 +16,7 @@
 
 #include "husk-tl-internal.h"
 #include "husk-tl-a64.h"
+#include "husk-tl-startup-trace.h"
 #include "husk-tl-xmem.h"
 
 /* The project's log sink, and the bionic shim's surface. */
@@ -2332,6 +2333,13 @@ static tl_lib *load_locked(const char *name, int depth, bool system)
 
 tl_lib *tl_ld_load(const char *name)
 {
+    /* Arm the startup breadcrumbs on the loader's own first use, whatever engine driver the app arrived
+     * through: the sites are inside the app's OWN libraries, and the post-relocation hook must be in place
+     * before the first of them is mapped. This was previously registered only on the ENGINE_UNITY driver's
+     * path (tl_unity_start), so an app driven by the Java runtime -- which loads libil2cpp.so/libunity.so
+     * from its own Java code, through this same tl_ld_load -- never armed it and the trace produced nothing.
+     * Idempotent (one atomic exchange), and it takes no loader lock. */
+    tl_startup_trace_arm();
     ld_big_lock();
     tl_lib *L = load_locked(name, 0, false);
     ld_big_unlock();
