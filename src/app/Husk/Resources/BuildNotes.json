@@ -3,16 +3,16 @@
     {
       "sha": "next",
       "date": "2026-10-18",
-      "title": "The ICU lead, answered from the runtime",
-      "goal": "The locale/ICU stack was the sharpest difference between the run that freezes and the one that works. This build writes down the runtime's own record of which ICU classes actually initialised, at the freeze and at the close, so that difference is measured rather than guessed.",
+      "title": "Who draws the first frame",
+      "goal": "Husk hands Unity everything it needs and the app still never submits a frame of its own -- this build writes that down precisely, and corrects a workaround in these notes that was never real.",
       "details": [
-        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
-        "Answered, from the source: the locale parent-chain walk the freezing run's main thread is 24 frames deep in CANNOT fail to terminate. Every branch either drops a component or returns a language-only id, the one native-free table it consults is generated Java, and the id parser advances its index on every character -- so no answer a native could give it makes the chain loop.",
-        "Answered, from the log: that walk is not where the app is stuck. The main thread MOVED between the two samples (a HashMap.put inside the bundle cache, then Object.wait in the idle looper), so this is a message it is passing through, and after it the looper had nothing left to do.",
-        "Measured, one pair of runs only: the run that freezes has ICU running; the single run that got through had ICUBinary's and LocaleData's class initialisers throw a NullPointerException raised by a native, and ran with ICU dead. That inversion is a correlation, not a proven cause -- the cause is still unnamed.",
-        "New: the freeze report and the session close print the initialisation state of every loaded ICU/locale class (never run / running / ran / threw) plus the four that decide whether the app's Java locale work runs at all.",
-        "New: the freeze report says how much of the app main thread's Java chain is ICU/locale/text code at the instant it is sampled, next to the spin-vs-wait sample.",
-        "Nothing here changes how the app runs: it reads the runtime's bookkeeping and never loads or initialises a class."
+        "Correction: an earlier note here told you to open Lewdest House first and then Robot Girlfriend, and claimed it ran to 700+ frames. That was WRONG, and here is why: those frames were the CLOSED Lewdest House still being drawn into the screen and counted. The number the log showed as 'frames' was Husk's own drawing, not the app's. A fresh launch of Robot Girlfriend is expected to stall until the real fix lands -- there is no workaround to use in the meantime.",
+        "Settled this round: on a fresh launch Husk DOES hand the app everything it needs -- a correctly sized surface, a real OpenGL ES 3.0 context made current on it, GL answering, window focus, resume and audio. Then the app itself never submits a single frame of its own.",
+        "Settled: all 7 frames that reached the screen came from Husk's own view system, not from the app. The app's own drawing has never reached the screen in any run of this build.",
+        "So the missing piece is not something Husk fails to deliver -- it is the app's own first frame, and its own startup is where it stops, one asset read in.",
+        "New: the log now counts the screen surfaces handed to an app, so three different situations stop looking like one number -- 'never asked for a surface', 'was given one and never drew into it', and 'drew, but the frames were counted elsewhere'.",
+        "New: the exact place in the app's own code that keeps retrying is recorded by address and count, so it can be looked up against the app's own library afterwards instead of showing as a bare address.",
+        "Nothing here changes how the app runs: this build records and corrects the record. It does not fake a frame, force a callback or special-case this title."
       ]
     },
     {
@@ -21,7 +21,7 @@
       "title": "Following the signal that never arrives",
       "goal": "This build writes down everything Husk hands the app -- lifecycle, window, surface and looper -- so the next log of the freeze says which of those never arrived, instead of only that the app is waiting.",
       "details": [
-        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
+        "Correction: an earlier note here told you to open Lewdest House first and then Robot Girlfriend, and claimed it ran to 700+ frames. That was WRONG -- those frames were the closed Lewdest House still being drawn and counted, not Robot Girlfriend running. There is no such workaround: a fresh launch of this title is expected to stall until the real fix lands.",
         "Settled this round by comparing the two logs line by line: in the working after-swap run the app's own first frame reaches the screen; in the freezing fresh run the app creates its drawing surface and then never once draws into it. Everything before that is identical, so what is missing is the step that makes the app draw.",
         "Settled: a message is NOT sitting in the looper un-woken. The queue wakes the waiting thread and also re-checks itself every 8 ms; the freezing run's own close proves delivery (the app did run its onPause/onStop/onDestroy, just late).",
         "New: every lifecycle step (onCreate/onStart/onResume/onPause/onStop/onDestroy), every window added or removed, every window-focus delivery, every surface created/changed/destroyed (with size and format) is written to the log as a D/HuskDelivery line.",
@@ -37,7 +37,7 @@
       "title": "Naming the Java loop",
       "goal": "The freeze report can now name the app's own Java method it is sitting in, and say whether that thread is spinning or waiting.",
       "details": [
-        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
+        "Correction: an earlier note here told you to open Lewdest House first and then Robot Girlfriend, and claimed it ran to 700+ frames. That was WRONG -- those frames were the closed Lewdest House still being drawn and counted, not Robot Girlfriend running. There is no such workaround: a fresh launch of this title is expected to stall until the real fix lands.",
         "Best evidence so far: the app is WAITING for something that never arrives, rather than being stuck. The render thread and the engine's main thread are both asleep, and Android's main thread is idle waiting for a message.",
         "New: the freeze report prints the app's own Java call stack -- class and method -- for the render thread, the engine thread and the app's main thread.",
         "New: it samples those threads twice, so a spin can be told apart from a wait.",
