@@ -442,7 +442,12 @@ static int b_getattr_np(pthread_t t, guest_attr *a)
     return 0;
 }
 
-typedef struct { void *(*fn)(void *); void *arg; } start_ctx;
+/* `born_clean`: the creator was NOT a guest thread, so the mask this new thread inherits from it is HOST code's mask (the
+ * creator is one of the layer's own threads -- UIKit/SpringBoard/the app's bootstrap put it there, the guest never did).
+ * A guest thread must run guest code with the mask the guest expects, so such a thread clears its mask at entry
+ * (tl_guest_mask_default). A thread created BY a guest thread inherits the guest's own mask, as bionic does, and is left
+ * alone: that inheritance is the guest's, not the host's. */
+typedef struct { void *(*fn)(void *); void *arg; int born_clean; } start_ctx;
 
 const char *tl_ld_symbol_at(const void *addr, const char **lib_name, const void **sym_addr);
 
@@ -623,6 +628,14 @@ static void *start_thunk(void *p)
     free(p);
     atomic_fetch_add(&g_guest_threads, 1);
     gt_enter((const void *)c.fn);
+
+    /* Run guest code with the mask the guest expects. On Darwin pthread_create copies the creating thread's mask into the
+     * new thread, and bionic does the same -- so a thread created BY a guest thread already carries the guest's own mask
+     * and is left alone. A thread created by one of the LAYER's threads carries HOST code's mask, which the guest never
+     * set and must not run with: it is cleared here, before any guest code (il2cpp's collector threads are made this way,
+     * and a Darwin 29 bit riding in on one of them leaves a stop-the-world handshake pending forever). See
+     * tl_guest_mask_default. One pthread_sigmask on a thread's ENTRY -- never per call, never per frame. */
+    if (c.born_clean) tl_guest_mask_default();
     /* This guest thread may run Java through the interpreter (Unity's Java-side HandlerThreads, an app's own Threads do).
      * Register its Java frame stack ONCE, at entry -- so the cold stall probe can name its Java frames from outside
      * without the running path paying anything. Declared here so this file needs no DVM header. */
@@ -659,6 +672,10 @@ static int b_create(pthread_t *out, const guest_attr *attr, void *(*fn)(void *),
     if (attr && (attr->flags & GATTR_DETACHED)) pthread_attr_setdetachstate(&a, PTHREAD_CREATE_DETACHED);
     start_ctx *c = malloc(sizeof(*c));
     c->fn = fn; c->arg = arg;
+    /* Is the caller a guest thread? gt_enter set this thread's own census slot at its entry; a layer thread has none. If
+     * the caller is NOT a guest thread, the mask the new thread would inherit is host code's, so the child clears it at
+     * entry (start_thunk). If the caller IS a guest thread, the inherited mask is the guest's own and the child keeps it. */
+    c->born_clean = (g_my_slot < 0);
     pthread_t t;
     int r = pthread_create(&t, &a, start_thunk, c);
     pthread_attr_destroy(&a);

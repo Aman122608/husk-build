@@ -2192,6 +2192,47 @@ static void sig_trace(const char *what, int g)
     tl_log_line("signal[%s]: %s %d", nm, what, g);
 }
 
+/*
+ * ------------------------------------------------- the mask a guest thread runs guest code with
+ *
+ * On bionic a new thread inherits the creating thread's signal mask, and Darwin's pthread_create does the same (XNU
+ * copies the creating thread's uth_sigmask into the new uthread). So when a GUEST thread creates a guest thread, the
+ * inheritance the guest expects comes for free. It does NOT when the creator is one of the LAYER's own threads: the
+ * mask such a thread carries came from the host process -- UIKit, SpringBoard, the app's own bootstrap -- never from
+ * the guest, and bionic would never have had it. Nothing in the layer ever calls pthread_sigmask/sigprocmask on a
+ * guest thread's behalf, so a blocked bit on a guest thread can only be one that rode in this way, and it is exactly
+ * the last reading this bug has left:
+ *
+ *   il2cpp's collector (Boehm) stops the world by signalling EVERY registered thread and waits for each one's handler
+ *   to run. A thread whose mask has Darwin 29 -- bionic 30 / SIGPWR, with 24 / SIGXCPU beside it -- BLOCKED leaves its
+ *   thread-directed signal PENDING: Darwin runs no handler and nothing unblocks it, so the collector never gets its ack,
+ *   the engine's main thread never returns from GC_stop_world, and the app never asks for another frame.
+ *
+ * tl_guest_mask_default() puts the CALLING thread's mask where a bionic thread starts: empty. It is called the moment
+ * layer code hands off to guest code -- at every guest thread's entry (start_thunk) and at each of the layer's own
+ * threads that runs the guest (the Java main thread, a Java thread, the DVM boot thread, the native start thread, the
+ * GL thread) -- so a guest thread runs guest code with the mask the guest expects and the host's mask cannot ride in.
+ * It is ONE pthread_sigmask on a thread's ENTRY: never per call, never per frame, and it takes no lock unless a line is
+ * written.
+ *
+ * It also puts the fact in the ledger, ONCE per signal: a thread that arrives with a signal BLOCKED that the guest has
+ * armed a handler for is the mask this bug is made of, and the line names it. That is the ONLY place the mask is
+ * visible at all -- a blocked thread-directed signal is invisible on the send side, which is why the ledger's send
+ * counts read as "armed, accepted, never ran".
+ */
+void tl_guest_mask_default(void)
+{
+    sigset_t cur;
+    if (pthread_sigmask(SIG_SETMASK, NULL, &cur) != 0) return;
+    uint32_t m; memcpy(&m, &cur, sizeof(m));
+    for (int g = 1; g < 32; g++) {
+        if (!g_guest_sig[g].handler || g_guest_sig[g].handler == (void *)1) continue;
+        int d = tl_signal_to_darwin(g);
+        if (d > 0 && (m & (1u << (d - 1)))) tl_signal_note_arrived_blocked(g, d);
+    }
+    if (m) { sigset_t empty; sigemptyset(&empty); pthread_sigmask(SIG_SETMASK, &empty, NULL); }
+}
+
 /* The context a Linux arm64 handler is given (bionic's ucontext_t, the kernel's layout): built from Darwin's for each delivery and
  * copied back after, so a handler that reads the interrupted registers (Mono's thread suspension samples the pc and sp, and
  * gives up and retries forever when they are garbage) or changes them sees what a phone would show it. */

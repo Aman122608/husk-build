@@ -922,6 +922,9 @@ static void *gl_main(void *arg)
 {
     (void)arg;
     pthread_setname_np("GLThread");
+    /* A layer thread that runs the guest's renderer (and hands off to it): it must run guest code with the guest's mask,
+     * not the host's, and guest threads it creates must not inherit the host's. See tl_guest_mask_default. */
+    tl_guest_mask_default();
     dvm_thread_register_frames();           /* this thread runs Java (the GLSurfaceView renderer): register its frame stack for the cold stall probe */
     EGLDisplay (*getDisplay)(void *) = tl_egl_resolve("eglGetDisplay");
     unsigned (*initialize)(EGLDisplay, EGLint *, EGLint *) = tl_egl_resolve("eglInitialize");
@@ -1163,6 +1166,9 @@ static void log_pending_stack(void)
 static void *app_main(void *arg)
 {
     void tl_thread_altstack(void); tl_thread_altstack();
+    /* The Java main/looper thread: it runs the guest's Java (and, for a native engine, loads and runs libil2cpp), so it
+     * runs guest code with the guest's mask and the guest threads it creates do not inherit the host's. */
+    tl_guest_mask_default();
     (void)arg;
     pthread_setname_np("main");
     dvm_thread_register_frames();           /* this thread runs Java: register its frame stack so the cold stall probe can name its Java frames from outside */

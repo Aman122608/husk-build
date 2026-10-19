@@ -109,7 +109,7 @@ int tl_signal_from_darwin(int d)
  * of each kind per signal pay for a thread name and a log line. sigaction is a handful of calls per process. Nothing
  * here is on the per-frame path, and nothing takes a lock unless a line is about to be written. */
 static struct {
-    atomic_ulong installed, sent, ran, refused, rearmed, failed;
+    atomic_ulong installed, sent, ran, refused, rearmed, failed, arrived_blocked;
     int n_install, n_send, n_run;
     char inst_by[32], sent_from[32], sent_to[32];
 } g_sig[65];
@@ -189,28 +189,59 @@ void tl_signal_note_rearm(int gsig, int dsig, int kind, int host_errno, int foun
                     found == 0 ? "SIG_DFL" : found == 1 ? "SIG_IGN" : "another handler");
 }
 
+/* A thread that was about to run GUEST code arrived with a signal BLOCKED in its mask that the guest itself has armed a
+ * handler for. The guest never blocks such a signal (il2cpp's one mask call site UNBLOCKS the collector's signals), so a
+ * blocked bit here rode in from HOST code -- inherited at thread creation from a layer/host thread whose mask the guest
+ * never set, which is the one path a mask can take onto a guest thread at all. It is fatal to a stop-the-world
+ * handshake: a thread-directed signal to a blocked thread is left PENDING by Darwin, its handler does not run, and
+ * nothing on that thread ever unblocks it, so the collector waits forever. The layer now clears the mask before guest
+ * code runs (tl_guest_mask_default); this line is said once per signal (the counter is the ledger) and is the ONLY trace
+ * of the mask, because the send side cannot see a blocked target. */
+void tl_signal_note_arrived_blocked(int gsig, int dsig)
+{
+    if (gsig < 1 || gsig > 64) return;
+    unsigned long n = atomic_fetch_add(&g_sig[gsig].arrived_blocked, 1);
+    if (n >= 2) return;
+    char me[32]; sig_thread_name(me, sizeof(me));
+    tl_log_line("signal[N]: a thread about to run guest code ('%s') ARRIVED with Darwin %d (bionic %d) BLOCKED in its mask "
+                "-- the guest never blocks it, so it rode in from HOST code (inherited at thread creation); a signal sent to a "
+                "thread that has it blocked stays PENDING and its handler never runs, which is what a stop-the-world handshake "
+                "hangs on. The layer CLEARED the mask before guest code ran", me, dsig, gsig);
+}
+
 void tl_signal_report(const char *tag)
 {
     char buf[340];
-    unsigned long total_sent = 0, total_ran = 0, total_ref = 0, total_rearm = 0, total_failed = 0;
+    unsigned long total_sent = 0, total_ran = 0, total_ref = 0, total_rearm = 0, total_failed = 0, total_blocked = 0;
     int any = 0;
     for (int g = 1; g <= 64; g++) {
         unsigned long i = atomic_load(&g_sig[g].installed), s = atomic_load(&g_sig[g].sent);
         unsigned long r = atomic_load(&g_sig[g].ran), f = atomic_load(&g_sig[g].refused);
         unsigned long ra = atomic_load(&g_sig[g].rearmed), fl = atomic_load(&g_sig[g].failed);
-        if (!i && !s && !r && !f && !ra && !fl) continue;
+        unsigned long ab = atomic_load(&g_sig[g].arrived_blocked);
+        if (!i && !s && !r && !f && !ra && !fl && !ab) continue;
         pthread_mutex_lock(&g_sig_mu);
         char iby[32], sf[32], st[32];
         snprintf(iby, sizeof(iby), "%s", g_sig[g].inst_by);
         snprintf(sf, sizeof(sf), "%s", g_sig[g].sent_from);
         snprintf(st, sizeof(st), "%s", g_sig[g].sent_to);
         pthread_mutex_unlock(&g_sig_mu);
-        any = 1; total_sent += s; total_ran += r; total_ref += f; total_rearm += ra; total_failed += fl;
+        any = 1; total_sent += s; total_ran += r; total_ref += f; total_rearm += ra; total_failed += fl; total_blocked += ab;
         snprintf(buf, sizeof(buf), "%s: signal %d (Darwin %d): handler installed %lu time(s) by '%s' (install(s) the host refused: %lu), sent %lu time(s) (first from '%s' to '%s'), guest handler RAN %lu time(s), refused by the layer %lu time(s), host handler re-armed before a send %lu time(s)",
                  tag, g, g < 32 && k_sig_to_darwin[g] > 0 ? k_sig_to_darwin[g] : -1, i, iby[0] ? iby : "?", fl, s, sf[0] ? sf : "?", st[0] ? st : "?", r, f, ra);
         tl_log_line("%s", buf);
     }
     if (!any) { tl_log_line("%s: no guest signal was installed, sent or delivered this run (the guest never armed one)", tag); return; }
+    /* The mask, named while it is being removed: a thread that reached guest code with a guest-armed signal already
+     * blocked is carrying HOST code's mask (inherited at thread creation), the one way a blocked bit can reach a guest
+     * thread. It is the case a send/run ledger cannot see from the send side, and it is why the block is cleared where
+     * guest code is entered rather than worked around at send time. */
+    if (total_blocked)
+        tl_log_line("%s: %lu thread(s) about to run guest code ARRIVED with a guest-armed signal BLOCKED in the mask they were born "
+                    "with -- a mask from HOST code, inherited at thread creation (no guest and no layer code ever blocks it). A "
+                    "thread-directed signal to such a thread stays PENDING and its handler never runs, which is what a stop-the-world "
+                    "handshake hangs on; the layer CLEARED the mask before guest code ran (the signal[N] lines above name it)",
+                    tag, total_blocked);
     /* The verdict the ledger exists for: a send whose handler did not run is a thread that never answered. */
     tl_log_line("%s: %lu guest signal send(s), %lu handler run(s), %lu refused, %lu host handler re-armed, %lu install(s) the host refused -- %s",
                 tag, total_sent, total_ran, total_ref, total_rearm, total_failed,
@@ -218,7 +249,7 @@ void tl_signal_report(const char *tag)
                           : (total_failed ? "the HOST refused to install a guest handler (see the install lines): a send of that signal can never run a handler here, and the refusal is the reason, not the delivery"
                           : (total_rearm ? "sends had to re-install the guest's handler because it had been CLEARED on the host: Darwin DISCARDS a signal whose disposition is SIG_DFL, which reads exactly like a handler that never ran -- the re-arm is what makes those sends land"
                           : (total_sent == total_ran ? "every send ran a handler: no thread was left un-signalled (if a stop-the-world handshake still hangs, the missing ack is not a missing signal)"
-                                                     : "SENDS > RUNS with every handler armed and the host accepting the deliver: at least one thread has the Darwin signal BLOCKED (Darwin leaves a blocked thread-directed signal pending and discards it only on SIG_DFL, so an armed handler that never ran means the thread's mask swallowed it) -- the 'sent ... to ...' and 'RAN on ...' lines above name the threads"))));
+                                                     : "SENDS > RUNS with every handler armed and the host accepting the deliver: at least one thread has the Darwin signal BLOCKED (Darwin leaves a blocked thread-directed signal pending and discards it only on SIG_DFL, so an armed handler that never ran means the thread's mask swallowed it) -- the 'sent ... to ...' and 'RAN on ...' lines above name the threads. A run that happens only LATER is not in this count yet: the ledger prints again at the close, so RAN rising there means the blocked signal finally ran (something unblocked the mask), and RAN still 0 there is the mask never lifting"))));
 }
 
 

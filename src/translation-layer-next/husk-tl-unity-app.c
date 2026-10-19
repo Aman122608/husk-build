@@ -493,6 +493,8 @@ static bool manifest_launcher_activity(const char *apk, const char *package, cha
  * the interpreter, and class initialisation runs deep, so this runs on its own thread with a big stack. */
 static void *java_boot(void *arg)
 {
+    /* Runs the DVM's class initialisation (guest Java) and creates guest threads: no host mask rides in. */
+    tl_guest_mask_default();
     bool *ok = arg;
     const char *r = g_java_root;
     static const char *const jars[] = { "core-oj", "core-libart", "okhttp", "bouncycastle", "apache-xml" };
@@ -524,6 +526,9 @@ static void *launch_thread(void *arg)
 {
     (void)arg;
     pthread_setname_np("husk-native-start");
+    /* The layer's own entry thread: it runs the guest (the engine/Java boot) and creates guest threads, so it must not
+     * carry host code's signal mask into them. See tl_guest_mask_default. */
+    tl_guest_mask_default();
     tl_guest_exit_hook = guest_exit;
     {
         char path[1100];

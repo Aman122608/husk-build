@@ -112,6 +112,10 @@ void tl_signal_note_install(int guest_sig, int darwin_sig);
 void tl_signal_note_send(int guest_sig, pthread_t target, int refused);
 void tl_signal_note_run(int guest_sig);
 void tl_signal_note_rearm(int guest_sig, int darwin_sig, int refused_install, int host_errno, int found_disposition);
+/* A thread about to run guest code arrived with a guest-armed signal BLOCKED in its mask (a mask from HOST code,
+ * inherited at thread creation -- the only way a blocked bit reaches a guest thread, and the case a send/run ledger
+ * cannot see from the send side). Said once per signal; the caller then clears the mask. */
+void tl_signal_note_arrived_blocked(int guest_sig, int darwin_sig);
 void tl_signal_report(const char *tag);
 
 /* Make sure the guest's own dispatcher is really installed on the Darwin signal a send is about to use, and install it
@@ -125,6 +129,14 @@ int tl_signal_arm_guest(int darwin_sig, int guest_sig);
 /* The guest's signal mask applied to the calling thread (bionic's `how`: SIG_BLOCK 0 / SIG_UNBLOCK 1 / SIG_SETMASK 2).
  * Shared by pthread_sigmask, sigprocmask and the raw rt_sigprocmask syscall. */
 int tl_bionic_sigmask(int how, const uint64_t *set, uint64_t *old);
+
+/* Run the CALLING thread's guest code with the mask the guest expects: put the thread's signal mask back to bionic's
+ * empty thread mask, so a park of HOST code's mask (inherited at thread creation from one of the layer's own threads,
+ * which the guest never set) cannot ride into a guest thread -- a blocked thread-directed signal is left PENDING by
+ * Darwin, its handler never runs, and a stop-the-world handshake waits forever. Called at the moment layer code hands off
+ * to guest code (each guest thread's entry, and each layer thread that runs the guest). One pthread_sigmask per thread
+ * ENTRY, never per call or per frame; it also records in the ledger, once per signal, any blocked bit it removed. */
+void tl_guest_mask_default(void);
 
 /* The layer's pthread handle for a live guest thread named by its Darwin thread id (what a raw tkill/tgkill carries), or
  * NULL. Reads the layer's own live-thread census; never invents a handle, never suspends or joins anyone. */

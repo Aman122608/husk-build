@@ -703,6 +703,8 @@ typedef struct { jobj *thread; } start_arg;
 static void *thread_main(void *p)
 {
     void tl_thread_altstack(void); tl_thread_altstack();
+    /* A Java thread runs guest code on a layer-created Darwin thread: give it the guest's mask, not the host's. */
+    tl_guest_mask_default();
     start_arg *s = p;
     t_thread = s->thread;
     free(s);
