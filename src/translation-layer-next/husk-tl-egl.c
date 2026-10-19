@@ -47,6 +47,7 @@ static struct {
     bool latest_only;           /* overwrite latest.bmp instead of keeping every frame */
     atomic_ulong presented;
     atomic_ulong composited;    /* frames handed to the runtime's on-screen compositor (the visible surface) */
+    atomic_ulong comp_made;     /* composited WINDOW surfaces handed to an app (created, whether or not it ever swapped) */
     atomic_ulong dropped;       /* swaps refused because their surface's session had ended */
     EGLDisplay display;
     pthread_mutex_t lock;
@@ -124,6 +125,11 @@ unsigned long tl_egl_frames_presented(void) { return atomic_load(&E.presented); 
  * mark taken when the session started (husk-tl-unity-app.c: live_frames_mark / live_screen). */
 unsigned long tl_egl_composited_frames(void) { return atomic_load(&E.composited); }
 unsigned long tl_egl_dropped_frames(void) { return atomic_load(&E.dropped); }
+/* How many WINDOW surfaces this layer has handed an app on the composited path (kind 2) over the process's life. Paired
+ * with tl_egl_composited_frames this is the one-line answer to "did the app ever take its own EGL surface and draw into
+ * it": created > 0 with swapped == 0 means the app was given a surface and never swapped it, which is a different
+ * failure from the app never asking for one, and it is the shape a Unity title shows when it never finishes loading. */
+unsigned long tl_egl_composited_surfaces(void) { return atomic_load(&E.comp_made); }
 
 /* ------------------------------------------------------------ EGL wrappers */
 
@@ -407,7 +413,10 @@ static EGLSurface w_eglCreateWindowSurface(EGLDisplay d, EGLConfig cfg, void *wi
             for (int i = 0; i < MAX_COMP_SURFACES; i++) if (!g_comp_surf[i].s) { g_comp_surf[i].s = s; g_comp_surf[i].epoch = tl_guest_thread_epoch(); break; }
             pthread_mutex_unlock(&g_tex_lock);
         }
-        tl_log_line("egl: window %dx%d -> surface %p, composited under the app's views", pb[1], pb[3], s);
+        unsigned long made = s ? atomic_fetch_add(&E.comp_made, 1) + 1 : atomic_load(&E.comp_made);
+        /* The count is the app's own EGL ledger's CREATE side: a surface handed over with no swap to follow is a
+         * different failure from the app never asking for one, and this line says which happened, in one run. */
+        tl_log_line("egl: window %dx%d -> surface %p, composited under the app's views (window surface #%lu handed to an app this process)", pb[1], pb[3], s, made);
         return s;
     }
     if (E.frame_dir[0] || g_offscreen_windows) {

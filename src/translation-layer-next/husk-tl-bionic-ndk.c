@@ -891,6 +891,25 @@ static void *b_ANativeWindow_fromSurface(void *env, void *surface)
     (void)env;
     jobj *tex = surface ? tl_jni_get_field(surface, "huskTexture", "Landroid/graphics/SurfaceTexture;").l : NULL;
     if (tl_jni_pending()) { tl_jni_clear(); tex = NULL; }
+    /* WHICH window the app is drawing into, said once per process: a SurfaceView's own (the layer can tell that view the
+     * app has taken it over with its own EGL, as android/opengl/GLSurfaceView's path does through
+     * SurfaceView.huskSetGL) or the process-wide screen window, which names no view and therefore CANNOT complete that
+     * handshake at all. A native-EGL engine (Unity, SDL, Unreal) always lands in the second case, which is why its
+     * SurfaceView reports gl=false in the delivery log and why EGLNative.hide() is never called on its destroy. */
+    if (tex) {
+        static atomic_int told_tex;
+        if (atomic_fetch_add(&told_tex, 1) < 2)
+            tl_log_line("ndk: ANativeWindow_fromSurface -> the window is a SurfaceTexture's (the app draws off-screen and each swap is read back into the texture)");
+    } else {
+        static atomic_int told_win;
+        if (atomic_fetch_add(&told_win, 1) < 2) {
+            jobj *view = surface ? tl_jni_get_field(surface, "huskView", "Landroid/view/SurfaceView;").l : NULL;
+            if (tl_jni_pending()) { tl_jni_clear(); view = NULL; }
+            tl_log_line("ndk: ANativeWindow_fromSurface -> the process-wide %dx%d window (%s): a native-EGL engine draws into this window surface, and this window names no SurfaceView, so no view is told the app has taken the surface over (SurfaceView.huskSetGL / EGLNative.hide only ever run for an app that goes through the Java EGL path)",
+                        g_window.width, g_window.height,
+                        view ? "the Surface it came from IS a SurfaceView's" : "the Surface it came from has no SurfaceView behind it");
+        }
+    }
     if (tex) {
         tl_nwindow *w = calloc(1, sizeof(*w));
         atomic_store(&w->refs, 1); w->format = 1; w->texture = tl_jni_ref(tex);

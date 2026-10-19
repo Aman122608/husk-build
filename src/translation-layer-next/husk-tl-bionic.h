@@ -127,10 +127,20 @@ enum {
 };
 extern volatile unsigned long tl_hp_count[TL_HP_N];
 const char *tl_hp_name(int which);
-static inline void tl_hp_bump(int which)
+/* THE SAMPLE, not a per-call trace: one mask test on the counter this bump already does, and every 4096th call on a shim
+ * records WHERE that shim was called FROM (the guest's return address). A guest thread spinning on gettimeofday /
+ * pthread_mutex_lock without presenting a frame is an engine's own retry loop, and the only thing the log can otherwise
+ * say about it is a bare pc; these call sites name the loop by address, with a count, resolvable against the APK's .so.
+ * Bounded (16 sites per shim, the rest counted, never stored) and bounded in cost: no lock and no store on a call that
+ * is not sampled. */
+void tl_hp_note_callsite(int which, void *ret);
+void tl_hp_callsites_each(void (*cb)(const char *shim, const void *ret, unsigned long n, void *user), void *user);
+static inline __attribute__((always_inline)) void tl_hp_bump(int which)
 {
-    if (which >= 0 && which < TL_HP_N)
-        __atomic_fetch_add(&tl_hp_count[which], 1ul, __ATOMIC_RELAXED);
+    if (which >= 0 && which < TL_HP_N) {
+        unsigned long n = __atomic_fetch_add(&tl_hp_count[which], 1ul, __ATOMIC_RELAXED) + 1;
+        if ((n & 0xFFFul) == 0) tl_hp_note_callsite(which, __builtin_return_address(0));
+    }
 }
 
 /* How many guest threads the pthread shim has started and that have not returned: what a session close reports it could

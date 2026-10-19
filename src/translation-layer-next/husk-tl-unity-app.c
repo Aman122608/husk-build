@@ -397,12 +397,16 @@ static void *heartbeat_thread(void *arg)
         unsigned long dcomp = comp >= last_comp ? comp - last_comp : 0; last_comp = comp;
         unsigned long ddrop = drop >= last_drop ? drop - last_drop : 0; last_drop = drop;
         char scr_app[240]; ss_app_name(scr_app, sizeof(scr_app));
+        /* The app's OWN EGL ledger in the same line: "N frames in this session" is the COMPOSITOR's count, and a frame
+         * that came from a thread of an earlier session is not this app drawing. Surfaces handed over vs frames the app
+         * swapped back is what tells "the app drew" from "something was on screen", every time, without a probe. */
+        unsigned long egl_made = tl_egl_composited_surfaces(), egl_swap = tl_egl_composited_frames();
 #if TARGET_OS_IPHONE
-        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d), %zu MiB left before jetsam; on screen: %lu frame(s) composited (+%lu) from '%s', %lu swap(s) (+%lu) refused from a session that has ended",
-                    f, delta, ep, os_proc_available_memory() >> 20, comp, dcomp, scr_app, drop, ddrop);
+        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d), %zu MiB left before jetsam; on screen: %lu frame(s) composited (+%lu) from '%s', %lu swap(s) (+%lu) refused from a session that has ended; the app's own EGL window: %lu surface(s) handed over, %lu frame(s) the app swapped back",
+                    f, delta, ep, os_proc_available_memory() >> 20, comp, dcomp, scr_app, drop, ddrop, egl_made, egl_swap);
 #else
-        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d); on screen: %lu frame(s) composited (+%lu) from '%s', %lu swap(s) (+%lu) refused from a session that has ended",
-                    f, delta, ep, comp, dcomp, scr_app, drop, ddrop);
+        tl_log_line("unity: alive: %lu frames (+%lu) in this session (session epoch %d); on screen: %lu frame(s) composited (+%lu) from '%s', %lu swap(s) (+%lu) refused from a session that has ended; the app's own EGL window: %lu surface(s) handed over, %lu frame(s) the app swapped back",
+                    f, delta, ep, comp, dcomp, scr_app, drop, ddrop, egl_made, egl_swap);
 #endif
         /* A swapped-in app that presented a frame and then stopped drawing may be blocked on a layer lock a parked thread
          * holds (tl_swapstall_tick). This is where such a stall names itself, once per stall. */
@@ -1195,6 +1199,46 @@ static void ss_app_name(char *out, size_t n)
     snprintf(out, n, "%s (%s)", pkg, base);
 }
 
+/* THE APP'S OWN EGL, in two numbers: how many composited window surfaces this layer handed an app, and how many frames
+ * the app swapped back through them. Together with tl_javaapp_frame_reasons (which source fed the compositor) these
+ * separate the shapes that all look like a black screen, in one line each: the app never asked for a surface (0/0), it
+ * asked and never drew into it (n/0 -- the shape a Unity title shows while its engine is still loading), or it drew and
+ * the compositor's frames were attributed to something else (n/m with the reasons naming the other source). */
+static void ss_own_egl(char *out, size_t n)
+{
+    unsigned long made = tl_egl_composited_surfaces(), swapped = tl_egl_composited_frames();
+    char why[400];
+    if (A.engine == ENGINE_JAVA) {
+        tl_javaapp_frame_reasons(why, sizeof(why));
+        snprintf(out, n, "own-egl: the app's own EGL window: %lu surface(s) handed to it, %lu frame(s) it swapped back -- %s; %s",
+                 made, swapped,
+                 swapped ? "the app's own rendering did reach the compositor"
+                         : made ? "the app was GIVEN a window surface and never swapped it: it never drew a frame of its own"
+                                : "the app never asked for a window surface of its own",
+                 why);
+        return;
+    }
+    snprintf(out, n, "own-egl: %lu composited window surface(s) handed to an app this process, %lu frame(s) composited through them", made, swapped);
+}
+
+/* WHERE the hot shims were called from (sampled; husk-tl-bionic.c). An app whose engine thread spins on gettimeofday and
+ * pthread_mutex_lock while presenting nothing has a retry loop, and this names the guest function doing it by address and
+ * by count -- resolvable against the app's own .so, which is what the stall's bare 'Translat ...+0x...' frames are not. */
+static const char *g_callsite_tag;
+static void ss_callsite_one(const char *shim, const void *ret, unsigned long n, void *user)
+{
+    (void)user;
+    char w[220];
+    ss_where(w, sizeof(w), (uintptr_t)ret);
+    tl_log_line("%s: %s called from %s (%lu sampled call(s)) -- that is the shim's CALLER, the guest function running the loop",
+                g_callsite_tag ? g_callsite_tag : "callsite", shim, w, n);
+}
+static void ss_callsites(const char *tag)
+{
+    g_callsite_tag = tag;
+    tl_hp_callsites_each(ss_callsite_one, NULL);
+}
+
 #define TL_SS_THREADS 160
 
 /* Monotonic ns, the same clock husk-tl-bionic-pthread.c's census stamps a thread's last shim with, so the ages the stall
@@ -1619,6 +1663,12 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
     /* The app's OWN reads leading up to this freeze, oldest first -- recorded whatever the run, so it exists for a stall in a
      * lone (never-swapped) app too, which the old swap-gated trace could never show. */
     tl_asset_ring_dump("stall");
+
+    /* The app's own EGL ledger (surface handed over vs frames swapped back), and WHERE the hot shims are being called
+     * from: the first separates "never asked" from "asked and never drew"; the second names the guest function doing the
+     * spinning, which the bare pc of the sampler cannot. Both are cold (this probe runs once per detected stall). */
+    { char own[520]; ss_own_egl(own, sizeof(own)); tl_log_line("stall-%s", own); }
+    ss_callsites("stall-callsite");
 }
 
 static void tl_swapstall_tick(unsigned long frames, bool running, int epoch)
@@ -1728,6 +1778,8 @@ int husk_tl_session_close(void)
         tl_log_line("delivery[close]: %s", why);
     }
     tl_log_line("delivery[close]: the app's own lifecycle/window/surface/looper deliveries of this session are the 'D/HuskDelivery' lines above; a step with no line was never delivered to the app, and a 'post #n' with no 'dispatch #n' is a message the looper never took");
+    { char own[520]; ss_own_egl(own, sizeof(own)); tl_log_line("delivery[close]: %s", own); }
+    ss_callsites("close-callsite");
 
     /* THE FATAL-TIME MEASUREMENT, taken HERE on this normal thread -- NOT in the crash reporter's signal handler (see
      * tl_xmem_report_fault_time). A no-op when no guest fault was recorded and on a host with no arena. */

@@ -41,6 +41,8 @@ unsigned long tl_egl_frames_presented(void);
  * difference from a mark taken when the session started (husk-tl-unity-app.c). */
 unsigned long tl_egl_composited_frames(void);
 unsigned long tl_egl_dropped_frames(void);
+/* Composited WINDOW surfaces handed to an app (created, whether or not the app ever swapped one). */
+unsigned long tl_egl_composited_surfaces(void);
 
 /* A session has ended (husk_tl_session_close): drop the frame it had composited and refuse further swaps from the
  * surfaces it made, so a closed app's parked threads cannot keep presenting. Call AFTER the census epoch advances. */

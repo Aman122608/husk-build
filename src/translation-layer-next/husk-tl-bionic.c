@@ -114,6 +114,38 @@ static const char *const k_hp_name[TL_HP_N] = {
 
 const char *tl_hp_name(int which) { return (which >= 0 && which < TL_HP_N) ? k_hp_name[which] : "?"; }
 
+/* --------------------------------------------- where the hot shims are called FROM
+ *
+ * The counters above say WHICH shim is hot; a stall also needs to say WHERE. Every 4096th call (the mask in tl_hp_bump)
+ * the guest's return address is recorded here, so an app that spins on gettimeofday + pthread_mutex_lock without
+ * presenting a frame -- an engine's own retry loop -- is named by the address of the function doing it, with a count,
+ * and that address resolves against the app's own .so offline. 16 sites per shim; a site past the bound is counted by the
+ * shim's own counter and never invented. The lock is taken only on a sampled call (a few times a second), never per call. */
+#define TL_HP_SITES 16
+static struct { void *ret; unsigned long n; } g_hp_sites[TL_HP_N][TL_HP_SITES];
+static pthread_mutex_t g_hp_sites_mu = PTHREAD_MUTEX_INITIALIZER;
+
+void tl_hp_note_callsite(int which, void *ret)
+{
+    if (which < 0 || which >= TL_HP_N || !ret) return;
+    pthread_mutex_lock(&g_hp_sites_mu);
+    for (int i = 0; i < TL_HP_SITES; i++)
+        if (g_hp_sites[which][i].ret == ret) { g_hp_sites[which][i].n++; pthread_mutex_unlock(&g_hp_sites_mu); return; }
+    for (int i = 0; i < TL_HP_SITES; i++)
+        if (!g_hp_sites[which][i].ret) { g_hp_sites[which][i].ret = ret; g_hp_sites[which][i].n = 1; pthread_mutex_unlock(&g_hp_sites_mu); return; }
+    pthread_mutex_unlock(&g_hp_sites_mu);          /* the table is full: the shim's counter still holds the total */
+}
+
+void tl_hp_callsites_each(void (*cb)(const char *shim, const void *ret, unsigned long n, void *user), void *user)
+{
+    if (!cb) return;
+    pthread_mutex_lock(&g_hp_sites_mu);
+    for (int i = 0; i < TL_HP_N; i++)
+        for (int k = 0; k < TL_HP_SITES; k++)
+            if (g_hp_sites[i][k].ret) cb(tl_hp_name(i), g_hp_sites[i][k].ret, g_hp_sites[i][k].n, user);
+    pthread_mutex_unlock(&g_hp_sites_mu);
+}
+
 /* ------------------------------------------------------------ properties */
 
 static const struct { const char *k, *v; } k_props[] = {
