@@ -608,6 +608,12 @@ static void *start_thunk(void *p)
     free(p);
     atomic_fetch_add(&g_guest_threads, 1);
     gt_enter((const void *)c.fn);
+    /* This guest thread may run Java through the interpreter (Unity's Java-side HandlerThreads, an app's own Threads do).
+     * Register its Java frame stack ONCE, at entry -- so the cold stall probe can name its Java frames from outside
+     * without the running path paying anything. Declared here so this file needs no DVM header. */
+    void dvm_thread_register_frames(void); void dvm_thread_unregister_frames(void);
+    dvm_thread_register_frames();
+
     /* a stack of its own for fault handlers: a crash that leaves the thread's stack unusable is then still reported (macOS kills a
        thread it can not deliver a signal to with SIGILL, and nothing is said) */
     tl_thread_altstack();
@@ -620,6 +626,7 @@ static void *start_thunk(void *p)
     void *r = c.fn(c.arg);
     if (g_thread_trace) { char nm[32] = ""; pthread_getname_np(pthread_self(), nm, sizeof(nm)); tl_log_line("thread: '%s' EXITED", nm); }
     gt_leave();
+    dvm_thread_unregister_frames();          /* leaving: its TLS is about to go, so forget the frame-stack address */
     atomic_fetch_sub(&g_guest_threads, 1);
     return r;
 }

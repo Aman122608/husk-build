@@ -912,6 +912,7 @@ static void *gl_main(void *arg)
 {
     (void)arg;
     pthread_setname_np("GLThread");
+    dvm_thread_register_frames();           /* this thread runs Java (the GLSurfaceView renderer): register its frame stack for the cold stall probe */
     EGLDisplay (*getDisplay)(void *) = tl_egl_resolve("eglGetDisplay");
     unsigned (*initialize)(EGLDisplay, EGLint *, EGLint *) = tl_egl_resolve("eglInitialize");
     unsigned (*bindAPI)(unsigned) = tl_egl_resolve("eglBindAPI");
@@ -921,7 +922,7 @@ static void *gl_main(void *arg)
     unsigned (*makeCurrent)(EGLDisplay, EGLSurface, EGLSurface, EGLContext) = tl_egl_resolve("eglMakeCurrent");
     unsigned (*swapBuffers)(EGLDisplay, EGLSurface) = tl_egl_resolve("eglSwapBuffers");
     unsigned (*swapInterval)(EGLDisplay, EGLint) = tl_egl_resolve("eglSwapInterval");
-    if (!getDisplay || !createWindowSurface || !swapBuffers) { tl_log_line("javaapp: EGL is not available"); atomic_store(&A.gl_done, true); return NULL; }
+    if (!getDisplay || !createWindowSurface || !swapBuffers) { tl_log_line("javaapp: EGL is not available"); atomic_store(&A.gl_done, true); dvm_thread_unregister_frames(); return NULL; }
     EGLDisplay dpy = getDisplay(NULL);
     EGLint major = 0, minor = 0;
     initialize(dpy, &major, &minor);
@@ -930,11 +931,11 @@ static void *gl_main(void *arg)
     const EGLint want3[] = { 0x3040, 0x40, 0x3033, 0x5, 0x3024, 8, 0x3023, 8, 0x3022, 8, 0x3021, 8, 0x3025, 24, 0x3026, 8, EGL_NONE };
     const EGLint want2[] = { 0x3040, 0x4, 0x3033, 0x5, 0x3024, 8, 0x3023, 8, 0x3022, 8, 0x3021, 8, 0x3025, 24, 0x3026, 8, EGL_NONE };
     bool es3 = chooseConfig(dpy, want3, &cfg, 1, &ncfg) && ncfg >= 1;
-    if (!es3 && (!chooseConfig(dpy, want2, &cfg, 1, &ncfg) || ncfg < 1)) { tl_log_line("javaapp: no EGL config"); atomic_store(&A.gl_done, true); return NULL; }
+    if (!es3 && (!chooseConfig(dpy, want2, &cfg, 1, &ncfg) || ncfg < 1)) { tl_log_line("javaapp: no EGL config"); atomic_store(&A.gl_done, true); dvm_thread_unregister_frames(); return NULL; }
     const EGLint ui_attr[] = { 0x3098, 2, EGL_NONE };
     EGLContext ui = createContext(dpy, cfg, NULL, ui_attr), app = NULL;
     EGLSurface surf = createWindowSurface(dpy, cfg, tl_nwindow_get(), NULL);
-    if (!ui || !surf || !makeCurrent(dpy, surf, surf, ui)) { tl_log_line("javaapp: no GL context"); atomic_store(&A.gl_done, true); return NULL; }
+    if (!ui || !surf || !makeCurrent(dpy, surf, surf, ui)) { tl_log_line("javaapp: no GL context"); atomic_store(&A.gl_done, true); dvm_thread_unregister_frames(); return NULL; }
     if (swapInterval) swapInterval(dpy, 1);
     overlay ov = { 0 }, appov = { 0 }, appup = { 0 };
     ov_init(&ov);
@@ -1028,6 +1029,7 @@ static void *gl_main(void *arg)
         else if (late < 0) { struct timespec ts = { 0, (long)(-late) }; nanosleep(&ts, NULL); }
     }
     atomic_store(&A.gl_done, true);         /* the close waits on this instead of joining (a join-collect would run TLS dtors) */
+    dvm_thread_unregister_frames();         /* leaving: its TLS is about to go, so forget the frame-stack address */
     return NULL;
 }
 
@@ -1138,6 +1140,7 @@ static void *app_main(void *arg)
     void tl_thread_altstack(void); tl_thread_altstack();
     (void)arg;
     pthread_setname_np("main");
+    dvm_thread_register_frames();           /* this thread runs Java: register its frame stack so the cold stall probe can name its Java frames from outside */
     jvalue a[2] = { L(dvm_new_string_utf8(A.activity)), L(A.application[0] ? dvm_new_string_utf8(A.application) : NULL) };
     jvalue r;
     if (!tl_dvm_call_static("husk/AppRunner", "run", "(Ljava/lang/String;Ljava/lang/String;)V", a, &r)) {
@@ -1147,6 +1150,7 @@ static void *app_main(void *arg)
         atomic_store(&A.ended, true);
     }
     atomic_store(&A.app_done, true);        /* the close waits on this instead of joining (a join-collect would run TLS dtors) */
+    dvm_thread_unregister_frames();         /* leaving: its TLS is about to go, so forget the frame-stack address */
     return NULL;
 }
 

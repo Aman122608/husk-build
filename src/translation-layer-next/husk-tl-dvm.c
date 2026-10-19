@@ -966,6 +966,90 @@ void tl_dvm_print_stack(FILE *f, int max)
     }
 }
 
+/* ---- naming ANOTHER thread's Java stack: the cold stall probe reads this from outside ----
+ *
+ * t_frames/t_pcs/t_depth above are _Thread_local: only the running thread can read its own frame chain. That is exactly
+ * why a stall's frame-POINTER walk of a thread inside the interpreter can name only the interpreter's C functions
+ * (dvm_call/invoke_regs/dvm_call_inner) and never the Java method executing inside them. A thread that runs Java calls
+ * dvm_thread_register_frames() ONCE at its entry (so the running path pays nothing), recording the ADDRESSES of its own
+ * frame stack here; the cold stall path then reads that thread's Java frames from a different thread, reading t_depth
+ * once and clamped, WITHOUT ever suspending, joining or signalling the thread it is sampling. */
+#define DVM_FRAME_SLOTS 256
+typedef struct {
+    pthread_t    tid;
+    dvm_method *(*frames)[8192];    /* &t_frames of that thread */
+    uint32_t    (*pcs)[8192];       /* &t_pcs of that thread */
+    int         *depth;             /* &t_depth of that thread; NULL when the slot is empty */
+} dvm_frame_slot;
+static dvm_frame_slot g_frame_slots[DVM_FRAME_SLOTS];
+static pthread_mutex_t g_frame_slots_lk = PTHREAD_MUTEX_INITIALIZER;
+
+void dvm_thread_register_frames(void)
+{
+    pthread_t self = pthread_self();
+    pthread_mutex_lock(&g_frame_slots_lk);
+    dvm_frame_slot *slot = NULL;
+    for (int i = 0; i < DVM_FRAME_SLOTS; i++)
+        if (g_frame_slots[i].depth && pthread_equal(g_frame_slots[i].tid, self)) { slot = &g_frame_slots[i]; break; }
+    if (!slot)
+        for (int i = 0; i < DVM_FRAME_SLOTS; i++) if (!g_frame_slots[i].depth) { slot = &g_frame_slots[i]; break; }
+    if (slot) {
+        slot->tid = self;
+        slot->frames = &t_frames;
+        slot->pcs = &t_pcs;
+        slot->depth = &t_depth;
+    }
+    pthread_mutex_unlock(&g_frame_slots_lk);
+}
+
+void dvm_thread_unregister_frames(void)
+{
+    pthread_t self = pthread_self();
+    pthread_mutex_lock(&g_frame_slots_lk);
+    for (int i = 0; i < DVM_FRAME_SLOTS; i++)
+        if (g_frame_slots[i].depth && pthread_equal(g_frame_slots[i].tid, self)) {
+            g_frame_slots[i].tid = 0; g_frame_slots[i].depth = NULL; g_frame_slots[i].frames = NULL; g_frame_slots[i].pcs = NULL;
+            break;
+        }
+    pthread_mutex_unlock(&g_frame_slots_lk);
+}
+
+/* Every thread that registered is gone (a session's threads are unwound): forget the slots, so a later probe never reads
+ * the frame stack of a thread whose TLS has been unmapped. Call only with no guest thread running. */
+void dvm_thread_frames_reset(void)
+{
+    pthread_mutex_lock(&g_frame_slots_lk);
+    for (int i = 0; i < DVM_FRAME_SLOTS; i++) {
+        g_frame_slots[i].tid = 0; g_frame_slots[i].depth = NULL; g_frame_slots[i].frames = NULL; g_frame_slots[i].pcs = NULL;
+    }
+    pthread_mutex_unlock(&g_frame_slots_lk);
+}
+
+int dvm_thread_java_frames(unsigned long tid, dvm_java_frame *out, int max)
+{
+    dvm_frame_slot *slot = NULL;
+    pthread_mutex_lock(&g_frame_slots_lk);
+    for (int i = 0; i < DVM_FRAME_SLOTS; i++)
+        if (g_frame_slots[i].depth && g_frame_slots[i].tid == (pthread_t)(uintptr_t)tid) { slot = &g_frame_slots[i]; break; }
+    pthread_mutex_unlock(&g_frame_slots_lk);
+    if (!slot || !slot->depth) return -1;   /* not a thread that runs through the interpreter: nothing read, nothing invented */
+    int depth = *slot->depth;               /* read once, then clamped -- the thread is live and may be moving (a diagnostic) */
+    if (depth < 0) depth = 0;
+    if (depth > 8192) depth = 8192;
+    int n = 0;
+    for (int i = depth - 1; i >= 0 && n < max; i--, n++) {
+        dvm_method *m = (*slot->frames)[i];
+        uint32_t pc = (*slot->pcs)[i];
+        out[n].cls  = (m && m->cls) ? m->cls->name : NULL;
+        out[n].name = m ? m->name : NULL;
+        out[n].sig  = m ? m->sig : NULL;
+        out[n].pc   = pc;
+        out[n].line = m ? dvm_line_of(m, pc) : -1;
+    }
+    return n;
+}
+
+
 static bool dvm_call_inner(dvm_method *m, jobj *self, const jvalue *params, jvalue *ret);
 /* TL_DVM_CALLS: comma-separated cls.method entries (class names with slashes) */
 static bool watch_hit(const char *w, const dvm_method *m)
@@ -2478,6 +2562,9 @@ static void reset_framework_statics(void)
 
 bool tl_dvm_end_app(void)
 {
+    /* A session's threads are unwound (tl_javaapp_reset ran first): drop every registered Java frame-stack address, so a
+     * later stall probe never reads the frame stack of a thread whose TLS has been unmapped. Safe with no thread running. */
+    dvm_thread_frames_reset();
     if (!g_running || g_nboot_dex < 0) { tl_log_line("husk: java reset dvm skipped (the runtime is not up)"); return false; }
     int dropped = g_ndex - g_nboot_dex;
     if (dropped <= 0) { tl_log_line("husk: java reset dvm: no app dexes to drop"); return false; }

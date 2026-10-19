@@ -1099,6 +1099,74 @@ static void ss_guest_walk(unsigned long tid, const char *who)
 static void ss_guest_walk(unsigned long tid, const char *who) { (void)tid; (void)who; }
 #endif
 
+/* ---------------------------------------------------------------------------------------------------------------
+ * THE JAVA FRAME CHAIN of one thread, and the twice-sample that separates a spin from a block.
+ *
+ * A frame-POINTER walk of a thread INSIDE the DVM interpreter can name only the interpreter's C functions
+ * (dvm_call/invoke_regs/dvm_call_inner -- see ss_guest_walk): it can never say WHICH Java method is running. But the
+ * interpreter DOES keep a per-thread Java frame chain (t_frames/t_pcs/t_depth, the stack Reflection and stack traces
+ * read), and a thread that runs Java registers the addresses of that frame stack at its entry (dvm_thread_register_frames
+ * -- app_main, gl_main, and every guest thread start_thunk). dvm_thread_java_frames() then hands the probe that thread's
+ * Java frames from OUTSIDE it -- class.method+descriptor, innermost first -- without suspending, joining or signalling the
+ * thread: it reads t_depth once and clamps it, then reads that many method pointers. When the thread registered no Java
+ * frame stack the walk says so plainly rather than invent one. Cold path only: called once per detected stall.
+ */
+#define TL_SS_JAVA_MAX 24
+static void ss_java_walk(unsigned long tid, const char *who)
+{
+    dvm_java_frame f[TL_SS_JAVA_MAX];
+    int n = dvm_thread_java_frames(tid, f, TL_SS_JAVA_MAX);
+    if (n < 0) {
+        tl_log_line("stall-java-stack: %s: it registered no Java frame stack, so it is not a thread that runs through the DVM interpreter -- its Java frames cannot be walked this run (said plainly; nothing invented).", who);
+        return;
+    }
+    tl_log_line("stall-java-stack: %s: its JAVA frame chain, INNERMOST FIRST (class.method+descriptor), read from the frame stack the thread registered -- the interpreter's frame-pointer walk above could only name dvm_call/invoke_regs, never the Java method running inside them. %d frame(s):", who, n);
+    for (int i = 0; i < n; i++) {
+        char line[260]; int w = 0;
+        w += snprintf(line + w, sizeof(line) - (size_t)w, "stall-java-stack:    java #%-2d %s.%s%s @%u",
+                      i, f[i].cls ? f[i].cls : "?", f[i].name ? f[i].name : "?", f[i].sig ? f[i].sig : "", f[i].pc);
+        if (f[i].line >= 0 && w > 0 && w < (int)sizeof(line)) snprintf(line + w, sizeof(line) - (size_t)w, " (line %d)", f[i].line);
+        tl_log_line("%s", line);
+    }
+    if (n == 0) tl_log_line("stall-java-stack:    (the thread's Java stack is empty right now: it is between interpreted calls)");
+}
+
+/* A thread's identity at ONE instant: its pc and its innermost Java frame, for the twice-sample. */
+typedef struct { uintptr_t pc; bool pc_ok; char java[220]; int java_n; } ss_java_sample;
+static void ss_java_take(unsigned long tid, ss_java_sample *s)
+{
+    s->pc = 0; s->pc_ok = ss_thread_pc(tid, &s->pc);
+    dvm_java_frame f[1];
+    int n = dvm_thread_java_frames(tid, f, 1);
+    s->java_n = n;
+    if (n < 0)       snprintf(s->java, sizeof(s->java), "(no Java frame stack registered: not a DVM thread)");
+    else if (n == 0) snprintf(s->java, sizeof(s->java), "(Java stack empty)");
+    else             snprintf(s->java, sizeof(s->java), "%s.%s%s @%u",
+                              f[0].cls ? f[0].cls : "?", f[0].name ? f[0].name : "?", f[0].sig ? f[0].sig : "", f[0].pc);
+}
+
+/* Sample a Java thread's pc AND its innermost Java frame twice, `ms` apart, and say whether it MOVED or HELD. A thread
+ * whose pc and Java frame are UNCHANGED across the sample is stuck or spinning in ONE place (looping in Java, or sitting
+ * deep in a single call); one whose pc or Java frame changed is progressing -- today's log cannot make this distinction,
+ * and it decides whether the bug is a spin or a missing signal. Bounded and read-only: the interval is a sleep on THIS
+ * thread, and the sampled thread is never suspended, joined or signalled. Cold path only (once per detected stall). */
+static void ss_java_sample_twice(unsigned long tid, const char *who, int ms)
+{
+    ss_java_sample a, b;
+    ss_java_take(tid, &a);
+    struct timespec ts = { 0, (long)ms * 1000000L };
+    nanosleep(&ts, NULL);
+    ss_java_take(tid, &b);
+    int moved = (a.pc_ok != b.pc_ok) || (a.pc_ok && a.pc != b.pc) || (a.java_n != b.java_n) || strcmp(a.java, b.java) != 0;
+    char pc1[200], pc2[200];
+    if (a.pc_ok) ss_where(pc1, sizeof(pc1), a.pc); else snprintf(pc1, sizeof(pc1), "not readable by the layer");
+    if (b.pc_ok) ss_where(pc2, sizeof(pc2), b.pc); else snprintf(pc2, sizeof(pc2), "not readable by the layer");
+    tl_log_line("stall-java-sample: %s (tid %p): sample #1 pc [%s] java %s; %d ms later sample #2 pc [%s] java %s -> %s",
+                who, (void *)(uintptr_t)tid, pc1, a.java, ms, pc2, b.java,
+                moved ? "MOVED (progressing: not sitting in one Java place)"
+                      : "HELD (pc AND Java frame UNCHANGED across the sample: stuck/blocked, or spinning in ONE place)");
+}
+
 /* One line per N seconds, and once at session close, with the hot-path counters: what the log cannot answer without a
  * line per event -- the store guard's carried/refused traps, the arena's per-allocation backing (allocations and pages
  * backed), and the intercepted calls by name. NEVER per event; the caller gates the cadence (the heartbeat, husk). */
@@ -1164,6 +1232,31 @@ static unsigned long ss_frame_thread_id(int engine)
     return engine == ENGINE_UNITY ? tl_unity_thread() : engine == ENGINE_JAVA ? tl_javaapp_render_thread() : 0;
 }
 
+/* Find a thread by its Darwin NAME from the process-wide list (task_threads), returning its (unsigned long)pthread_t, or 0.
+ * Needed for a thread the LAYER's handle cannot name: a Unity title run through the JAVA engine has a 'UnityMain' thread
+ * that Unity's own native code started, so tl_unity_thread() is null for it -- but the thread exists and names itself, so
+ * it is found here instead of via an engine handle the engine does not own. Only its state is READ (as elsewhere): the
+ * thread is never suspended, ended or joined. Cold path only. */
+#if defined(__APPLE__)
+static unsigned long ss_find_thread_by_name(const char *want)
+{
+    thread_act_array_t list = NULL;
+    mach_msg_type_number_t n = 0;
+    if (task_threads(mach_task_self(), &list, &n) != KERN_SUCCESS || !list) return 0;
+    unsigned long found = 0;
+    for (mach_msg_type_number_t i = 0; i < n && !found; i++) {
+        pthread_t pt = pthread_from_mach_thread_np(list[i]);
+        if (!pt) continue;
+        char nm[32] = "";
+        if (pthread_getname_np(pt, nm, sizeof(nm)) == 0 && nm[0] && !strcmp(nm, want)) found = (unsigned long)(uintptr_t)pt;
+    }
+    vm_deallocate(mach_task_self(), (vm_address_t)list, (vm_size_t)n * sizeof(thread_t));
+    return found;
+}
+#else
+static unsigned long ss_find_thread_by_name(const char *want) { (void)want; return 0; }
+#endif
+
 /* ---------------------------------------------------------------------------------------------------------------
  * EVERY thread in this process that the guest census cannot see. The census only holds threads the layer created on
  * the guest's behalf (b_create -> start_thunk); the threads the LAYER starts itself carry no census slot at all:
@@ -1215,6 +1308,7 @@ static void ss_host_threads(const tl_guest_thread_info *gt, int ngt, const char 
             (frame_id && id == frame_id) ? "THE FRAME/RENDER THREAD: its missing next frame IS the stall"
           : (main_id && id == main_id)   ? "the Java driver's app/main+looper thread: the Activity lifecycle (onCreate/onStart/onResume) and the SurfaceView callbacks are delivered here"
           : (unity_id && id == unity_id) ? "the layer's UnityMain frame thread (ENGINE_UNITY)"
+          : (!strcmp(nm, "UnityMain"))   ? "UnityMain -- the guest engine's main thread, started by Unity's own code, not by a layer handle (that is why the engine-handle accessor is null on this engine); found here by name"
           : (id == me)                   ? "this probe's own thread (the heartbeat)"
           :                                "a layer-started or host thread (the guest census does not hold it)";
 
@@ -1415,9 +1509,38 @@ static void ss_probe(unsigned long frames, double quiet_s, int epoch)
     {
         unsigned long main_id = tl_javaapp_main_thread();
         unsigned long unity_id = tl_unity_thread();
+        /* The engine-handle accessor is null when Unity's OWN native code started its main thread -- a Unity title run
+         * through the JAVA engine. The thread still exists and names itself 'UnityMain', so it is found by NAME from the
+         * process-wide thread list, never via a handle the engine does not own. */
+        if (!unity_id) unity_id = ss_find_thread_by_name("UnityMain");
         if (frame_id) ss_guest_walk(frame_id, frame_name);
-        if (unity_id && unity_id != frame_id) ss_guest_walk(unity_id, "UnityMain (the guest engine's main thread)");
+        if (unity_id && unity_id != frame_id) ss_guest_walk(unity_id, "UnityMain (found by NAME: the engine-handle accessor is null on this engine)");
         if (main_id && main_id != frame_id && main_id != unity_id) ss_guest_walk(main_id, "the Java driver's app/main+looper thread");
+    }
+
+    /* ---------------------------------------------------------------------------------------------------------------
+     * NAME THE JAVA LOOP, and tell a SPIN from a BLOCK.
+     *
+     * The frame-pointer walk above runs INSIDE the DVM interpreter, so it can name only the interpreter's C functions
+     * (dvm_call/invoke_regs/dvm_call_inner) and can never say which JAVA method is executing. His Java frame chain is a
+     * different thing: the interpreter keeps it per thread (what Reflection and stack traces read), and every thread that
+     * runs Java registered those per-thread addresses at its entry. ss_java_walk prints that chain -- class.method+
+     * descriptor, innermost first -- for the Java driver's app/main+looper thread and for every other layer-driven Java
+     * thread (the render/GL thread, and UnityMain found by name). Then the same threads are sampled TWICE, ~300 ms apart,
+     * to say whether their pc and Java frame MOVED (progressing) or HELD (in one place: a spin or a block). Both are
+     * read-only and cold (once per detected stall): no thread is suspended, joined or signalled. */
+    {
+        unsigned long main_id = tl_javaapp_main_thread();
+        if (main_id) ss_java_walk(main_id, "the Java driver's app/main+looper thread");
+        if (frame_id && frame_id != main_id) ss_java_walk(frame_id, frame_name);
+        unsigned long unity_id = tl_unity_thread();
+        if (!unity_id) unity_id = ss_find_thread_by_name("UnityMain");
+        if (unity_id && unity_id != main_id && unity_id != frame_id) ss_java_walk(unity_id, "UnityMain (found by name)");
+
+        /* SPIN vs BLOCK: the same pc + Java frame, sampled twice. */
+        int ss_ms = 300;
+        if (main_id) ss_java_sample_twice(main_id, "the Java driver's app/main+looper thread", ss_ms);
+        if (frame_id && frame_id != main_id) ss_java_sample_twice(frame_id, frame_name, ss_ms);
     }
 
     /* Guest mutexes HELD with a live waiter, with both sites -- the guest-level deadlock the layer lock ledger cannot hold.

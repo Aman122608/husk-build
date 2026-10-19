@@ -61,6 +61,24 @@ const uint16_t *tl_dvm_string_chars(jobj *s, int32_t *n);
 /* The exception pending on this thread as text ("java.lang.Foo: message"), for logs; NULL when there is none. */
 const char *tl_dvm_describe_pending(char *buf, size_t n);
 
+/* ---- Naming a Java thread's STACK from OUTSIDE it (the cold stall probe) ----
+ *
+ * The interpreter keeps a per-thread Java frame chain (the stack Reflection and stack traces read). It is thread-local,
+ * so only the running thread can read its own -- which is why a stall's frame-POINTER walk inside the interpreter can
+ * name only the interpreter's C functions (dvm_call/invoke_regs/dvm_call_inner) and never the Java method running inside
+ * them. A thread that runs Java registers the addresses of its own frame stack here once, at its ENTRY (so nothing is
+ * added to any running path), and dvm_thread_java_frames() then lets the cold stall path read that thread's Java frames
+ * WITHOUT suspending, joining or signalling it. Unregister on the way out; reset clears every slot for a dead session. */
+void dvm_thread_register_frames(void);
+void dvm_thread_unregister_frames(void);
+void dvm_thread_frames_reset(void);
+/* One Java frame as the probe reads it: class name ("java/lang/String"), method name, descriptor ("(...)R"), the pc at
+ * the frame's last call out, and the source line (-1 without debug info). */
+typedef struct { const char *cls; const char *name; const char *sig; uint32_t pc; int line; } dvm_java_frame;
+/* The thread `tid`'s Java frames, INNERMOST FIRST, up to `max` into `out`. Returns the count, or -1 when that thread
+ * registered no Java frame stack (it does not run through the interpreter) -- the honest answer, never a frame invented. */
+int dvm_thread_java_frames(unsigned long tid, dvm_java_frame *out, int max);
+
 void tl_dvm_set_trace(int level);       /* 1: classes and natives; 2: every invoke */
 
 #ifdef __cplusplus
