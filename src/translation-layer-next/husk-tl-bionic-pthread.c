@@ -493,6 +493,12 @@ void tl_guest_thread_new_epoch(void) { atomic_fetch_add(&g_epoch, 1); }
  * which then skip the marker entirely. */
 static __thread int g_my_slot = -1;
 
+/* The CALLING thread is a GUEST thread (the layer honours the guest's own mask inheritance for it) iff it claimed a
+ * census slot at its entry through start_thunk. A thread the LAYER itself started that runs guest code (an engine's main
+ * thread, a Java thread) has no slot, and the mask it was born with is HOST code's -- which is the one case a guest
+ * handler can be armed on a thread whose mask swallows its signal. See tl_thread_is_guest in husk-tl-bionic.h. */
+int tl_thread_is_guest(void) { return g_my_slot >= 0; }
+
 /* Monotonic nanoseconds, for the census: how long a thread has been inside the shim it is in (or since the last one it
  * entered). CLOCK_MONOTONIC on Darwin; the value is only ever subtracted from another reading of the same clock. */
 static unsigned long gt_now_ns(void)

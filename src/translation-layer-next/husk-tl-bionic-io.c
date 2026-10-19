@@ -2227,17 +2227,54 @@ static void sig_trace(const char *what, int g)
  * visible at all -- a blocked thread-directed signal is invisible on the send side, which is why the ledger's send
  * counts read as "armed, accepted, never ran".
  */
+static atomic_int g_mask_reported;   /* threads that have printed their entry mask: a fixed cap, so a thread storm cannot flood the log */
+
 void tl_guest_mask_default(void)
 {
     sigset_t cur;
     if (pthread_sigmask(SIG_SETMASK, NULL, &cur) != 0) return;
     uint32_t m; memcpy(&m, &cur, sizeof(m));
+
+    /* MEASURE the mask, do not infer it: this thread reads its OWN mask (no Darwin call reads another thread's) and
+     * reports what it was BORN with, UNCONDITIONALLY and once per thread (capped). The earlier form only named a bit when
+     * the guest had ALREADY armed that signal -- never true at a thread's entry -- so it never fired and the inherited
+     * mask stayed invisible; the send/run ledger could then only guess ("SENDS > RUNS ... at least one thread has the
+     * Darwin signal BLOCKED"). This line turns that guess into a reading: 0x0 is the guest's own empty mask, anything
+     * else is HOST code's mask that rode in by inheritance. */
+    tl_signal_note_mask_entry(m);
+    if (atomic_fetch_add(&g_mask_reported, 1) < 16) {
+        char me[32]; pthread_getname_np(pthread_self(), me, sizeof(me));
+        if (!me[0]) snprintf(me, sizeof(me), "?");
+        char bits[220] = ""; size_t bl = 0;
+        for (int d = 1; d < 32 && bl + 16 < sizeof(bits); d++) {
+            if (!(m & (1u << (d - 1)))) continue;
+            int g = tl_signal_from_darwin(d);
+            bl += (size_t)snprintf(bits + bl, sizeof(bits) - bl, "%sDarwin %d%s%s",
+                                   bl ? ", " : "", d, g ? "=bionic " : "", "");
+            if (g) bl += (size_t)snprintf(bits + bl, sizeof(bits) - bl, "%d", g);
+        }
+        tl_log_line("signal-mask: thread '%s' is about to run guest code; it READ ITS OWN mask here: 0x%08x (%s) -- %s",
+                    me, m, m ? bits : "empty",
+                    m ? "HOST bits rode in by inheritance (no guest blocked them, and no layer code blocks them); clearing them now"
+                      : "the guest's own empty mask");
+    }
+
     for (int g = 1; g < 32; g++) {
         if (!g_guest_sig[g].handler || g_guest_sig[g].handler == (void *)1) continue;
         int d = tl_signal_to_darwin(g);
         if (d > 0 && (m & (1u << (d - 1)))) tl_signal_note_arrived_blocked(g, d);
     }
-    if (m) { sigset_t empty; sigemptyset(&empty); pthread_sigmask(SIG_SETMASK, &empty, NULL); }
+    if (m) {
+        sigset_t empty; sigemptyset(&empty);
+        int cr = pthread_sigmask(SIG_SETMASK, &empty, NULL);
+        /* VERIFY the clear by reading the mask back -- a clear that did not take must not be silently indistinguishable
+         * from a clean thread: a signal blocked on a thread that runs guest code leaves every delivery of it PENDING and
+         * its handler never runs, which is exactly a stop-the-world handshake waiting forever. */
+        sigset_t back; uint32_t mb = 0;
+        if (pthread_sigmask(SIG_SETMASK, NULL, &back) == 0) memcpy(&mb, &back, sizeof(mb));
+        else mb = 0xffffffffu;
+        if (cr != 0 || mb) tl_signal_note_mask_clear_failed(cr, (unsigned long)mb);
+    }
 }
 
 /* The context a Linux arm64 handler is given (bionic's ucontext_t, the kernel's layout): built from Darwin's for each delivery and
@@ -2394,12 +2431,36 @@ static void probe_handler(int sig, siginfo_t *info, void *uc)
     tl_signal_probe_ran();
 }
 
-/* One cross-thread probe: the helper thread's OWN mask and its OWN observation, filled in BY the helper thread. */
+/* --- the mask MEASURED on the thread that owns it ---------------------------------------------------------------
+ * No Darwin call reads ANOTHER thread's mask, so a mask reading is only ever valid when the thread reads its OWN. Both
+ * probes therefore have the thread that owns the mask read it and hand the value back: the caller for a self-directed
+ * send, the helper for a cross-thread one. `mask` = sigprocmask(SIG_SETMASK, NULL, &cur); `pending` = sigpending(), the
+ * set of signals accepted for this thread but not yet delivered -- a signal that is BOTH blocked and pending is proof it
+ * was accepted and swallowed by the mask, not discarded by a disposition. Returns 0 on success, -1 on failure. */
+static int probe_own_mask(uint32_t *out)
+{
+    sigset_t cur;
+    if (pthread_sigmask(SIG_SETMASK, NULL, &cur) != 0) return -1;
+    memcpy(out, &cur, sizeof(*out));
+    return 0;
+}
+static int probe_own_pending(uint32_t *out)
+{
+    sigset_t p;
+    if (sigpending(&p) != 0) return -1;
+    memcpy(out, &p, sizeof(*out));
+    return 0;
+}
+static int probe_bit(uint32_t m, int dsig) { return dsig >= 1 && dsig <= 32 && (m & (1u << (dsig - 1))) != 0; }
+
+/* One cross-thread probe: the helper thread's OWN mask (BEFORE and AFTER its own explicit unblock) and its OWN
+ * observation, filled in BY the helper thread. */
 typedef struct {
     int        dsig;
-    sigset_t   mask_seen;     /* the target's OWN mask AFTER it unblocked the signal, read by the target */
-    int        unblock_rc;    /* pthread_sigmask(SIG_UNBLOCK) return, by the target */
-    int        mask_rc;       /* pthread_sigmask(SIG_SETMASK,NULL,&mask) return, by the target */
+    uint32_t   mask_before;   /* the target's OWN mask BEFORE it unblocked: what it was BORN with */
+    uint32_t   mask_after;    /* the target's OWN mask AFTER its explicit SIG_UNBLOCK */
+    uint32_t   pend_after;    /* the target's OWN pending set after the bounded wait */
+    int        mask_e_before, mask_e_after, pend_e, unblock_rc;   /* return codes, by the target */
     atomic_int go;            /* target -> the tester: I am running with the mask I just set */
     atomic_int done;          /* target -> the tester: I have made my observation */
     int        ran;           /* the target's OWN answer */
@@ -2424,25 +2485,32 @@ static void *probe_target_main(void *p)
     pthread_getname_np(pthread_self(), t->name, sizeof(t->name));
     if (!t->name[0]) snprintf(t->name, sizeof(t->name), "signal-probe");
     t_probe_seen = 0;
+    /* MEASURE BEFORE THE UNBLOCK: this is the mask the helper thread was BORN with (inherited from its creator at
+     * pthread_create). Reading it here, on the thread that owns it, is the only way it can be read at all. */
+    t->mask_e_before = probe_own_mask(&t->mask_before);
     sigset_t set;
     sigemptyset(&set); sigaddset(&set, t->dsig);
     t->unblock_rc = pthread_sigmask(SIG_UNBLOCK, &set, NULL);            /* the EXPLICIT target-side unblock */
-    t->mask_rc    = pthread_sigmask(SIG_SETMASK, NULL, &t->mask_seen);   /* the target reads and reports its OWN mask */
+    t->mask_e_after = probe_own_mask(&t->mask_after);                    /* and read the mask BACK, to prove it took */
     atomic_store(&t->go, 1);
     int seen = 0;                                                        /* its OWN bounded wait, ~200 ms */
     for (int i = 0; i < 200 && !seen; i++) {
         for (int y = 0; y < 16 && !seen; y++) { sched_yield(); seen = (t_probe_seen == t->dsig); }
         if (!seen) { struct timespec ts = { 0, 1000000 }; nanosleep(&ts, NULL); }
     }
+    t->pend_e = probe_own_pending(&t->pend_after);   /* accepted-but-undelivered? then the mask swallowed it */
     t->ran = seen;
     atomic_store(&t->done, 1);
     return NULL;      /* after this store the helper touches nothing of the caller's: it is detached, never joined */
 }
 
-/* Send `dsig` thread-directed to the CALLING thread with the probe handler installed. *errno_out is what pthread_kill
- * returned (0 = accepted for the target); *ran_out is whether the probe handler actually ran. Restores the disposition.
- * Returns 0 if the probe could be installed and sent, -1 if the host refused the install (then nothing was sent). */
-static int probe_deliver_self(int dsig, int *errno_out, int *ran_out)
+/* Send `dsig` thread-directed to the CALLING thread with the probe handler installed. The CALLER reads its OWN mask
+ * BEFORE the send and again after, and its OWN pending set after the bounded wait -- the target-side measurement the
+ * review asked for (a self-directed send runs on the sender's mask, so the sender IS the target here). *errno_out is
+ * what pthread_kill returned (0 = accepted for the target); *ran_out is whether the probe handler actually ran.
+ * Restores the disposition. Returns 0 if the probe could be installed and sent, -1 if the host refused the install. */
+static int probe_deliver_self(int dsig, int *errno_out, int *ran_out,
+                              uint32_t *mask_before_out, uint32_t *mask_after_out, uint32_t *pend_out)
 {
     struct sigaction old, sa;
     memset(&sa, 0, sizeof(sa));
@@ -2451,6 +2519,7 @@ static int probe_deliver_self(int dsig, int *errno_out, int *ran_out)
     sigemptyset(&sa.sa_mask);
     errno = 0;
     if (sigaction(dsig, &sa, &old) != 0) { *errno_out = errno ? errno : EINVAL; *ran_out = 0; return -1; }
+    if (mask_before_out) { *mask_before_out = 0; probe_own_mask(mask_before_out); }
     unsigned long before = tl_signal_probe_count();
     errno = 0;
     int dr = pthread_kill(pthread_self(), dsig);
@@ -2459,14 +2528,16 @@ static int probe_deliver_self(int dsig, int *errno_out, int *ran_out)
      * syscall boundaries before calling it absent. Bounded. */
     for (int i = 0; i < 8 && tl_signal_probe_count() == before; i++) sched_yield();
     *ran_out = tl_signal_probe_count() != before;
+    if (mask_after_out) { *mask_after_out = 0; probe_own_mask(mask_after_out); }
+    if (pend_out) { *pend_out = 0; probe_own_pending(pend_out); }
     sigaction(dsig, &old, NULL);
     return 0;
 }
 
-/* One cross-thread probe: install the handler on `dsig`, start a DETACHED helper that explicitly unblocks `dsig` and
- * reports its own mask, send from HERE to that thread with pthread_kill, and let the helper say whether ITS handler ran.
- * *errno_out = what pthread_kill returned. Fills *t. Restores the disposition. Returns -1 if the host refused the
- * install or the helper could not start (then nothing was sent). */
+/* One cross-thread probe: install the handler on `dsig`, start a DETACHED helper that reports its OWN mask before and
+ * after it explicitly unblocks `dsig`, send from HERE to that thread with pthread_kill, and let the helper say whether
+ * ITS handler ran and whether the signal is still PENDING on it. *errno_out = what pthread_kill returned. Fills *t.
+ * Restores the disposition. Returns -1 if the host refused the install or the helper could not start. */
 static int probe_deliver_thread(int dsig, probe_target *t, int *errno_out)
 {
     struct sigaction old, sa;
@@ -2572,38 +2643,74 @@ void tl_signal_selftest(void)
      * bionic SIGPWR (30) maps to -- the discriminator; SIGXCPU is bionic 24; SIGUSR1 is a known-ordinary catchable signal. */
     static const int   cand[4]      = { SIGEMT,  SIGINFO, SIGXCPU, SIGUSR1 };
     static const char *cand_name[4] = { "SIGEMT (control)", "SIGINFO", "SIGXCPU", "SIGUSR1 (control)" };
-    int          self_ok[4],  self_e[4],  self_ran[4];
+    int          self_ok[4],  self_e[4],  self_ran[4],  self_unb[4];
+    uint32_t     self_mb[4],  self_ma[4],  self_pd[4];
     int          cross_ok[4], cross_e[4];
     probe_target ct[4];
+
+    /* THE CALLING THREAD'S OWN MASK, MEASURED FIRST -- before anything is sent. The self-test runs on a thread the LAYER
+     * started, and a self-directed send is delivered on the SENDER's mask, so this one reading is what decides whether a
+     * "pthread_kill returned 0 but the handler never ran" is the mask or something else. It is a reading, not an
+     * inference: no Darwin call can read another thread's mask, but a thread can always read its own. */
+    {
+        uint32_t own = 0; int e = probe_own_mask(&own);
+        tl_log_line("signal-selftest: the thread this test runs on ('%s') READ ITS OWN mask: 0x%08x -- %s", self_name, own,
+                    e != 0 ? "the read FAILED (no mask could be read here)"
+                           : (own ? "SIGNALS ARE BLOCKED on this thread; a self-directed send to it is left PENDING"
+                                  : "empty: nothing is blocked, so a self-directed send that does not run a handler is NOT a mask"));
+    }
+
     for (int i = 0; i < 4; i++) {
-        self_ok[i]  = probe_deliver_self(cand[i], &self_e[i], &self_ran[i]) == 0;
+        /* The caller's own mask BEFORE anything is applied, then an EXPLICIT unblock ON THIS THREAD, then the send: the
+         * before/after pair the review asked for, taken on the thread that owns the mask. */
+        self_mb[i] = 0; probe_own_mask(&self_mb[i]);
+        sigset_t us; sigemptyset(&us); sigaddset(&us, cand[i]);
+        errno = 0;
+        int ur = pthread_sigmask(SIG_UNBLOCK, &us, NULL);
+        self_unb[i] = ur ? (errno ? errno : ur) : 0;
+        self_ok[i]  = probe_deliver_self(cand[i], &self_e[i], &self_ran[i], NULL, &self_ma[i], &self_pd[i]) == 0;
         cross_ok[i] = probe_deliver_thread(cand[i], &ct[i], &cross_e[i]) == 0;
     }
 
-    /* One plain verdict line per signal per direction: the number, pthread_kill's return, RAN or DID NOT RUN, and whether
-     * the destination was self or another thread. The cross-thread line also carries the TARGET'S OWN mask report, so a
-     * mask failure is separated from a number/target/dispatcher failure. */
+    /* One measured line per signal per direction. Each carries the mask the OWNER of that thread read for itself, BEFORE
+     * and AFTER its explicit unblock, its own PENDING set after the bounded wait, pthread_kill's return, and whether the
+     * probe handler actually ran THERE. The pending set is what separates the two ways an accepted signal can vanish: a
+     * signal that is BLOCKED is left PENDING (the mask swallowed it), while one whose disposition was cleared or whose
+     * delivery was intercepted is neither blocked nor pending (the send returned 0 and DISCARDED it). */
     for (int i = 0; i < 4; i++) {
+        const char *self_why = self_ran[i] ? "it was DELIVERED, so this thread's mask did not swallow it"
+            : probe_bit(self_ma[i], cand[i]) ? "STILL BLOCKED after the unblock and STILL PENDING: the MASK is the cause"
+            : probe_bit(self_pd[i], cand[i]) ? "not blocked but LEFT PENDING: something other than the mask is holding it"
+            : "NOT blocked and NOT pending: the mask is NOT the cause -- a send that returns 0 and leaves nothing pending was DISCARDED, so look at the disposition or at a delivery intercepted outside the process";
         if (!self_ok[i])
             tl_log_line("signal-selftest: Darwin %-2d %-17s SELF-DIRECTED (%s): the host refused the probe handler: %s (%d)",
                         cand[i], cand_name[i], self_name, strerror(self_e[i]), self_e[i]);
         else
-            tl_log_line("signal-selftest: Darwin %-2d %-17s SELF-DIRECTED (%s): pthread_kill returned %s (%d); the probe handler %s",
-                        cand[i], cand_name[i], self_name, self_e[i] ? strerror(self_e[i]) : "0 = accepted", self_e[i],
-                        self_ran[i] ? "RAN" : "DID NOT RUN");
+            tl_log_line("signal-selftest: Darwin %-2d %-17s SELF-DIRECTED (%s): OWN mask BEFORE 0x%08x (Darwin %d %s); explicit "
+                        "SIG_UNBLOCK on this thread returned %d -> mask AFTER 0x%08x (Darwin %d %s); pthread_kill returned %s (%d); "
+                        "the probe handler %s -- %s",
+                        cand[i], cand_name[i], self_name, self_mb[i], cand[i],
+                        probe_bit(self_mb[i], cand[i]) ? "BLOCKED" : "clear", self_unb[i], self_ma[i], cand[i],
+                        probe_bit(self_ma[i], cand[i]) ? "STILL BLOCKED" : "clear",
+                        self_e[i] ? strerror(self_e[i]) : "0 = accepted", self_e[i],
+                        self_ran[i] ? "RAN" : "DID NOT RUN", self_why);
         if (!cross_ok[i])
             tl_log_line("signal-selftest: Darwin %-2d %-17s CROSS-THREAD: could not probe -- the host refused the install or "
                         "the helper thread would not start: %s (%d)",
                         cand[i], cand_name[i], cross_e[i] ? strerror(cross_e[i]) : "-", cross_e[i]);
         else {
-            uint32_t m = 0; memcpy(&m, &ct[i].mask_seen, sizeof(m));
-            tl_log_line("signal-selftest: Darwin %-2d %-17s CROSS-THREAD to '%s': the target unblocked it (SIG_UNBLOCK "
-                        "returned %d) and read back its OWN mask 0x%08x (Darwin %d %s); pthread_kill returned %s (%d); the probe "
-                        "handler %s on THAT thread",
-                        cand[i], cand_name[i], ct[i].name[0] ? ct[i].name : "?", ct[i].unblock_rc, m, cand[i],
-                        (m & (1u << (cand[i] - 1))) ? "STILL BLOCKED in it" : "clear in it",
+            const char *xwhy = ct[i].ran ? "it ran on THAT thread, so that thread can receive it"
+                : probe_bit(ct[i].mask_after, cand[i]) ? "the target is STILL BLOCKED in it after its own unblock: the MASK is the cause"
+                : probe_bit(ct[i].pend_after, cand[i]) ? "not blocked on the target but LEFT PENDING there: something other than the mask holds it"
+                : "NOT blocked and NOT pending on the target: the mask is NOT the cause, so the number or the delivery, not the mask, is the discriminator";
+            tl_log_line("signal-selftest: Darwin %-2d %-17s CROSS-THREAD to '%s': the target READ ITS OWN mask: BEFORE its unblock "
+                        "0x%08x (Darwin %d %s, i.e. what it was BORN with), SIG_UNBLOCK returned %d, AFTER 0x%08x (Darwin %d %s), its "
+                        "pending set after the wait 0x%08x; pthread_kill returned %s (%d); the probe handler %s on THAT thread -- %s",
+                        cand[i], cand_name[i], ct[i].name[0] ? ct[i].name : "?", ct[i].mask_before, cand[i],
+                        probe_bit(ct[i].mask_before, cand[i]) ? "BLOCKED" : "clear", ct[i].unblock_rc, ct[i].mask_after, cand[i],
+                        probe_bit(ct[i].mask_after, cand[i]) ? "STILL BLOCKED" : "clear", ct[i].pend_after,
                         cross_e[i] ? strerror(cross_e[i]) : "0 = accepted", cross_e[i],
-                        ct[i].ran ? "RAN" : "DID NOT RUN");
+                        ct[i].ran ? "RAN" : "DID NOT RUN", xwhy);
         }
     }
 
@@ -2623,6 +2730,33 @@ void tl_signal_selftest(void)
                     "its disposition was installed and the target unblocked it: this process can NOT complete a cross-thread "
                     "signal handshake AT ALL -- that is the fault to fix, and it makes the Darwin number and the target's mask "
                     "both beside the point", SIGEMT);
+    /* The mask-vs-mechanism verdict, from the CONTROL's own readings. The control (Darwin 7/SIGEMT) is a number no bionic
+     * signal claims, and its mask was read by the thread that owns it -- so this line is a measurement, never an inference.
+     * It separates the three ways an accepted, un-run signal can look: still blocked (the mask), clear but pending (held
+     * outside the mask), or clear and not pending (discarded: the disposition, not the mask). */
+    if (self_ok[0]) {
+        int blk_after = probe_bit(self_ma[0], SIGEMT);
+        if (self_ran[0])
+            tl_log_line("signal-selftest: VERDICT -- the control (Darwin %d/SIGEMT) RAN a SELF-DIRECTED handler on '%s': the calling "
+                        "thread's OWN mask was 0x%08x (Darwin %d %s) and the explicit unblock made it 0x%08x, so a self-directed "
+                        "delivery works here and a missing handler run is about the TARGET's mask, not this thread's",
+                        SIGEMT, self_name, self_mb[0], SIGEMT,
+                        probe_bit(self_mb[0], SIGEMT) ? "BLOCKED" : "clear", self_ma[0]);
+        else if (blk_after)
+            tl_log_line("signal-selftest: VERDICT -- the control (Darwin %d/SIGEMT) did NOT run and the calling thread's OWN mask STILL "
+                        "had Darwin %d BLOCKED AFTER an explicit SIG_UNBLOCK (0x%08x -> 0x%08x): the MASK is the cause of the missing "
+                        "handler, and a stop-the-world handshake cannot complete until that mask is cleared at the ROOT (the thread "
+                        "was born with it by inheritance from HOST code)", SIGEMT, SIGEMT, self_mb[0], self_ma[0]);
+        else if (probe_bit(self_pd[0], SIGEMT))
+            tl_log_line("signal-selftest: VERDICT -- the control (Darwin %d/SIGEMT) did NOT run, its mask is CLEAR and the signal is "
+                        "LEFT PENDING (0x%08x): something OTHER than this thread's mask is holding the delivery -- an exception port or "
+                        "a tracer intercepting it. That is not a mask and cannot be cleared by a mask call", SIGEMT, self_pd[0]);
+        else
+            tl_log_line("signal-selftest: VERDICT -- the control (Darwin %d/SIGEMT) did NOT run, its mask is CLEAR, and the signal is NOT "
+                        "pending (pending set 0x%08x): the send returned 0 and DISCARDED it. The mask is EXONERATED on this thread -- the "
+                        "fault is the disposition or the delivery, not a blocked signal; look at the Darwin number, the disposition, and "
+                        "anything outside the process that intercepts signals", SIGEMT, self_pd[0]);
+    }
     if (cross_ok[1])
         tl_log_line("signal-selftest: VERDICT -- Darwin %d/SIGINFO (what bionic SIGPWR 30 maps to) %s the probe handler on the "
                     "target: Darwin SIGINFO IS %s by a thread-directed pthread_kill here",
@@ -2734,6 +2868,29 @@ static int b_sigaction(int sig, const guest_sigaction *act, guest_sigaction *old
     /* A host that REFUSED the install must not be recorded as "the handler is installed": the ledger would then claim a
      * delivery that can never run. Said once per signal, with the host's own errno. */
     if (r != 0) tl_signal_note_rearm(sig, d, 1, hn ? hn : EINVAL, 2);
+    /* ROOT FIX -- the mask on the thread that just armed this handler. A signal can be blocked in a thread's mask without
+     * the guest ever having blocked it: a thread the LAYER started that runs guest code is born with the HOST process's
+     * mask by inheritance (tl_guest_mask_default clears it at the layer's own guest-entry points; this closes any thread
+     * that does not call it -- an engine's main thread started by the layer, UnityMain among them). bionic's contract is
+     * that a handler the thread does not itself block is delivered, so where the guest arms a REAL handler for `sig` on
+     * such a thread, that Darwin number is brought in line with the guest's expectation. Otherwise every thread-directed
+     * delivery of it stays PENDING on that thread and the handler never runs -- which is a collector's stop-the-world
+     * handshake hanging forever. Guest threads are left ALONE: a thread a guest created has the guest's own mask, and this
+     * acts only on a thread the LAYER started (tl_thread_is_guest()). It is the ARMING path -- a handful of calls per
+     * process, never per frame, never per send -- and it touches no fault signal (those returned above) and nothing the
+     * guest asked to ignore. */
+    if (r == 0 && act->handler && act->handler != (void *)1 && !tl_thread_is_guest()) {
+        sigset_t cur;
+        if (pthread_sigmask(SIG_SETMASK, NULL, &cur) == 0) {
+            uint32_t m; memcpy(&m, &cur, sizeof(m));
+            if (m & (1u << (d - 1))) {
+                sigset_t un; sigemptyset(&un); sigaddset(&un, d);
+                errno = 0;
+                int ur = pthread_sigmask(SIG_UNBLOCK, &un, NULL);
+                tl_signal_note_mask_unblocked(sig, d, ur ? (errno ? errno : ur) : 0);
+            }
+        }
+    }
     return r;
 }
 static void *b_signal(int sig, void *handler)

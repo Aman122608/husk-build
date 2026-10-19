@@ -134,6 +134,20 @@ void tl_signal_note_rearm(int guest_sig, int darwin_sig, int refused_install, in
  * inherited at thread creation -- the only way a blocked bit reaches a guest thread, and the case a send/run ledger
  * cannot see from the send side). Said once per signal; the caller then clears the mask. */
 void tl_signal_note_arrived_blocked(int guest_sig, int darwin_sig);
+/* The mask a thread runs guest code with, MEASURED at the handoff: tl_guest_mask_default reads the calling thread's OWN
+ * mask (the only thread a process can read) and reports it unconditionally, once per thread and capped -- the earlier
+ * form named a bit only when the guest had ALREADY armed that signal, which is never true at a thread's entry, so it
+ * never fired and the inherited mask stayed invisible. These keep the run's totals for the report: how many threads
+ * reached guest code, how many were BORN with a signal blocked (a mask from HOST code, inherited at thread creation),
+ * and whether any clear did not take. 0 dirty threads is the measured form of "no guest thread ever inherited a blocked
+ * signal" -- what the old send/run ledger could only guess at. One atomic add per thread entry. */
+void tl_signal_note_mask_entry(unsigned long darwin_mask);
+void tl_signal_note_mask_clear_failed(int pthread_sigmask_rc, unsigned long mask_left);
+/* The calling thread's mask for one Darwin number was brought in line with the guest's expectation at the moment the
+ * guest armed a real handler for it on a thread the LAYER started (not one a guest created): a layer thread that runs
+ * guest code is born with the HOST process's mask by inheritance, and the guest's handler would then be armed on a
+ * thread whose mask swallows it. One line per signal. */
+void tl_signal_note_mask_unblocked(int guest_sig, int darwin_sig, int rc);
 void tl_signal_report(const char *tag);
 
 /* The one-shot signal self-test (husk-tl-bionic-io.c): installs its OWN probe handler on a Darwin signal the layer owns,
@@ -179,6 +193,11 @@ int tl_bionic_sigmask(int how, const uint64_t *set, uint64_t *old);
  * to guest code (each guest thread's entry, and each layer thread that runs the guest). One pthread_sigmask per thread
  * ENTRY, never per call or per frame; it also records in the ledger, once per signal, any blocked bit it removed. */
 void tl_guest_mask_default(void);
+/* Whether the CALLING thread is one the layer started for a guest (a guest thread it honours the guest's mask
+ * inheritance for, g_my_slot >= 0) rather than a thread the LAYER itself started. A layer thread that runs guest code
+ * carries HOST code's mask -- the guest never set it -- and is the one case a handler can be armed on a thread whose
+ * mask swallows its signal. */
+int tl_thread_is_guest(void);
 
 /* The layer's pthread handle for a live guest thread named by its Darwin thread id (what a raw tkill/tgkill carries), or
  * NULL. Reads the layer's own live-thread census; never invents a handle, never suspends or joins anyone. */

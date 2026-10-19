@@ -3,6 +3,23 @@
     {
       "sha": "next",
       "date": "2026-10-19",
+      "title": "Reading the signal switch on each thread, and switching it back on at the root",
+      "goal": "The last build's self-test came back decisive: the phone accepted the test signal but never ran the handler -- for a plain control signal, for the collector's signal, and even when a thread signals itself. This build measures WHY instead of guessing, and removes the one cause that fits: a signal switched off in a thread's mask.",
+      "details": [
+        "What the last self-test proved: the phone's 'send a signal to this thread' call returned success and the handler did not run -- for three different signals, including one no Android signal uses, and including a signal a thread sent to ITSELF. A single signal number being special cannot explain that. A single thread being special cannot explain it either. Something process-wide was swallowing the delivery.",
+        "The reading that fits, and the one this build finally MEASURES instead of inferring: a signal that is switched off in the receiving thread's mask is not thrown away -- it is parked as pending and never delivered, so the send still reports success and the handler never runs. Nothing on the phone can read ANOTHER thread's mask, which is why this was a guess for so long. But every thread can read its OWN, so that is what this build does.",
+        "New, and it is the point of the build: a thread reads its own signal settings the moment it is about to run the app's code, and writes them to the log -- once per thread, capped, so it cannot flood. '0x00000000 (empty)' means the thread has the settings the app expects; anything else is a leftover from Husk's own process that rode in by inheritance and must not be there.",
+        "New: the startup self-test now reports its own thread's settings BEFORE anything is sent, then switches the test signal back on explicitly, then reports the settings AGAIN -- so the next log contains the before-and-after pair, taken by the thread that owns the mask, not inferred from a count.",
+        "New: it also reports whether the signal was left PARKED (accepted but never delivered) after the send. That one fact separates the two ways an accepted signal can vanish: switched-off-and-parked means the mask is the cause; not-parked means the send returned success and the signal was DISCARDED, so the mask is exonerated and the fault is elsewhere (the handler slot, or something outside Husk intercepting it).",
+        "The fix, at the root: a thread the LAYER starts itself (rather than one the app creates) is born with HUSK's process signal settings by inheritance, never the app's. Husk already resets those settings at the points where it hands off to the app's code; this build also resets the specific switch whenever the app installs its handler for that signal on a thread the layer started. So a thread that runs the app's code runs with the settings the app expects, and a stop-the-world pause can actually be answered.",
+        "New: each thread's own mask report is also counted, and the freeze/close report prints the totals -- how many threads reported, how many had a leftover signal switched off, and whether any attempt to switch it off failed. A count of zero for the leftovers is the measured form of 'no thread ran app code with a switched-off signal', which is what the old log could only call a GUESS.",
+        "What this build does NOT do: it does not switch anything on just before each send (that would be a workaround, not a fix), it does not stop or suspend any thread, and it adds nothing to the per-frame path -- the mask is read once per thread at entry, and each signal's switch is touched once when the app installs its handler.",
+        "Partly settled, and worth saying: the two-copies-of-the-layer hazard is disproven from the running process -- the self-test and the report read the same ledger address, so there is one owner. Still open: IF the next log shows a thread with a leftover switch AND the send still runs no handler, the next thing to suspect is delivery intercepted outside Husk (a debugger or a crash-time exception port), which is not a mask and cannot be fixed with a mask call -- the new verdict line says which of the two it is."
+      ]
+    },
+    {
+      "sha": "ae9add4",
+      "date": "2026-10-19",
       "title": "Testing whether the phone can deliver the signal at all",
       "goal": "Last build tried to fix the 'the thread is blocking it' reading and changed nothing. This build stops guessing and measures -- including fixing the log that told me the wrong thing.",
       "details": [

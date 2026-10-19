@@ -312,6 +312,37 @@ void tl_signal_note_arrived_blocked(int gsig, int dsig)
                 "hangs on. The layer CLEARED the mask before guest code ran", me, dsig, gsig);
 }
 
+/* --- the mask a thread runs guest code with, as a MEASUREMENT (see tl_signal_note_mask_entry in the header) ---------
+ * tl_guest_mask_default() reads the calling thread's OWN mask at every handoff to guest code and reports it, once per
+ * thread and capped. These counters are the run's totals, printed by the report: a run with dirty_threads == 0 is the
+ * measured form of "no guest thread ever ran guest code with a blocked signal", which the send/run ledger could only
+ * guess at ("SENDS > RUNS with every handler armed ... at least one thread has the Darwin signal BLOCKED" was a
+ * hypothesis, because no Darwin call reads another thread's mask; the thread reads its own here). */
+static atomic_ulong g_mask_threads_seen, g_mask_threads_dirty, g_mask_clear_failed, g_mask_unblocked;
+void tl_signal_note_mask_entry(unsigned long darwin_mask)
+{
+    atomic_fetch_add(&g_mask_threads_seen, 1);
+    if (darwin_mask) atomic_fetch_add(&g_mask_threads_dirty, 1);
+}
+void tl_signal_note_mask_clear_failed(int rc, unsigned long left)
+{
+    unsigned long n = atomic_fetch_add(&g_mask_clear_failed, 1);
+    if (n >= 2) return;
+    tl_log_line("signal-mask: clearing the mask did NOT take on this thread (pthread_sigmask returned %d and the mask still reads "
+                "0x%08lx) -- a signal blocked on a thread that runs guest code is a stop-the-world handshake that never completes, so "
+                "this has to be fixed, not measured again", rc, left);
+}
+void tl_signal_note_mask_unblocked(int gsig, int dsig, int rc)
+{
+    unsigned long n = atomic_fetch_add(&g_mask_unblocked, 1);
+    if (n >= 4) return;
+    char me[32]; sig_thread_name(me, sizeof(me));
+    tl_log_line("signal-mask: '%s' is a LAYER thread (not one a guest created), so the mask it was born with is HOST code's: the guest "
+                "armed a handler for signal %d (Darwin %d) on it, and Darwin %d was BLOCKED there, which would have left every delivery "
+                "of it PENDING with no handler ever running. It was unblocked on this thread now (pthread_sigmask returned %d) so the "
+                "thread runs guest code with the mask the guest expects", me, gsig, dsig, dsig, rc);
+}
+
 void tl_signal_report(const char *tag)
 {
     char buf[420];
@@ -357,6 +388,24 @@ void tl_signal_report(const char *tag)
                     "thread-directed signal to such a thread stays PENDING and its handler never runs, which is what a stop-the-world "
                     "handshake hangs on; the layer CLEARED the mask before guest code ran (the signal[N] lines above name it)",
                     tag, total_blocked);
+    /* The mask MEASURED, not inferred: every thread that reached guest code read its OWN mask at the handoff (the only
+     * thread whose mask a process can read), so the run can say how many were born with a signal blocked -- the exact
+     * fact the send/run ledger could only hypothesise ("SENDS > RUNS ... consistent with the target's mask BLOCKING it").
+     * dirty_threads == 0 exonerates the mask as the cause of a delivery that never ran. */
+    {
+        unsigned long mseen = atomic_load(&g_mask_threads_seen);
+        unsigned long mdirty = atomic_load(&g_mask_threads_dirty);
+        unsigned long mfail = atomic_load(&g_mask_clear_failed);
+        unsigned long munb = atomic_load(&g_mask_unblocked);
+        if (mseen)
+            tl_log_line("%s: signal-mask: %lu thread(s) reached guest code and READ THEIR OWN mask there; %lu were BORN with a signal "
+                        "blocked (a mask from HOST code, inherited at thread creation -- no guest and no layer code blocks it), and the "
+                        "layer CLEARED it before guest code ran; %lu clear(s) did not take; %lu layer-thread arm(s) had the armed number "
+                        "unblocked. A dirty count of 0 is the MEASURED form of \"no guest thread ran guest code with a blocked signal\", so "
+                        "if a send still ran no handler the mask is NOT the reason -- look at the number, the disposition, or a delivery "
+                        "blocked elsewhere (a debugger/exception port, which is not a mask at all)",
+                        tag, mseen, mdirty, mfail, munb);
+    }
     /* The verdict the ledger exists for: a send whose handler did not run is a thread that never answered -- and, now that
      * the outcome of each send is recorded, the verdict can say WHICH of the two it is instead of only guessing. */
     const char *verdict;
