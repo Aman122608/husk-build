@@ -3,15 +3,26 @@
     {
       "sha": "next",
       "date": "2026-10-18",
+      "title": "Naming the Java loop",
+      "goal": "The freeze report can now name the app's own Java method it is sitting in, and say whether that thread is spinning or waiting.",
+      "details": [
+        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
+        "Best evidence so far: the app is WAITING for something that never arrives, rather than being stuck. The render thread and the engine's main thread are both asleep, and Android's main thread is idle waiting for a message.",
+        "New: the freeze report prints the app's own Java call stack -- class and method -- for the render thread, the engine thread and the app's main thread.",
+        "New: it samples those threads twice, so a spin can be told apart from a wait.",
+        "Fixed: the engine's main thread was being skipped in that report because of how it was looked up.",
+        "Working in this build: the note you are reading now, and the fix that stops a closed game showing its own screen after you open another one."
+      ]
+    },
+    {
+      "sha": "88668be",
+      "date": "2026-10-18",
       "title": "The note finally shows, and the freeze gets a stack",
       "goal": "Each build's note now actually appears when you open a new one, and the freeze report can name the guest function that is looping.",
       "details": [
-        "Fixed: a new build's note did NOT appear even though the app knew about it. It was being opened as a pop-up the way iOS silently drops during launch; it is now part of the screen instead, so it shows.",
-        "Settings > This Build still shows the note for the build you are running, any time you want to re-read it.",
-        "Still open: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Workaround unchanged -- open Lewdest House first, close it, then Robot Girlfriend, and it runs to 700+ frames.",
-        "New: the freeze report now walks the app's own call stack, so the next log names the guest function that keeps running in a loop instead of only showing that a thread is asleep.",
-        "Settled this round: the app DOES get a working OpenGL ES 3.0 context and a renderer. The refused ES 3.2 / 3.1 requests are not the cause, so nothing was changed for them.",
-        "Also fixed earlier in this build's line: a closed game can no longer keep showing its screen and swallowing your taps after you open another one."
+        "Fixed: a new build's note did NOT appear even though the app knew about it. It was being opened as a pop-up the way iOS silently drops during launch; it is now part of the screen instead.",
+        "Settings > This Build still shows the note for the build you are running, any time.",
+        "New: the freeze report walks the app's own call stack, so the log names the function that keeps running instead of only showing that a thread is asleep."
       ]
     },
     {
@@ -21,20 +32,17 @@
       "goal": "A closed app can no longer put its frames on the screen or swallow your taps, and the freeze report now names the threads that used to be invisible.",
       "details": [
         "Fixed: after closing one game and opening another, the screen could keep showing the CLOSED game's menu with buttons that did nothing.",
-        "If you saw a stale picture for a moment, that part is not ours to erase -- the layer can stop a dead app drawing, but it cannot remove a frame iOS has already put on the glass.",
-        "Still open, and here is the workaround: Robot Girlfriend freezes at 8 frames when it is the FIRST app in a fresh launch. Open Lewdest House first, close it, then Robot Girlfriend -- the same build runs it to 700+ frames that way.",
-        "The freeze report now lists EVERY thread in the process, including the ones Husk starts itself, with the NAME of the call each thread is blocked in instead of a bare address."
+        "The layer can stop a dead app drawing, but it cannot remove a frame iOS has already put on the glass.",
+        "The freeze report now lists EVERY thread in the process, including the ones Husk starts itself, with the NAME of the call each thread is blocked in."
       ]
     },
     {
       "sha": "161a83d",
       "date": "2026-10-18",
       "title": "Seeing the freeze — and yes, updates can be near one-tap",
-      "goal": "Same fixes as before, plus the instruments that can finally see WHERE the black screen comes from — and the answer to whether Husk can update itself.",
+      "goal": "Instruments that can see WHERE the black screen comes from — and the answer to whether Husk can update itself.",
       "details": [
-        "The JIT region and the Java failure are fixed in this build too -- it gets 8 frames where it used to get none, and Lewdest House now runs properly.",
-        "New: when a title stalls, the log lists the asset reads from just before the freeze, so the last thing it touched is visible.",
-        "You asked whether the app can push its own updates: iOS does NOT let an app install an update for itself. There is no such API, and nothing inside Husk can change that.",
+        "You asked whether the app can push its own updates: iOS does NOT let an app install an update for itself. There is no such API.",
         "What IS possible: Husk can notice a new build and download it itself, then hand it to an installer, which needs one tap from you. AltStore and SideStore can do the whole thing automatically from the source file the project already ships."
       ]
     },
@@ -42,11 +50,10 @@
       "sha": "9e86ec9",
       "date": "2026-10-18",
       "title": "The region fix, and a note on every build",
-      "goal": "The translation layer can adopt the JIT region the app has already secured, so guest libraries can load -- and every build now opens with a note like this one saying what it is for.",
+      "goal": "The translation layer can adopt the JIT region the app has already secured, so guest libraries can load -- and every build opens with a note saying what it is for.",
       "details": [
-        "This is the build that should finally get a Unity title past 0 frames.",
-        "In the log, look for 'jni: libjavacore.so JNI_OnLoad' and for the failed to initialize Java/lang/System message to be gone.",
-        "From now on every build opens with a short note like this one, and it is re-readable under Settings, This Build."
+        "This is the build that got Lewdest House running properly.",
+        "In the log, look for 'jni: libjavacore.so JNI_OnLoad' and for the failed to initialize Java/lang/System message to be gone."
       ]
     },
     {
@@ -55,8 +62,7 @@
       "title": "The engine can use the JIT region",
       "goal": "The translation layer now reaches the JIT region directly instead of looking it up by name, so it can finally open its arena.",
       "details": [
-        "Guest libraries can load for the first time, which is what makes java.lang.System initialise.",
-        "If the region still cannot be reached, the log now names that failure instead of quietly reporting no arena."
+        "Guest libraries can load for the first time, which is what makes java.lang.System initialise."
       ]
     },
     {
@@ -66,7 +72,6 @@
       "goal": "The hand-off to StikDebug no longer depends on a permission check that LiveContainer breaks.",
       "details": [
         "Opening stikjit:// is now attempted for real, and iOS own answer is what is reported.",
-        "A refused scheme query is treated as \"cannot tell\" rather than \"not installed\".",
         "The attach request goes to StikDebug when running inside LiveContainer, where the built-in helper cannot work."
       ]
     },
@@ -76,8 +81,7 @@
       "title": "The JIT latch is gone",
       "goal": "One failed JIT probe at launch no longer uses up this launch only chance at a JIT region.",
       "details": [
-        "A failed probe is now remembered as \"nothing answered yet\" instead of \"give up\", so the claim is retried up to 3 times and each attempt names itself in the log.",
-        "A debugger that actively refuses is still never asked twice."
+        "A failed probe is remembered as \"nothing answered yet\" instead of \"give up\", so the claim is retried up to 3 times."
       ]
     },
     {
@@ -86,8 +90,7 @@
       "title": "Downloads tile is back",
       "goal": "The 3.0 port is done, and the way to download apps from your computer is visible again.",
       "details": [
-        "Home shows an always-there Downloads card with a live status line, reading \"Up to date\" when nothing is happening.",
-        "A second one sits on the Library screen.",
+        "Home shows an always-there Downloads card with a live status line.",
         "The old emulator engine (QEMU) was removed, so the app is about 8% smaller."
       ]
     }
