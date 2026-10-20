@@ -2799,6 +2799,17 @@ static volatile sig_atomic_t g_mach_test_ran;
 static volatile sig_atomic_t g_mach_dispatch_ran;   /* did the redirected thread actually run mach_sig_dispatch? */
 static volatile int g_mach_test_done;
 
+/* Which target threads are CURRENTLY inside mach_sig_dispatch (parked in the guest handler it ran). Measured: Boehm's
+ * suspend handler parks the thread by design (it waits for the world to restart), so the thread stays inside the dispatch.
+ * A second signal to that same thread (the collector's restart) MUST NOT re-redirect it -- a nested redirect overwrites the
+ * park frame and wedges the thread at mach_sig_dispatch+0, which is exactly the freeze. It is woken instead. */
+#define MACH_PARK_MAX 64
+static pthread_t g_mach_park[MACH_PARK_MAX];
+static volatile int g_mach_delivered_direct, g_mach_woke;
+static int mach_park_has(pthread_t t) { for (int i = 0; i < MACH_PARK_MAX; i++) if (g_mach_park[i] == t) return 1; return 0; }
+static void mach_park_add(pthread_t t) { for (int i = 0; i < MACH_PARK_MAX; i++) if (!g_mach_park[i]) { g_mach_park[i] = t; return; } }
+static void mach_park_del(pthread_t t) { for (int i = 0; i < MACH_PARK_MAX; i++) if (g_mach_park[i] == t) g_mach_park[i] = NULL; }
+
 static void mach_test_handler(int gsig, siginfo_t *info, void *uc)
 { (void)gsig; (void)info; (void)uc; g_mach_test_ran++; }
 
@@ -2836,6 +2847,7 @@ static void mach_sig_dispatch(int gsig, siginfo_t *info, ucontext_t *uc)
     mcontext_t mc = uc->uc_mcontext;
     g_mach_dispatch_ran++;
     host_signal_entry(tl_signal_to_darwin(gsig), info, uc);
+    mach_park_del(pthread_self());   /* the handler returned: this thread is no longer parked inside a dispatch */
     uintptr_t pc = (uintptr_t)arm_thread_state64_get_pc(mc->__ss);
     mach_sig_restore(&mc->__ss, pc);
     __builtin_unreachable();
@@ -2846,6 +2858,18 @@ static int mach_sig_deliver(pthread_t target, int gsig)
 {
     mach_port_t tp = pthread_mach_thread_np(target);
     if (!tp) return -1;
+    /* The target is already inside a dispatch (parked in the guest's suspend handler -- Boehm parks by design). Do NOT
+     * re-redirect it: a nested redirect overwrites the park frame and wedges it at mach_sig_dispatch+0. Wake the park
+     * instead (abort the syscall it is blocked in, then resume it), so its handler's wait loop can re-check and return. */
+    if (mach_park_has(target)) {
+        if (thread_suspend(tp) != KERN_SUCCESS) return -1;
+        thread_abort_safely(tp);
+        thread_resume(tp);
+        if (g_mach_woke++ == 0)
+            tl_log_line("signal-mach: a target is already parked in a dispatch (the guest suspend handler) -- waking that park "
+                        "instead of re-redirecting it (a nested redirect is what wedged it at mach_sig_dispatch+0)");
+        return 1;
+    }
     if (thread_suspend(tp) != KERN_SUCCESS) return -1;
     /* A thread parked in an interruptible syscall (nanosleep, futex, poll -- where a guest thread waits) keeps its PC in
      * the kernel; a thread_set_state PC change is then lost when the syscall returns. thread_abort_safely brings it back to
@@ -2873,10 +2897,12 @@ static int mach_sig_deliver(pthread_t target, int gsig)
     nst.__x[0] = (uint64_t)gsig;
     nst.__x[1] = (uint64_t)(uintptr_t)info;
     nst.__x[2] = (uint64_t)(uintptr_t)uc;
+    mach_park_add(target);                     /* it will be inside the dispatch until its handler returns (or parks) */
     if (thread_set_state(tp, ARM_THREAD_STATE64, (thread_state_t)&nst, ARM_THREAD_STATE64_COUNT) != KERN_SUCCESS) {
-        thread_resume(tp); return -1;
+        mach_park_del(target); thread_resume(tp); return -1;
     }
     thread_resume(tp);
+    g_mach_delivered_direct++;
     return 0;
 }
 

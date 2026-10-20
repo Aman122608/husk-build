@@ -708,8 +708,9 @@ static int b_kill(pthread_t t, int sig)
      * hangs a signal-based stop-the-world (Boehm's). Fall back to a real send when Mach is unavailable or the self-test
      * did not pass. SEND FIRST, then record what the send DID (the ledger needs the outcome either way). */
     int host_errno = 0, r = 0;
-    if (tl_signal_deliver(t, sig) == 0) {
-        host_errno = 0;                          /* delivered by Mach thread control; the target runs the handler there */
+    int md = tl_signal_deliver(t, sig);          /* 0 = redirected by Mach, 1 = woke a thread parked in a dispatch, -1 = fall back */
+    if (md >= 0) {
+        host_errno = 0;                          /* handled by Mach thread control (redirect or park wake) */
         r = 0;
     } else {
         errno = 0;
