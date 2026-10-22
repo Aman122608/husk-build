@@ -2933,6 +2933,25 @@ static int mach_sig_deliver(pthread_t target, int gsig)
         mach_park_del(target); thread_resume(tp); return -1;
     }
     thread_resume(tp);
+    /* Suspend counts ADD. If anything else had the target suspended, our one resume leaves it suspended, and a thread
+     * that is still suspended never executes the PC we just wrote -- measured: the redirect was in place at
+     * mach_sig_dispatch+0 and ran zero instructions for the whole run. Drain the count and say so, so "written but never
+     * ran" can finally be told apart from "ran and did nothing". */
+    {
+        int left = -1;
+        for (int i = 0; i < 4; i++) {
+            struct thread_basic_info tbi;
+            mach_msg_type_number_t tic = THREAD_BASIC_INFO_COUNT;
+            memset(&tbi, 0, sizeof(tbi));
+            if (thread_info(tp, THREAD_BASIC_INFO, (thread_info_t)&tbi, &tic) != KERN_SUCCESS) { left = -1; break; }
+            left = tbi.suspend_count;
+            if (left <= 0) break;
+            thread_resume(tp);
+        }
+        if (left > 0 && g_mach_rc_logged++ < 8)
+            tl_log_line("signal-mach: target still SUSPENDED after resume (suspend_count=%d, nested=%d) -- suspend counts add, and a suspended thread never runs the redirect",
+                        left, nested);
+    }
     g_mach_delivered_direct++;
     return 0;
 }
