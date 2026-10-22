@@ -2805,7 +2805,7 @@ static volatile int g_mach_test_done;
  * park frame and wedges the thread at mach_sig_dispatch+0, which is exactly the freeze. It is woken instead. */
 #define MACH_PARK_MAX 64
 static pthread_t g_mach_park[MACH_PARK_MAX];
-static volatile int g_mach_delivered_direct, g_mach_woke;
+static volatile int g_mach_delivered_direct, g_mach_woke, g_mach_rc_logged;
 static int mach_park_has(pthread_t t) { for (int i = 0; i < MACH_PARK_MAX; i++) if (g_mach_park[i] == t) return 1; return 0; }
 static void mach_park_add(pthread_t t) { for (int i = 0; i < MACH_PARK_MAX; i++) if (!g_mach_park[i]) { g_mach_park[i] = t; return; } }
 static void mach_park_del(pthread_t t) { for (int i = 0; i < MACH_PARK_MAX; i++) if (g_mach_park[i] == t) g_mach_park[i] = NULL; }
@@ -2864,18 +2864,29 @@ static int mach_sig_deliver(pthread_t target, int gsig)
      * restarted. So deliver nested -- but refuse the one redirect that provably loops: a thread already sitting ON the
      * dispatcher's entry (the old mach_sig_dispatch+0 wedge). */
     int nested = mach_park_has(target);
-    if (thread_suspend(tp) != KERN_SUCCESS) return -1;
+    kern_return_t kr_sus = thread_suspend(tp);
+    if (kr_sus != KERN_SUCCESS) {
+        if (g_mach_rc_logged++ < 4)
+            tl_log_line("signal-mach: delivery FAILED at thread_suspend (rc=%d, nested=%d) -- nothing was redirected, falling back",
+                        (int)kr_sus, nested);
+        return -1;
+    }
     /* A thread parked in an interruptible syscall (nanosleep, futex, poll -- where a guest thread waits) keeps its PC in
      * the kernel; a thread_set_state PC change is then lost when the syscall returns. thread_abort_safely brings it back to
      * a safe point in user space first (KERN_FAILURE simply means it was not in a syscall, so nothing to abort). */
     thread_abort_safely(tp);
     struct __darwin_arm_thread_state64 st;
     mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
-    if (thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt) != KERN_SUCCESS) {
+    kern_return_t kr_get = thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt);
+    if (kr_get != KERN_SUCCESS) {
+        if (g_mach_rc_logged++ < 4)
+            tl_log_line("signal-mach: delivery FAILED at thread_get_state (rc=%d, nested=%d, cnt=%u) -- falling back",
+                        (int)kr_get, nested, (unsigned)cnt);
         thread_resume(tp); return -1;
     }
+    uintptr_t cur_pc = (uintptr_t)arm_thread_state64_get_pc(st);
     if (nested) {
-        uintptr_t cur = (uintptr_t)arm_thread_state64_get_pc(st);
+        uintptr_t cur = cur_pc;
         uintptr_t disp = (uintptr_t)(void (*)(void))mach_sig_dispatch;
         if (g_mach_woke++ == 0)
             tl_log_line("signal-mach: delivering NESTED to a target parked in a dispatch (a wake alone never ran the handler: "
@@ -2903,7 +2914,12 @@ static int mach_sig_deliver(pthread_t target, int gsig)
     nst.__x[1] = (uint64_t)(uintptr_t)info;
     nst.__x[2] = (uint64_t)(uintptr_t)uc;
     mach_park_add(target);                     /* it will be inside the dispatch until its handler returns (or parks) */
-    if (thread_set_state(tp, ARM_THREAD_STATE64, (thread_state_t)&nst, ARM_THREAD_STATE64_COUNT) != KERN_SUCCESS) {
+    kern_return_t kr_set = thread_set_state(tp, ARM_THREAD_STATE64, (thread_state_t)&nst, ARM_THREAD_STATE64_COUNT);
+    if (kr_set != KERN_SUCCESS) {
+        if (g_mach_rc_logged++ < 8)
+            tl_log_line("signal-mach: delivery FAILED at thread_set_state (rc=%d, nested=%d, was_pc=0x%llx, disp=0x%llx) -- the phone refused the redirect",
+                        (int)kr_set, nested, (unsigned long long)cur_pc,
+                        (unsigned long long)(uintptr_t)(void (*)(void))mach_sig_dispatch);
         mach_park_del(target); thread_resume(tp); return -1;
     }
     thread_resume(tp);
