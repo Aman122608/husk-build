@@ -2858,18 +2858,12 @@ static int mach_sig_deliver(pthread_t target, int gsig)
 {
     mach_port_t tp = pthread_mach_thread_np(target);
     if (!tp) return -1;
-    /* The target is already inside a dispatch (parked in the guest's suspend handler -- Boehm parks by design). Do NOT
-     * re-redirect it: a nested redirect overwrites the park frame and wedges it at mach_sig_dispatch+0. Wake the park
-     * instead (abort the syscall it is blocked in, then resume it), so its handler's wait loop can re-check and return. */
-    if (mach_park_has(target)) {
-        if (thread_suspend(tp) != KERN_SUCCESS) return -1;
-        thread_abort_safely(tp);
-        thread_resume(tp);
-        if (g_mach_woke++ == 0)
-            tl_log_line("signal-mach: a target is already parked in a dispatch (the guest suspend handler) -- waking that park "
-                        "instead of re-redirecting it (a nested redirect is what wedged it at mach_sig_dispatch+0)");
-        return 1;
-    }
+    /* Boehm's suspend handler parks in sigsuspend by design, so a target may already be inside a dispatch. A WAKE alone is
+     * not enough: the guest installed a handler for the restart signal, and a real kernel delivers it NESTED on this
+     * thread. Measured on device (d259bb2): signal 24 sent 2, handler ran 0, target still in __sigsuspend, the world never
+     * restarted. So deliver nested -- but refuse the one redirect that provably loops: a thread already sitting ON the
+     * dispatcher's entry (the old mach_sig_dispatch+0 wedge). */
+    int nested = mach_park_has(target);
     if (thread_suspend(tp) != KERN_SUCCESS) return -1;
     /* A thread parked in an interruptible syscall (nanosleep, futex, poll -- where a guest thread waits) keeps its PC in
      * the kernel; a thread_set_state PC change is then lost when the syscall returns. thread_abort_safely brings it back to
@@ -2879,6 +2873,17 @@ static int mach_sig_deliver(pthread_t target, int gsig)
     mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
     if (thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt) != KERN_SUCCESS) {
         thread_resume(tp); return -1;
+    }
+    if (nested) {
+        uintptr_t cur = (uintptr_t)arm_thread_state64_get_pc(st);
+        uintptr_t disp = (uintptr_t)(void (*)(void))mach_sig_dispatch;
+        if (g_mach_woke++ == 0)
+            tl_log_line("signal-mach: delivering NESTED to a target parked in a dispatch (a wake alone never ran the handler: "
+                        "measured sent 2, ran 0) -- the restart handler must run on the parked thread");
+        if (cur == disp) {   /* already on the dispatcher's entry: one more redirect loops at +0 forever */
+            thread_resume(tp);
+            return 1;
+        }
     }
     /* Carve ucontext + siginfo + mcontext on the target's OWN stack, below its SP (16-byte aligned), so the guest handler
      * sees the target's real stack pointer and mach_sig_restore returns it there. The dispatch runs from base up into this. */
