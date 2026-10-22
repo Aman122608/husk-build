@@ -2874,7 +2874,17 @@ static int mach_sig_deliver(pthread_t target, int gsig)
     /* A thread parked in an interruptible syscall (nanosleep, futex, poll -- where a guest thread waits) keeps its PC in
      * the kernel; a thread_set_state PC change is then lost when the syscall returns. thread_abort_safely brings it back to
      * a safe point in user space first (KERN_FAILURE simply means it was not in a syscall, so nothing to abort). */
-    thread_abort_safely(tp);
+    kern_return_t kr_ab = thread_abort_safely(tp);
+    if (kr_ab != KERN_SUCCESS) {
+        /* A thread parked inside a signal handler's sigsuspend is not always abortable by the "safe" call, and until its
+         * syscall returns it will never execute a redirected PC (measured: the redirect was written, the target stayed at
+         * mach_sig_dispatch+0 forever). Try the hard abort and say which one worked. */
+        kern_return_t kr_hard = thread_abort(tp);
+        if (g_mach_rc_logged++ < 4)
+            tl_log_line("signal-mach: thread_abort_safely rc=%d, thread_abort rc=%d (nested=%d) -- the parked thread's syscall %s",
+                        (int)kr_ab, (int)kr_hard, nested,
+                        kr_hard == KERN_SUCCESS ? "was aborted, the redirect can run" : "would not abort, the redirect cannot run");
+    }
     struct __darwin_arm_thread_state64 st;
     mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
     kern_return_t kr_get = thread_get_state(tp, ARM_THREAD_STATE64, (thread_state_t)&st, &cnt);

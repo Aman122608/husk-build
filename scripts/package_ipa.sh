@@ -95,6 +95,52 @@ if [ -f "$APP_PLIST" ]; then
     plutil -replace HuskBuildCommit -string "$COMMIT" "$APP_PLIST"
     plutil -replace HuskBuildDate -string "$(date -u '+%Y-%m-%d %H:%M UTC')" "$APP_PLIST"
     echo "==> stamped build $COMMIT"
+
+    # The "what this build is for" note is keyed by the commit, and a note for build N cannot be written before N's sha
+    # exists -- so a CI build never matched and the app fell back to the newest hand-written entry, showing the SAME stale
+    # note on every install. Write this build's own entry here, from the commit itself, so the popup always describes the
+    # build that was actually installed.
+    NOTE_SHA="${COMMIT%%-dirty}"
+    if command -v python3 >/dev/null 2>&1; then
+        NOTE_TITLE="$(git -C "$HUSK_ROOT" log -1 --format=%s 2>/dev/null || echo 'untitled build')"
+        NOTE_BODY="$(git -C "$HUSK_ROOT" log -1 --format=%b 2>/dev/null || true)"
+        NOTE_TITLE="$NOTE_TITLE" NOTE_BODY="$NOTE_BODY" NOTE_SHA="$NOTE_SHA" \
+        python3 - "$APP" <<'PY'
+import json, os, sys
+from datetime import date
+
+app = sys.argv[1]
+sha = os.environ["NOTE_SHA"]
+title = os.environ["NOTE_TITLE"].strip() or "untitled build"
+body = os.environ["NOTE_BODY"].strip()
+
+lines = [l.strip(" \t-*") for l in body.splitlines()]
+lines = [l for l in lines if l]
+goal = lines[0] if lines else title
+details = lines[1:] if len(lines) > 1 else []
+entry = {"sha": sha, "date": date.today().isoformat(),
+         "title": title, "goal": goal, "details": details[:24]}
+
+targets = []
+for root, _dirs, files in os.walk(app):
+    if "BuildNotes.json" in files:
+        targets.append(os.path.join(root, "BuildNotes.json"))
+if not targets:
+    targets = [os.path.join(app, "BuildNotes.json")]
+
+for path in targets:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+        notes = [n for n in doc.get("notes", []) if n.get("sha") != sha]
+    except Exception:
+        notes = []
+    notes.insert(0, entry)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump({"notes": notes}, fh, indent=2, ensure_ascii=False)
+    print(f"==> note for {sha} written to {path}")
+PY
+    fi
 fi
 
 echo "==> validating bundle"
